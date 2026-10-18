@@ -47,12 +47,18 @@ function AuthConfirmContent() {
   const [userEmail, setUserEmail] = useState("");
   const [userFullName, setUserFullName] = useState("");
   const [tempPassword, setTempPassword] = useState("");
+  const [isEmailChange, setIsEmailChange] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
 
     async function confirmInvite() {
       const hashParams = readHashParams();
+      const modeParam =
+        searchParams.get("mode") ?? hashParams.get("mode") ?? "";
+      if (modeParam === "email_change") {
+        setIsEmailChange(true);
+      }
       const code = searchParams.get("code");
       const accessToken =
         hashParams.get("access_token") ?? searchParams.get("access_token");
@@ -130,17 +136,15 @@ function AuthConfirmContent() {
         (hashParams.get("type") as string | null) ||
         "invite";
 
-      // Force sign-out any existing active session (e.g. Superadmin) BEFORE code exchange
-      // to avoid session collision and ensure invite setup belongs purely to the invited account.
+      // Clear local session before exchanging new tokens, using local scope so we never revoke the new token on the server
       if (
-        verificationType === "invite" ||
         code ||
         tokenHash ||
         token ||
         (accessToken && refreshToken)
       ) {
         try {
-          await supabase.auth.signOut();
+          await supabase.auth.signOut({ scope: "local" });
         } catch {
           // Ignore signOut errors
         }
@@ -225,6 +229,13 @@ function AuthConfirmContent() {
       const derivedEmail = userSession.email || "";
       setUserEmail(derivedEmail);
 
+      const isPendingEmailChangeMeta = Boolean(
+        (userSession.user_metadata as any)?.pending_email_change_verification,
+      );
+      if (isPendingEmailChangeMeta) {
+        setIsEmailChange(true);
+      }
+
       const fullName =
         (userSession.user_metadata && (userSession.user_metadata as any).full_name) ||
         (userSession.user_metadata && (userSession.user_metadata as any).first_name
@@ -244,12 +255,17 @@ function AuthConfirmContent() {
           userId: userSession.id,
           email: derivedEmail,
           full_name: fullName,
+          mode:
+            modeParam === "email_change" || isPendingEmailChangeMeta
+              ? "email_change"
+              : undefined,
         }),
       });
 
       const completeBody = (await completeResponse.json()) as {
         success?: boolean;
         bootstrapped?: boolean;
+        isEmailChange?: boolean;
         tempPasswordIssued?: boolean;
         tempPasswordEmailSent?: boolean;
         tempPasswordError?: string;
@@ -268,8 +284,11 @@ function AuthConfirmContent() {
         return;
       }
 
-      await supabase.auth.signOut();
+      await supabase.auth.signOut({ scope: "local" });
 
+      if (completeBody.isEmailChange) {
+        setIsEmailChange(true);
+      }
       if (completeBody.email) {
         setUserEmail(completeBody.email);
       }
@@ -311,6 +330,7 @@ function AuthConfirmContent() {
         fullName={userFullName || undefined}
         temporaryPassword={tempPassword}
         errorMessage={statusMessage}
+        isEmailChange={isEmailChange}
         onSignIn={() => router.push("/")}
         onReturnToSignIn={() => router.push("/")}
       />

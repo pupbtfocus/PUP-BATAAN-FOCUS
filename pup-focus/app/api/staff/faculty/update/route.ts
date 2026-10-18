@@ -4,6 +4,9 @@ import { getServiceRoleClient } from "@/lib/supabase/service-role";
 import { ROLE } from "@/config/roles";
 import { logAuditEvent } from "@/features/audit-logs/services/audit-log.service";
 import { logger } from "@/lib/observability/logger";
+import { isValidEmailAddress } from "@/lib/validation/email";
+import { sendEmailChangeVerificationEmail } from "@/lib/email/send-invite";
+import { generateTempPassword } from "@/lib/auth/temp-password";
 import {
   FACULTY_PROFILE_IMAGE_BUCKET,
   buildFacultyFullName,
@@ -33,6 +36,10 @@ async function readRequestPayload(request: NextRequest) {
       lastName: trimOrEmpty(
         formData.get("lastName") || formData.get("last_name"),
       ),
+      email: trimOrEmpty(formData.get("email")).toLowerCase(),
+      resendVerification:
+        formData.get("resendVerification") === "true" ||
+        formData.get("resend_verification") === "true",
       programId: trimOrEmpty(
         formData.get("programId") ||
           formData.get("program_id") ||
@@ -54,6 +61,11 @@ async function readRequestPayload(request: NextRequest) {
     firstName: trimOrEmpty(body.firstName || body.first_name),
     middleName: trimOrEmpty(body.middleName || body.middle_name),
     lastName: trimOrEmpty(body.lastName || body.last_name),
+    email: trimOrEmpty(body.email).toLowerCase(),
+    resendVerification:
+      body.resendVerification === true ||
+      body.resendVerification === "true" ||
+      body.resend_verification === true,
     programId: trimOrEmpty(
       body.programId || body.program_id || body.department_id,
     ),
@@ -84,6 +96,8 @@ export async function PATCH(request: NextRequest) {
       firstName,
       middleName,
       lastName,
+      email,
+      resendVerification,
       programId,
       profileImage,
     } = await readRequestPayload(request);
@@ -119,6 +133,47 @@ export async function PATCH(request: NextRequest) {
 
     const authUserId = profile.user_id ?? null;
     const previousProfileName = profile.full_name;
+    const previousEmail = (profile.email ?? "").trim().toLowerCase();
+    const targetEmail = email || previousEmail;
+    const isEmailChanged = Boolean(email && email !== previousEmail);
+    const shouldSendVerification = isEmailChanged || resendVerification;
+
+    if (isEmailChanged) {
+      if (!isValidEmailAddress(email)) {
+        return NextResponse.json(
+          { error: "Please provide a valid email address" },
+          { status: 400 },
+        );
+      }
+
+      const { data: existingProfileWithEmail } = await supabase
+        .from("profiles")
+        .select("id")
+        .ilike("email", email)
+        .neq("id", profile.id)
+        .maybeSingle();
+
+      if (existingProfileWithEmail) {
+        return NextResponse.json(
+          { error: `An account with email ${email} already exists.` },
+          { status: 400 },
+        );
+      }
+
+      const { data: authUsersList } = await supabase.auth.admin.listUsers({
+        page: 1,
+        perPage: 1000,
+      });
+      const duplicateAuthUser = authUsersList?.users?.find(
+        (u) => u.id !== authUserId && u.email?.trim().toLowerCase() === email,
+      );
+      if (duplicateAuthUser) {
+        return NextResponse.json(
+          { error: `An account with email ${email} already exists.` },
+          { status: 400 },
+        );
+      }
+    }
 
     let authUserResult = null;
     if (authUserId) {
@@ -196,7 +251,7 @@ export async function PATCH(request: NextRequest) {
       }
 
       const safeFileName = profileImage.name.replace(/[^a-zA-Z0-9._-]/g, "_");
-      const storagePath = `faculty-profile-images/${profile.email}/${Date.now()}-${crypto.randomUUID()}-${safeFileName}`;
+      const storagePath = `faculty-profile-images/${targetEmail}/${Date.now()}-${crypto.randomUUID()}-${safeFileName}`;
       const arrayBuffer = await profileImage.arrayBuffer();
 
       const { error: uploadError } = await supabase.storage
@@ -221,6 +276,7 @@ export async function PATCH(request: NextRequest) {
 
     const profileUpdatePayload: Record<string, unknown> = {
       full_name: updatedFullName,
+      ...(isEmailChanged ? { email: targetEmail } : {}),
     };
 
     const { error: profileUpdateError } = await supabase
@@ -251,10 +307,20 @@ export async function PATCH(request: NextRequest) {
         .from("faculty")
         .update({
           full_name: updatedFullName,
+          ...(isEmailChanged ? { email: targetEmail } : {}),
           updated_at: new Date().toISOString(),
         })
         .eq("profile_id", profile.id);
     } catch {}
+
+    if (isEmailChanged && authUserId) {
+      try {
+        await supabase
+          .from("extension_requests")
+          .update({ faculty_email: targetEmail })
+          .eq("faculty_user_id", authUserId);
+      } catch {}
+    }
 
     if (resolvedProgramId) {
       try {
@@ -310,26 +376,59 @@ export async function PATCH(request: NextRequest) {
     }
 
     if (authUserId) {
+      const authUpdateBody: {
+        email?: string;
+        email_confirm?: boolean;
+        user_metadata: Record<string, unknown>;
+      } = {
+        ...(isEmailChanged
+          ? {
+              email: targetEmail,
+              email_confirm: true,
+            }
+          : {}),
+        user_metadata: {
+          ...previousAuthUserMetadata,
+          first_name: firstName,
+          middle_name: middleName || null,
+          last_name: lastName,
+          full_name: updatedFullName,
+          role: ROLE.FACULTY,
+          profile_image_bucket: updatedMetadata.profile_image_bucket,
+          profile_image_path: updatedMetadata.profile_image_path,
+          ...(resolvedProgramId ? { program_id: resolvedProgramId } : {}),
+          ...(shouldSendVerification
+            ? {
+                pending_email_change_verification: true,
+                previous_email: previousEmail,
+              }
+            : {}),
+        },
+      };
+
       const { error: authUpdateError } =
-        await supabase.auth.admin.updateUserById(authUserId, {
-          user_metadata: {
-            ...previousAuthUserMetadata,
-            first_name: firstName,
-            middle_name: middleName || null,
-            last_name: lastName,
-            full_name: updatedFullName,
-            role: ROLE.FACULTY,
-            profile_image_bucket: updatedMetadata.profile_image_bucket,
-            profile_image_path: updatedMetadata.profile_image_path,
-            ...(resolvedProgramId ? { program_id: resolvedProgramId } : {}),
-          },
-        });
+        await supabase.auth.admin.updateUserById(authUserId, authUpdateBody);
 
       if (authUpdateError) {
         await supabase
           .from("profiles")
-          .update({ full_name: previousProfileName })
+          .update({
+            full_name: previousProfileName,
+            ...(isEmailChanged ? { email: previousEmail } : {}),
+          })
           .eq("id", profile.id);
+
+        if (isEmailChanged) {
+          try {
+            await supabase
+              .from("faculty")
+              .update({
+                full_name: previousProfileName,
+                email: previousEmail,
+              })
+              .eq("profile_id", profile.id);
+          } catch {}
+        }
 
         if (
           uploadedProfileImagePath &&
@@ -363,16 +462,85 @@ export async function PATCH(request: NextRequest) {
         .catch(() => null);
     }
 
+    let verificationSent = false;
+    let verificationError: string | null = null;
+    let verificationLink: string | null = null;
+
+    if (shouldSendVerification && targetEmail) {
+      const siteUrl =
+        process.env.NEXT_PUBLIC_SITE_URL ||
+        process.env.NEXT_PUBLIC_APP_URL ||
+        (request.url
+          ? new URL(request.url).origin
+          : "https://pupfocus.cjaayy.dev");
+      const callbackUrl = `${siteUrl.replace(/\/$/, "")}/auth/confirm?email=${encodeURIComponent(targetEmail)}&mode=email_change`;
+
+      let { data: genData, error: genError } =
+        await supabase.auth.admin.generateLink({
+          type: "magiclink",
+          email: targetEmail,
+          options: {
+            redirectTo: callbackUrl,
+          },
+        });
+
+      if (genError || !genData?.properties?.action_link) {
+        const inviteAttempt = await supabase.auth.admin.generateLink({
+          type: "invite",
+          email: targetEmail,
+          options: {
+            data: {
+              ...updatedMetadata,
+              role: ROLE.FACULTY,
+              pending_email_change_verification: true,
+            },
+            redirectTo: callbackUrl,
+          },
+        });
+        if (!inviteAttempt.error && inviteAttempt.data?.properties?.action_link) {
+          genData = inviteAttempt.data;
+          genError = null;
+        }
+      }
+
+      verificationLink = genData?.properties?.action_link ?? null;
+
+      if (verificationLink) {
+        try {
+          await sendEmailChangeVerificationEmail({
+            to: targetEmail,
+            previousEmail: isEmailChanged ? previousEmail : undefined,
+            link: verificationLink,
+            firstName,
+            fullName: updatedFullName,
+          });
+          verificationSent = true;
+        } catch (err) {
+          verificationError =
+            err instanceof Error ? err.message : String(err ?? "unknown error");
+        }
+      } else if (genError) {
+        verificationError = genError.message;
+      }
+    }
+
     // Audit log – fire-and-forget; never blocks the update response
     try {
       await logAuditEvent({
         actorId: user.id,
-        action: "faculty.update",
+        action: isEmailChanged ? "faculty.email_change" : "faculty.update",
         entityType: "faculty",
         entityId: facultyProfileId,
         metadata: {
           updated_full_name: updatedFullName,
           previous_full_name: previousProfileName,
+          ...(isEmailChanged
+            ? {
+                previous_email: previousEmail,
+                updated_email: targetEmail,
+                verification_sent: verificationSent,
+              }
+            : {}),
         },
       });
     } catch (auditError) {
@@ -382,7 +550,14 @@ export async function PATCH(request: NextRequest) {
       });
     }
 
-    return NextResponse.json({ success: true });
+    return NextResponse.json({
+      success: true,
+      emailChanged: isEmailChanged,
+      email: targetEmail,
+      verificationSent,
+      verificationError,
+      link: verificationLink,
+    });
   } catch (error) {
     return NextResponse.json(
       {

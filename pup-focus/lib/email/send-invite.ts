@@ -8,6 +8,8 @@ import {
   buildTempPasswordEmailHtml,
   buildForgotPasswordEmailHtml,
   buildSubmissionWindowNotificationEmailHtml,
+  buildEmailChangeVerificationHtml,
+  buildEmailChangeTempPasswordHtml,
 } from "./email-templates";
 
 export * from "./email-templates";
@@ -296,4 +298,135 @@ export async function sendForgotPasswordEmail({
 
   return info;
 }
+
+type SendEmailChangeVerificationOpts = {
+  to: string;
+  previousEmail?: string;
+  link: string;
+  fullName?: string;
+  firstName?: string;
+  from?: string;
+};
+
+export async function sendEmailChangeVerificationEmail({
+  to,
+  previousEmail,
+  link,
+  fullName,
+  firstName,
+  from,
+}: SendEmailChangeVerificationOpts) {
+  const host = normalizeSmtpValue(process.env.EMAIL_SMTP_HOST);
+  const port = normalizeSmtpValue(process.env.EMAIL_SMTP_PORT);
+  const user = normalizeSmtpValue(process.env.EMAIL_SMTP_USER);
+  const pass = normalizeSmtpPassword(process.env.EMAIL_SMTP_PASS);
+
+  if (!host || !port || !user || !pass) {
+    throw new Error(
+      "SMTP configuration missing (EMAIL_SMTP_HOST/PORT/USER/PASS)",
+    );
+  }
+
+  const transporter = nodemailer.createTransport({
+    host,
+    port: Number(port),
+    secure: Number(port) === 465,
+    auth: {
+      user,
+      pass,
+    },
+  });
+
+  const fromAddress = normalizeEmailAddress(
+    from || process.env.EMAIL_FROM || user,
+  );
+
+  const resolvedFirstName =
+    firstName?.trim() ||
+    fullName?.trim().split(/\s+/)[0] ||
+    "there";
+
+  const subject = "PUP FOCUS - Verify Your Updated Email Address";
+  const text = `Hello ${resolvedFirstName},\n\nYour PUP FOCUS account email address has been updated to ${to}. All of your existing account records and submissions remain intact.\n\nUse the link below to verify your new email and receive your temporary sign-in password:\n\n${link}\n\nIf you did not request this email change, please contact your campus administrator immediately.`;
+  const html = buildEmailChangeVerificationHtml({
+    fullName,
+    firstName: resolvedFirstName,
+    newEmail: to,
+    previousEmail,
+    link,
+  });
+
+  return transporter.sendMail({
+    from: formatDisplayFromAddress(fromAddress),
+    to: normalizeEmailAddress(to),
+    subject,
+    text,
+    html,
+  });
+}
+
+type SendEmailChangeTempPasswordOpts = {
+  to: string;
+  tempPassword: string;
+  fullName: string;
+  firstName?: string;
+  from?: string;
+};
+
+export async function sendEmailChangeTempPasswordEmail({
+  to,
+  tempPassword,
+  fullName,
+  firstName,
+  from,
+}: SendEmailChangeTempPasswordOpts) {
+  const host = normalizeSmtpValue(process.env.EMAIL_SMTP_HOST);
+  const port = normalizeSmtpValue(process.env.EMAIL_SMTP_PORT);
+  const user = normalizeSmtpValue(process.env.EMAIL_SMTP_USER);
+  const pass = normalizeSmtpPassword(process.env.EMAIL_SMTP_PASS);
+
+  if (!host || !port || !user || !pass) {
+    throw new Error(
+      "SMTP configuration missing (EMAIL_SMTP_HOST/PORT/USER/PASS)",
+    );
+  }
+
+  const transporter = nodemailer.createTransport({
+    host,
+    port: Number(port),
+    secure: Number(port) === 465,
+    auth: {
+      user,
+      pass,
+    },
+  });
+
+  const fromAddress = normalizeEmailAddress(
+    from || process.env.EMAIL_FROM || user,
+  );
+
+  const resolvedFirstName =
+    firstName?.trim() ||
+    fullName?.trim().split(/\s+/)[0] ||
+    "there";
+
+  const subject = "PUP FOCUS - New Email Verified & Temporary Credentials";
+  const text = `Hello ${resolvedFirstName},\n\nYour updated email address (${to}) is now verified. Your existing account and submissions are ready.\n\nVerified Email: ${to}\nNew Temporary Password: ${tempPassword}\n\nPlease sign in and set a new password upon logging in.`;
+  const html = buildEmailChangeTempPasswordHtml({
+    fullName,
+    firstName: resolvedFirstName,
+    email: to,
+    tempPassword,
+    signInHref: buildAppUrl("/auth/sign-in"),
+  });
+
+  return transporter.sendMail({
+    from: formatDisplayFromAddress(fromAddress),
+    to: normalizeEmailAddress(to),
+    subject,
+    text,
+    html,
+  });
+}
+
 

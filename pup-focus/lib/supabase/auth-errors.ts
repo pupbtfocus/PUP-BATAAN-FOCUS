@@ -47,6 +47,12 @@ export function patchRefreshTokenErrorConsoleFilter() {
       originalConsoleWarn(...args);
       return;
     }
+    if (
+      typeof args[0] === "string" &&
+      args[0].includes("Can't perform a React state update on a component that hasn't mounted yet")
+    ) {
+      return;
+    }
     originalConsoleError(...args);
   };
 }

@@ -292,3 +292,134 @@ export function buildSubmissionWindowNotificationEmailHtml({
   });
 }
 
+export function buildEmailChangeVerificationHtml({
+  fullName,
+  firstName,
+  newEmail,
+  previousEmail,
+  link,
+}: {
+  fullName?: string;
+  firstName?: string;
+  newEmail: string;
+  previousEmail?: string;
+  link: string;
+}) {
+  const resolvedFirstName =
+    firstName?.trim() ||
+    fullName?.trim().split(/\s+/)[0] ||
+    "there";
+  const safeFirstName = escapeHtml(resolvedFirstName);
+  const safeNewEmail = escapeHtml(newEmail);
+  const safePreviousEmail = previousEmail ? escapeHtml(previousEmail) : "";
+
+  const detailsHtml = `
+    <table role="presentation" width="100%" style="margin:18px 0;background:#fffdf7;border:1.5px solid #f59e0b;border-radius:12px;border-collapse:separate;overflow:hidden;">
+      <tr>
+        <td style="padding:14px 18px;">
+          ${
+            safePreviousEmail
+              ? `<div style="font-size:12px;color:#6b4b4b;margin-bottom:6px;">
+                  <strong>Previous Email:</strong> <span style="font-family:monospace;color:#475569;">${safePreviousEmail}</span>
+                </div>`
+              : ""
+          }
+          <div style="font-size:13px;color:#2f1a1a;">
+            <strong>New Account Email:</strong> <span style="font-family:monospace;font-weight:700;color:#780000;">${safeNewEmail}</span>
+          </div>
+          <p style="margin:10px 0 0 0;font-size:12px;color:#854d0e;line-height:1.5;">
+            All of your existing account content, compliance records, and uploaded submissions remain completely intact.
+          </p>
+        </td>
+      </tr>
+    </table>
+  `;
+
+  return buildEmailLayout({
+    title: "Verify Your Updated Email",
+    intro: `Hello ${safeFirstName}, your PUP FOCUS account email has been changed.`,
+    body: `An institutional administrator updated the email address linked to your faculty account. Click the button below to verify your new email address and receive a fresh temporary password to sign back in.`,
+    contentHtml: detailsHtml,
+    actionLabel: "Verify New Email & Restore Access",
+    actionHref: link,
+    footerNote:
+      "If you did not request this email change, please contact your PUP Bataan campus administrator immediately.",
+    pupLogoSrc: buildAppUrl("/icons/pup-seal.png"),
+  });
+}
+
+export function buildEmailChangeTempPasswordHtml({
+  fullName,
+  firstName,
+  email,
+  tempPassword,
+  signInHref,
+}: {
+  fullName?: string;
+  firstName?: string;
+  email: string;
+  tempPassword: string;
+  signInHref?: string;
+}) {
+  const resolvedFirstName =
+    firstName?.trim() ||
+    fullName?.trim().split(/\s+/)[0] ||
+    "there";
+  const safeFirstName = escapeHtml(resolvedFirstName);
+  const safeTempPassword = escapeHtml(tempPassword);
+  const safeEmail = escapeHtml(email);
+
+  const credentialsHtml = `
+    <table role="presentation" width="100%" style="margin:20px 0;background:#fffdf7;border:2px solid #f59e0b;border-radius:12px;border-collapse:separate;overflow:hidden;box-shadow:0 2px 8px rgba(245,158,11,0.12);">
+      <tr>
+        <td style="padding:12px 18px;background:linear-gradient(135deg,#780000 0%,#4d0000 100%);color:#fff8e7;border-bottom:2px solid #f59e0b;">
+          <span style="font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:#ffd700;">
+            🔑 Updated Account Credentials
+          </span>
+        </td>
+      </tr>
+      <tr>
+        <td style="padding:18px 20px;">
+          <table role="presentation" width="100%" style="border-collapse:collapse;">
+            <tr>
+              <td style="padding:8px 0;width:150px;font-size:13px;font-weight:700;color:#6b4b4b;vertical-align:middle;">
+                Verified New Email:
+              </td>
+              <td style="padding:8px 0;font-size:14px;font-family:monospace;font-weight:700;color:#1e293b;user-select:all;vertical-align:middle;">
+                <span style="background:#f8fafc;padding:5px 10px;border-radius:6px;border:1px solid #e2e8f0;display:inline-block;">
+                  ${safeEmail}
+                </span>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:8px 0;font-size:13px;font-weight:700;color:#6b4b4b;vertical-align:middle;">
+                New Temp Password:
+              </td>
+              <td style="padding:8px 0;font-size:15px;font-family:monospace;font-weight:800;color:#780000;user-select:all;vertical-align:middle;">
+                <span style="background:#fef3c7;padding:5px 12px;border-radius:6px;border:1.5px dashed #f59e0b;display:inline-block;">
+                  ${safeTempPassword}
+                </span>
+              </td>
+            </tr>
+          </table>
+          <p style="margin:14px 0 0 0;font-size:12px;color:#854d0e;line-height:1.5;">
+            💡 <strong>Note:</strong> Your previous login credentials have been invalidated. Sign in with your verified new email and temporary password above, then set a new password upon sign-in. All of your existing account records and submissions are preserved.
+          </p>
+        </td>
+      </tr>
+    </table>
+  `;
+
+  return buildEmailLayout({
+    title: "New Email Verified",
+    intro: `Hello ${safeFirstName}, your updated email address is now verified.`,
+    body: `Your existing PUP FOCUS account is ready to use with your new email address. Use the temporary credentials below to sign back into your account.`,
+    contentHtml: credentialsHtml,
+    actionLabel: "Sign in to PUP FOCUS",
+    actionHref: signInHref || buildAppUrl("/auth/sign-in"),
+    footerNote: `Temporary Password: ${safeTempPassword} • Verified Email: ${safeEmail}`,
+    pupLogoSrc: buildAppUrl("/icons/pup-seal.png"),
+  });
+}
+
+

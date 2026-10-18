@@ -3,7 +3,10 @@ import { createClient } from "@supabase/supabase-js";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { bootstrapInvitedAdminAccount } from "@/lib/auth/bootstrap-invited-admin";
 import { bootstrapInvitedFacultyAccount } from "@/lib/auth/bootstrap-invited-faculty";
-import { sendTempPasswordEmail } from "@/lib/email/send-invite";
+import {
+  sendTempPasswordEmail,
+  sendEmailChangeTempPasswordEmail,
+} from "@/lib/email/send-invite";
 import { ROLE } from "@/config/roles";
 import { generateTempPassword } from "@/lib/auth/temp-password";
 
@@ -27,6 +30,7 @@ export async function POST(req: Request) {
       fullName: bodyFullNameCamel,
       name: bodyName,
       email: bodyEmail,
+      mode: bodyMode,
       token,
     } = body;
 
@@ -120,6 +124,11 @@ export async function POST(req: Request) {
       );
     }
 
+    const isEmailChange = Boolean(
+      bodyMode === "email_change" ||
+        authUser.user_metadata?.pending_email_change_verification,
+    );
+
     // 3. Call supabase.auth.admin.updateUserById to update the password and set email_confirm: true
     const isTempPasswordGenerated = !requestedPassword;
     const passwordToSet = requestedPassword || generateTempPassword(16);
@@ -141,6 +150,7 @@ export async function POST(req: Request) {
         full_name: fullNameToSet,
         must_change_password: true,
         force_password_change: true,
+        pending_email_change_verification: false,
       },
     };
 
@@ -205,11 +215,19 @@ export async function POST(req: Request) {
 
     if (isTempPasswordGenerated) {
       try {
-        await sendTempPasswordEmail({
-          to: email,
-          tempPassword: passwordToSet,
-          fullName: fullNameToSet,
-        });
+        if (isEmailChange) {
+          await sendEmailChangeTempPasswordEmail({
+            to: email,
+            tempPassword: passwordToSet,
+            fullName: fullNameToSet,
+          });
+        } else {
+          await sendTempPasswordEmail({
+            to: email,
+            tempPassword: passwordToSet,
+            fullName: fullNameToSet,
+          });
+        }
         tempPasswordEmailSent = true;
       } catch (emailErr) {
         tempPasswordError =
@@ -224,6 +242,7 @@ export async function POST(req: Request) {
     return NextResponse.json({
       success: true,
       bootstrapped: true,
+      isEmailChange,
       email: email,
       fullName: fullNameToSet,
       role: userRole,

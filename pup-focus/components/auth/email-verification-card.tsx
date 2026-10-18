@@ -21,6 +21,7 @@ export interface EmailVerificationCardProps {
   fullName?: string;
   temporaryPassword?: string;
   errorMessage?: string;
+  isEmailChange?: boolean;
   onSignIn?: () => void;
   onReturnToSignIn?: () => void;
 }
@@ -31,6 +32,7 @@ export function EmailVerificationCard({
   fullName,
   temporaryPassword = "",
   errorMessage,
+  isEmailChange = false,
   onSignIn,
   onReturnToSignIn,
 }: EmailVerificationCardProps) {
@@ -77,25 +79,34 @@ export function EmailVerificationCard({
     copyToClipboard(textToCopy, "all");
   };
 
-  const defaultErrorMessage =
-    "This invitation link was already used or has expired. Please ask an administrator to send a new invite or sign in if your account is already set up.";
+  const defaultErrorMessage = isEmailChange
+    ? "This email change verification link was already used or has expired. Please ask an administrator to resend the email verification link."
+    : "This invitation link was already used or has expired. Please ask an administrator to send a new invite or sign in if your account is already set up.";
 
   const firstName = fullName?.trim().split(/\s+/)[0];
 
   const headerConfig = {
     loading: {
-      title: "Verifying invitation link...",
-      subtitle: "Please wait, confirming your token with the campus directory.",
+      title: isEmailChange
+        ? "Verifying new email address..."
+        : "Verifying invitation link...",
+      subtitle: isEmailChange
+        ? "Please wait, confirming your updated email and restoring access to your account."
+        : "Please wait, confirming your token with the campus directory.",
     },
     success: {
-      title: "Account Ready",
-      subtitle: firstName
-        ? `Welcome, ${firstName}! We also sent this to your email. Save your temporary credentials before signing in.`
-        : "Welcome! We also sent this to your email. Save your temporary credentials before signing in.",
+      title: isEmailChange ? "New Email Verified" : "Account Ready",
+      subtitle: isEmailChange
+        ? `${firstName ? `Welcome back, ${firstName}! ` : ""}Your updated email is verified and all of your existing account records remain intact. Save your new temporary credentials before signing in.`
+        : firstName
+          ? `Welcome, ${firstName}! We also sent this to your email. Save your temporary credentials before signing in.`
+          : "Welcome! We also sent this to your email. Save your temporary credentials before signing in.",
     },
     error: {
-      title: "Verification Failed",
-      subtitle: "This invitation link could not be validated or has expired.",
+      title: isEmailChange ? "Email Verification Failed" : "Verification Failed",
+      subtitle: isEmailChange
+        ? "This email change verification link could not be validated or has expired."
+        : "This invitation link could not be validated or has expired.",
     },
     cancelled: {
       title: "Invitation Cancelled",

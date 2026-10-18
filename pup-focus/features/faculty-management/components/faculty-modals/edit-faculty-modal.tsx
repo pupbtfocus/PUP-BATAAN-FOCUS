@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { CheckCircle, EditPencil, ShieldCheck, User, Xmark } from "iconoir-react";
+import { CheckCircle, EditPencil, Mail, SendMail, ShieldCheck, User, Xmark } from "iconoir-react";
 import { AppIcon } from "@/components/ui/app-icon";
 import { ModalHeader } from "@/components/ui/modal-header";
 import { AlertPopup } from "@/components/ui/alert-popup";
@@ -27,6 +27,7 @@ export function EditFacultyModal({
   const [firstName, setFirstName] = useState("");
   const [middleName, setMiddleName] = useState("");
   const [lastName, setLastName] = useState("");
+  const [email, setEmail] = useState("");
   const [programId, setProgramId] = useState("");
   const [degreePrograms, setDegreePrograms] = useState<ProgramOption[]>([]);
   const [diplomaCourses, setDiplomaCourses] = useState<ProgramOption[]>([]);
@@ -36,22 +37,31 @@ export function EditFacultyModal({
     string | null
   >(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [isResendingVerification, setIsResendingVerification] = useState(false);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
+  const [verificationFeedback, setVerificationFeedback] = useState<{
+    emailChanged?: boolean;
+    verificationSent?: boolean;
+    verificationError?: string | null;
+    email?: string;
+  } | null>(null);
 
   const firstNameInputRef = useRef<HTMLInputElement>(null);
   const middleNameInputRef = useRef<HTMLInputElement>(null);
   const lastNameInputRef = useRef<HTMLInputElement>(null);
+  const emailInputRef = useRef<HTMLInputElement>(null);
 
   const [activeField, setActiveField] = useState<
-    "firstName" | "middleName" | "lastName" | null
+    "firstName" | "middleName" | "lastName" | "email" | null
   >(null);
 
   const [initialValues, setInitialValues] = useState({
     firstName: "",
     middleName: "",
     lastName: "",
+    email: "",
     programId: "",
   });
 
@@ -99,17 +109,28 @@ export function EditFacultyModal({
   useEffect(() => {
     if (!selectedFaculty) return;
 
-    // Strictly display first_name, middle_name, last_name directly from database fields
+    const parsedFallback = parseFullNameFallback(selectedFaculty.fullName || "");
     const directFirstName =
-      selectedFaculty.first_name ?? selectedFaculty.firstName ?? "";
+      selectedFaculty.first_name ??
+      selectedFaculty.firstName ??
+      parsedFallback.firstName ??
+      "";
     const directMiddleName =
-      selectedFaculty.middle_name ?? selectedFaculty.middleName ?? "";
+      selectedFaculty.middle_name ??
+      selectedFaculty.middleName ??
+      parsedFallback.middleName ??
+      "";
     const directLastName =
-      selectedFaculty.last_name ?? selectedFaculty.lastName ?? "";
+      selectedFaculty.last_name ??
+      selectedFaculty.lastName ??
+      parsedFallback.lastName ??
+      "";
+    const directEmail = (selectedFaculty.email ?? "").trim();
 
     setFirstName(directFirstName);
     setMiddleName(directMiddleName);
     setLastName(directLastName);
+    setEmail(directEmail);
 
     const targetProgramId = selectedFaculty.program?.id;
     const targetProgramCode = selectedFaculty.program?.code?.toUpperCase();
@@ -139,6 +160,7 @@ export function EditFacultyModal({
       firstName: directFirstName,
       middleName: directMiddleName,
       lastName: directLastName,
+      email: directEmail,
       programId: resolvedProgramId,
     });
     setActiveField(null);
@@ -165,7 +187,7 @@ export function EditFacultyModal({
   }, [profileImageFile, selectedFaculty]);
 
   function handleFocusField(
-    fieldKey: "firstName" | "middleName" | "lastName",
+    fieldKey: "firstName" | "middleName" | "lastName" | "email",
     ref: React.RefObject<HTMLInputElement | null>,
   ) {
     setActiveField(fieldKey);
@@ -173,15 +195,20 @@ export function EditFacultyModal({
       if (ref.current) {
         ref.current.focus();
         const length = ref.current.value.length;
-        ref.current.setSelectionRange(length, length);
+        try {
+          ref.current.setSelectionRange(length, length);
+        } catch {}
       }
     }, 0);
   }
 
-  function handleCancelEdit(fieldKey: "firstName" | "middleName" | "lastName") {
+  function handleCancelEdit(
+    fieldKey: "firstName" | "middleName" | "lastName" | "email",
+  ) {
     if (fieldKey === "firstName") setFirstName(initialValues.firstName);
     if (fieldKey === "middleName") setMiddleName(initialValues.middleName);
     if (fieldKey === "lastName") setLastName(initialValues.lastName);
+    if (fieldKey === "email") setEmail(initialValues.email);
     setActiveField(null);
   }
 
@@ -196,14 +223,20 @@ export function EditFacultyModal({
     day: "numeric",
   });
 
+  const normalizedEmail = email.trim().toLowerCase();
+  const normalizedInitialEmail = initialValues.email.trim().toLowerCase();
+  const isEmailModified = normalizedEmail !== normalizedInitialEmail;
+
   const hasChanges =
     firstName.trim() !== initialValues.firstName.trim() ||
     middleName.trim() !== initialValues.middleName.trim() ||
     lastName.trim() !== initialValues.lastName.trim() ||
+    isEmailModified ||
     programId !== initialValues.programId ||
     Boolean(profileImageFile);
 
   const isNameValid = firstName.trim().length > 0 && lastName.trim().length > 0;
+  const isEmailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmail);
 
   const currentFullName = [firstName.trim(), middleName.trim(), lastName.trim()]
     .filter(Boolean)
@@ -212,6 +245,65 @@ export function EditFacultyModal({
   const selectedProgramObj = [...degreePrograms, ...diplomaCourses].find(
     (p) => p.id === programId,
   );
+
+  async function handleResendVerificationOnly() {
+    if (!selectedFaculty) return;
+    setIsResendingVerification(true);
+    setSaveError(null);
+
+    try {
+      const formData = new FormData();
+      formData.append("facultyProfileId", selectedFaculty.id);
+      formData.append("firstName", firstName.trim());
+      formData.append("middleName", middleName.trim());
+      formData.append("lastName", lastName.trim());
+      formData.append("email", normalizedEmail);
+      formData.append("resendVerification", "true");
+
+      const response = await fetch("/api/staff/faculty/update", {
+        method: "PATCH",
+        body: formData,
+      });
+
+      const payload = await response.json();
+
+      if (!response.ok) {
+        throw new Error(
+          typeof payload === "object" && payload && "error" in payload
+            ? String((payload as { error?: unknown }).error)
+            : "Failed to send verification email",
+        );
+      }
+
+      setVerificationFeedback({
+        emailChanged: Boolean(payload.emailChanged),
+        verificationSent: Boolean(payload.verificationSent),
+        verificationError: payload.verificationError ?? null,
+        email: payload.email || normalizedEmail,
+      });
+      setInitialValues((prev) => ({
+        ...prev,
+        email: normalizedEmail,
+      }));
+      setActiveField(null);
+      setShowSuccessModal(true);
+
+      if (onSave && payload.emailChanged) {
+        await onSave({
+          id: selectedFaculty.id,
+          email: normalizedEmail,
+        });
+      }
+    } catch (error) {
+      setSaveError(
+        error instanceof Error
+          ? error.message
+          : "Failed to send verification email",
+      );
+    } finally {
+      setIsResendingVerification(false);
+    }
+  }
 
   async function handleConfirmSave() {
     setIsSaving(true);
@@ -232,6 +324,7 @@ export function EditFacultyModal({
       formData.append("first_name", firstName.trim());
       formData.append("middle_name", middleName.trim());
       formData.append("last_name", lastName.trim());
+      formData.append("email", normalizedEmail);
       if (programId) {
         formData.append("programId", programId);
         formData.append("program_id", programId);
@@ -273,14 +366,27 @@ export function EditFacultyModal({
         middle_name: middleName.trim(),
         last_name: lastName.trim(),
         fullName: currentFullName,
+        email: normalizedEmail,
         profileImageUrl: profileImagePreviewUrl,
         program: updatedProgram,
       };
+
+      setVerificationFeedback(
+        payload.emailChanged
+          ? {
+              emailChanged: true,
+              verificationSent: Boolean(payload.verificationSent),
+              verificationError: payload.verificationError ?? null,
+              email: payload.email || normalizedEmail,
+            }
+          : null,
+      );
 
       setInitialValues({
         firstName: firstName.trim(),
         middleName: middleName.trim(),
         lastName: lastName.trim(),
+        email: normalizedEmail,
         programId,
       });
       setProfileImageFile(null);
@@ -571,16 +677,79 @@ export function EditFacultyModal({
                 </select>
               </div>
 
-              <div className="grid gap-3 sm:grid-cols-3 pt-2 border-t border-slate-200/80 dark:border-slate-800">
-                <div className="space-y-1">
-                  <p className="text-xs uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400 font-semibold">
-                    Email
-                  </p>
-                  <p className="text-xs font-medium text-slate-700 dark:text-slate-300 truncate" title={selectedFaculty.email}>
-                    {selectedFaculty.email}
-                  </p>
+              <div className="space-y-2 pt-2 border-t border-slate-200/80 dark:border-slate-800">
+                <div className="flex items-center justify-between gap-2">
+                  <label
+                    htmlFor="faculty-email-address"
+                    className="block text-xs uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400 font-semibold"
+                  >
+                    Email Address (Account Recovery / Change Email)
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => void handleResendVerificationOnly()}
+                    disabled={isResendingVerification || isSaving || !isEmailValid}
+                    title="Send a verification email to this address without modifying account data"
+                    className="inline-flex items-center gap-1.5 rounded-lg border border-amber-500/40 bg-amber-500/15 hover:bg-amber-500/25 text-amber-800 dark:text-amber-300 px-2.5 py-1 text-[11px] font-semibold transition cursor-pointer disabled:opacity-50"
+                  >
+                    <AppIcon icon={SendMail} size="xs" color="inherit" />
+                    <span>
+                      {isResendingVerification
+                        ? "Sending..."
+                        : isEmailModified
+                          ? "Change Email & Verify Now"
+                          : "Re-verify Email"}
+                    </span>
+                  </button>
                 </div>
 
+                <div className="relative flex items-center">
+                  <input
+                    id="faculty-email-address"
+                    ref={emailInputRef}
+                    type="email"
+                    readOnly={activeField !== "email"}
+                    className={`w-full bg-slate-50 dark:bg-slate-950 border rounded-xl pl-3.5 pr-9 py-2 text-xs font-medium text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 outline-none focus:outline-none focus-visible:outline-none transition-all ${
+                      activeField === "email"
+                        ? "border-amber-500 ring-2 ring-amber-500/80 dark:ring-amber-500/60"
+                        : "border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 cursor-default"
+                    }`}
+                    value={email}
+                    onChange={(event) => setEmail(event.target.value)}
+                    onBlur={() => setActiveField(null)}
+                    placeholder="faculty@pup.edu.ph"
+                  />
+                  {activeField === "email" ? (
+                    <button
+                      type="button"
+                      title="Cancel email edit"
+                      aria-label="Cancel email edit"
+                      onMouseDown={(e) => e.preventDefault()}
+                      onClick={() => handleCancelEdit("email")}
+                      className="absolute right-1.5 top-1/2 -translate-y-1/2 flex h-6 w-6 items-center justify-center rounded-lg border border-[#5e0000] bg-[#780000] hover:bg-[#5e0000] text-white transition-all shadow-2xs cursor-pointer active:scale-95"
+                    >
+                      <AppIcon icon={Xmark} size="xs" color="inherit" />
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      title="Change email address"
+                      aria-label="Change email address"
+                      onMouseDown={(e) => e.preventDefault()}
+                      onClick={() => handleFocusField("email", emailInputRef)}
+                      className="absolute right-1.5 top-1/2 -translate-y-1/2 flex h-6 w-6 items-center justify-center rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800/80 text-slate-600 dark:text-slate-300 hover:border-amber-500 hover:text-amber-500 dark:hover:border-amber-400 dark:hover:text-amber-400 transition-all shadow-2xs cursor-pointer active:scale-95"
+                    >
+                      <AppIcon icon={EditPencil} size="xs" color="inherit" />
+                    </button>
+                  )}
+                </div>
+
+                <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed">
+                  If the faculty member lost access to their email or their email was compromised, update only the email here. All account data, submissions, and compliance records remain intact, and a new verification link will be sent to the new email.
+                </p>
+              </div>
+
+              <div className="grid gap-3 sm:grid-cols-2 pt-2 border-t border-slate-200/80 dark:border-slate-800">
                 <div className="space-y-1">
                   <p className="text-xs uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400 font-semibold">
                     Account Status
@@ -630,7 +799,7 @@ export function EditFacultyModal({
             <Button
               type="button"
               onClick={() => setShowConfirmModal(true)}
-              disabled={isSaving || !hasChanges || !isNameValid}
+              disabled={isSaving || !hasChanges || !isNameValid || !isEmailValid}
               className="disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
             >
               Save Changes
@@ -675,6 +844,9 @@ export function EditFacultyModal({
                       {currentFullName}
                     </p>
                     <p className="text-xs text-slate-500 dark:text-slate-400 truncate">
+                      {normalizedEmail}
+                    </p>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 truncate">
                       {selectedProgramObj
                         ? `${selectedProgramObj.code} — ${selectedProgramObj.name}`
                         : "No department assigned"}
@@ -691,6 +863,19 @@ export function EditFacultyModal({
                     middleName.trim() !== initialValues.middleName.trim() ||
                     lastName.trim() !== initialValues.lastName.trim() ? (
                       <li>Updated faculty name</li>
+                    ) : null}
+                    {isEmailModified ? (
+                      <li>
+                        Changed email from{" "}
+                        <strong className="text-slate-700 dark:text-slate-200">
+                          {initialValues.email}
+                        </strong>{" "}
+                        to{" "}
+                        <strong className="text-amber-600 dark:text-amber-400">
+                          {normalizedEmail}
+                        </strong>{" "}
+                        (sends new verification link; keeps all account content intact)
+                      </li>
                     ) : null}
                     {programId !== initialValues.programId ? (
                       <li>Changed department / program assignment</li>
@@ -754,14 +939,39 @@ export function EditFacultyModal({
             </div>
 
             <h3 className="text-slate-900 dark:text-slate-100 font-bold text-lg tracking-tight mb-1">
-              Faculty Updated Successfully
+              {verificationFeedback
+                ? verificationFeedback.emailChanged
+                  ? "Email Updated & Verification Sent"
+                  : "Verification Email Sent"
+                : "Faculty Updated Successfully"}
             </h3>
             <p className="text-slate-600 dark:text-slate-400 text-sm leading-relaxed mb-6">
-              Faculty details for{" "}
-              <strong className="font-semibold text-slate-900 dark:text-slate-100">
-                {currentFullName}
-              </strong>{" "}
-              have been updated securely.
+              {verificationFeedback ? (
+                <>
+                  Account email for{" "}
+                  <strong className="font-semibold text-slate-900 dark:text-slate-100">
+                    {currentFullName}
+                  </strong>{" "}
+                  is now{" "}
+                  <strong className="font-semibold text-amber-600 dark:text-amber-400">
+                    {verificationFeedback.email}
+                  </strong>
+                  . All account content and submissions remain intact.{" "}
+                  {verificationFeedback.verificationSent
+                    ? "A new verification link has been sent to their email address."
+                    : verificationFeedback.verificationError
+                      ? `Note: Email delivery encountered an issue (${verificationFeedback.verificationError}).`
+                      : ""}
+                </>
+              ) : (
+                <>
+                  Faculty details for{" "}
+                  <strong className="font-semibold text-slate-900 dark:text-slate-100">
+                    {currentFullName}
+                  </strong>{" "}
+                  have been updated securely.
+                </>
+              )}
             </p>
 
             <button
