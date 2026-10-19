@@ -604,7 +604,7 @@ export default function Home() {
   }
 
   return (
-    <main className="relative min-h-screen h-auto md:h-screen md:max-h-screen w-full flex flex-col items-center justify-start md:justify-center px-3 sm:px-4 py-6 sm:py-6 md:py-2 text-[#fff8e7] overflow-x-hidden overflow-y-auto md:overflow-hidden bg-[#1c0406]">
+    <main className="relative min-h-dvh h-auto md:h-screen md:max-h-screen w-full flex flex-col items-center justify-center px-3 sm:px-4 py-2.5 sm:py-4 md:py-2 text-[#fff8e7] overflow-x-hidden overflow-y-auto md:overflow-hidden bg-[#1c0406]">
       {/* Campus Background Photos with Maroon Blur */}
       <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
         <div
@@ -626,7 +626,7 @@ export default function Home() {
         <div className="absolute inset-0 bg-gradient-to-b from-[#2a0408]/45 via-transparent to-[#1c0205]/60" />
       </div>
 
-      <div className="relative z-10 w-full max-w-[460px] md:max-w-4xl lg:max-w-5xl mx-auto my-0 md:my-auto py-1 sm:py-2 md:py-3">
+      <div className="relative z-10 w-full max-w-[420px] sm:max-w-[460px] md:max-w-4xl lg:max-w-5xl mx-auto my-auto py-0.5 md:py-3">
         {/* Wide Open-Book Card Container */}
         <div className="relative w-full mx-auto opacity-[0.88]">
           {/* Desktop Curved Card Top Header SVG (>= md) */}
@@ -716,22 +716,22 @@ export default function Home() {
           />
 
           {/* Card Body - Official PUP Brand Maroon (#800000) with 2-Sided Open Book Layout */}
-          <section className="relative rounded-[1.75rem] sm:rounded-[2rem] md:rounded-t-none md:rounded-b-[2rem] border-4 md:border-t-0 md:border-x-4 md:border-b-4 border-amber-400 bg-[#800000] overflow-hidden shadow-[0_20px_50px_rgba(0,0,0,0.6),0_0_30px_rgba(128,0,0,0.4)]">
+          <section className="relative rounded-[1.5rem] sm:rounded-[2rem] md:rounded-t-none md:rounded-b-[2rem] border-3 sm:border-4 md:border-t-0 md:border-x-4 md:border-b-4 border-amber-400 bg-[#800000] overflow-hidden shadow-[0_20px_50px_rgba(0,0,0,0.6),0_0_30px_rgba(128,0,0,0.4)]">
             <div className="grid grid-cols-1 md:grid-cols-12 items-stretch md:min-h-[420px]">
               {/* Left Side (Desktop) / Top (Mobile): Login Form */}
-              <div className="md:col-span-6 relative flex flex-col justify-center p-5 sm:p-7 md:p-8 bg-transparent">
+              <div className="md:col-span-6 relative z-10 flex flex-col justify-center px-4 pt-3 pb-1.5 sm:p-6 md:p-8 bg-transparent">
                 {/* PUP Seal Logo (Mobile only, centered above SIGN IN) */}
-                <div className="flex md:hidden justify-center mb-3">
-                  <Logo size={82} className="drop-shadow-[0_6px_16px_rgba(0,0,0,0.6)]" />
+                <div className="flex md:hidden justify-center mb-1">
+                  <Logo size={56} className="drop-shadow-[0_6px_16px_rgba(0,0,0,0.6)]" />
                 </div>
 
                 {/* Form Header */}
-                <div className="mb-3 sm:mb-4 text-center">
-                  <h2 className="text-2xl sm:text-3xl font-black tracking-wider text-amber-300 uppercase mb-1 drop-shadow-[0_2px_4px_rgba(0,0,0,0.6)]">
+                <div className="mb-1.5 sm:mb-4 text-center">
+                  <h2 className="text-xl sm:text-3xl font-black tracking-wider text-amber-300 uppercase mb-0.5 sm:mb-1 drop-shadow-[0_2px_4px_rgba(0,0,0,0.6)]">
                     Sign In
                   </h2>
-                  <div className="mx-auto my-2.5 sm:my-3 h-0.5 w-20 rounded-full bg-gradient-to-r from-transparent via-amber-400 to-transparent shadow-[0_0_10px_rgba(251,191,36,0.8)]" />
-                  <p className="text-amber-100 text-xs sm:text-sm font-medium tracking-wide">
+                  <div className="mx-auto my-1 sm:my-3 h-0.5 w-16 sm:w-20 rounded-full bg-gradient-to-r from-transparent via-amber-400 to-transparent shadow-[0_0_10px_rgba(251,191,36,0.8)]" />
+                  <p className="text-amber-100 text-[11px] sm:text-sm font-medium tracking-wide">
                     Enter your institutional credentials to continue
                   </p>
                 </div>
@@ -759,9 +759,9 @@ export default function Home() {
               </div>
 
               {/* Right Side (Desktop) / Bottom (Mobile): FOCUS Branding */}
-              <div className="md:col-span-6 relative flex flex-col items-center justify-center text-center py-6 px-2 sm:p-7 md:p-8 min-h-[200px] sm:min-h-[230px] md:min-h-[420px] bg-transparent overflow-hidden">
+              <div className="md:col-span-6 relative flex flex-col items-center justify-center text-center pt-5 pb-4 px-2 sm:py-6 sm:px-6 md:p-8 min-h-[165px] sm:min-h-[200px] md:min-h-[420px] bg-transparent md:overflow-hidden">
                 {/* Pylon Monument Background (pylon.png) */}
-                <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
+                <div className="absolute -top-14 inset-x-0 bottom-0 md:top-0 z-0 pointer-events-none md:overflow-hidden">
                   <Image
                     src="/images/pylon.png"
                     alt="PUP Pylon Monument"
@@ -773,23 +773,29 @@ export default function Home() {
                 </div>
 
                 {/* Centered Typography: FOCUS & Faculty Online Compliance and Uploading System */}
-                <div className="relative z-10 w-full max-w-xl mx-auto flex flex-col items-center justify-center text-center px-1">
+                <div className="relative z-10 w-full max-w-md mx-auto flex flex-col items-center justify-center text-center px-3">
                   {/* Title */}
-                  <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black tracking-wider text-amber-300 uppercase mb-2 drop-shadow-[0_3px_10px_rgba(0,0,0,0.95)]">
+                  <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black tracking-[0.2em] pl-[0.2em] bg-gradient-to-b from-[#fff3c4] via-amber-300 to-amber-500 bg-clip-text text-transparent uppercase drop-shadow-[0_4px_12px_rgba(0,0,0,0.9)]">
                     FOCUS
                   </h1>
 
-                  {/* Sleek Golden Divider */}
-                  <div className="mx-auto my-2.5 sm:my-3 h-0.5 w-24 rounded-full bg-gradient-to-r from-transparent via-amber-400 to-transparent shadow-[0_0_12px_rgba(251,191,36,1)]" />
+                  {/* Sleek Golden Divider with Center Diamond */}
+                  <div className="flex items-center justify-center gap-2 my-1.5 sm:my-2.5 w-36 sm:w-44">
+                    <div className="h-[1px] flex-1 bg-gradient-to-r from-transparent to-amber-400/90" />
+                    <div className="h-1.5 w-1.5 rotate-45 bg-amber-300 shadow-[0_0_8px_rgba(251,191,36,0.9)]" />
+                    <div className="h-[1px] flex-1 bg-gradient-to-l from-transparent to-amber-400/90" />
+                  </div>
 
-                  {/* Centered System Label in 1 row */}
-                  <h2 className="w-full text-center whitespace-nowrap text-[10px] min-[360px]:text-[11px] min-[400px]:text-xs sm:text-sm md:text-xs lg:text-sm xl:text-base font-bold tracking-tight sm:tracking-wide text-[#fff8e7] leading-snug drop-shadow-[0_2px_8px_rgba(0,0,0,0.95)]">
-                    <span className="text-amber-300 text-[1.2em] font-black drop-shadow-[0_0_8px_rgba(251,191,36,0.7)]">F</span>aculty{" "}
-                    <span className="text-amber-300 text-[1.2em] font-black drop-shadow-[0_0_8px_rgba(251,191,36,0.7)]">O</span>nline{" "}
-                    <span className="text-amber-300 text-[1.2em] font-black drop-shadow-[0_0_8px_rgba(251,191,36,0.7)]">C</span>ompliance and{" "}
-                    <span className="text-amber-300 text-[1.2em] font-black drop-shadow-[0_0_8px_rgba(251,191,36,0.7)]">U</span>ploading{" "}
-                    <span className="text-amber-300 text-[1.2em] font-black drop-shadow-[0_0_8px_rgba(251,191,36,0.7)]">S</span>ystem
-                  </h2>
+                  {/* Clean Institutional System Label Pill */}
+                  <div className="inline-flex items-center justify-center rounded-full bg-[#3b0000]/65 backdrop-blur-[3px] border border-amber-400/35 px-3.5 sm:px-4 py-1 sm:py-1.5 shadow-[0_4px_14px_rgba(0,0,0,0.55)]">
+                    <p className="text-[10.5px] sm:text-xs lg:text-[13px] font-semibold tracking-wide text-amber-50/95 leading-snug">
+                      <span className="text-amber-300 font-extrabold">F</span>aculty{" "}
+                      <span className="text-amber-300 font-extrabold">O</span>nline{" "}
+                      <span className="text-amber-300 font-extrabold">C</span>ompliance &{" "}
+                      <span className="text-amber-300 font-extrabold">U</span>ploading{" "}
+                      <span className="text-amber-300 font-extrabold">S</span>ystem
+                    </p>
+                  </div>
                 </div>
               </div>
             </div>
