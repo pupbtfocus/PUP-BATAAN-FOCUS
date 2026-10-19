@@ -1,7 +1,16 @@
 "use client";
 
 import React, { useState, useMemo } from "react";
-import { Download, EditPencil, Eye, Page, Trash, UserBadgeCheck, UserXmark, Xmark } from "iconoir-react";
+import {
+  Download,
+  EditPencil,
+  Eye,
+  Page,
+  Trash,
+  UserBadgeCheck,
+  UserXmark,
+  Xmark,
+} from "iconoir-react";
 import { AppIcon } from "@/components/ui/app-icon";
 import { ROLE, type AppRole, canManageAdminAccount } from "@/config/roles";
 import { exportReportToExcel, exportReportToPdf } from "@/lib/report-export";
@@ -266,7 +275,9 @@ export function AdminAccountsTable({
 }: AdminAccountsTableProps) {
   const [searchTerm, setSearchTerm] = useState("");
   const [roleFilter, setRoleFilter] = useState<"all" | string>("all");
-  const [statusFilter, setStatusFilter] = useState<"all" | "active" | "inactive">("all");
+  const [statusFilter, setStatusFilter] = useState<
+    "all" | "active" | "inactive"
+  >("all");
   const [failedImageIds, setFailedImageIds] = useState<Set<string>>(new Set());
 
   const filteredAccounts = useMemo(() => {
@@ -307,9 +318,17 @@ export function AdminAccountsTable({
       subtitle: `Role Filter: ${roleFilter === "all" ? "All Roles" : roleFilter} • Status: ${statusFilter.toUpperCase()}`,
       fileName: `PUP_FOCUS_Staff_Report_${new Date().toISOString().slice(0, 10)}`,
       summaryStats: [
-        { label: "Total Listed Staff", value: filteredAccounts.length, tone: "default" as const },
+        {
+          label: "Total Listed Staff",
+          value: filteredAccounts.length,
+          tone: "default" as const,
+        },
         { label: "Active Staff", value: activeCount, tone: "success" as const },
-        { label: "Inactive Staff", value: inactiveCount, tone: "danger" as const },
+        {
+          label: "Inactive Staff",
+          value: inactiveCount,
+          tone: "danger" as const,
+        },
       ],
       columns: [
         { header: "#", key: "index", align: "center" as const },
@@ -323,7 +342,8 @@ export function AdminAccountsTable({
         const isSuperAdmin =
           (admin.role || "").toLowerCase() === "admin" ||
           (admin.role || "").toLowerCase().includes("super") ||
-          admin.email?.toLowerCase() === "pupbataanfocus.superadmin@gmail.com" ||
+          admin.email?.toLowerCase() ===
+            "pupbataanfocus.superadmin@gmail.com" ||
           admin.email?.toLowerCase() === "pupbataanfocus.admin@gmail.com";
         return {
           index: index + 1,
@@ -331,7 +351,9 @@ export function AdminAccountsTable({
           email: admin.email || "—",
           role: isSuperAdmin ? "Admin" : "Staff",
           status: admin.is_active ? "Active" : "Inactive",
-          lastLogin: formatLastLogin(admin.last_sign_in_at || admin.lastLoginAt),
+          lastLogin: formatLastLogin(
+            admin.last_sign_in_at || admin.lastLoginAt,
+          ),
         };
       }),
     };
@@ -343,12 +365,12 @@ export function AdminAccountsTable({
         <div className="rounded-xl border border-red-700/60 bg-red-950/30 px-3.5 py-2 text-xs text-red-300 flex justify-between items-center">
           <span>{accountsError}</span>
           {onClearMessages ? (
-              <button
-                type="button"
-                onClick={onClearMessages}
-                className="rounded-md border border-[#5e0000] bg-[#780000] hover:bg-[#5e0000] text-white p-1 transition-colors cursor-pointer shadow-xs"
-                aria-label="Dismiss alert"
-              >
+            <button
+              type="button"
+              onClick={onClearMessages}
+              className="rounded-md border border-[#5e0000] bg-[#780000] hover:bg-[#5e0000] text-white p-1 transition-colors cursor-pointer shadow-xs"
+              aria-label="Dismiss alert"
+            >
               <AppIcon icon={Xmark} size="sm" color="inherit" />
             </button>
           ) : null}
@@ -359,12 +381,12 @@ export function AdminAccountsTable({
         <div className="rounded-xl border border-red-700/60 bg-red-950/30 px-3.5 py-2 text-xs text-red-300 flex justify-between items-center">
           <span>{accountActionError}</span>
           {onClearMessages ? (
-              <button
-                type="button"
-                onClick={onClearMessages}
-                className="rounded-md border border-[#5e0000] bg-[#780000] hover:bg-[#5e0000] text-white p-1 transition-colors cursor-pointer shadow-xs"
-                aria-label="Dismiss alert"
-              >
+            <button
+              type="button"
+              onClick={onClearMessages}
+              className="rounded-md border border-[#5e0000] bg-[#780000] hover:bg-[#5e0000] text-white p-1 transition-colors cursor-pointer shadow-xs"
+              aria-label="Dismiss alert"
+            >
               <AppIcon icon={Xmark} size="sm" color="inherit" />
             </button>
           ) : null}
@@ -375,12 +397,12 @@ export function AdminAccountsTable({
         <div className="rounded-xl border border-emerald-700/60 bg-emerald-950/30 px-3.5 py-2 text-xs text-emerald-300 flex justify-between items-center">
           <span>{accountActionSuccess}</span>
           {onClearMessages ? (
-              <button
-                type="button"
-                onClick={onClearMessages}
-                className="rounded-md border border-[#5e0000] bg-[#780000] hover:bg-[#5e0000] text-white p-1 transition-colors cursor-pointer shadow-xs"
-                aria-label="Dismiss alert"
-              >
+            <button
+              type="button"
+              onClick={onClearMessages}
+              className="rounded-md border border-[#5e0000] bg-[#780000] hover:bg-[#5e0000] text-white p-1 transition-colors cursor-pointer shadow-xs"
+              aria-label="Dismiss alert"
+            >
               <AppIcon icon={Xmark} size="sm" color="inherit" />
             </button>
           ) : null}
@@ -412,19 +434,27 @@ export function AdminAccountsTable({
               <th className="px-4 py-2.5 font-semibold">Role</th>
               <th className="px-4 py-2.5 font-semibold">Status</th>
               <th className="px-4 py-2.5 font-semibold">Last Login</th>
-              <th className="px-4 py-2.5 text-right font-semibold whitespace-nowrap">Actions</th>
+              <th className="px-4 py-2.5 text-right font-semibold whitespace-nowrap">
+                Actions
+              </th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-200 dark:divide-slate-800/60">
             {isLoading ? (
               <tr>
-                <td colSpan={6} className="px-4 py-8 text-center text-xs text-slate-500 dark:text-slate-400">
+                <td
+                  colSpan={6}
+                  className="px-4 py-8 text-center text-xs text-slate-500 dark:text-slate-400"
+                >
                   Loading accounts...
                 </td>
               </tr>
             ) : filteredAccounts.length === 0 ? (
               <tr>
-                <td colSpan={6} className="px-4 py-8 text-center text-xs text-slate-500 dark:text-slate-400">
+                <td
+                  colSpan={6}
+                  className="px-4 py-8 text-center text-xs text-slate-500 dark:text-slate-400"
+                >
                   No staff members match the selected criteria.
                 </td>
               </tr>
@@ -433,10 +463,16 @@ export function AdminAccountsTable({
                 const isSuperAdmin =
                   (admin.role || "").toLowerCase() === "admin" ||
                   (admin.role || "").toLowerCase().includes("super") ||
-                  admin.email?.toLowerCase() === "pupbataanfocus.superadmin@gmail.com" ||
-                  admin.email?.toLowerCase() === "pupbataanfocus.admin@gmail.com";
-                const hasAvatar = admin.profileImageUrl && !failedImageIds.has(admin.profile_id);
-                const isDeactivatingOrActivating = loadingAdminIds.has(admin.profile_id);
+                  admin.email?.toLowerCase() ===
+                    "pupbataanfocus.superadmin@gmail.com" ||
+                  admin.email?.toLowerCase() ===
+                    "pupbataanfocus.admin@gmail.com";
+                const hasAvatar =
+                  admin.profileImageUrl &&
+                  !failedImageIds.has(admin.profile_id);
+                const isDeactivatingOrActivating = loadingAdminIds.has(
+                  admin.profile_id,
+                );
                 const isDeleting = deletingAdminIds.has(admin.profile_id);
                 const canEdit = canManageAdminAccount({
                   targetEmail: admin.email,
@@ -553,7 +589,12 @@ export function AdminAccountsTable({
                           title="View Admin Details"
                           className="bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold border border-amber-600/30 text-xs rounded-md px-2.5 py-1 transition-colors cursor-pointer inline-flex items-center gap-1.5 shadow-2xs shrink-0 whitespace-nowrap"
                         >
-                          <AppIcon icon={Eye} size="sm" color="inherit" className="text-slate-950" />
+                          <AppIcon
+                            icon={Eye}
+                            size="sm"
+                            color="inherit"
+                            className="text-slate-950"
+                          />
                           <span>View Details</span>
                         </button>
 
@@ -565,7 +606,12 @@ export function AdminAccountsTable({
                             title="Edit Admin"
                             className="bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold border border-amber-600/30 text-xs rounded-md px-2.5 py-1 transition-colors cursor-pointer inline-flex items-center gap-1.5 shadow-2xs shrink-0 whitespace-nowrap"
                           >
-                            <AppIcon icon={EditPencil} size="sm" color="inherit" className="text-slate-950" />
+                            <AppIcon
+                              icon={EditPencil}
+                              size="sm"
+                              color="inherit"
+                              className="text-slate-950"
+                            />
                             <span>Edit</span>
                           </button>
                         )}
@@ -575,24 +621,47 @@ export function AdminAccountsTable({
                           admin.is_active ? (
                             <button
                               type="button"
-                              onClick={() => onDeactivateAdmin(admin.profile_id)}
-                              disabled={isDeactivatingOrActivating || isDeleting}
+                              onClick={() =>
+                                onDeactivateAdmin(admin.profile_id)
+                              }
+                              disabled={
+                                isDeactivatingOrActivating || isDeleting
+                              }
                               title="Deactivate Admin"
                               className="bg-[#780000] hover:bg-[#5e0000] text-white font-semibold border border-[#5e0000] text-xs rounded-md px-2.5 py-1 transition-colors cursor-pointer inline-flex items-center gap-1.5 disabled:opacity-50 shadow-2xs shrink-0 whitespace-nowrap"
                             >
-                              <AppIcon icon={UserXmark} size="sm" color="white" />
-                              <span>{isDeactivatingOrActivating ? "Deactivating..." : "Deactivate"}</span>
+                              <AppIcon
+                                icon={UserXmark}
+                                size="sm"
+                                color="white"
+                              />
+                              <span>
+                                {isDeactivatingOrActivating
+                                  ? "Deactivating..."
+                                  : "Deactivate"}
+                              </span>
                             </button>
                           ) : (
                             <button
                               type="button"
                               onClick={() => onActivateAdmin(admin.profile_id)}
-                              disabled={isDeactivatingOrActivating || isDeleting}
+                              disabled={
+                                isDeactivatingOrActivating || isDeleting
+                              }
                               title="Activate Admin"
                               className="bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold border border-amber-600/30 text-xs rounded-md px-2.5 py-1 transition-colors cursor-pointer inline-flex items-center gap-1.5 disabled:opacity-50 shadow-2xs shrink-0 whitespace-nowrap"
                             >
-                              <AppIcon icon={UserBadgeCheck} size="sm" color="inherit" className="text-slate-950" />
-                              <span>{isDeactivatingOrActivating ? "Activating..." : "Activate"}</span>
+                              <AppIcon
+                                icon={UserBadgeCheck}
+                                size="sm"
+                                color="inherit"
+                                className="text-slate-950"
+                              />
+                              <span>
+                                {isDeactivatingOrActivating
+                                  ? "Activating..."
+                                  : "Activate"}
+                              </span>
                             </button>
                           )
                         ) : null}
