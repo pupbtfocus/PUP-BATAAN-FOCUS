@@ -7,6 +7,7 @@ import {
   isValidSemester,
   normalizeSemester,
 } from "@/features/submissions/services/submission-window.service";
+import { logTransactionEvent } from "@/features/transaction-logs/services/transaction-log.service";
 
 type AcademicTermStatus = "Current" | "Upcoming" | "Archived";
 
@@ -312,6 +313,14 @@ export async function POST(request: NextRequest) {
         );
       }
 
+      void logTransactionEvent({
+        actorId: user.id,
+        action: "academic_term.summer_create",
+        entityType: "academic_term",
+        entityId: user.id,
+        metadata: { academic_year: targetAy, semester: "Summer Semester" },
+      });
+
       return NextResponse.json({ success: true, added: true });
     }
     const { data: existingTerms, error: existingError } = await supabase
@@ -419,6 +428,14 @@ export async function POST(request: NextRequest) {
         { status: 500 },
       );
     }
+
+    void logTransactionEvent({
+      actorId: user.id,
+      action: "academic_term.create",
+      entityType: "academic_term",
+      entityId: user.id,
+      metadata: { academic_year: nextAcademicYear },
+    });
 
     return NextResponse.json({ nextAcademicYear, created: true });
   } catch (error) {
@@ -787,6 +804,14 @@ export async function PATCH(request: NextRequest) {
       await supabase.from("submission_windows").delete().eq("id", 1);
     }
 
+    void logTransactionEvent({
+      actorId: user.id,
+      action: "academic_term.set_current",
+      entityType: "academic_term",
+      entityId: user.id,
+      metadata: { academic_year: academicYear, semester },
+    });
+
     return NextResponse.json({ success: true });
   } catch (error) {
     return NextResponse.json(
@@ -872,6 +897,14 @@ export async function DELETE(request: NextRequest) {
       .eq("id", 1)
       .eq("academic_year", academicYear)
       .eq("semester", semester);
+
+    void logTransactionEvent({
+      actorId: user.id,
+      action: "academic_term.delete",
+      entityType: "academic_term",
+      entityId: user.id,
+      metadata: { academic_year: academicYear, semester },
+    });
 
     return NextResponse.json({ success: true, deleted: true });
   } catch (error) {

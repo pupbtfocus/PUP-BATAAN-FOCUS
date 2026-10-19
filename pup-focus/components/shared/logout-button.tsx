@@ -15,6 +15,12 @@ export function LogoutButton({ className }: { className?: string }) {
 
     resetDashboardNavigationState();
 
+    try {
+      await fetch("/api/auth/logout", { method: "POST", credentials: "include" });
+    } catch {
+      // Ignore
+    }
+
     const supabase = createClient();
     await supabase.auth.signOut();
 

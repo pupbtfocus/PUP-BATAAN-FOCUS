@@ -76,9 +76,9 @@ export async function POST(request: NextRequest) {
       // ignore
     }
 
-    // 3. Log audit event
+    // 3. Log transaction event
     try {
-      await supabase.from("audit_logs").insert({
+      const logPayload = {
         action: "ARCHIVE_ACADEMIC_TERM",
         entity_type: "academic_terms",
         actor_id: user.id,
@@ -88,7 +88,11 @@ export async function POST(request: NextRequest) {
           semester: semester || "All Semesters",
           timestamp: new Date().toISOString(),
         },
-      });
+      };
+      const { error: txErr } = await supabase.from("transaction_logs").insert(logPayload);
+      if (txErr && (txErr.code === "42P01" || txErr.message?.includes("transaction_logs") || txErr.message?.includes("does not exist"))) {
+        await supabase.from("audit_logs").insert(logPayload);
+      }
     } catch {
       // ignore
     }

@@ -237,14 +237,26 @@ export async function POST(request: NextRequest) {
       .from("requirement_templates")
       .select("*");
 
-    // 5. Collect Audit Logs (Excluding admin account management events)
+    // 5. Collect Transaction / Audit Logs (Excluding admin account management events)
     let auditLogsData: unknown[] = [];
     try {
-      const { data: logs } = await supabase
-        .from("audit_logs")
+      let logs: any[] | null = null;
+      const { data: txLogs, error: txError } = await supabase
+        .from("transaction_logs")
         .select("*")
-        .order("timestamp", { ascending: false })
+        .order("created_at", { ascending: false })
         .limit(500);
+
+      if (txError && (txError.code === "42P01" || txError.message?.includes("transaction_logs") || txError.message?.includes("does not exist"))) {
+        const { data: legacyLogs } = await supabase
+          .from("audit_logs")
+          .select("*")
+          .order("timestamp", { ascending: false })
+          .limit(500);
+        logs = legacyLogs;
+      } else {
+        logs = txLogs;
+      }
 
       if (logs) {
         auditLogsData = logs.filter((log: { action?: string; details?: Record<string, unknown>; actor_id?: string }) => {

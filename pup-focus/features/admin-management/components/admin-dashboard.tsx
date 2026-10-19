@@ -8,7 +8,7 @@ import { createClient } from "@/lib/supabase/client";
 import { emitRealtimeSync, useRealtimeSync } from "@/lib/realtime";
 import { isValidEmailAddress } from "@/lib/validation/email";
 import { ROLE, ROLE_LABEL, type AppRole, canManageAdminAccount } from "@/config/roles";
-import { AuditLogsPanel } from "@/features/audit-logs/components/audit-logs-panel";
+import { TransactionLogsPanel } from "@/features/transaction-logs/components/transaction-logs-panel";
 import { Activity, CheckCircle, ClockRotateRight, EditPencil, Eye, EyeClosed, Group, Key, Menu, NavArrowRight, Page, Refresh, SendMail, Shield, User, UserPlus, Xmark } from "iconoir-react";
 import { AppIcon } from "@/components/ui/app-icon";
 import { ModalHeader } from "@/components/ui/modal-header";
@@ -205,7 +205,16 @@ function normalizeSuperAdminSection(
     return "backups";
   if (val === "programs" || val === "templates" || val === "templates-programs")
     return "templates";
-  if (val === "audit" || val === "auditlogs" || val === "audit-logs" || val === "logs") return "audit";
+  if (
+    val === "audit" ||
+    val === "auditlogs" ||
+    val === "audit-logs" ||
+    val === "logs" ||
+    val === "transaction-logs" ||
+    val === "transactionlogs" ||
+    val === "transaction-log"
+  )
+    return "audit";
   if (val === "settings" || val === "super-admin-settings" || val === "admin-settings") return "settings";
   if (
     val === "previews" ||
@@ -2257,7 +2266,7 @@ export function SuperAdminDashboard({
                   </div>
                 </div>
 
-                <AuditLogsPanel />
+                <TransactionLogsPanel />
               </article>
             ) : null}
 

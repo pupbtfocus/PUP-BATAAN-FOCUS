@@ -60,7 +60,11 @@ const nextConfig: NextConfig = {
       },
       {
         source: "/api/admin/audit-logs/:path*",
-        destination: "/api/staff/audit-logs/:path*",
+        destination: "/api/staff/transaction-logs/:path*",
+      },
+      {
+        source: "/api/admin/transaction-logs/:path*",
+        destination: "/api/staff/transaction-logs/:path*",
       },
       {
         source: "/api/admin/user-registration-logs/:path*",

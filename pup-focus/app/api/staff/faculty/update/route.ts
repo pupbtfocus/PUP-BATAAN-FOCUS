@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { getServiceRoleClient } from "@/lib/supabase/service-role";
 import { ROLE } from "@/config/roles";
+import { logTransactionEvent } from "@/features/transaction-logs/services/transaction-log.service";
 import { logAuditEvent } from "@/features/audit-logs/services/audit-log.service";
 import { logger } from "@/lib/observability/logger";
 import { isValidEmailAddress } from "@/lib/validation/email";
@@ -362,6 +363,24 @@ export async function PATCH(request: NextRequest) {
             program_id: resolvedProgramId,
             academic_year: academicYear,
             term,
+          });
+        }
+
+        if (resolvedProgramId) {
+          void logTransactionEvent({
+            actorId: user.id,
+            action: "program.assign",
+            entityType: "faculty_program",
+            entityId: profile.id,
+            metadata: {
+              faculty_profile_id: profile.id,
+              faculty_name: updatedFullName,
+              program_id: resolvedProgramId,
+              program_code: resolvedProgramRecord?.code,
+              program_name: resolvedProgramRecord?.name,
+              academic_year: academicYear,
+              term,
+            },
           });
         }
       } catch (assignErr) {

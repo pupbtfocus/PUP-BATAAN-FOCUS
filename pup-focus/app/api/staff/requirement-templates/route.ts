@@ -7,6 +7,7 @@ import {
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { getServiceRoleClient } from "@/lib/supabase/service-role";
 import type { RequirementTemplate } from "@/features/requirement-templates/types/requirement-template.types";
+import { logTransactionEvent } from "@/features/transaction-logs/services/transaction-log.service";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -350,6 +351,14 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: insertError.message }, { status: 400 });
     }
 
+    void logTransactionEvent({
+      actorId: user.id,
+      action: "template.create",
+      entityType: "requirement_template",
+      entityId: created?.id || user.id,
+      metadata: { code, title, is_mandatory, is_active },
+    });
+
     return NextResponse.json({ template: created, success: true }, { status: 201 });
   } catch (error) {
     console.error("POST requirement-templates error:", error);
@@ -418,6 +427,14 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ error: updateError.message }, { status: 400 });
     }
 
+    void logTransactionEvent({
+      actorId: user.id,
+      action: "template.update",
+      entityType: "requirement_template",
+      entityId: id,
+      metadata: { ...updatePayload },
+    });
+
     return NextResponse.json({ template: updated, success: true });
   } catch (error) {
     console.error("PUT requirement-templates error:", error);
@@ -459,6 +476,14 @@ export async function DELETE(request: NextRequest) {
     if (deleteError) {
       return NextResponse.json({ error: deleteError.message }, { status: 400 });
     }
+
+    void logTransactionEvent({
+      actorId: user.id,
+      action: "template.delete",
+      entityType: "requirement_template",
+      entityId: id,
+      metadata: { template_id: id },
+    });
 
     return NextResponse.json({ success: true, message: "Template deleted successfully" });
   } catch (error) {

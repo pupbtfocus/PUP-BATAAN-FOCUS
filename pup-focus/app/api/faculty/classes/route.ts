@@ -4,6 +4,7 @@ export const revalidate = 0;
 import { NextResponse, type NextRequest } from "next/server";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { getServiceRoleClient } from "@/lib/supabase/service-role";
+import { logTransactionEvent } from "@/features/transaction-logs/services/transaction-log.service";
 
 export async function GET(request: NextRequest) {
   try {
@@ -208,9 +209,21 @@ export async function PATCH(request: NextRequest) {
           if (fallbackError) {
             return NextResponse.json({ error: fallbackError.message }, { status: 500 });
           }
+          const finalClass = { ...fallbackUpdated, is_archived };
+          void logTransactionEvent({
+            actorId: user.id,
+            action: "class.update",
+            entityType: "faculty_class",
+            entityId: id,
+            metadata: {
+              subject_code: finalClass.subject_code,
+              section_code: finalClass.section_code,
+              changes: updatePayload,
+            },
+          });
           return NextResponse.json({
             success: true,
-            class: { ...fallbackUpdated, is_archived },
+            class: finalClass,
           });
         }
         return NextResponse.json({
@@ -221,6 +234,18 @@ export async function PATCH(request: NextRequest) {
 
       return NextResponse.json({ error: updateError.message }, { status: 500 });
     }
+
+    void logTransactionEvent({
+      actorId: user.id,
+      action: "class.update",
+      entityType: "faculty_class",
+      entityId: id,
+      metadata: {
+        subject_code: updatedClass.subject_code,
+        section_code: updatedClass.section_code,
+        changes: updatePayload,
+      },
+    });
 
     return NextResponse.json({ success: true, class: updatedClass });
   } catch (error) {
@@ -297,6 +322,17 @@ export async function DELETE(request: NextRequest) {
     if (deleteError) {
       return NextResponse.json({ error: deleteError.message }, { status: 500 });
     }
+
+    void logTransactionEvent({
+      actorId: user.id,
+      action: "class.delete",
+      entityType: "faculty_class",
+      entityId: classId,
+      metadata: {
+        subject_code: existingClass.subject_code,
+        section_code: existingClass.section_code,
+      },
+    });
 
     return NextResponse.json({
       success: true,
