@@ -6065,6 +6065,7 @@ function FacultySubmissionPanelContent({
                     ) : (
                       <SubmissionHistoryList
                         submissions={filteredPastSubmissions}
+                        classes={facultyClasses}
                         onViewFile={openHistorySubmissionPreview}
                         viewedSubmissionIds={viewedSubmissionIds}
                         getRequirementTitle={getRequirementTitle}

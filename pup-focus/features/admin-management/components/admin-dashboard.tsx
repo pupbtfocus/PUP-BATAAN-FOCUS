@@ -2234,7 +2234,7 @@ export function SuperAdminDashboard({
                       Backups & Archive
                     </h1>
                     <p className="mt-1.5 text-sm sm:text-base text-amber-950/90 dark:text-amber-200/90 font-medium leading-relaxed">
-                      Create system snapshots, export compliance records, and download encrypted archives.
+                      Download faculty files, save system backups, and view past school terms.
                     </p>
                   </div>
                 </div>

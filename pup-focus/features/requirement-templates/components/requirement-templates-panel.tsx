@@ -547,9 +547,9 @@ export function RequirementTemplatesPanel({
                 ({templateToDelete.code})?
               </p>
 
-              <div className="rounded-xl border border-amber-300 bg-amber-50 dark:border-amber-500/20 dark:bg-amber-950/20 p-3 text-xs text-amber-800 dark:text-amber-400 space-y-1">
-                <p className="font-semibold">Safety Notice:</p>
-                <p>
+              <div className="rounded-xl border border-amber-600 bg-amber-500 p-3 text-xs text-slate-950 space-y-1 shadow-xs">
+                <p className="font-bold">Safety Notice:</p>
+                <p className="font-medium">
                   If faculty members have already submitted files for this requirement, deleting it will remove the template definition. To temporarily suspend submissions without deleting the template, use the <strong>Hide</strong> option instead.
                 </p>
               </div>

@@ -321,54 +321,69 @@ export async function GET(request: NextRequest) {
 
     const currentAcademicTerm = await getCurrentAcademicTerm(supabase);
 
-    const assignmentAcademicYears = Array.from(
-      new Set(
-        (assignmentRows ?? [])
-          .map((row: any) => row.academic_year)
-          .filter(Boolean),
-      ),
-    ).sort((a, b) => b.localeCompare(a));
+    const { data: dbTerms } = await supabase
+      .from("academic_terms")
+      .select("academic_year, semester, status")
+      .order("academic_year", { ascending: false });
 
-    if (
-      currentAcademicTerm &&
-      !assignmentAcademicYears.includes(currentAcademicTerm.academicYear)
-    ) {
-      assignmentAcademicYears.unshift(currentAcademicTerm.academicYear);
+    const termsByYear: Record<string, SemesterOption[]> = {};
+
+    const registerTerm = (ay?: string | null, sem?: string | null) => {
+      if (!ay || !sem) return;
+      const normalizedSem = normalizeSemester(sem);
+      if (!termsByYear[ay]) {
+        termsByYear[ay] = [];
+      }
+      if (!termsByYear[ay].includes(normalizedSem)) {
+        termsByYear[ay].push(normalizedSem);
+      }
+    };
+
+    (dbTerms ?? []).forEach((t: any) => registerTerm(t.academic_year, t.semester));
+    (assignmentRows ?? []).forEach((row: any) => registerTerm(row.academic_year, row.term));
+    if (currentAcademicTerm) {
+      registerTerm(currentAcademicTerm.academicYear, currentAcademicTerm.semester);
     }
+    const SEMESTER_SORT_ORDER: Record<string, number> = {
+      "1st Semester": 1,
+      "2nd Semester": 2,
+      "Summer Semester": 3,
+    };
 
-    const fallbackAcademicYears = buildFallbackAcademicYears();
-    const availableAcademicYears =
-      assignmentAcademicYears.length > 0
-        ? assignmentAcademicYears
-        : fallbackAcademicYears;
+    Object.keys(termsByYear).forEach((ay) => {
+      termsByYear[ay].sort(
+        (a, b) => (SEMESTER_SORT_ORDER[a] ?? 99) - (SEMESTER_SORT_ORDER[b] ?? 99),
+      );
+    });
+
+    const availableAcademicYears = Object.keys(termsByYear).sort((a, b) => b.localeCompare(a));
+
+    if (availableAcademicYears.length === 0) {
+      const fallbackYears = buildFallbackAcademicYears(1);
+      const defaultYear = fallbackYears[0] || "2024-2025";
+      termsByYear[defaultYear] = ["1st Semester", "2nd Semester"];
+      availableAcademicYears.push(defaultYear);
+    }
 
     const selectedAcademicYear =
       requestedAcademicYear &&
       availableAcademicYears.includes(requestedAcademicYear)
         ? requestedAcademicYear
-        : (currentAcademicTerm?.academicYear ??
-          availableAcademicYears[0] ??
-          "");
+        : (currentAcademicTerm?.academicYear && availableAcademicYears.includes(currentAcademicTerm.academicYear)
+          ? currentAcademicTerm.academicYear
+          : availableAcademicYears[0] ?? "");
 
-    let availableSemesters = getAvailableSemestersForAcademicYear(
-      assignmentRows ?? [],
-      selectedAcademicYear,
-    );
-
-    if (
-      availableSemesters.length === 0 &&
-      currentAcademicTerm &&
-      currentAcademicTerm.academicYear === selectedAcademicYear
-    ) {
-      availableSemesters = [currentAcademicTerm.semester];
+    let availableSemesters = termsByYear[selectedAcademicYear] ?? [];
+    if (availableSemesters.length === 0) {
+      availableSemesters = ["1st Semester", "2nd Semester"];
     }
 
     const effectiveSelectedSemester =
       selectedSemester && availableSemesters.includes(selectedSemester)
         ? selectedSemester
-        : (currentAcademicTerm?.semester ??
-          availableSemesters[0] ??
-          "2nd Semester");
+        : (currentAcademicTerm?.semester && availableSemesters.includes(currentAcademicTerm.semester)
+          ? currentAcademicTerm.semester
+          : availableSemesters[0] ?? "1st Semester");
 
     const filteredAssignmentIds = (assignmentRows ?? [])
       .filter(
@@ -584,6 +599,7 @@ export async function GET(request: NextRequest) {
       availableAcademicYears,
       semesters: SEMESTER_OPTIONS,
       availableSemesters,
+      termsByYear,
       selectedAcademicYear,
       selectedSemester: effectiveSelectedSemester,
       currentAcademicYear: currentAcademicTerm?.academicYear ?? null,

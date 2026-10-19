@@ -419,189 +419,227 @@ export function TemplatesAndProgramsPanel({
 
       {/* ─── TAB 2: ACADEMIC PROGRAMS ────────────────────────────── */}
       {activeTab === "programs" && (
-        <div className="space-y-6">
-          {/* Quick Stat Cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
-            <div className="p-4 rounded-2xl border border-slate-300 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs">
-              <div className="flex items-center justify-between text-slate-500 dark:text-slate-400">
-                <span className="text-xs font-bold uppercase tracking-wider">Total Degree Programs</span>
-                <AppIcon icon={GraduationCap} size="sm" />
+        <div className="w-full space-y-4">
+          {/* 3-Card Stat Summary Header matching RequirementTemplatesPanel */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+            {/* 1. TOTAL DEGREE PROGRAMS */}
+            <div className="rounded-2xl bg-white text-slate-900 border border-slate-200 dark:border-slate-800 shadow-xs dark:bg-slate-900 dark:text-slate-100 p-5 transition-colors">
+              <div className="flex items-center justify-between">
+                <span className="text-slate-500 dark:text-slate-400 text-xs font-medium uppercase tracking-wider">
+                  Total Degree Programs
+                </span>
+                <GraduationCap className="h-5 w-5 text-slate-400" strokeWidth={2} />
               </div>
-              <p className="mt-2 text-2xl font-black text-slate-900 dark:text-slate-100">{totalPrograms}</p>
-              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Bataan campus degree offerings</p>
+              <p className="mt-2 text-2xl font-bold text-slate-900 dark:text-slate-100">
+                {isLoadingPrograms ? "..." : totalPrograms}
+              </p>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                Bataan campus degree offerings
+              </p>
             </div>
 
-            <div className="p-4 rounded-2xl border border-emerald-300/80 dark:border-emerald-800/80 bg-emerald-50/60 dark:bg-emerald-950/20 shadow-xs">
-              <div className="flex items-center justify-between text-emerald-700 dark:text-emerald-300">
-                <span className="text-xs font-bold uppercase tracking-wider">Active & Visible</span>
-                <AppIcon icon={Check} size="sm" />
+            {/* 2. ACTIVE & VISIBLE */}
+            <div className="rounded-2xl bg-white text-slate-900 border border-slate-200 dark:border-slate-800 shadow-xs dark:bg-slate-900 dark:text-slate-100 p-5 transition-colors">
+              <div className="flex items-center justify-between">
+                <span className="text-slate-500 dark:text-slate-400 text-xs font-medium uppercase tracking-wider">
+                  Active & Visible
+                </span>
+                <span className="w-2 h-2 rounded-full bg-[#0b5336]" />
               </div>
-              <p className="mt-2 text-2xl font-black text-emerald-900 dark:text-emerald-100">{activeProgramsCount}</p>
-              <p className="text-xs text-emerald-700/80 dark:text-emerald-300/80 mt-0.5">Available for faculty selection</p>
+              <p className="mt-2 text-2xl font-bold text-slate-900 dark:text-slate-100">
+                {isLoadingPrograms ? "..." : activeProgramsCount}
+              </p>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                Available for faculty selection
+              </p>
             </div>
 
-            <div className="p-4 rounded-2xl border border-amber-300/80 dark:border-amber-800/80 bg-amber-50/60 dark:bg-amber-950/20 shadow-xs">
-              <div className="flex items-center justify-between text-amber-700 dark:text-amber-300">
-                <span className="text-xs font-bold uppercase tracking-wider">Hidden Offerings</span>
-                <AppIcon icon={EyeClosed} size="sm" />
+            {/* 3. HIDDEN OFFERINGS */}
+            <div className="rounded-2xl bg-white text-slate-900 border border-slate-200 dark:border-slate-800 shadow-xs dark:bg-slate-900 dark:text-slate-100 p-5 transition-colors">
+              <div className="flex items-center justify-between">
+                <span className="text-slate-500 dark:text-slate-400 text-xs font-medium uppercase tracking-wider">
+                  Hidden Offerings
+                </span>
+                <span className="w-2 h-2 rounded-full bg-[#780000]" />
               </div>
-              <p className="mt-2 text-2xl font-black text-amber-900 dark:text-amber-100">{hiddenProgramsCount}</p>
-              <p className="text-xs text-amber-700/80 dark:text-amber-300/80 mt-0.5">Hidden from faculty forms</p>
+              <p className="mt-2 text-2xl font-bold text-slate-900 dark:text-slate-100">
+                {isLoadingPrograms ? "..." : hiddenProgramsCount}
+              </p>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                Hidden from faculty forms
+              </p>
             </div>
           </div>
 
-          {/* Programs Management Workspace Card */}
-          <div className="rounded-2xl border border-slate-300 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs overflow-hidden">
-            {/* Filter Bar */}
-            <div className="p-4 sm:p-5 border-b border-slate-200 dark:border-slate-800 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 bg-slate-50/50 dark:bg-slate-950/20">
-              <div className="relative flex-1 max-w-md">
-                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
-                  <AppIcon icon={Search} size="sm" />
-                </div>
+          {/* Filter & Actions Bar matching RequirementTemplatesPanel */}
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-4 bg-white text-slate-900 border border-slate-300 shadow-xs dark:bg-slate-900 dark:text-slate-100 dark:border-slate-800 rounded-2xl mb-6 transition-colors">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2.5 w-full sm:w-auto flex-wrap">
+              <div className="relative w-full sm:w-64">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" strokeWidth={2} />
                 <input
                   type="text"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder="Search programs by code or name..."
-                  className="w-full pl-10 pr-4 py-2 rounded-xl text-xs sm:text-sm bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-amber-500/50"
+                  className="w-full sm:w-64 h-9 rounded-xl bg-white text-slate-900 border border-slate-300 focus:border-slate-400 dark:bg-slate-900 dark:text-slate-100 dark:border-slate-800 dark:focus:border-slate-600 pl-8 pr-3 text-xs placeholder-slate-400 dark:placeholder-slate-500 outline-none transition"
                 />
               </div>
 
-              <div className="flex items-center gap-2.5 flex-wrap">
-                {/* Visibility Filters */}
-                <div className="inline-flex items-center p-1 bg-slate-100 dark:bg-slate-800/80 rounded-xl border border-slate-200 dark:border-slate-700">
+              {/* Status Filter Tabs */}
+              <div className="flex items-center rounded-xl bg-slate-100 dark:bg-slate-800 p-1 border border-slate-200 dark:border-slate-700">
+                {(["all", "active", "hidden"] as const).map((st) => (
                   <button
+                    key={st}
                     type="button"
-                    onClick={() => setVisibilityFilter("all")}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                      visibilityFilter === "all"
-                        ? "bg-white dark:bg-slate-900 text-slate-950 dark:text-amber-400 shadow-xs"
-                        : "text-slate-600 dark:text-slate-400"
+                    onClick={() => setVisibilityFilter(st)}
+                    className={`px-3 py-1 text-xs font-semibold rounded-lg capitalize transition-all cursor-pointer ${
+                      visibilityFilter === st
+                        ? "bg-amber-500 text-slate-950 font-semibold shadow-xs border border-amber-600/30"
+                        : "text-slate-600 hover:text-slate-900 hover:bg-slate-200/60 dark:text-slate-400 dark:hover:text-slate-100 dark:hover:bg-slate-800/60"
                     }`}
                   >
-                    All ({programs.length})
+                    {st}
                   </button>
-                  <button
-                    type="button"
-                    onClick={() => setVisibilityFilter("active")}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                      visibilityFilter === "active"
-                        ? "bg-white dark:bg-slate-900 text-slate-950 dark:text-amber-400 shadow-xs"
-                        : "text-slate-600 dark:text-slate-400"
-                    }`}
-                  >
-                    Active ({activeProgramsCount})
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setVisibilityFilter("hidden")}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                      visibilityFilter === "hidden"
-                        ? "bg-white dark:bg-slate-900 text-slate-950 dark:text-amber-400 shadow-xs"
-                        : "text-slate-600 dark:text-slate-400"
-                    }`}
-                  >
-                    Hidden ({hiddenProgramsCount})
-                  </button>
-                </div>
-
-                <button
-                  type="button"
-                  onClick={handleOpenAddModal}
-                  className="inline-flex items-center gap-1.5 bg-[#780000] hover:bg-[#5e0000] text-white px-4 py-2 rounded-xl text-xs font-bold shadow-xs transition-all cursor-pointer active:scale-95"
-                >
-                  <AppIcon icon={Plus} size="sm" color="white" />
-                  <span>Add Academic Program</span>
-                </button>
+                ))}
               </div>
             </div>
 
-            {/* Programs Table */}
-            {isLoadingPrograms ? (
-              <div className="p-8 text-center text-xs text-slate-500 dark:text-slate-400">
-                Loading academic programs...
-              </div>
-            ) : filteredPrograms.length === 0 ? (
-              <div className="p-12 text-center space-y-2">
-                <AppIcon icon={GraduationCap} size="lg" className="mx-auto text-slate-400" />
-                <h3 className="text-sm font-bold text-slate-800 dark:text-slate-200">No Programs Found</h3>
-                <p className="text-xs text-slate-500 dark:text-slate-400">
-                  {searchQuery
-                    ? "Try adjusting your search criteria or visibility filter."
-                    : "Add your first academic program using the button above."}
-                </p>
-              </div>
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full text-left text-xs sm:text-sm">
-                  <thead className="bg-slate-50 dark:bg-slate-950/40 border-b border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 font-bold uppercase text-[11px] tracking-wider">
-                    <tr>
-                      <th className="py-3 px-4">Program Code</th>
-                      <th className="py-3 px-4">Program Name</th>
-                      <th className="py-3 px-4">Status</th>
-                      <th className="py-3 px-4 text-right">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
-                    {filteredPrograms.map((prog) => (
-                      <tr
-                        key={prog.id}
-                        className={`hover:bg-slate-50/70 dark:hover:bg-slate-850/50 transition-colors ${
-                          prog.is_hidden ? "opacity-60 bg-slate-50/40 dark:bg-slate-950/20" : ""
-                        }`}
-                      >
-                        <td className="py-3.5 px-4 font-black">
-                          <span className="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-black bg-amber-400 text-slate-950">
-                            {prog.code}
+            {/* Action Buttons */}
+            <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
+              <button
+                type="button"
+                onClick={handleOpenAddModal}
+                className="bg-amber-500 hover:bg-amber-400 text-slate-950 border border-amber-600 font-semibold px-4 py-2 rounded-xl text-xs transition-all shadow-xs cursor-pointer inline-flex items-center gap-1.5 whitespace-nowrap"
+              >
+                <Plus className="h-3.5 w-3.5" strokeWidth={2} />
+                <span>+ Add Academic Program</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Main Data Table matching RequirementTemplatesPanel */}
+          <div className="w-full overflow-x-auto rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs dark:shadow-none overflow-hidden transition-colors">
+            <table className="w-full text-left border-collapse min-w-[700px]">
+              <thead className="border-b border-slate-300 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/60 text-slate-700 dark:text-slate-300 text-[11px] font-bold uppercase tracking-wider">
+                <tr>
+                  <th className="px-3 py-2.5 font-semibold w-10 text-center">#</th>
+                  <th className="py-3 px-4">Program Code</th>
+                  <th className="py-3 px-4">Program Name</th>
+                  <th className="py-3 px-4">Status</th>
+                  <th className="py-3 px-4 text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-300 dark:divide-slate-800/60 text-xs">
+                {isLoadingPrograms ? (
+                  <tr>
+                    <td colSpan={5} className="py-10 text-center text-slate-500 dark:text-slate-400">
+                      <Refresh className="h-5 w-5 animate-spin mx-auto mb-2 text-amber-500" strokeWidth={2} />
+                      Loading academic programs...
+                    </td>
+                  </tr>
+                ) : filteredPrograms.length === 0 ? (
+                  <tr>
+                    <td colSpan={5} className="py-12 text-center text-slate-500 dark:text-slate-400">
+                      <GraduationCap className="h-8 w-8 mx-auto mb-2 text-slate-400 opacity-60" strokeWidth={2} />
+                      <p className="font-semibold text-slate-700 dark:text-slate-300">No academic programs found</p>
+                      <p className="text-xs text-slate-500 mt-1">
+                        {searchQuery
+                          ? "Try modifying your search filter"
+                          : "Get started by adding an academic program using the button above"}
+                      </p>
+                    </td>
+                  </tr>
+                ) : (
+                  filteredPrograms.map((prog, index) => (
+                    <tr
+                      key={prog.id}
+                      className="hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors"
+                    >
+                      {/* Index */}
+                      <td className="px-3 py-3 text-center text-xs font-mono text-slate-400 dark:text-slate-500">
+                        {index + 1}
+                      </td>
+
+                      {/* Column 1: Program Code */}
+                      <td className="py-3 px-4 whitespace-nowrap">
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-bold bg-amber-500 text-slate-950 border border-amber-600 shadow-2xs">
+                          {prog.code}
+                        </span>
+                      </td>
+
+                      {/* Column 2: Program Name */}
+                      <td className="py-3 px-4 font-semibold text-slate-900 dark:text-slate-100 text-xs sm:text-sm">
+                        {prog.name}
+                      </td>
+
+                      {/* Column 3: Status */}
+                      <td className="py-3 px-4 whitespace-nowrap">
+                        {!prog.is_hidden ? (
+                          <span className="bg-[#0b5336] text-white border border-[#08412a] px-2 py-0.5 text-xs font-semibold rounded-md inline-flex items-center gap-1.5 shadow-2xs">
+                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-300" />
+                            Active
                           </span>
-                        </td>
-                        <td className="py-3.5 px-4 font-semibold text-slate-900 dark:text-slate-100">
-                          {prog.name}
-                        </td>
-                        <td className="py-3.5 px-4">
+                        ) : (
+                          <span className="bg-[#780000] text-white border border-[#5e0000] px-2 py-0.5 text-xs font-semibold rounded-md inline-flex items-center gap-1.5 shadow-2xs">
+                            <span className="w-1.5 h-1.5 rounded-full bg-rose-300" />
+                            Hidden
+                          </span>
+                        )}
+                      </td>
+
+                      {/* Column 4: Actions */}
+                      <td className="py-3 px-4 text-right whitespace-nowrap">
+                        <div className="inline-flex items-center gap-1.5 justify-end">
+                          {/* Edit Button */}
                           <button
                             type="button"
-                            onClick={(e) => handleToggleHideProgram(prog, e)}
-                            className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider cursor-pointer transition-all ${
-                              prog.is_hidden
-                                ? "bg-amber-100 text-amber-800 dark:bg-amber-950/50 dark:text-amber-300 border border-amber-300 dark:border-amber-800"
-                                : "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800"
-                            }`}
-                            title={prog.is_hidden ? "Click to make active" : "Click to hide from dropdowns"}
+                            onClick={(e) => handleOpenEditModal(prog, e)}
+                            className="bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 dark:bg-slate-800/60 dark:hover:bg-slate-800 dark:text-slate-300 dark:border-slate-700 text-xs font-medium rounded-md px-2.5 py-1 transition-colors cursor-pointer inline-flex items-center gap-1 shadow-2xs"
+                            title="Edit program"
                           >
-                            <AppIcon icon={prog.is_hidden ? EyeClosed : Check} size="xs" color="inherit" />
-                            <span>{prog.is_hidden ? "Hidden" : "Active"}</span>
+                            <EditPencil className="h-3.5 w-3.5" strokeWidth={2} />
+                            <span>Edit</span>
                           </button>
-                        </td>
-                        <td className="py-3.5 px-4 text-right">
-                          <div className="flex items-center justify-end gap-1.5">
-                            <button
-                              type="button"
-                              onClick={(e) => handleOpenEditModal(prog, e)}
-                              className="p-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 transition cursor-pointer"
-                              title="Edit program"
-                            >
-                              <AppIcon icon={EditPencil} size="xs" color="inherit" />
-                            </button>
-                            <button
-                              type="button"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setDeleteTarget(prog);
-                              }}
-                              className="p-1.5 rounded-lg border border-rose-200 dark:border-rose-900/60 bg-white dark:bg-slate-800 hover:bg-rose-50 dark:hover:bg-rose-950/40 text-rose-600 dark:text-rose-400 transition cursor-pointer"
-                              title="Delete program"
-                            >
-                              <AppIcon icon={Trash} size="xs" color="inherit" />
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
+
+                          {/* Hide / Unhide Button */}
+                          <button
+                            type="button"
+                            onClick={(e) => void handleToggleHideProgram(prog, e)}
+                            className="bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 dark:bg-slate-800/60 dark:hover:bg-slate-800 dark:text-slate-300 dark:border-slate-700 text-xs font-medium rounded-md px-2.5 py-1 transition-colors cursor-pointer inline-flex items-center gap-1 shadow-2xs"
+                            title={prog.is_hidden ? "Unhide program for faculty" : "Hide program from faculty"}
+                          >
+                            {!prog.is_hidden ? (
+                              <>
+                                <EyeClosed className="h-3.5 w-3.5" strokeWidth={2} />
+                                <span>Hide</span>
+                              </>
+                            ) : (
+                              <>
+                                <Eye className="h-3.5 w-3.5" strokeWidth={2} />
+                                <span>Unhide</span>
+                              </>
+                            )}
+                          </button>
+
+                          {/* Delete Button */}
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setDeleteTarget(prog);
+                            }}
+                            className="p-1.5 text-red-500 hover:bg-red-500/10 rounded-md transition cursor-pointer"
+                            title="Delete program"
+                          >
+                            <Trash className="h-4 w-4" strokeWidth={2} />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
           </div>
         </div>
       )}
@@ -676,50 +714,67 @@ export function TemplatesAndProgramsPanel({
 
       {/* ─── DELETE PROGRAM CONFIRMATION MODAL ────────────────────── */}
       {deleteTarget && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-xs animate-in fade-in duration-200">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4 backdrop-blur-sm">
           <div
-            className="w-full max-w-md rounded-2xl bg-white dark:bg-slate-900 border border-rose-200 dark:border-rose-900/60 shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200"
+            className="w-full max-w-md rounded-2xl border border-slate-300 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-2xl text-slate-900 dark:text-slate-100"
             role="dialog"
             aria-modal="true"
           >
-            <div className="p-5 sm:p-6 space-y-4">
-              <div className="flex items-start gap-3">
-                <div className="p-2.5 rounded-xl bg-rose-100 dark:bg-rose-950/50 text-rose-600 dark:text-rose-400 shrink-0">
-                  <AppIcon icon={Trash} size="md" color="inherit" />
-                </div>
-                <div>
-                  <h3 className="text-base font-bold text-slate-900 dark:text-slate-100">
-                    Delete Program: {deleteTarget.code}?
-                  </h3>
-                  <p className="mt-1 text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
-                    Are you sure you want to delete <strong>{deleteTarget.name}</strong> ({deleteTarget.code})? You can also hide it instead to preserve historic compliance logs.
-                  </p>
-                </div>
+            <ModalHeader
+              icon={Trash}
+              title="Delete Academic Program"
+              subtitle="Confirm Permanent Program Deletion"
+              className="-mx-6 -mt-6 mb-4 rounded-t-2xl"
+            />
+
+            <div className="space-y-3">
+              <p className="text-xs text-slate-700 dark:text-slate-300 leading-relaxed">
+                Are you sure you want to permanently delete{" "}
+                <strong className="text-slate-900 dark:text-slate-100">
+                  &ldquo;{deleteTarget.name}&rdquo;
+                </strong>{" "}
+                ({deleteTarget.code})?
+              </p>
+
+              <div className="rounded-xl border border-amber-600 bg-amber-500 p-3 text-xs text-slate-950 space-y-1 shadow-xs">
+                <p className="font-bold">Safety Notice:</p>
+                <p className="font-medium">
+                  To temporarily remove this program from faculty selection dropdowns while preserving historic compliance logs, use the <strong>Hide</strong> option instead.
+                </p>
               </div>
 
-              <div className="p-3 rounded-xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/50 text-xs text-amber-900 dark:text-amber-200">
-                Safety wait: Delete button unlocks in <strong>{deleteCountdown}s</strong>.
-              </div>
+              {deleteCountdown > 0 ? (
+                <p className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">
+                  Safety lock active. The confirmation button will be available in{" "}
+                  <span className="font-bold text-slate-800 dark:text-slate-200">
+                    {deleteCountdown} seconds
+                  </span>
+                  .
+                </p>
+              ) : null}
+            </div>
 
-              <div className="flex items-center justify-end gap-2.5 pt-2 border-t border-slate-200 dark:border-slate-800">
-                <button
-                  type="button"
-                  onClick={() => setDeleteTarget(null)}
-                  disabled={isSubmitting}
-                  className="px-4 py-2 rounded-xl text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="button"
-                  onClick={handleConfirmDelete}
-                  disabled={isSubmitting || deleteCountdown > 0}
-                  className="inline-flex items-center justify-center gap-1.5 bg-[#780000] hover:bg-[#5e0000] text-white font-bold px-4 py-2 rounded-xl text-xs shadow-xs transition-all cursor-pointer disabled:opacity-40"
-                >
-                  <AppIcon icon={Trash} size="sm" color="white" />
-                  <span>{deleteCountdown > 0 ? `Wait ${deleteCountdown}s` : "Confirm Delete"}</span>
-                </button>
-              </div>
+            <div className="mt-6 flex items-center justify-end gap-2.5">
+              <button
+                type="button"
+                onClick={() => setDeleteTarget(null)}
+                disabled={isSubmitting}
+                className="px-4 py-2 rounded-xl bg-[#780000] hover:bg-[#5e0000] text-white border border-[#5e0000] text-xs font-semibold transition cursor-pointer shadow-xs"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmDelete}
+                disabled={isSubmitting || deleteCountdown > 0}
+                className="bg-[#780000] hover:bg-[#5e0000] text-white border border-[#5e0000] text-xs font-semibold px-4 py-2 rounded-xl transition disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer shadow-xs"
+              >
+                {isSubmitting
+                  ? "Deleting..."
+                  : deleteCountdown > 0
+                  ? `Confirm Delete (${deleteCountdown}s)`
+                  : "Confirm Delete"}
+              </button>
             </div>
           </div>
         </div>
