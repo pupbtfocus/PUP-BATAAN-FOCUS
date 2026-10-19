@@ -302,16 +302,6 @@ export function OnlineDocumentPreview({
 
         {/* Embedded Iframe Container */}
         <div className="relative flex-1 w-full bg-slate-950 flex flex-col">
-          {(iframeLoading || isResolving) ? (
-            <div className="absolute inset-0 z-20">
-              <SystemLoadingScreen
-                fullScreen={false}
-                className="h-full min-h-0 rounded-b-2xl"
-                text={`Loading ${isGoogle ? googleAppName : officeAppName} Preview...`}
-                subtitle={displayName}
-              />
-            </div>
-          ) : null}
           <iframe
             key={currentEmbedSrc}
             src={currentEmbedSrc}
@@ -351,13 +341,8 @@ export function OnlineDocumentPreview({
         {/* Content */}
         <div className="flex-1 overflow-y-auto p-5 bg-slate-950">
           {isLoadingLocalContent ? (
-            <div className="flex items-center justify-center h-full py-16">
-              <SystemLoadingScreen
-                fullScreen={false}
-                className="h-full min-h-0 rounded-b-2xl"
-                text="Reading document content..."
-                subtitle={displayName}
-              />
+            <div className="flex items-center justify-center h-full py-12 text-xs text-slate-400">
+              Reading document content...
             </div>
           ) : localContent && localContent.length > 0 ? (
             <>
