@@ -479,21 +479,25 @@ export function SuperAdminDashboard({
     [facultyAccounts, pendingFacultyAction]
   );
 
-  async function loadFacultyFromDatabase(silent = false) {
+  async function loadFacultyFromDatabase(silent = false, isRetry = false) {
     try {
       if (!silent) setIsLoadingFaculty(true);
-      const response = await fetch(`/api/admin/faculty/list?_t=${Date.now()}`, {
+      const response = await fetch(`/api/staff/faculty/list?_t=${Date.now()}`, {
         cache: "no-store",
+        credentials: "include",
       });
       if (response.ok) {
         const data = await response.json();
         setFacultyAccounts(data.faculty || []);
+      } else if ((response.status === 401 || response.status === 403) && !isRetry) {
+        await new Promise((resolve) => setTimeout(resolve, 300));
+        return await loadFacultyFromDatabase(silent, true);
       } else {
         const errData = await response.json().catch(() => ({}));
-        console.error("Failed to fetch faculty list in super-admin:", response.status, errData);
+        console.warn("Failed to fetch faculty list in super-admin:", response.status, errData);
       }
     } catch (err) {
-      console.error("Error loading faculty accounts in super-admin:", err);
+      console.warn("Error loading faculty accounts in super-admin:", err);
     } finally {
       if (!silent) setIsLoadingFaculty(false);
     }
@@ -835,9 +839,10 @@ export function SuperAdminDashboard({
           : data.accounts || data.data || [];
         const mapped = rawAccounts.map((acc: any) => {
           const rawRole = (acc.role || "").toLowerCase().trim();
-          const normalizedRole = rawRole.includes("super")
-            ? ROLE.ADMIN
-            : ROLE.ADMIN;
+          const normalizedRole =
+            rawRole === "staff" || rawRole.includes("staff")
+              ? ROLE.STAFF
+              : ROLE.ADMIN;
           return {
             id: acc.id,
             profile_id: acc.id,
@@ -2727,13 +2732,23 @@ function AdminDetailsModal({
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [isResendingVerification, setIsResendingVerification] = useState(false);
+  const [isSendingPasswordReset, setIsSendingPasswordReset] = useState(false);
+  const [hasReverifiedPendingSave, setHasReverifiedPendingSave] = useState(false);
+  const [reverifySuccessMessage, setReverifySuccessMessage] = useState<string | null>(null);
+  const [closeReminder, setCloseReminder] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [modalAvatarError, setModalAvatarError] = useState(false);
+  const [savedBaseline, setSavedBaseline] = useState({
+    fullName: details?.full_name ?? "",
+    email: details?.email ?? "",
+  });
+
   const canEdit =
     Boolean(editable) &&
     canManageAdminAccount({
-      targetEmail: details?.email,
+      targetEmail: savedBaseline.email || details?.email,
       targetRole: details?.role,
       actorEmail: currentAdminEmail,
       action: "edit",
@@ -2743,24 +2758,44 @@ function AdminDetailsModal({
   const emailInputRef = useRef<HTMLInputElement>(null);
   const [activeField, setActiveField] = useState<"fullName" | "email" | null>(null);
 
-  const initialFullName = details?.full_name ?? "";
-  const initialEmail = details?.email ?? "";
-
-  const hasChanges =
-    fullName.trim() !== initialFullName.trim() ||
-    email.trim() !== initialEmail.trim() ||
-    password.trim().length > 0;
-
   useEffect(() => {
-    setFullName(details?.full_name ?? "");
-    setEmail(details?.email ?? "");
+    const initName = details?.full_name ?? "";
+    const initEmail = (details?.email ?? "").trim();
+    setFullName(initName);
+    setEmail(initEmail);
+    setSavedBaseline({ fullName: initName, email: initEmail });
     setPassword("");
     setError(null);
     setSuccess(null);
+    setHasReverifiedPendingSave(false);
+    setReverifySuccessMessage(null);
+    setCloseReminder(null);
     setShowPassword(false);
     setModalAvatarError(false);
     setActiveField(null);
   }, [details]);
+
+  const normalizedEmail = email.trim().toLowerCase();
+  const normalizedInitialEmail = savedBaseline.email.trim().toLowerCase();
+  const isEmailModified =
+    normalizedEmail.length > 0 && normalizedEmail !== normalizedInitialEmail;
+  const isEmailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmail);
+
+  const hasChanges =
+    fullName.trim() !== savedBaseline.fullName.trim() ||
+    isEmailModified ||
+    hasReverifiedPendingSave ||
+    password.trim().length > 0;
+
+  function handleAttemptClose() {
+    if (canEdit && hasChanges) {
+      setCloseReminder(
+        "You have unsaved changes. Please click 'Save Changes' first before closing.",
+      );
+      return;
+    }
+    onClose();
+  }
 
   function handleFocusField(
     fieldKey: "fullName" | "email",
@@ -2781,18 +2816,76 @@ function AdminDetailsModal({
   }
 
   function handleCancelEdit(fieldKey: "fullName" | "email") {
-    if (fieldKey === "fullName") setFullName(initialFullName);
-    if (fieldKey === "email") setEmail(initialEmail);
+    if (fieldKey === "fullName") setFullName(savedBaseline.fullName);
+    if (fieldKey === "email") {
+      setEmail(savedBaseline.email);
+      setHasReverifiedPendingSave(false);
+      setReverifySuccessMessage(null);
+    }
+    setCloseReminder(null);
     setActiveField(null);
+  }
+
+  async function handleReverifyEmail() {
+    if (!details?.profile_id || !isEmailModified || !isEmailValid) return;
+    setIsResendingVerification(true);
+    setError(null);
+    setCloseReminder(null);
+
+    try {
+      setHasReverifiedPendingSave(true);
+      setReverifySuccessMessage(
+        `Re-verification prepared for ${normalizedEmail}. Please click "Save Changes" below to apply and send the verification link.`,
+      );
+      setActiveField(null);
+    } finally {
+      setIsResendingVerification(false);
+    }
+  }
+
+  async function handleSendPasswordReset() {
+    const targetResetEmail = savedBaseline.email.trim().toLowerCase() || normalizedEmail;
+    if (!details?.profile_id || !targetResetEmail) return;
+
+    setIsSendingPasswordReset(true);
+    setError(null);
+    setSuccess(null);
+    setCloseReminder(null);
+
+    try {
+      const response = await fetch("/api/admin/reset-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          profileId: details.profile_id,
+          email: targetResetEmail,
+          fullName: fullName.trim() || details.full_name,
+          accountType: "Staff",
+        }),
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        setError(data.error ?? "Failed to send password reset email");
+        return;
+      }
+      setSuccess(
+        data.message || `Password reset link sent to ${targetResetEmail}.`,
+      );
+    } catch {
+      setError("Failed to send password reset email.");
+    } finally {
+      setIsSendingPasswordReset(false);
+    }
   }
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError(null);
     setSuccess(null);
+    setCloseReminder(null);
 
     if (!details?.profile_id) {
-      setError("Admin details are not available.");
+      setError("Staff details are not available.");
       return;
     }
 
@@ -2801,8 +2894,13 @@ function AdminDetailsModal({
       return;
     }
 
-    if (!fullName.trim() || !email.trim()) {
+    if (!fullName.trim() || !normalizedEmail) {
       setError("Full name and email are required.");
+      return;
+    }
+
+    if (!isEmailValid) {
+      setError("Please provide a valid email address.");
       return;
     }
 
@@ -2822,7 +2920,8 @@ function AdminDetailsModal({
         body: JSON.stringify({
           profileId: details.profile_id,
           fullName: fullName.trim(),
-          email: email.trim(),
+          email: normalizedEmail,
+          resendVerification: hasReverifiedPendingSave || isEmailModified,
           ...(password ? { password } : {}),
         }),
       });
@@ -2830,376 +2929,454 @@ function AdminDetailsModal({
       const data = await response.json();
 
       if (!response.ok) {
-        setError(data.error ?? "Failed to update admin details");
+        setError(data.error ?? "Failed to update staff details");
         setIsSaving(false);
         return;
       }
 
-      setSuccess("Admin account updated successfully.");
+      const nextName = data.details?.full_name ?? fullName.trim();
+      const nextEmail = data.details?.email ?? normalizedEmail;
+
+      setFullName(nextName);
+      setEmail(nextEmail);
+      setSavedBaseline({ fullName: nextName, email: nextEmail });
       setPassword("");
+      setHasReverifiedPendingSave(false);
+      setReverifySuccessMessage(null);
+      setCloseReminder(null);
       setActiveField(null);
-      if (data.details) {
-        setFullName(data.details.full_name ?? fullName);
-        setEmail(data.details.email ?? email);
+
+      if (data.emailChanged) {
+        setSuccess(
+          data.verificationSent
+            ? `Staff email updated to ${nextEmail} and a new verification link has been sent.`
+            : `Staff email updated to ${nextEmail}.`,
+        );
+      } else {
+        setSuccess("Staff account updated successfully.");
       }
+
       await onSaved();
       setIsSaving(false);
     } catch {
-      setError("Unexpected error while updating admin details.");
+      setError("Unexpected error while updating staff details.");
       setIsSaving(false);
     }
   }
 
   return (
-    <div className="fixed inset-0 z-40 flex items-center justify-center bg-slate-950/80 p-3 sm:p-5 backdrop-blur-sm">
-      <div className="w-full max-w-2xl sm:max-w-3xl rounded-2xl border-2 border-amber-400 dark:border-amber-500/70 bg-white dark:bg-slate-950 shadow-2xl text-slate-900 dark:text-slate-100 overflow-hidden flex flex-col">
+    <div className="fixed inset-0 z-40 flex items-center justify-center bg-slate-950/80 p-3 sm:p-4 backdrop-blur-sm">
+      <div className="w-full max-w-xl max-h-[94vh] rounded-2xl border-2 border-amber-400 dark:border-amber-500/70 bg-white dark:bg-slate-950 shadow-2xl text-slate-900 dark:text-slate-100 overflow-hidden flex flex-col">
         <ModalHeader
           title={canEdit ? "Edit Staff Account" : "View Staff Account"}
+          subtitle="Manage staff profile, email recovery, and account credentials"
           icon={User}
+          onClose={handleAttemptClose}
+          className="shrink-0"
         />
-        <div className="p-4 sm:p-6 overflow-y-auto overflow-x-hidden">
-        {isLoading ? (
-          <p className="mt-4 text-xs text-slate-500 dark:text-slate-400">Loading details...</p>
-        ) : details ? (
-          <div className="space-y-4 mt-2">
-            <div className="flex items-center gap-4 rounded-xl border border-slate-300 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 p-4 min-w-0">
-              {details.profileImageUrl && !modalAvatarError ? (
-                <img
-                  src={details.profileImageUrl}
-                  alt={details.full_name ?? "Admin"}
-                  className="w-14 h-14 rounded-full object-cover border-2 border-amber-500/60 bg-slate-100 dark:bg-slate-950 shadow-md ring-2 ring-white dark:ring-slate-950 shrink-0"
-                  onError={() => setModalAvatarError(true)}
-                />
-              ) : (
-                <div className="w-14 h-14 rounded-full bg-slate-100 dark:bg-slate-800 border-2 border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 font-bold text-base flex items-center justify-center shadow-md ring-2 ring-white dark:ring-slate-950 shrink-0">
-                  {getInitials(
-                    details.full_name,
-                    details.role === ROLE.ADMIN ? "SA" : "AD"
-                  )}
-                </div>
-              )}
-              <div className="min-w-0 flex-1">
-                <h4 className="text-base font-bold text-slate-900 dark:text-slate-100 truncate">
-                  {details.full_name || "Admin User"}
-                </h4>
-                <p className="text-xs text-slate-500 dark:text-slate-400 break-all select-all font-mono mt-0.5">{details.email}</p>
-                <span className="inline-block mt-1 px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-slate-200/70 text-slate-900 dark:bg-slate-800 dark:text-slate-300 border border-slate-300 dark:border-slate-700">
-                  {details.role ? ROLE_LABEL[details.role as AppRole] : "Admin"}
-                </span>
-              </div>
-            </div>
-
-            {canEdit ? (
-              <form className="space-y-4" onSubmit={onSubmit}>
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <div className="min-w-0">
-                    <label
-                      className="block text-xs font-semibold text-slate-700 dark:text-slate-300 tracking-wider mb-1.5"
-                      htmlFor="adminFullName"
-                    >
-                      Full Name
-                    </label>
-                    <div className="relative flex items-center">
-                      <input
-                        id="adminFullName"
-                        ref={fullNameInputRef}
-                        type="text"
-                        value={fullName}
-                        onChange={(event) => setFullName(event.target.value)}
-                        readOnly={activeField !== "fullName"}
-                        onBlur={() => setActiveField(null)}
-                        className={`w-full rounded-xl border bg-white dark:bg-slate-950 pl-3.5 pr-9 py-2 text-xs font-medium text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 outline-none focus:outline-none focus-visible:outline-none transition-all ${
-                          activeField === "fullName"
-                            ? "border-amber-500 ring-2 ring-amber-500/80 dark:ring-amber-500/60"
-                            : "border-slate-300 dark:border-slate-800 hover:border-slate-400 dark:hover:border-slate-700 cursor-default"
-                        }`}
-                      />
-                      {activeField === "fullName" ? (
-                        <button
-                          type="button"
-                          title="Cancel edit"
-                          aria-label="Cancel edit"
-                          onMouseDown={(e) => e.preventDefault()}
-                          onClick={() => handleCancelEdit("fullName")}
-                          className="absolute right-1.5 top-1/2 -translate-y-1/2 flex h-6 w-6 items-center justify-center rounded-lg border border-[#5e0000] bg-[#780000] hover:bg-[#5e0000] text-white transition-all shadow-2xs cursor-pointer active:scale-95"
-                        >
-                          <AppIcon icon={Xmark} size="xs" color="inherit" />
-                        </button>
-                      ) : (
-                        <button
-                          type="button"
-                          title="Edit full name"
-                          aria-label="Edit full name"
-                          onMouseDown={(e) => e.preventDefault()}
-                          onClick={() => handleFocusField("fullName", fullNameInputRef)}
-                          className="absolute right-1.5 top-1/2 -translate-y-1/2 flex h-6 w-6 items-center justify-center rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800/80 text-slate-600 dark:text-slate-300 hover:border-amber-500 hover:text-amber-500 dark:hover:border-amber-400 dark:hover:text-amber-400 transition-all shadow-2xs cursor-pointer active:scale-95"
-                        >
-                          <AppIcon icon={EditPencil} size="xs" color="inherit" />
-                        </button>
-                      )}
-                    </div>
-                  </div>
-
-                  <div className="min-w-0">
-                    <label
-                      className="block text-xs font-semibold text-slate-700 dark:text-slate-300 tracking-wider mb-1.5"
-                      htmlFor="adminEmail"
-                    >
-                      Email Address
-                    </label>
-                    <div className="relative flex items-center">
-                      <input
-                        id="adminEmail"
-                        ref={emailInputRef}
-                        type="email"
-                        value={email}
-                        onChange={(event) => setEmail(event.target.value)}
-                        readOnly={activeField !== "email"}
-                        onBlur={() => setActiveField(null)}
-                        className={`w-full rounded-xl border bg-white dark:bg-slate-950 pl-3.5 pr-9 py-2 text-xs font-medium text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 outline-none focus:outline-none focus-visible:outline-none transition-all ${
-                          activeField === "email"
-                            ? "border-amber-500 ring-2 ring-amber-500/80 dark:ring-amber-500/60"
-                            : "border-slate-300 dark:border-slate-800 hover:border-slate-400 dark:hover:border-slate-700 cursor-default"
-                        }`}
-                      />
-                      {activeField === "email" ? (
-                        <button
-                          type="button"
-                          title="Cancel edit"
-                          aria-label="Cancel edit"
-                          onMouseDown={(e) => e.preventDefault()}
-                          onClick={() => handleCancelEdit("email")}
-                          className="absolute right-1.5 top-1/2 -translate-y-1/2 flex h-6 w-6 items-center justify-center rounded-lg border border-[#5e0000] bg-[#780000] hover:bg-[#5e0000] text-white transition-all shadow-2xs cursor-pointer active:scale-95"
-                        >
-                          <AppIcon icon={Xmark} size="xs" color="inherit" />
-                        </button>
-                      ) : (
-                        <button
-                          type="button"
-                          title="Edit email address"
-                          aria-label="Edit email address"
-                          onMouseDown={(e) => e.preventDefault()}
-                          onClick={() => handleFocusField("email", emailInputRef)}
-                          className="absolute right-1.5 top-1/2 -translate-y-1/2 flex h-6 w-6 items-center justify-center rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800/80 text-slate-600 dark:text-slate-300 hover:border-amber-500 hover:text-amber-500 dark:hover:border-amber-400 dark:hover:text-amber-400 transition-all shadow-2xs cursor-pointer active:scale-95"
-                        >
-                          <AppIcon icon={EditPencil} size="xs" color="inherit" />
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                </div>
-
-                <div>
-                  <label
-                    className="block text-xs font-semibold text-slate-700 dark:text-slate-300 tracking-wider mb-1.5"
-                    htmlFor="adminPassword"
-                  >
-                    New Password
-                  </label>
-                  <div className="relative">
-                    <input
-                      id="adminPassword"
-                      type={showPassword ? "text" : "password"}
-                      value={password}
-                      onChange={(event) => setPassword(event.target.value)}
-                      disabled={!canEdit}
-                      minLength={8}
-                      placeholder="Leave blank to keep current password"
-                      className="w-full rounded-xl border border-slate-300 dark:border-slate-800 bg-white dark:bg-slate-950 px-4 py-2.5 pr-12 text-xs text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/80 dark:focus:ring-amber-500/60 outline-none"
-                    />
-                    <PasswordToggleButton
-                      shown={showPassword}
-                      onClick={() => setShowPassword((value) => !value)}
-                    />
-                  </div>
-                </div>
-
-                <div className="grid gap-2 text-xs text-slate-600 dark:text-slate-400 md:grid-cols-2 p-3 rounded-xl border border-slate-300 dark:border-slate-800 bg-slate-50 dark:bg-slate-900">
-                  <p>
-                    <span className="font-semibold text-slate-700 dark:text-slate-300">Role:</span>{" "}
-                    {details.role ? ROLE_LABEL[details.role as AppRole] : "Admin"}
-                  </p>
-                  <p className="flex items-center gap-2">
-                    <span className="font-semibold text-slate-700 dark:text-slate-300">Status:</span>{" "}
-                    <span className={`inline-flex items-center px-2 py-0.5 text-xs font-semibold rounded-md border shadow-2xs ${
-                      details.is_active
-                        ? "bg-[#0b5336] text-white border-[#08412a]"
-                        : "bg-[#780000] text-white border-[#5e0000]"
-                    }`}>
-                      {details.is_active ? "Active" : "Inactive"}
-                    </span>
-                  </p>
-                  {details.department ? (
-                    <p>
-                      <span className="font-semibold text-slate-700 dark:text-slate-300">Department:</span>{" "}
-                      {details.department}
-                    </p>
-                  ) : null}
-                  {details.permissions && details.permissions.length > 0 ? (
-                    <p>
-                      <span className="font-semibold text-slate-700 dark:text-slate-300">Permissions:</span>{" "}
-                      {details.permissions.length}
-                    </p>
-                  ) : null}
-                </div>
-
+        <div className="p-4 sm:p-5 overflow-y-auto overflow-x-hidden flex-1">
+          {isLoading ? (
+            <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">Loading details...</p>
+          ) : details ? (
+            <div className="space-y-3">
+              {error ? (
                 <AlertPopup
                   type="error"
                   message={error}
                   position="inline"
                   onClose={() => setError(null)}
                 />
+              ) : null}
+
+              {closeReminder ? (
+                <AlertPopup
+                  type="warning"
+                  message={closeReminder}
+                  position="inline"
+                  onClose={() => setCloseReminder(null)}
+                />
+              ) : null}
+
+              {reverifySuccessMessage ? (
+                <AlertPopup
+                  type="info"
+                  message={reverifySuccessMessage}
+                  position="inline"
+                  onClose={() => setReverifySuccessMessage(null)}
+                />
+              ) : null}
+
+              {success ? (
                 <AlertPopup
                   type="success"
                   message={success}
                   position="inline"
                   onClose={() => setSuccess(null)}
                 />
+              ) : null}
 
-                <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-slate-300 dark:border-slate-800">
-                  <div className="text-[11px] text-slate-500 dark:text-slate-400 space-y-0.5">
-                    <div>
-                      Created{" "}
-                      {details.created_at
-                        ? new Date(details.created_at).toLocaleString()
-                        : "Unknown"}
-                      {details.updated_at
-                        ? ` • Updated ${new Date(details.updated_at).toLocaleString()}`
-                        : ""}
+              <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-300 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 p-3.5 min-w-0">
+                <div className="flex items-center gap-3 min-w-0">
+                  {details.profileImageUrl && !modalAvatarError ? (
+                    <img
+                      src={details.profileImageUrl}
+                      alt={details.full_name ?? "Staff"}
+                      className="w-12 h-12 rounded-full object-cover border-2 border-amber-500/60 bg-slate-100 dark:bg-slate-950 shadow-md ring-2 ring-white dark:ring-slate-950 shrink-0"
+                      onError={() => setModalAvatarError(true)}
+                    />
+                  ) : (
+                    <div className="w-12 h-12 rounded-full bg-slate-100 dark:bg-slate-800 border-2 border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 font-bold text-sm flex items-center justify-center shadow-md ring-2 ring-white dark:ring-slate-950 shrink-0">
+                      {getInitials(
+                        details.full_name,
+                        details.role === ROLE.ADMIN ? "SA" : "AD",
+                      )}
                     </div>
-                    <div>
-                      Last Login:{" "}
-                      <span className="font-medium text-slate-700 dark:text-slate-300">
-                        {details.last_sign_in_at || details.lastLoginAt
-                          ? new Date(
-                              details.last_sign_in_at || details.lastLoginAt!,
-                            ).toLocaleString()
-                          : "Never logged in"}
+                  )}
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <h4 className="text-sm sm:text-base font-bold text-slate-900 dark:text-slate-100 truncate">
+                        {savedBaseline.fullName || details.full_name || "Staff User"}
+                      </h4>
+                      <span className="inline-block px-2 py-0.5 rounded-full text-[10px] font-semibold bg-slate-200/70 text-slate-900 dark:bg-slate-800 dark:text-slate-300 border border-slate-300 dark:border-slate-700">
+                        {details.role ? ROLE_LABEL[details.role as AppRole] : "Staff"}
                       </span>
                     </div>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 break-all select-all font-mono mt-0.5">
+                      {savedBaseline.email || details.email}
+                    </p>
                   </div>
-                  <div className="flex gap-2">
-                    <button
-                      type="button"
-                      onClick={onClose}
-                      className="rounded-xl bg-[#780000] hover:bg-[#5e0000] text-white border border-[#5e0000] px-4 py-2 text-xs font-semibold transition cursor-pointer shadow-xs"
-                    >
-                      Close
-                    </button>
-                    {canEdit ? (
+                </div>
+
+                <div className="flex items-center gap-3">
+                  <span
+                    className={`inline-flex items-center px-2 py-0.5 text-xs font-semibold rounded-md border shadow-2xs ${
+                      details.is_active
+                        ? "bg-[#0b5336] text-white border-[#08412a]"
+                        : "bg-[#780000] text-white border-[#5e0000]"
+                    }`}
+                  >
+                    {details.is_active ? "Active" : "Inactive"}
+                  </span>
+                </div>
+              </div>
+
+              {canEdit ? (
+                <form className="space-y-3" onSubmit={onSubmit}>
+                  <div className="rounded-xl border border-slate-200/80 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 p-3.5 space-y-3">
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      <div className="min-w-0 space-y-1">
+                        <label
+                          className="block text-[11px] uppercase tracking-[0.16em] text-slate-500 dark:text-slate-400 font-semibold"
+                          htmlFor="adminFullName"
+                        >
+                          Full Name
+                        </label>
+                        <div className="relative flex items-center">
+                          <input
+                            id="adminFullName"
+                            ref={fullNameInputRef}
+                            type="text"
+                            value={fullName}
+                            onChange={(event) => {
+                              setFullName(event.target.value);
+                              setCloseReminder(null);
+                            }}
+                            readOnly={activeField !== "fullName"}
+                            onBlur={() => setActiveField(null)}
+                            className={`w-full rounded-xl border bg-white dark:bg-slate-950 pl-3 pr-8 py-1.5 text-xs font-medium text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 outline-none focus:outline-none focus-visible:outline-none transition-all ${
+                              activeField === "fullName"
+                                ? "border-amber-500 ring-2 ring-amber-500/80 dark:ring-amber-500/60"
+                                : "border-slate-300 dark:border-slate-800 hover:border-slate-400 dark:hover:border-slate-700 cursor-default"
+                            }`}
+                          />
+                          {activeField === "fullName" ? (
+                            <button
+                              type="button"
+                              title="Cancel edit"
+                              aria-label="Cancel edit"
+                              onMouseDown={(e) => e.preventDefault()}
+                              onClick={() => handleCancelEdit("fullName")}
+                              className="absolute right-1.5 top-1/2 -translate-y-1/2 flex h-5.5 w-5.5 items-center justify-center rounded-md border border-[#5e0000] bg-[#780000] hover:bg-[#5e0000] text-white transition-all shadow-2xs cursor-pointer active:scale-95"
+                            >
+                              <AppIcon icon={Xmark} size="xs" color="inherit" />
+                            </button>
+                          ) : (
+                            <button
+                              type="button"
+                              title="Edit full name"
+                              aria-label="Edit full name"
+                              onMouseDown={(e) => e.preventDefault()}
+                              onClick={() => handleFocusField("fullName", fullNameInputRef)}
+                              className="absolute right-1.5 top-1/2 -translate-y-1/2 flex h-5.5 w-5.5 items-center justify-center rounded-md border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800/80 text-slate-600 dark:text-slate-300 hover:border-amber-500 hover:text-amber-500 dark:hover:border-amber-400 dark:hover:text-amber-400 transition-all shadow-2xs cursor-pointer active:scale-95"
+                            >
+                              <AppIcon icon={EditPencil} size="xs" color="inherit" />
+                            </button>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="min-w-0 space-y-1">
+                        <label
+                          className="block text-[11px] uppercase tracking-[0.16em] text-slate-500 dark:text-slate-400 font-semibold"
+                          htmlFor="adminPassword"
+                        >
+                          New Password (Optional)
+                        </label>
+                        <div className="relative">
+                          <input
+                            id="adminPassword"
+                            type={showPassword ? "text" : "password"}
+                            value={password}
+                            onChange={(event) => {
+                              setPassword(event.target.value);
+                              setCloseReminder(null);
+                            }}
+                            disabled={!canEdit}
+                            minLength={8}
+                            placeholder="Leave blank to keep current"
+                            className="w-full rounded-xl border border-slate-300 dark:border-slate-800 bg-white dark:bg-slate-950 pl-3 pr-10 py-1.5 text-xs text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/80 dark:focus:ring-amber-500/60 outline-none"
+                          />
+                          <PasswordToggleButton
+                            shown={showPassword}
+                            onClick={() => setShowPassword((value) => !value)}
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="space-y-1.5 pt-2.5 border-t border-slate-200/80 dark:border-slate-800">
+                      <div className="flex items-center justify-between gap-2">
+                        <label
+                          className="block text-[11px] uppercase tracking-[0.16em] text-slate-500 dark:text-slate-400 font-semibold"
+                          htmlFor="adminEmail"
+                        >
+                          Email Address (Account Recovery / Change Email)
+                        </label>
+                        <div className="flex items-center gap-1.5 shrink-0">
+                          <button
+                            type="button"
+                            onClick={() => void handleSendPasswordReset()}
+                            disabled={
+                              isSendingPasswordReset ||
+                              isResendingVerification ||
+                              isSaving ||
+                              !isEmailValid
+                            }
+                            title="Send password reset email to this staff member"
+                            className="inline-flex items-center gap-1.5 rounded-lg bg-[#800000] hover:bg-[#990000] text-white border border-[#800000]/30 px-2.5 py-1 text-xs font-semibold transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed shadow-2xs shrink-0 whitespace-nowrap"
+                          >
+                            <AppIcon icon={Key} size="xs" color="inherit" className="text-white" />
+                            <span>
+                              {isSendingPasswordReset ? "Sending..." : "Reset Password"}
+                            </span>
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => void handleReverifyEmail()}
+                            disabled={
+                              isResendingVerification ||
+                              isSendingPasswordReset ||
+                              isSaving ||
+                              !isEmailModified ||
+                              !isEmailValid
+                            }
+                            title={
+                              !isEmailModified
+                                ? "Change the email address first to re-verify"
+                                : "Re-verify the updated email address"
+                            }
+                            className="inline-flex items-center gap-1.5 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 border border-amber-600/30 px-2.5 py-1 text-xs font-semibold transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed shadow-2xs shrink-0 whitespace-nowrap"
+                          >
+                            <AppIcon icon={SendMail} size="xs" color="inherit" className="text-slate-950" />
+                            <span>
+                              {isResendingVerification
+                                ? "Sending..."
+                                : hasReverifiedPendingSave
+                                  ? "Re-verify Ready"
+                                  : "Re-verify Email"}
+                            </span>
+                          </button>
+                        </div>
+                      </div>
+
+                      <div className="relative flex items-center">
+                        <input
+                          id="adminEmail"
+                          ref={emailInputRef}
+                          type="email"
+                          value={email}
+                          onChange={(event) => {
+                            const nextEmail = event.target.value;
+                            setEmail(nextEmail);
+                            setCloseReminder(null);
+                            if (
+                              nextEmail.trim().toLowerCase() ===
+                              savedBaseline.email.trim().toLowerCase()
+                            ) {
+                              setHasReverifiedPendingSave(false);
+                              setReverifySuccessMessage(null);
+                            }
+                          }}
+                          readOnly={activeField !== "email"}
+                          onBlur={() => setActiveField(null)}
+                          placeholder="staff@pup.edu.ph"
+                          className={`w-full rounded-xl border bg-white dark:bg-slate-950 pl-3 pr-8 py-1.5 text-xs font-medium text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 outline-none focus:outline-none focus-visible:outline-none transition-all ${
+                            activeField === "email"
+                              ? "border-amber-500 ring-2 ring-amber-500/80 dark:ring-amber-500/60"
+                              : "border-slate-300 dark:border-slate-800 hover:border-slate-400 dark:hover:border-slate-700 cursor-default"
+                          }`}
+                        />
+                        {activeField === "email" ? (
+                          <button
+                            type="button"
+                            title="Cancel email edit"
+                            aria-label="Cancel email edit"
+                            onMouseDown={(e) => e.preventDefault()}
+                            onClick={() => handleCancelEdit("email")}
+                            className="absolute right-1.5 top-1/2 -translate-y-1/2 flex h-5.5 w-5.5 items-center justify-center rounded-md border border-[#5e0000] bg-[#780000] hover:bg-[#5e0000] text-white transition-all shadow-2xs cursor-pointer active:scale-95"
+                          >
+                            <AppIcon icon={Xmark} size="xs" color="inherit" />
+                          </button>
+                        ) : (
+                          <button
+                            type="button"
+                            title="Change email address"
+                            aria-label="Change email address"
+                            onMouseDown={(e) => e.preventDefault()}
+                            onClick={() => handleFocusField("email", emailInputRef)}
+                            className="absolute right-1.5 top-1/2 -translate-y-1/2 flex h-5.5 w-5.5 items-center justify-center rounded-md border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800/80 text-slate-600 dark:text-slate-300 hover:border-amber-500 hover:text-amber-500 dark:hover:border-amber-400 dark:hover:text-amber-400 transition-all shadow-2xs cursor-pointer active:scale-95"
+                          >
+                            <AppIcon icon={EditPencil} size="xs" color="inherit" />
+                          </button>
+                        )}
+                      </div>
+
+                      <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-snug">
+                        If the staff member lost access to their email or their email was compromised, update only the email here. All account data and records remain intact, and a new verification link will be sent to the new email.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex flex-wrap items-center justify-between gap-3 pt-2.5 border-t border-slate-300 dark:border-slate-800">
+                    <div className="text-[11px] text-slate-500 dark:text-slate-400 space-y-0.5">
+                      <div>
+                        Created{" "}
+                        {details.created_at
+                          ? new Date(details.created_at).toLocaleDateString("en-US", {
+                              year: "numeric",
+                              month: "short",
+                              day: "numeric",
+                            })
+                          : "Unknown"}
+                      </div>
+                      <div>
+                        Last Login:{" "}
+                        <span className="font-medium text-slate-700 dark:text-slate-300">
+                          {details.last_sign_in_at || details.lastLoginAt
+                            ? new Date(
+                                details.last_sign_in_at || details.lastLoginAt!,
+                              ).toLocaleString()
+                            : "Never logged in"}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="flex gap-2">
+                      <button
+                        type="button"
+                        onClick={handleAttemptClose}
+                        className="rounded-xl bg-[#780000] hover:bg-[#5e0000] text-white border border-[#5e0000] px-4 py-2 text-xs font-semibold transition cursor-pointer shadow-xs"
+                      >
+                        Close
+                      </button>
                       <button
                         type="submit"
-                        disabled={isSaving || !hasChanges || !fullName.trim() || !email.trim()}
+                        disabled={
+                          isSaving ||
+                          !hasChanges ||
+                          !fullName.trim() ||
+                          !isEmailValid
+                        }
                         className="bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold rounded-xl px-5 py-2 text-xs transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed shadow-2xs"
                       >
                         {isSaving ? "Saving..." : "Save Changes"}
                       </button>
-                    ) : null}
-                  </div>
-                </div>
-              </form>
-            ) : (
-              <div className="space-y-4">
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <div className="min-w-0">
-                    <p className="text-xs font-semibold text-slate-600 dark:text-slate-400">
-                      Full Name
-                    </p>
-                    <p className="mt-1 text-sm font-semibold text-slate-900 dark:text-slate-100 break-words">
-                      {details.full_name}
-                    </p>
-                  </div>
-                  <div className="min-w-0">
-                    <p className="text-xs font-semibold text-slate-600 dark:text-slate-400">
-                      Email Address
-                    </p>
-                    <p className="mt-1 text-sm font-semibold text-slate-900 dark:text-slate-100 break-all select-all font-mono">
-                      {details.email}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="grid gap-2 text-xs text-slate-600 dark:text-slate-400 md:grid-cols-2 p-3 rounded-xl border border-slate-400 dark:border-slate-800 bg-slate-50 dark:bg-slate-900">
-                  <p>
-                    <span className="font-semibold text-slate-700 dark:text-slate-300">Role:</span>{" "}
-                    {details.role ? ROLE_LABEL[details.role as AppRole] : "Admin"}
-                  </p>
-                  <p className="flex items-center gap-2">
-                    <span className="font-semibold text-slate-700 dark:text-slate-300">Status:</span>{" "}
-                    <span className={`inline-flex items-center px-2 py-0.5 text-xs font-semibold rounded-md border shadow-2xs ${
-                      details.is_active
-                        ? "bg-[#0b5336] text-white border-[#08412a]"
-                        : "bg-[#780000] text-white border-[#5e0000]"
-                    }`}>
-                      {details.is_active ? "Active" : "Inactive"}
-                    </span>
-                  </p>
-                  {details.department ? (
-                    <p>
-                      <span className="font-semibold text-slate-700 dark:text-slate-300">Department:</span>{" "}
-                      {details.department}
-                    </p>
-                  ) : null}
-                  {details.permissions && details.permissions.length > 0 ? (
-                    <p>
-                      <span className="font-semibold text-slate-700 dark:text-slate-300">Permissions:</span>{" "}
-                      {details.permissions.length}
-                    </p>
-                  ) : null}
-                </div>
-
-                {details.metadata &&
-                !(
-                  typeof details.metadata === "object" &&
-                  Object.keys(details.metadata).length === 1 &&
-                  (details.metadata as any).is_active === true
-                ) ? (
-                  <div>
-                    <p className="text-xs font-semibold text-slate-600 dark:text-slate-400">Metadata</p>
-                    <pre className="mt-1 max-h-40 overflow-auto rounded-xl border border-slate-400 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 p-3 text-xs text-slate-900 dark:text-slate-200 font-mono">
-                      {JSON.stringify(details.metadata, null, 2)}
-                    </pre>
-                  </div>
-                ) : null}
-
-                <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-slate-400 dark:border-slate-800">
-                  <div className="text-[11px] text-slate-500 dark:text-slate-400 space-y-0.5">
-                    <div>
-                      Created{" "}
-                      {details.created_at
-                        ? new Date(details.created_at).toLocaleString()
-                        : "Unknown"}
-                      {details.updated_at
-                        ? ` • Updated ${new Date(details.updated_at).toLocaleString()}`
-                        : ""}
                     </div>
-                    <div>
-                      Last Login:{" "}
-                      <span className="font-medium text-slate-700 dark:text-slate-300">
-                        {details.last_sign_in_at || details.lastLoginAt
-                          ? new Date(
-                              details.last_sign_in_at || details.lastLoginAt!,
-                            ).toLocaleString()
-                          : "Never logged in"}
+                  </div>
+                </form>
+              ) : (
+                <div className="space-y-4">
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <div className="min-w-0">
+                      <p className="text-xs font-semibold text-slate-600 dark:text-slate-400">
+                        Full Name
+                      </p>
+                      <p className="mt-1 text-sm font-semibold text-slate-900 dark:text-slate-100 break-words">
+                        {details.full_name}
+                      </p>
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-xs font-semibold text-slate-600 dark:text-slate-400">
+                        Email Address
+                      </p>
+                      <p className="mt-1 text-sm font-semibold text-slate-900 dark:text-slate-100 break-all select-all font-mono">
+                        {details.email}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="grid gap-2 text-xs text-slate-600 dark:text-slate-400 md:grid-cols-2 p-3 rounded-xl border border-slate-400 dark:border-slate-800 bg-slate-50 dark:bg-slate-900">
+                    <p>
+                      <span className="font-semibold text-slate-700 dark:text-slate-300">Role:</span>{" "}
+                      {details.role ? ROLE_LABEL[details.role as AppRole] : "Staff"}
+                    </p>
+                    <p className="flex items-center gap-2">
+                      <span className="font-semibold text-slate-700 dark:text-slate-300">Status:</span>{" "}
+                      <span className={`inline-flex items-center px-2 py-0.5 text-xs font-semibold rounded-md border shadow-2xs ${
+                        details.is_active
+                          ? "bg-[#0b5336] text-white border-[#08412a]"
+                          : "bg-[#780000] text-white border-[#5e0000]"
+                      }`}>
+                        {details.is_active ? "Active" : "Inactive"}
                       </span>
+                    </p>
+                  </div>
+
+                  <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-slate-400 dark:border-slate-800">
+                    <div className="text-[11px] text-slate-500 dark:text-slate-400 space-y-0.5">
+                      <div>
+                        Created{" "}
+                        {details.created_at
+                          ? new Date(details.created_at).toLocaleString()
+                          : "Unknown"}
+                      </div>
+                      <div>
+                        Last Login:{" "}
+                        <span className="font-medium text-slate-700 dark:text-slate-300">
+                          {details.last_sign_in_at || details.lastLoginAt
+                            ? new Date(
+                                details.last_sign_in_at || details.lastLoginAt!,
+                              ).toLocaleString()
+                            : "Never logged in"}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="flex gap-2">
+                      <button
+                        type="button"
+                        onClick={onClose}
+                        className="rounded-xl bg-[#780000] hover:bg-[#5e0000] text-white border border-[#5e0000] px-4 py-2 text-xs font-semibold transition cursor-pointer shadow-xs"
+                      >
+                        Close
+                      </button>
                     </div>
                   </div>
-                  <div className="flex gap-2">
-                    <button
-                      type="button"
-                      onClick={onClose}
-                      className="rounded-xl bg-[#780000] hover:bg-[#5e0000] text-white border border-[#5e0000] px-4 py-2 text-xs font-semibold transition cursor-pointer shadow-xs"
-                    >
-                      Close
-                    </button>
-                  </div>
                 </div>
-              </div>
-            )}
-          </div>
-        ) : (
-          <p className="mt-4 text-xs text-slate-500 dark:text-slate-400">No details available.</p>
-        )}
+              )}
+            </div>
+          ) : (
+            <p className="mt-4 text-xs text-slate-500 dark:text-slate-400">No details available.</p>
+          )}
         </div>
       </div>
     </div>

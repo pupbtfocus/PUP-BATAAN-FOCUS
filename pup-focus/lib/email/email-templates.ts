@@ -248,6 +248,61 @@ export function buildForgotPasswordEmailHtml({
   });
 }
 
+export function buildAdminPasswordResetEmailHtml({
+  fullName,
+  firstName,
+  email,
+  accountRoleLabel = "Account",
+  resetLink,
+}: {
+  fullName?: string;
+  firstName?: string;
+  email?: string;
+  accountRoleLabel?: string;
+  resetLink: string;
+}) {
+  const resolvedFirstName =
+    firstName?.trim() ||
+    fullName?.trim().split(/\s+/)[0] ||
+    "there";
+  const safeFirstName = escapeHtml(resolvedFirstName);
+  const safeEmail = email ? escapeHtml(email) : "";
+  const safeRoleLabel = escapeHtml(accountRoleLabel);
+
+  const detailsHtml = `
+    <table role="presentation" width="100%" style="margin:18px 0;background:#fffdf7;border:1.5px solid #f59e0b;border-radius:12px;border-collapse:separate;overflow:hidden;">
+      <tr>
+        <td style="padding:14px 18px;">
+          <div style="font-size:12px;color:#6b4b4b;margin-bottom:4px;">
+            <strong>Account Type:</strong> <span style="color:#1e293b;font-weight:700;">${safeRoleLabel}</span>
+          </div>
+          ${
+            safeEmail
+              ? `<div style="font-size:13px;color:#2f1a1a;">
+                  <strong>Account Email:</strong> <span style="font-family:monospace;font-weight:700;color:#780000;">${safeEmail}</span>
+                </div>`
+              : ""
+          }
+          <p style="margin:10px 0 0 0;font-size:12px;color:#854d0e;line-height:1.5;">
+            Click the <strong>Reset Password</strong> button below to choose a new password and regain access to your account.
+          </p>
+        </td>
+      </tr>
+    </table>
+  `;
+
+  return buildEmailLayout({
+    title: "Administrator Password Reset",
+    intro: `Hello ${safeFirstName}, an administrator has sent you a password reset link.`,
+    body: `A campus administrator initiated a password reset for your PUP FOCUS ${safeRoleLabel.toLowerCase()} account${safeEmail ? ` (${safeEmail})` : ""}. Click the button below to securely create your new password.`,
+    contentHtml: detailsHtml,
+    actionLabel: "Reset Password",
+    actionHref: resetLink,
+    footerNote: `This password reset link is valid for 1 hour. If you did not expect this reset, please contact your PUP Bataan campus administrator.`,
+    pupLogoSrc: buildAppUrl("/icons/pup-seal.png"),
+  });
+}
+
 export function buildSubmissionWindowNotificationEmailHtml({
   fullName,
   firstName,

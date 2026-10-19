@@ -105,66 +105,152 @@ export async function GET() {
       return NextResponse.json({ error: authError.message }, { status: 500 });
     }
 
-    // Try fetching profiles for supplementary full_name and status
-    let profileMap = new Map<string, { full_name?: string | null; status?: string | null }>();
+    // Try fetching profiles, staff, admins, and user_roles for supplementary full_name, role, and status
+    const profileByUserId = new Map<string, any>();
+    const profileByEmail = new Map<string, any>();
+    const profileById = new Map<string, any>();
+    const staffByEmail = new Map<string, any>();
+    const staffByProfileId = new Map<string, any>();
+    const adminByEmail = new Map<string, any>();
+    const adminByProfileId = new Map<string, any>();
+    const roleByProfileId = new Map<string, string>();
+
     try {
       const { data: profiles } = await supabaseAdmin
         .from("profiles")
-        .select("id, full_name, status");
+        .select("id, user_id, email, full_name, status");
       if (profiles) {
-        profileMap = new Map(profiles.map((p) => [p.id, p]));
+        for (const p of profiles) {
+          if (p.id) profileById.set(p.id, p);
+          if (p.user_id) profileByUserId.set(p.user_id, p);
+          if (p.email) profileByEmail.set(p.email.toLowerCase().trim(), p);
+        }
       }
     } catch {
       // Ignore profiles table query error if schema differs
     }
 
+    try {
+      const { data: staffRows } = await supabaseAdmin
+        .from("staff")
+        .select("id, profile_id, email, full_name, is_active");
+      if (staffRows) {
+        for (const s of staffRows) {
+          if (s.profile_id) staffByProfileId.set(s.profile_id, s);
+          if (s.email) staffByEmail.set(s.email.toLowerCase().trim(), s);
+        }
+      }
+    } catch {}
+
+    try {
+      const { data: adminRows } = await supabaseAdmin
+        .from("admins")
+        .select("id, profile_id, email, full_name, is_active");
+      if (adminRows) {
+        for (const a of adminRows) {
+          if (a.profile_id) adminByProfileId.set(a.profile_id, a);
+          if (a.email) adminByEmail.set(a.email.toLowerCase().trim(), a);
+        }
+      }
+    } catch {}
+
+    try {
+      const { data: userRolesData } = await supabaseAdmin
+        .from("user_roles")
+        .select("profile_id, roles(code)");
+      if (userRolesData) {
+        for (const ur of userRolesData as any[]) {
+          const roleObj = Array.isArray(ur.roles) ? ur.roles[0] : ur.roles;
+          if (roleObj?.code && ur.profile_id) {
+            roleByProfileId.set(ur.profile_id, String(roleObj.code).toLowerCase().trim());
+          }
+        }
+      }
+    } catch {}
+
     const adminAccounts = await Promise.all(
       (users ?? [])
         .filter((u) => {
-          // If the invite has been sent but not yet accepted, do not include in the active accounts list until accepted
-          const isPendingInvite =
-            !u.email_confirmed_at && !u.confirmed_at && !u.last_sign_in_at;
-          if (isPendingInvite) {
-            return false;
-          }
+          const emailKey = (u.email || "").toLowerCase().trim();
+          const profile =
+            profileByUserId.get(u.id) ||
+            profileById.get(u.id) ||
+            (emailKey ? profileByEmail.get(emailKey) : null);
+          const dbRole = profile?.id ? roleByProfileId.get(profile.id) : "";
+          const hasStaffRow =
+            (profile?.id && staffByProfileId.has(profile.id)) ||
+            (emailKey && staffByEmail.has(emailKey));
+          const hasAdminRow =
+            (profile?.id && adminByProfileId.has(profile.id)) ||
+            (emailKey && adminByEmail.has(emailKey));
 
           const rawRole = (
             u.user_metadata?.role ||
             u.app_metadata?.role ||
+            dbRole ||
             (u as any).role ||
             ""
           ).toString().toLowerCase().trim();
 
+          if (rawRole === "faculty" || rawRole === "faculty_member") {
+            return false;
+          }
+
           return (
+            hasStaffRow ||
+            hasAdminRow ||
+            rawRole.includes("staff") ||
             rawRole.includes("admin") ||
             rawRole.includes("super") ||
+            rawRole === "staff" ||
             rawRole === "admin" ||
             rawRole === "super_admin" ||
             rawRole === "superadmin"
           );
         })
         .map(async (u) => {
+          const emailKey = (u.email || "").toLowerCase().trim();
+          const profile =
+            profileByUserId.get(u.id) ||
+            profileById.get(u.id) ||
+            (emailKey ? profileByEmail.get(emailKey) : null);
+          const staffRow =
+            (profile?.id ? staffByProfileId.get(profile.id) : null) ||
+            (emailKey ? staffByEmail.get(emailKey) : null);
+          const adminRow =
+            (profile?.id ? adminByProfileId.get(profile.id) : null) ||
+            (emailKey ? adminByEmail.get(emailKey) : null);
+          const dbRole = profile?.id ? roleByProfileId.get(profile.id) : "";
+
           const rawRole = (
             u.user_metadata?.role ||
             u.app_metadata?.role ||
+            (staffRow ? ROLE.STAFF : "") ||
+            dbRole ||
             (u as any).role ||
-            "admin"
+            "staff"
           ).toString().toLowerCase().trim();
 
-          let normalizedRole = "admin";
-          if (rawRole.includes("super")) {
-            normalizedRole = "super_admin";
-          } else if (rawRole.includes("admin")) {
-            normalizedRole = "admin";
+          const isSuperAdminEmail =
+            emailKey === "pupbataanfocus.superadmin@gmail.com" ||
+            emailKey === "pupbataanfocus.admin@gmail.com" ||
+            emailKey.startsWith("qa.superadmin");
+
+          let normalizedRole: string = ROLE.STAFF;
+          if (isSuperAdminEmail || rawRole.includes("super")) {
+            normalizedRole = ROLE.ADMIN;
+          } else {
+            normalizedRole = ROLE.STAFF;
           }
 
-          const profile = profileMap.get(u.id);
           const fullName =
             profile?.full_name ||
+            staffRow?.full_name ||
+            adminRow?.full_name ||
             u.user_metadata?.full_name ||
             u.user_metadata?.name ||
             u.email?.split("@")[0] ||
-            "Admin User";
+            "Staff User";
           const rawAvatarUrl =
             u.user_metadata?.avatar_url || u.user_metadata?.picture || null;
 
@@ -178,6 +264,8 @@ export async function GET() {
           const isUserActive =
             u.user_metadata?.is_active === false ||
             u.app_metadata?.is_active === false ||
+            staffRow?.is_active === false ||
+            adminRow?.is_active === false ||
             rawProfileStatus === "inactive" ||
             rawProfileStatus === "false"
               ? false

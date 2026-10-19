@@ -391,23 +391,27 @@ export function AdminFacultyDashboard({
     void loadFacultyFromDatabase({ silent: true });
   });
 
-  async function loadFacultyFromDatabase(options?: { silent?: boolean }) {
+  async function loadFacultyFromDatabase(options?: { silent?: boolean; isRetry?: boolean }) {
     try {
       if (!options?.silent) {
         setIsLoading(true);
       }
       const response = await fetch(`/api/staff/faculty/list?_t=${Date.now()}`, {
         cache: "no-store",
+        credentials: "include",
       });
       if (response.ok) {
         const data = await response.json();
         setFacultyAccounts(data.faculty || []);
+      } else if ((response.status === 401 || response.status === 403) && !options?.isRetry) {
+        await new Promise((resolve) => setTimeout(resolve, 300));
+        return await loadFacultyFromDatabase({ ...options, isRetry: true });
       } else {
         const errData = await response.json().catch(() => ({}));
-        console.error("Failed to fetch faculty list:", response.status, errData);
+        console.warn("Failed to fetch faculty list:", response.status, errData);
       }
     } catch (err) {
-      console.error("Error loading faculty accounts:", err);
+      console.warn("Error loading faculty accounts:", err);
     } finally {
       if (!options?.silent) {
         setIsLoading(false);

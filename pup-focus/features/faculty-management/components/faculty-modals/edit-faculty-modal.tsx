@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { CheckCircle, EditPencil, Mail, SendMail, ShieldCheck, User, Xmark } from "iconoir-react";
+import { CheckCircle, EditPencil, Key, Mail, SendMail, ShieldCheck, User, Xmark } from "iconoir-react";
 import { AppIcon } from "@/components/ui/app-icon";
 import { ModalHeader } from "@/components/ui/modal-header";
 import { AlertPopup } from "@/components/ui/alert-popup";
@@ -38,6 +38,11 @@ export function EditFacultyModal({
   >(null);
   const [isSaving, setIsSaving] = useState(false);
   const [isResendingVerification, setIsResendingVerification] = useState(false);
+  const [isSendingPasswordReset, setIsSendingPasswordReset] = useState(false);
+  const [hasReverifiedPendingSave, setHasReverifiedPendingSave] = useState(false);
+  const [reverifySuccessMessage, setReverifySuccessMessage] = useState<string | null>(null);
+  const [passwordResetSuccessMessage, setPasswordResetSuccessMessage] = useState<string | null>(null);
+  const [closeReminder, setCloseReminder] = useState<string | null>(null);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
@@ -168,6 +173,9 @@ export function EditFacultyModal({
     setProfileImageFile(null);
     setProfileImagePreviewUrl(selectedFaculty.profileImageUrl);
     setSaveError(null);
+    setHasReverifiedPendingSave(false);
+    setReverifySuccessMessage(null);
+    setCloseReminder(null);
   }, [selectedFaculty, degreePrograms, diplomaCourses]);
 
   useEffect(() => {
@@ -208,7 +216,12 @@ export function EditFacultyModal({
     if (fieldKey === "firstName") setFirstName(initialValues.firstName);
     if (fieldKey === "middleName") setMiddleName(initialValues.middleName);
     if (fieldKey === "lastName") setLastName(initialValues.lastName);
-    if (fieldKey === "email") setEmail(initialValues.email);
+    if (fieldKey === "email") {
+      setEmail(initialValues.email);
+      setHasReverifiedPendingSave(false);
+      setReverifySuccessMessage(null);
+    }
+    setCloseReminder(null);
     setActiveField(null);
   }
 
@@ -225,13 +238,15 @@ export function EditFacultyModal({
 
   const normalizedEmail = email.trim().toLowerCase();
   const normalizedInitialEmail = initialValues.email.trim().toLowerCase();
-  const isEmailModified = normalizedEmail !== normalizedInitialEmail;
+  const isEmailModified =
+    normalizedEmail.length > 0 && normalizedEmail !== normalizedInitialEmail;
 
   const hasChanges =
     firstName.trim() !== initialValues.firstName.trim() ||
     middleName.trim() !== initialValues.middleName.trim() ||
     lastName.trim() !== initialValues.lastName.trim() ||
     isEmailModified ||
+    hasReverifiedPendingSave ||
     programId !== initialValues.programId ||
     Boolean(profileImageFile);
 
@@ -246,68 +261,76 @@ export function EditFacultyModal({
     (p) => p.id === programId,
   );
 
+  function handleAttemptClose() {
+    if (hasChanges) {
+      setCloseReminder(
+        "You have unsaved changes. Please click 'Save Changes' first before closing.",
+      );
+      return;
+    }
+    onClose();
+  }
+
   async function handleResendVerificationOnly() {
-    if (!selectedFaculty) return;
+    if (!selectedFaculty || !isEmailModified || !isEmailValid) return;
     setIsResendingVerification(true);
     setSaveError(null);
+    setCloseReminder(null);
 
     try {
-      const formData = new FormData();
-      formData.append("facultyProfileId", selectedFaculty.id);
-      formData.append("firstName", firstName.trim());
-      formData.append("middleName", middleName.trim());
-      formData.append("lastName", lastName.trim());
-      formData.append("email", normalizedEmail);
-      formData.append("resendVerification", "true");
-
-      const response = await fetch("/api/staff/faculty/update", {
-        method: "PATCH",
-        body: formData,
-      });
-
-      const payload = await response.json();
-
-      if (!response.ok) {
-        throw new Error(
-          typeof payload === "object" && payload && "error" in payload
-            ? String((payload as { error?: unknown }).error)
-            : "Failed to send verification email",
-        );
-      }
-
-      setVerificationFeedback({
-        emailChanged: Boolean(payload.emailChanged),
-        verificationSent: Boolean(payload.verificationSent),
-        verificationError: payload.verificationError ?? null,
-        email: payload.email || normalizedEmail,
-      });
-      setInitialValues((prev) => ({
-        ...prev,
-        email: normalizedEmail,
-      }));
+      setHasReverifiedPendingSave(true);
+      setReverifySuccessMessage(
+        `Re-verification prepared for ${normalizedEmail}. Please click "Save Changes" below to apply and send the verification link.`,
+      );
       setActiveField(null);
-      setShowSuccessModal(true);
+    } finally {
+      setIsResendingVerification(false);
+    }
+  }
 
-      if (onSave && payload.emailChanged) {
-        await onSave({
-          id: selectedFaculty.id,
-          email: normalizedEmail,
-        });
+  async function handleSendPasswordReset() {
+    if (!selectedFaculty) return;
+    const targetResetEmail = initialValues.email.trim().toLowerCase() || normalizedEmail;
+    if (!targetResetEmail) return;
+
+    setIsSendingPasswordReset(true);
+    setSaveError(null);
+    setPasswordResetSuccessMessage(null);
+    setCloseReminder(null);
+
+    try {
+      const response = await fetch("/api/admin/reset-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          profileId: selectedFaculty.id,
+          email: targetResetEmail,
+          fullName: currentFullName || selectedFaculty.fullName,
+          accountType: "Faculty",
+        }),
+      });
+      const payload = await response.json();
+      if (!response.ok) {
+        throw new Error(payload.error || "Failed to send password reset email");
       }
+      setPasswordResetSuccessMessage(
+        payload.message || `Password reset link sent to ${targetResetEmail}.`,
+      );
     } catch (error) {
       setSaveError(
         error instanceof Error
           ? error.message
-          : "Failed to send verification email",
+          : "Failed to send password reset email",
       );
     } finally {
-      setIsResendingVerification(false);
+      setIsSendingPasswordReset(false);
     }
   }
 
   async function handleConfirmSave() {
     setIsSaving(true);
     setSaveError(null);
+    setCloseReminder(null);
 
     if (!selectedFaculty) {
       setSaveError("Faculty not selected.");
@@ -325,6 +348,9 @@ export function EditFacultyModal({
       formData.append("middle_name", middleName.trim());
       formData.append("last_name", lastName.trim());
       formData.append("email", normalizedEmail);
+      if (hasReverifiedPendingSave || isEmailModified) {
+        formData.append("resendVerification", "true");
+      }
       if (programId) {
         formData.append("programId", programId);
         formData.append("program_id", programId);
@@ -390,6 +416,9 @@ export function EditFacultyModal({
         programId,
       });
       setProfileImageFile(null);
+      setHasReverifiedPendingSave(false);
+      setReverifySuccessMessage(null);
+      setCloseReminder(null);
       setActiveField(null);
       setShowConfirmModal(false);
       setShowSuccessModal(true);
@@ -416,17 +445,17 @@ export function EditFacultyModal({
 
   return (
     <>
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
-        <div className="w-full max-w-xl max-h-[90vh] overflow-y-auto rounded-2xl border border-slate-200 dark:border-slate-800 bg-white text-slate-900 dark:bg-slate-900 dark:text-slate-100 p-6 shadow-2xl flex flex-col">
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-3 sm:p-4">
+        <div className="w-full max-w-xl max-h-[94vh] overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-800 bg-white text-slate-900 dark:bg-slate-900 dark:text-slate-100 shadow-2xl flex flex-col">
           <ModalHeader
             icon={User}
             title="Faculty Details"
             subtitle="View and manage faculty profile and department assignments"
-            className="-mx-6 -mt-6 mb-5 rounded-t-2xl"
-            onClose={onClose}
+            className="rounded-t-2xl shrink-0"
+            onClose={handleAttemptClose}
           />
 
-          <div className="space-y-5 flex-1">
+          <div className="p-4 sm:p-5 space-y-3 overflow-y-auto flex-1">
             {saveError ? (
               <AlertPopup
                 type="error"
@@ -436,64 +465,119 @@ export function EditFacultyModal({
               />
             ) : null}
 
-            <article className="rounded-xl border border-slate-200/80 bg-slate-50 dark:border-slate-800 dark:bg-slate-900/50 p-4 space-y-4">
-              <div className="flex items-center gap-4">
-                <div className="flex h-18 w-18 shrink-0 items-center justify-center overflow-hidden rounded-full border-2 border-amber-500/30 bg-slate-100 dark:bg-slate-800 text-lg font-bold text-slate-700 dark:text-slate-300 shadow-sm">
-                  {profileImagePreviewUrl ? (
-                    <img
-                      src={profileImagePreviewUrl}
-                      alt={selectedFaculty.fullName}
-                      className="h-full w-full object-cover"
-                    />
-                  ) : (
-                    <span>{buildFacultyInitials(selectedFaculty.fullName)}</span>
-                  )}
+            {closeReminder ? (
+              <AlertPopup
+                type="warning"
+                message={closeReminder}
+                position="inline"
+                onClose={() => setCloseReminder(null)}
+              />
+            ) : null}
+
+            {reverifySuccessMessage ? (
+              <AlertPopup
+                type="info"
+                message={reverifySuccessMessage}
+                position="inline"
+                onClose={() => setReverifySuccessMessage(null)}
+              />
+            ) : null}
+
+            {passwordResetSuccessMessage ? (
+              <AlertPopup
+                type="success"
+                message={passwordResetSuccessMessage}
+                position="inline"
+                onClose={() => setPasswordResetSuccessMessage(null)}
+              />
+            ) : null}
+
+            <article className="rounded-xl border border-slate-200/80 bg-slate-50 dark:border-slate-800 dark:bg-slate-900/50 p-3.5 space-y-3">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className="flex h-13 w-13 shrink-0 items-center justify-center overflow-hidden rounded-full border-2 border-amber-500/30 bg-slate-100 dark:bg-slate-800 text-base font-bold text-slate-700 dark:text-slate-300 shadow-sm">
+                    {profileImagePreviewUrl ? (
+                      <img
+                        src={profileImagePreviewUrl}
+                        alt={selectedFaculty.fullName}
+                        className="h-full w-full object-cover"
+                      />
+                    ) : (
+                      <span>{buildFacultyInitials(selectedFaculty.fullName)}</span>
+                    )}
+                  </div>
+                  <div className="space-y-1 min-w-0">
+                    <p className="text-[11px] uppercase tracking-[0.16em] text-slate-500 dark:text-slate-400 font-semibold">
+                      Profile Picture
+                    </p>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() =>
+                          document
+                            .getElementById("facultyProfileImageInput")
+                            ?.click()
+                        }
+                        className="rounded-lg bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 dark:bg-slate-800 dark:hover:bg-slate-750 dark:text-slate-200 dark:border-slate-700 px-2.5 py-1 text-xs font-semibold transition cursor-pointer shadow-2xs"
+                      >
+                        Change Photo
+                      </button>
+                      {profileImageFile ? (
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-xs text-amber-600 dark:text-amber-400 truncate max-w-[120px] font-medium">
+                            {profileImageFile.name}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setProfileImageFile(null);
+                              const input = document.getElementById(
+                                "facultyProfileImageInput",
+                              ) as HTMLInputElement | null;
+                              if (input) input.value = "";
+                            }}
+                            className="text-xs text-rose-500 hover:text-rose-600 hover:underline cursor-pointer font-semibold"
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                      ) : null}
+                    </div>
+                  </div>
                 </div>
-                <div className="space-y-1.5 flex-1 min-w-0">
-                  <p className="text-xs uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400 font-semibold">
-                    Profile Picture
-                  </p>
-                  <div className="flex flex-wrap items-center gap-2">
-                    <button
-                      type="button"
-                      onClick={() =>
-                        document
-                          .getElementById("facultyProfileImageInput")
-                          ?.click()
-                      }
-                      className="rounded-lg bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 dark:bg-slate-800 dark:hover:bg-slate-750 dark:text-slate-200 dark:border-slate-700 px-3 py-1.5 text-xs font-semibold transition cursor-pointer shadow-2xs"
+
+                <div className="flex items-center gap-4 border-t sm:border-t-0 pt-2 sm:pt-0 w-full sm:w-auto justify-between sm:justify-end">
+                  <div className="space-y-0.5">
+                    <p className="text-[10px] uppercase tracking-[0.15em] text-slate-500 dark:text-slate-400 font-semibold">
+                      Account Status
+                    </p>
+                    <p
+                      className={`text-xs font-semibold inline-flex items-center px-2 py-0.5 rounded-md border shadow-2xs ${
+                        selectedFaculty.is_active
+                          ? "bg-[#0b5336] text-white border-[#08412a]"
+                          : "bg-[#780000] text-white border-[#5e0000]"
+                      }`}
                     >
-                      Change Photo
-                    </button>
-                    {profileImageFile ? (
-                      <div className="flex items-center gap-2">
-                        <span className="text-xs text-amber-600 dark:text-amber-400 truncate max-w-[140px] font-medium">
-                          {profileImageFile.name}
-                        </span>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setProfileImageFile(null);
-                            const input = document.getElementById(
-                              "facultyProfileImageInput",
-                            ) as HTMLInputElement | null;
-                            if (input) input.value = "";
-                          }}
-                          className="text-xs text-rose-500 hover:text-rose-600 hover:underline cursor-pointer font-semibold"
-                        >
-                          Cancel
-                        </button>
-                      </div>
-                    ) : null}
+                      {selectedFaculty.is_active ? "Active" : "Inactive"}
+                    </p>
+                  </div>
+
+                  <div className="space-y-0.5 text-right">
+                    <p className="text-[10px] uppercase tracking-[0.15em] text-slate-500 dark:text-slate-400 font-semibold">
+                      Created Date
+                    </p>
+                    <p className="text-xs font-medium text-slate-900 dark:text-slate-200">
+                      {formattedDate}
+                    </p>
                   </div>
                 </div>
               </div>
 
-              <div className="grid gap-3.5 sm:grid-cols-2 pt-2 border-t border-slate-200/80 dark:border-slate-800">
-                <div className="space-y-1.5">
+              <div className="grid gap-2.5 sm:grid-cols-3 pt-2.5 border-t border-slate-200/80 dark:border-slate-800">
+                <div className="space-y-1">
                   <label
                     htmlFor="faculty-first-name"
-                    className="block text-xs uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400 font-semibold"
+                    className="block text-[11px] uppercase tracking-[0.16em] text-slate-500 dark:text-slate-400 font-semibold"
                   >
                     First Name
                   </label>
@@ -502,13 +586,16 @@ export function EditFacultyModal({
                       id="faculty-first-name"
                       ref={firstNameInputRef}
                       readOnly={activeField !== "firstName"}
-                      className={`w-full bg-slate-50 dark:bg-slate-950 border rounded-xl pl-3.5 pr-9 py-2 text-xs font-medium text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 outline-none focus:outline-none focus-visible:outline-none transition-all ${
+                      className={`w-full bg-slate-50 dark:bg-slate-950 border rounded-xl pl-3 pr-8 py-1.5 text-xs font-medium text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 outline-none focus:outline-none focus-visible:outline-none transition-all ${
                         activeField === "firstName"
                           ? "border-amber-500 ring-2 ring-amber-500/80 dark:ring-amber-500/60"
                           : "border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 cursor-default"
                       }`}
                       value={firstName}
-                      onChange={(event) => setFirstName(event.target.value)}
+                      onChange={(event) => {
+                        setFirstName(event.target.value);
+                        setCloseReminder(null);
+                      }}
                       onBlur={() => setActiveField(null)}
                       placeholder="First name"
                     />
@@ -519,7 +606,7 @@ export function EditFacultyModal({
                         aria-label="Cancel edit"
                         onMouseDown={(e) => e.preventDefault()}
                         onClick={() => handleCancelEdit("firstName")}
-                        className="absolute right-1.5 top-1/2 -translate-y-1/2 flex h-6 w-6 items-center justify-center rounded-lg border border-[#5e0000] bg-[#780000] hover:bg-[#5e0000] text-white transition-all shadow-2xs cursor-pointer active:scale-95"
+                        className="absolute right-1.5 top-1/2 -translate-y-1/2 flex h-5.5 w-5.5 items-center justify-center rounded-md border border-[#5e0000] bg-[#780000] hover:bg-[#5e0000] text-white transition-all shadow-2xs cursor-pointer active:scale-95"
                       >
                         <AppIcon icon={Xmark} size="xs" color="inherit" />
                       </button>
@@ -532,7 +619,7 @@ export function EditFacultyModal({
                         onClick={() =>
                           handleFocusField("firstName", firstNameInputRef)
                         }
-                        className="absolute right-1.5 top-1/2 -translate-y-1/2 flex h-6 w-6 items-center justify-center rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800/80 text-slate-600 dark:text-slate-300 hover:border-amber-500 hover:text-amber-500 dark:hover:border-amber-400 dark:hover:text-amber-400 transition-all shadow-2xs cursor-pointer active:scale-95"
+                        className="absolute right-1.5 top-1/2 -translate-y-1/2 flex h-5.5 w-5.5 items-center justify-center rounded-md border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800/80 text-slate-600 dark:text-slate-300 hover:border-amber-500 hover:text-amber-500 dark:hover:border-amber-400 dark:hover:text-amber-400 transition-all shadow-2xs cursor-pointer active:scale-95"
                       >
                         <AppIcon icon={EditPencil} size="xs" color="inherit" />
                       </button>
@@ -540,10 +627,10 @@ export function EditFacultyModal({
                   </div>
                 </div>
 
-                <div className="space-y-1.5">
+                <div className="space-y-1">
                   <label
                     htmlFor="faculty-middle-name"
-                    className="block text-xs uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400 font-semibold"
+                    className="block text-[11px] uppercase tracking-[0.16em] text-slate-500 dark:text-slate-400 font-semibold"
                   >
                     Middle Name
                   </label>
@@ -552,13 +639,16 @@ export function EditFacultyModal({
                       id="faculty-middle-name"
                       ref={middleNameInputRef}
                       readOnly={activeField !== "middleName"}
-                      className={`w-full bg-slate-50 dark:bg-slate-950 border rounded-xl pl-3.5 pr-9 py-2 text-xs font-medium text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 outline-none focus:outline-none focus-visible:outline-none transition-all ${
+                      className={`w-full bg-slate-50 dark:bg-slate-950 border rounded-xl pl-3 pr-8 py-1.5 text-xs font-medium text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 outline-none focus:outline-none focus-visible:outline-none transition-all ${
                         activeField === "middleName"
                           ? "border-amber-500 ring-2 ring-amber-500/80 dark:ring-amber-500/60"
                           : "border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 cursor-default"
                       }`}
                       value={middleName}
-                      onChange={(event) => setMiddleName(event.target.value)}
+                      onChange={(event) => {
+                        setMiddleName(event.target.value);
+                        setCloseReminder(null);
+                      }}
                       onBlur={() => setActiveField(null)}
                       placeholder="Middle name"
                     />
@@ -569,7 +659,7 @@ export function EditFacultyModal({
                         aria-label="Cancel edit"
                         onMouseDown={(e) => e.preventDefault()}
                         onClick={() => handleCancelEdit("middleName")}
-                        className="absolute right-1.5 top-1/2 -translate-y-1/2 flex h-6 w-6 items-center justify-center rounded-lg border border-[#5e0000] bg-[#780000] hover:bg-[#5e0000] text-white transition-all shadow-2xs cursor-pointer active:scale-95"
+                        className="absolute right-1.5 top-1/2 -translate-y-1/2 flex h-5.5 w-5.5 items-center justify-center rounded-md border border-[#5e0000] bg-[#780000] hover:bg-[#5e0000] text-white transition-all shadow-2xs cursor-pointer active:scale-95"
                       >
                         <AppIcon icon={Xmark} size="xs" color="inherit" />
                       </button>
@@ -582,7 +672,7 @@ export function EditFacultyModal({
                         onClick={() =>
                           handleFocusField("middleName", middleNameInputRef)
                         }
-                        className="absolute right-1.5 top-1/2 -translate-y-1/2 flex h-6 w-6 items-center justify-center rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800/80 text-slate-600 dark:text-slate-300 hover:border-amber-500 hover:text-amber-500 dark:hover:border-amber-400 dark:hover:text-amber-400 transition-all shadow-2xs cursor-pointer active:scale-95"
+                        className="absolute right-1.5 top-1/2 -translate-y-1/2 flex h-5.5 w-5.5 items-center justify-center rounded-md border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800/80 text-slate-600 dark:text-slate-300 hover:border-amber-500 hover:text-amber-500 dark:hover:border-amber-400 dark:hover:text-amber-400 transition-all shadow-2xs cursor-pointer active:scale-95"
                       >
                         <AppIcon icon={EditPencil} size="xs" color="inherit" />
                       </button>
@@ -590,10 +680,10 @@ export function EditFacultyModal({
                   </div>
                 </div>
 
-                <div className="space-y-1.5 sm:col-span-2">
+                <div className="space-y-1">
                   <label
                     htmlFor="faculty-last-name"
-                    className="block text-xs uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400 font-semibold"
+                    className="block text-[11px] uppercase tracking-[0.16em] text-slate-500 dark:text-slate-400 font-semibold"
                   >
                     Last Name
                   </label>
@@ -602,13 +692,16 @@ export function EditFacultyModal({
                       id="faculty-last-name"
                       ref={lastNameInputRef}
                       readOnly={activeField !== "lastName"}
-                      className={`w-full bg-slate-50 dark:bg-slate-950 border rounded-xl pl-3.5 pr-9 py-2 text-xs font-medium text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 outline-none focus:outline-none focus-visible:outline-none transition-all ${
+                      className={`w-full bg-slate-50 dark:bg-slate-950 border rounded-xl pl-3 pr-8 py-1.5 text-xs font-medium text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 outline-none focus:outline-none focus-visible:outline-none transition-all ${
                         activeField === "lastName"
                           ? "border-amber-500 ring-2 ring-amber-500/80 dark:ring-amber-500/60"
                           : "border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 cursor-default"
                       }`}
                       value={lastName}
-                      onChange={(event) => setLastName(event.target.value)}
+                      onChange={(event) => {
+                        setLastName(event.target.value);
+                        setCloseReminder(null);
+                      }}
                       onBlur={() => setActiveField(null)}
                       placeholder="Last name"
                     />
@@ -619,7 +712,7 @@ export function EditFacultyModal({
                         aria-label="Cancel edit"
                         onMouseDown={(e) => e.preventDefault()}
                         onClick={() => handleCancelEdit("lastName")}
-                        className="absolute right-1.5 top-1/2 -translate-y-1/2 flex h-6 w-6 items-center justify-center rounded-lg border border-[#5e0000] bg-[#780000] hover:bg-[#5e0000] text-white transition-all shadow-2xs cursor-pointer active:scale-95"
+                        className="absolute right-1.5 top-1/2 -translate-y-1/2 flex h-5.5 w-5.5 items-center justify-center rounded-md border border-[#5e0000] bg-[#780000] hover:bg-[#5e0000] text-white transition-all shadow-2xs cursor-pointer active:scale-95"
                       >
                         <AppIcon icon={Xmark} size="xs" color="inherit" />
                       </button>
@@ -632,7 +725,7 @@ export function EditFacultyModal({
                         onClick={() =>
                           handleFocusField("lastName", lastNameInputRef)
                         }
-                        className="absolute right-1.5 top-1/2 -translate-y-1/2 flex h-6 w-6 items-center justify-center rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800/80 text-slate-600 dark:text-slate-300 hover:border-amber-500 hover:text-amber-500 dark:hover:border-amber-400 dark:hover:text-amber-400 transition-all shadow-2xs cursor-pointer active:scale-95"
+                        className="absolute right-1.5 top-1/2 -translate-y-1/2 flex h-5.5 w-5.5 items-center justify-center rounded-md border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800/80 text-slate-600 dark:text-slate-300 hover:border-amber-500 hover:text-amber-500 dark:hover:border-amber-400 dark:hover:text-amber-400 transition-all shadow-2xs cursor-pointer active:scale-95"
                       >
                         <AppIcon icon={EditPencil} size="xs" color="inherit" />
                       </button>
@@ -641,19 +734,22 @@ export function EditFacultyModal({
                 </div>
               </div>
 
-              <div className="space-y-1.5 pt-2 border-t border-slate-200/80 dark:border-slate-800">
+              <div className="space-y-1 pt-2.5 border-t border-slate-200/80 dark:border-slate-800">
                 <label
                   htmlFor="faculty-department-program"
-                  className="block text-xs uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400 font-semibold"
+                  className="block text-[11px] uppercase tracking-[0.16em] text-slate-500 dark:text-slate-400 font-semibold"
                 >
                   Department / Program
                 </label>
                 <select
                   id="faculty-department-program"
                   value={programId}
-                  onChange={(e) => setProgramId(e.target.value)}
+                  onChange={(e) => {
+                    setProgramId(e.target.value);
+                    setCloseReminder(null);
+                  }}
                   disabled={isLoadingPrograms}
-                  className="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 px-3.5 py-2.5 text-xs font-medium text-slate-900 dark:text-slate-100 outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/80 dark:focus:ring-amber-500/60 transition-all cursor-pointer"
+                  className="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 px-3 py-1.5 text-xs font-medium text-slate-900 dark:text-slate-100 outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/80 dark:focus:ring-amber-500/60 transition-all cursor-pointer"
                 >
                   <option value="">-- Select Program / Department --</option>
                   {degreePrograms.length > 0 && (
@@ -677,30 +773,55 @@ export function EditFacultyModal({
                 </select>
               </div>
 
-              <div className="space-y-2 pt-2 border-t border-slate-200/80 dark:border-slate-800">
-                <div className="flex items-center justify-between gap-2">
+              <div className="space-y-1.5 pt-2.5 border-t border-slate-200/80 dark:border-slate-800">
+                <div className="flex flex-wrap items-center justify-between gap-2">
                   <label
                     htmlFor="faculty-email-address"
-                    className="block text-xs uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400 font-semibold"
+                    className="block text-[11px] uppercase tracking-[0.16em] text-slate-500 dark:text-slate-400 font-semibold"
                   >
                     Email Address (Account Recovery / Change Email)
                   </label>
-                  <button
-                    type="button"
-                    onClick={() => void handleResendVerificationOnly()}
-                    disabled={isResendingVerification || isSaving || !isEmailValid}
-                    title="Send a verification email to this address without modifying account data"
-                    className="inline-flex items-center gap-1.5 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 border border-amber-600/30 px-3 py-1.5 text-xs font-semibold transition-colors cursor-pointer disabled:opacity-50 shadow-2xs shrink-0 whitespace-nowrap"
-                  >
-                    <AppIcon icon={SendMail} size="xs" color="inherit" className="text-slate-950" />
-                    <span>
-                      {isResendingVerification
-                        ? "Sending..."
-                        : isEmailModified
-                          ? "Change Email & Verify Now"
-                          : "Re-verify Email"}
-                    </span>
-                  </button>
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => void handleSendPasswordReset()}
+                      disabled={isSendingPasswordReset || isSaving}
+                      title="Send password reset email to faculty member"
+                      className="inline-flex items-center gap-1.5 rounded-lg bg-[#780000] hover:bg-[#5e0000] text-white border border-[#5e0000] px-2.5 py-1 text-xs font-semibold transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed shadow-2xs shrink-0 whitespace-nowrap"
+                    >
+                      <AppIcon icon={Key} size="xs" color="white" />
+                      <span>
+                        {isSendingPasswordReset
+                          ? "Sending Reset..."
+                          : "Reset Password"}
+                      </span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => void handleResendVerificationOnly()}
+                      disabled={
+                        isResendingVerification ||
+                        isSaving ||
+                        !isEmailModified ||
+                        !isEmailValid
+                      }
+                      title={
+                        !isEmailModified
+                          ? "Change the email address first to re-verify"
+                          : "Re-verify the updated email address"
+                      }
+                      className="inline-flex items-center gap-1.5 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 border border-amber-600/30 px-2.5 py-1 text-xs font-semibold transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed shadow-2xs shrink-0 whitespace-nowrap"
+                    >
+                      <AppIcon icon={SendMail} size="xs" color="inherit" className="text-slate-950" />
+                      <span>
+                        {isResendingVerification
+                          ? "Sending..."
+                          : hasReverifiedPendingSave
+                            ? "Re-verify Ready"
+                            : "Re-verify Email"}
+                      </span>
+                    </button>
+                  </div>
                 </div>
 
                 <div className="relative flex items-center">
@@ -709,13 +830,24 @@ export function EditFacultyModal({
                     ref={emailInputRef}
                     type="email"
                     readOnly={activeField !== "email"}
-                    className={`w-full bg-slate-50 dark:bg-slate-950 border rounded-xl pl-3.5 pr-9 py-2 text-xs font-medium text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 outline-none focus:outline-none focus-visible:outline-none transition-all ${
+                    className={`w-full bg-slate-50 dark:bg-slate-950 border rounded-xl pl-3 pr-8 py-1.5 text-xs font-medium text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 outline-none focus:outline-none focus-visible:outline-none transition-all ${
                       activeField === "email"
                         ? "border-amber-500 ring-2 ring-amber-500/80 dark:ring-amber-500/60"
                         : "border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 cursor-default"
                     }`}
                     value={email}
-                    onChange={(event) => setEmail(event.target.value)}
+                    onChange={(event) => {
+                      const nextEmail = event.target.value;
+                      setEmail(nextEmail);
+                      setCloseReminder(null);
+                      if (
+                        nextEmail.trim().toLowerCase() ===
+                        initialValues.email.trim().toLowerCase()
+                      ) {
+                        setHasReverifiedPendingSave(false);
+                        setReverifySuccessMessage(null);
+                      }
+                    }}
                     onBlur={() => setActiveField(null)}
                     placeholder="faculty@pup.edu.ph"
                   />
@@ -726,7 +858,7 @@ export function EditFacultyModal({
                       aria-label="Cancel email edit"
                       onMouseDown={(e) => e.preventDefault()}
                       onClick={() => handleCancelEdit("email")}
-                      className="absolute right-1.5 top-1/2 -translate-y-1/2 flex h-6 w-6 items-center justify-center rounded-lg border border-[#5e0000] bg-[#780000] hover:bg-[#5e0000] text-white transition-all shadow-2xs cursor-pointer active:scale-95"
+                      className="absolute right-1.5 top-1/2 -translate-y-1/2 flex h-5.5 w-5.5 items-center justify-center rounded-md border border-[#5e0000] bg-[#780000] hover:bg-[#5e0000] text-white transition-all shadow-2xs cursor-pointer active:scale-95"
                     >
                       <AppIcon icon={Xmark} size="xs" color="inherit" />
                     </button>
@@ -737,42 +869,16 @@ export function EditFacultyModal({
                       aria-label="Change email address"
                       onMouseDown={(e) => e.preventDefault()}
                       onClick={() => handleFocusField("email", emailInputRef)}
-                      className="absolute right-1.5 top-1/2 -translate-y-1/2 flex h-6 w-6 items-center justify-center rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800/80 text-slate-600 dark:text-slate-300 hover:border-amber-500 hover:text-amber-500 dark:hover:border-amber-400 dark:hover:text-amber-400 transition-all shadow-2xs cursor-pointer active:scale-95"
+                      className="absolute right-1.5 top-1/2 -translate-y-1/2 flex h-5.5 w-5.5 items-center justify-center rounded-md border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800/80 text-slate-600 dark:text-slate-300 hover:border-amber-500 hover:text-amber-500 dark:hover:border-amber-400 dark:hover:text-amber-400 transition-all shadow-2xs cursor-pointer active:scale-95"
                     >
                       <AppIcon icon={EditPencil} size="xs" color="inherit" />
                     </button>
                   )}
                 </div>
 
-                <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed">
+                <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-snug">
                   If the faculty member lost access to their email or their email was compromised, update only the email here. All account data, submissions, and compliance records remain intact, and a new verification link will be sent to the new email.
                 </p>
-              </div>
-
-              <div className="grid gap-3 sm:grid-cols-2 pt-2 border-t border-slate-200/80 dark:border-slate-800">
-                <div className="space-y-1">
-                  <p className="text-xs uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400 font-semibold">
-                    Account Status
-                  </p>
-                  <p
-                    className={`text-xs font-semibold inline-flex items-center px-2 py-0.5 rounded-md border shadow-2xs ${
-                      selectedFaculty.is_active
-                        ? "bg-[#0b5336] text-white border-[#08412a]"
-                        : "bg-[#780000] text-white border-[#5e0000]"
-                    }`}
-                  >
-                    {selectedFaculty.is_active ? "Active" : "Inactive"}
-                  </p>
-                </div>
-
-                <div className="space-y-1">
-                  <p className="text-xs uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400 font-semibold">
-                    Created Date
-                  </p>
-                  <p className="text-xs font-medium text-slate-900 dark:text-slate-200">
-                    {formattedDate}
-                  </p>
-                </div>
               </div>
             </article>
 
@@ -783,15 +889,16 @@ export function EditFacultyModal({
               className="hidden"
               onChange={(event) => {
                 setProfileImageFile(event.target.files?.[0] ?? null);
+                setCloseReminder(null);
               }}
             />
           </div>
 
-          <div className="mt-6 flex items-center justify-end gap-2.5 pt-4 border-t border-slate-200 dark:border-slate-800">
+          <div className="flex items-center justify-end gap-2.5 px-5 py-3 border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shrink-0 rounded-b-2xl">
             <Button
               type="button"
               variant="maroon"
-              onClick={onClose}
+              onClick={handleAttemptClose}
               className="cursor-pointer"
             >
               Close

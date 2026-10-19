@@ -284,12 +284,12 @@ export function UserRegistrationLogsModal({
     return logs.filter((item) => {
       // Role filter
       if (targetRole === "admin") {
-        if (adminRoleFilter === "super" && item.role !== "Admin") return false;
-        if (adminRoleFilter === "regular" && item.role !== "Admin") return false;
+        if (adminRoleFilter === "super" && item.role !== "Admin" && item.role !== "Super Admin") return false;
+        if (adminRoleFilter === "regular" && item.role !== "Staff") return false;
       } else if (targetRole === "all" && adminRoleFilter !== "all") {
         if (adminRoleFilter === "faculty" && item.role !== "Faculty") return false;
-        if (adminRoleFilter === "regular" && item.role !== "Admin") return false;
-        if (adminRoleFilter === "super" && item.role !== "Admin") return false;
+        if (adminRoleFilter === "regular" && item.role !== "Staff") return false;
+        if (adminRoleFilter === "super" && item.role !== "Admin" && item.role !== "Super Admin") return false;
       }
 
       // Status match
@@ -332,13 +332,13 @@ export function UserRegistrationLogsModal({
   const modalTitle = isFacultyMode
     ? "Faculty Registration Logs"
     : isAdminMode
-    ? "Admin Registration Logs"
+    ? "Staff Registration Logs"
     : "User Registration Logs";
 
   const modalSubtitle = isFacultyMode
     ? "Track sent faculty invitations, delivery status, and account activation progress."
     : isAdminMode
-    ? "Track sent administrator invitations, delivery status, and account activation progress."
+    ? "Track sent staff and administrator invitations, delivery status, and account activation progress."
     : "Track sent invitations, delivery status, and account activation progress.";
 
   return (
@@ -420,7 +420,7 @@ export function UserRegistrationLogsModal({
                       isFacultyMode
                         ? "Search faculty by name or email..."
                         : isAdminMode
-                        ? "Search admin by name or email..."
+                        ? "Search staff by name or email..."
                         : "Search by name or email..."
                     }
                     value={searchTerm}
@@ -451,7 +451,7 @@ export function UserRegistrationLogsModal({
                     className="h-9 flex-1 sm:flex-initial sm:w-36 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-3 text-xs font-semibold text-slate-800 dark:text-slate-200 outline-none focus:border-[#780000] focus:ring-1 focus:ring-[#780000]/30 transition cursor-pointer shadow-2xs"
                   >
                     <option value="all">All Roles</option>
-                    <option value="regular">Admin</option>
+                    <option value="regular">Staff</option>
                     <option value="super">Admin</option>
                   </select>
                 ) : targetRole === "all" ? (
@@ -462,7 +462,7 @@ export function UserRegistrationLogsModal({
                   >
                     <option value="all">All Roles</option>
                     <option value="faculty">Faculty</option>
-                    <option value="regular">Admin</option>
+                    <option value="regular">Staff</option>
                     <option value="super">Admin</option>
                   </select>
                 ) : null}

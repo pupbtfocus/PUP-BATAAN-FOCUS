@@ -14,7 +14,7 @@ export interface RegistrationLogItem {
   id: string;
   fullName: string;
   email: string;
-  role: "Faculty" | "Admin" | "Super Admin";
+  role: "Faculty" | "Staff" | "Admin" | "Super Admin";
   status: "Accepted" | "Pending";
   invitedAt: string;
   confirmedAt: string | null;
@@ -81,6 +81,20 @@ export async function GET(request: NextRequest) {
       }
     }
 
+    const staffEmails = new Set<string>();
+    const staffProfileIds = new Set<string>();
+    try {
+      const { data: staffRows } = await supabase
+        .from("staff")
+        .select("profile_id, email");
+      if (staffRows) {
+        for (const s of staffRows) {
+          if (s.profile_id) staffProfileIds.add(s.profile_id);
+          if (s.email) staffEmails.add(s.email.toLowerCase().trim());
+        }
+      }
+    } catch {}
+
     // Fetch user_roles with roles code for reliable role resolution
     const { data: userRolesData } = await supabase
       .from("user_roles")
@@ -111,12 +125,11 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    // 4. Fetch audit logs for invite events and cancellations
     // 4. Fetch audit logs for invite events, cancellations, and deletions
     const { data: inviteAuditLogs } = await supabase
       .from("audit_logs")
       .select("id, actor_id, action, entity_id, metadata, created_at")
-      .in("action", ["faculty.create", "admin.create", "user.invite"])
+      .in("action", ["faculty.create", "admin.create", "staff.create", "user.invite"])
       .order("created_at", { ascending: false });
 
     const { data: cancelledAuditLogs } = await supabase
@@ -128,7 +141,7 @@ export async function GET(request: NextRequest) {
     const { data: deletedAuditLogs } = await supabase
       .from("audit_logs")
       .select("id, entity_id, metadata, created_at")
-      .in("action", ["user.delete", "faculty.delete", "admin.delete"])
+      .in("action", ["user.delete", "faculty.delete", "admin.delete", "staff.delete"])
       .order("created_at", { ascending: false });
 
     const cancelledByEmail = new Map<string, string>();
@@ -188,7 +201,7 @@ export async function GET(request: NextRequest) {
 
     const logsMap = new Map<string, RegistrationLogItem>();
 
-    // Process all Auth Users (Faculty & Admin)
+    // Process all Auth Users (Faculty, Staff & Admin)
     for (const u of authUsers) {
       const email = (u.email || "").trim().toLowerCase();
       if (!email) continue;
@@ -215,26 +228,38 @@ export async function GET(request: NextRequest) {
         continue;
       }
 
-      // Determine Role accurately using auth metadata, user_roles table, profile, or audit log
+      // Determine Role accurately using auth metadata, staff table, user_roles table, profile, or audit log
       const dbRole = profile?.id ? roleByProfileId.get(profile.id) : null;
+      const isStaffMember =
+        staffEmails.has(email) ||
+        (profile?.id ? staffProfileIds.has(profile.id) : false);
       const auditRole =
         (auditLog?.metadata?.role as string | undefined) ||
-        (auditLog?.action === "admin.create" ? ROLE.ADMIN : "");
+        (auditLog?.action === "staff.create" || auditLog?.action === "admin.create"
+          ? ROLE.STAFF
+          : "");
 
       const rawRole = (
         u.user_metadata?.role ||
         u.app_metadata?.role ||
+        (isStaffMember ? ROLE.STAFF : "") ||
         dbRole ||
         profile?.role ||
         auditRole ||
         ""
       ).toLowerCase();
 
-      let displayRole: "Faculty" | "Admin" | "Super Admin" = "Faculty";
-      if (rawRole.includes("super")) {
-        displayRole = "Super Admin";
-      } else if (rawRole.includes("admin")) {
+      const isSuperAdminEmail =
+        email === "pupbataanfocus.superadmin@gmail.com" ||
+        email === "pupbataanfocus.admin@gmail.com";
+
+      let displayRole: "Faculty" | "Staff" | "Admin" | "Super Admin" = "Faculty";
+      if (isSuperAdminEmail || rawRole.includes("super")) {
         displayRole = "Admin";
+      } else if (rawRole.includes("staff") || isStaffMember) {
+        displayRole = "Staff";
+      } else if (rawRole.includes("admin")) {
+        displayRole = "Staff";
       } else {
         displayRole = "Faculty";
       }
@@ -342,7 +367,7 @@ export async function GET(request: NextRequest) {
           id: log.id,
           fullName: fallbackProfile?.full_name || targetFullName,
           email: targetEmail,
-          role: isFaculty ? "Faculty" : "Admin",
+          role: isFaculty ? "Faculty" : "Staff",
           status: "Pending",
           invitedAt: log.created_at,
           confirmedAt: null,
@@ -359,10 +384,11 @@ export async function GET(request: NextRequest) {
     // Filter by role scope if requested
     let roleScopedItems = Array.from(logsMap.values());
     if (roleFilter !== "all") {
-      if (roleFilter === "admin") {
-        roleScopedItems = roleScopedItems.filter((item) =>
-          item.role.toLowerCase().includes("admin")
-        );
+      if (roleFilter === "admin" || roleFilter === "staff") {
+        roleScopedItems = roleScopedItems.filter((item) => {
+          const r = item.role.toLowerCase();
+          return r.includes("admin") || r.includes("staff");
+        });
       } else {
         roleScopedItems = roleScopedItems.filter(
           (item) => item.role.toLowerCase() === roleFilter
@@ -645,8 +671,14 @@ export async function DELETE(request: NextRequest) {
       // Clean up profiles & assignments
       if (prof?.id) {
         await supabase.from("faculty_program_assignments").delete().eq("faculty_profile_id", prof.id);
+        await supabase.from("staff").delete().eq("profile_id", prof.id);
+        await supabase.from("admins").delete().eq("profile_id", prof.id);
         await supabase.from("user_roles").delete().eq("profile_id", prof.id);
         await supabase.from("profiles").delete().eq("id", prof.id);
+      }
+      if (email) {
+        await supabase.from("staff").delete().ilike("email", email);
+        await supabase.from("admins").delete().ilike("email", email);
       }
     } else if (email) {
       // Clean up profile by email if auth user is already gone
@@ -658,9 +690,13 @@ export async function DELETE(request: NextRequest) {
 
       if (prof?.id) {
         await supabase.from("faculty_program_assignments").delete().eq("faculty_profile_id", prof.id);
+        await supabase.from("staff").delete().eq("profile_id", prof.id);
+        await supabase.from("admins").delete().eq("profile_id", prof.id);
         await supabase.from("user_roles").delete().eq("profile_id", prof.id);
         await supabase.from("profiles").delete().eq("id", prof.id);
       }
+      await supabase.from("staff").delete().ilike("email", email);
+      await supabase.from("admins").delete().ilike("email", email);
     }
 
     // Log the cancellation in audit_logs

@@ -63,7 +63,6 @@ export function canManageStaffAccount(params: {
   const targetEmail = params.targetEmail?.toLowerCase().trim();
   const actorEmail = params.actorEmail?.toLowerCase().trim();
   const targetRole = (params.targetRole || "").toLowerCase();
-  const isTargetAdmin = targetRole.includes("super") || targetRole === "admin";
 
   // The original primary Admin cannot be deactivated or deleted
   if (isOriginalAdmin(targetEmail)) {
@@ -79,14 +78,18 @@ export function canManageStaffAccount(params: {
     return false;
   }
 
-  // Staff can be managed by any authorized manager
-  if (!isTargetAdmin) {
+  // Primary Admin can manage all staff/admin accounts
+  if (isOriginalAdmin(actorEmail)) {
     return true;
   }
 
-  // QA Admins can be edited, deactivated, and deleted by original Admin
-  if (isQaAdmin(targetEmail)) {
-    return isOriginalAdmin(actorEmail);
+  // Staff accounts can be managed by any authorized manager
+  const isTargetSuperAdmin =
+    targetRole.includes("super") ||
+    Boolean(targetEmail && targetEmail.startsWith("qa.superadmin"));
+
+  if (!isTargetSuperAdmin) {
+    return true;
   }
 
   return false;
