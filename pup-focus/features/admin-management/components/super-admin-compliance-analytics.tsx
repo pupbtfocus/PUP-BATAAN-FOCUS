@@ -192,7 +192,7 @@ export function SuperAdminComplianceAnalytics({
 
   return (
     <section className="mb-6">
-      <div className="rounded-2xl border-2 border-amber-400 dark:border-amber-500/60 bg-white dark:bg-slate-900 p-5 sm:p-6 shadow-xs space-y-5">
+      <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 sm:p-6 shadow-xs space-y-5">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
             <span className="text-[11px] font-bold uppercase tracking-wider text-[#800000] dark:text-amber-400">

@@ -141,21 +141,30 @@ export function SubmissionWindowCountdown({
   // Completed all mandatory requirements for the semester
   if (isAllValidated) {
     return (
-      <div className="rounded-xl border border-emerald-500/40 bg-[#08412a]/90 p-3.5 shadow-xs text-white text-center">
-        <div className="flex items-center justify-center gap-2">
-          <AppIcon icon={CheckCircle} size="sm" color="inherit" className="text-emerald-300 shrink-0" />
-          <span className="text-xs font-bold uppercase tracking-[0.15em] text-emerald-200">
-            All Requirements Done
+      <div className="relative overflow-hidden rounded-2xl border border-amber-400/50 bg-black/20 p-3.5 shadow-sm text-white text-center space-y-2">
+        <div className="inline-flex items-center justify-center gap-1.5 rounded-full border border-emerald-400/40 bg-[#0b5336] px-3 py-1 shadow-2xs">
+          <AppIcon icon={CheckCircle} size="xs" color="inherit" className="text-emerald-300 shrink-0" />
+          <span className="text-[10.5px] font-bold uppercase tracking-wider text-white">
+            All Set!
           </span>
         </div>
-        {windowState?.academicYear && windowState?.semester ? (
-          <p className="mt-1 text-[11px] text-emerald-200/80 font-medium">
-            A.Y. {windowState.academicYear} | {windowState.semester}
+
+        <div className="space-y-0.5">
+          <p className="text-xs font-bold tracking-tight text-amber-300">
+            Done for This Semester
           </p>
-        ) : null}
-        <p className="mt-2 text-xs leading-relaxed text-emerald-100/90 font-medium">
-          All required compliance documents completed for this semester.
-        </p>
+          {windowState?.academicYear && windowState?.semester ? (
+            <p className="text-[11px] text-amber-100/85 font-medium">
+              A.Y. {windowState.academicYear} • {windowState.semester}
+            </p>
+          ) : null}
+        </div>
+
+        <div className="pt-1.5 border-t border-white/10">
+          <p className="text-[11px] leading-snug text-amber-100/75">
+            You&apos;re all caught up — no more files to submit this term.
+          </p>
+        </div>
       </div>
     );
   }

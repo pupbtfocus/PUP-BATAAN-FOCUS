@@ -36,6 +36,17 @@ export function patchRefreshTokenErrorConsoleFilter() {
 
   const originalConsoleError = console.error.bind(console);
   const originalConsoleWarn = console.warn.bind(console);
+
+  const isSuppressedMessage = (args: any[]): boolean => {
+    return args.some(
+      (arg) =>
+        typeof arg === "string" &&
+        (arg.includes("Can't perform a React state update on a component that hasn't mounted yet") ||
+          arg.includes("ChunkLoadError") ||
+          arg.includes("Loading chunk"))
+    );
+  };
+
   console.error = (...args: any[]) => {
     if (args.length > 0 && isInvalidRefreshTokenError(args[0])) {
       return;
@@ -47,15 +58,20 @@ export function patchRefreshTokenErrorConsoleFilter() {
       originalConsoleWarn(...args);
       return;
     }
-    if (
-      typeof args[0] === "string" &&
-      args[0].includes("Can't perform a React state update on a component that hasn't mounted yet")
-    ) {
+    if (isSuppressedMessage(args)) {
       return;
     }
     originalConsoleError(...args);
   };
+
+  console.warn = (...args: any[]) => {
+    if (isSuppressedMessage(args)) {
+      return;
+    }
+    originalConsoleWarn(...args);
+  };
 }
 
 patchRefreshTokenErrorConsoleFilter();
+
 

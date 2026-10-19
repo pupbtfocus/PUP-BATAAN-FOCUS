@@ -3746,7 +3746,7 @@ function FacultySubmissionPanelContent({
                 {/* Top Stat Summary Grid (3 Cards) */}
                 <section className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-5">
                   {/* Card 1: Overall Progress */}
-                  <div className="rounded-2xl border-2 border-amber-400 dark:border-amber-500/60 bg-white dark:bg-slate-900 shadow-xs p-5 sm:p-6 space-y-3 transition-colors">
+                  <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs p-5 sm:p-6 space-y-3 transition-colors">
                     <div className="flex items-center justify-between">
                       <span className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
                         Overall Progress
@@ -3756,9 +3756,7 @@ function FacultySubmissionPanelContent({
                     <div>
                       <div className="flex items-baseline justify-between">
                         <h3 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">
-                          {isAllValidated
-                            ? "Done All for This Semester"
-                            : `${mandatoryValidatedCount} of ${mandatoryTemplates.length} Required Validated`}
+                          {`${mandatoryValidatedCount} of ${mandatoryTemplates.length} Validated`}
                         </h3>
                         <span className="text-xs sm:text-sm font-bold text-emerald-600 dark:text-emerald-400">
                           {isAllValidated
@@ -3773,7 +3771,7 @@ function FacultySubmissionPanelContent({
                       </div>
                       <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1 font-medium">
                         {isAllValidated
-                          ? `All ${mandatoryTemplates.length} required requirements completed and validated`
+                          ? `All ${mandatoryTemplates.length} mandatory requirements approved`
                           : `${mandatoryTemplates.length - mandatoryValidatedCount} required items awaiting completion`}
                       </p>
                     </div>
@@ -3788,10 +3786,10 @@ function FacultySubmissionPanelContent({
                   </div>
 
                   {/* Card 2: Submission Window Status */}
-                  <div className={`rounded-2xl border-2 ${
+                  <div className={`rounded-2xl ${
                     hasActiveGracePeriod
-                      ? "border-emerald-400 dark:border-emerald-500/60"
-                      : "border-amber-400 dark:border-amber-500/60"
+                      ? "border-2 border-emerald-400 dark:border-emerald-500/60"
+                      : "border border-slate-200 dark:border-slate-800"
                   } bg-white dark:bg-slate-900 shadow-xs p-5 sm:p-6 space-y-3 transition-colors`}>
                     <div className="flex items-center justify-between">
                       <span className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
@@ -3811,29 +3809,25 @@ function FacultySubmissionPanelContent({
                           ? "text-emerald-700 dark:text-emerald-400"
                           : "text-slate-900 dark:text-slate-100"
                       }`}>
-                        {isAllValidated
-                          ? "Done All for This Sem"
-                          : hasActiveGracePeriod
-                            ? "Personal Deadline Active"
-                            : isWindowNotConfigured
-                              ? "Schedule Not Set"
-                              : isWindowClosed
-                                ? "Window Closed"
-                                : "Submission Open"}
+                        {hasActiveGracePeriod
+                          ? "Personal Deadline Active"
+                          : isWindowNotConfigured
+                            ? "Schedule Not Set"
+                            : isWindowClosed
+                              ? "Window Closed"
+                              : "Submission Open"}
                       </h3>
                       <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1 font-medium">
-                        {isAllValidated
-                          ? "All requirements completed for this term"
-                          : hasActiveGracePeriod && personalDeadlineFormatted
-                            ? `Due: ${personalDeadlineFormatted}`
-                            : windowDeadlineDisplay
-                              ? `Deadline: ${windowDeadlineDisplay}`
-                              : "Awaiting admin schedule"}
+                        {hasActiveGracePeriod && personalDeadlineFormatted
+                          ? `Due: ${personalDeadlineFormatted}`
+                          : windowDeadlineDisplay
+                            ? `Deadline: ${windowDeadlineDisplay}${windowDaysRemaining !== null ? ` (${windowDaysRemaining === 0 ? "Due today" : `${windowDaysRemaining}d left`})` : ""}`
+                            : "Awaiting admin schedule"}
                       </p>
                     </div>
                     <p className="text-xs text-slate-500 dark:text-slate-400">
                       {isAllValidated
-                        ? "Requirements locked in validated status"
+                        ? "All submissions finalized and locked for this term"
                         : hasActiveGracePeriod
                           ? "Uploads are currently unlocked"
                           : isSubmissionAvailable
@@ -3845,7 +3839,7 @@ function FacultySubmissionPanelContent({
                   </div>
 
                   {/* Card 3: Action Required */}
-                  <div className="rounded-2xl border-2 border-amber-400 dark:border-amber-500/60 bg-white dark:bg-slate-900 shadow-xs p-5 sm:p-6 space-y-3 transition-colors">
+                  <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs p-5 sm:p-6 space-y-3 transition-colors">
                     <div className="flex items-center justify-between">
                       <span className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
                         Action Required
@@ -3855,18 +3849,18 @@ function FacultySubmissionPanelContent({
                     <div>
                       <h3 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">
                         {isAllValidated
-                          ? "0 Items (Done All for This Sem)"
-                          : `${lackingRequirements.length} Items`}
+                          ? "0 Pending Actions"
+                          : `${lackingRequirements.length} ${lackingRequirements.length === 1 ? "Item" : "Items"}`}
                       </h3>
                       <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1 font-medium">
                         {isAllValidated
-                          ? `All ${mandatoryTemplates.length} Required Documents Validated`
+                          ? "No pending revisions or missing uploads"
                           : `${lackingRequirements.filter((r) => r.status === "Overdue").length > 0 ? `${lackingRequirements.filter((r) => r.status === "Overdue").length} Overdue • ` : ""}${lackingRequirements.filter((r) => r.status === "Pending" || r.status === "Not Submitted").length} Pending • ${lackingRequirements.filter((r) => r.status === "Rejected").length} Needs Revision`}
                       </p>
                     </div>
                     <p className="text-xs text-slate-500 dark:text-slate-400">
                       {isAllValidated
-                        ? "No further action needed for this semester"
+                        ? "You are 100% compliant for the current semester"
                         : (displayedStatusCounts?.pending ?? 0) > 0
                           ? `${displayedStatusCounts?.pending} item(s) currently under admin review`
                           : "Direct upload available for pending items"}
@@ -3874,10 +3868,254 @@ function FacultySubmissionPanelContent({
                   </div>
                 </section>
 
+                {/* Analytics Section: Compliance Distribution & Class Load Breakdown */}
+                <section className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-5">
+                  {/* Left Card: Document Status Analytics */}
+                  <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs p-5 sm:p-6 space-y-4 transition-colors">
+                    <div className="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-slate-800">
+                      <div>
+                        <h3 className="text-base sm:text-lg font-bold text-slate-900 dark:text-slate-100 tracking-tight flex items-center gap-2">
+                          <Reports className="h-5 w-5 text-[#800000] dark:text-amber-400" strokeWidth={2} />
+                          <span>Compliance Status Breakdown</span>
+                        </h3>
+                        <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                          Distribution of your {totalRequirements || mandatoryTemplates.length} required documents this semester
+                        </p>
+                      </div>
+                      <span className="inline-flex items-center px-2.5 py-1 rounded-lg bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30 text-xs font-bold">
+                        {isAllValidated
+                          ? "100% Complete"
+                          : `${Math.round((mandatoryValidatedCount / (mandatoryTemplates.length || 1)) * 100)}% Complete`}
+                      </span>
+                    </div>
+
+                    {(() => {
+                      const total = Math.max(totalRequirements || mandatoryTemplates.length, 1);
+                      const valCount = isAllValidated ? total : (displayedStatusCounts?.validated ?? 0);
+                      const pendCount = isAllValidated ? 0 : (displayedStatusCounts?.pending ?? 0);
+                      const revCount = isAllValidated ? 0 : (displayedStatusCounts?.rejected ?? 0);
+                      const unsubCount = isAllValidated ? 0 : (displayedStatusCounts?.notSubmitted ?? 0);
+                      const overCount = isAllValidated ? 0 : (displayedStatusCounts?.overdue ?? 0);
+
+                      const metrics = [
+                        {
+                          label: "Validated",
+                          count: valCount,
+                          pct: Math.round((valCount / total) * 100),
+                          barColor: "bg-[#0b5336]",
+                          badgeBg: "bg-[#0b5336]/10 text-[#0b5336] dark:bg-emerald-500/15 dark:text-emerald-300",
+                        },
+                        {
+                          label: "Pending Review",
+                          count: pendCount,
+                          pct: Math.round((pendCount / total) * 100),
+                          barColor: "bg-amber-500",
+                          badgeBg: "bg-amber-500/15 text-amber-800 dark:text-amber-300",
+                        },
+                        {
+                          label: "Needs Revision",
+                          count: revCount,
+                          pct: Math.round((revCount / total) * 100),
+                          barColor: "bg-[#780000]",
+                          badgeBg: "bg-[#780000]/10 text-[#780000] dark:bg-rose-500/15 dark:text-rose-300",
+                        },
+                        {
+                          label: "Not Submitted",
+                          count: unsubCount,
+                          pct: Math.round((unsubCount / total) * 100),
+                          barColor: "bg-slate-400 dark:bg-slate-600",
+                          badgeBg: "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300",
+                        },
+                        {
+                          label: "Overdue",
+                          count: overCount,
+                          pct: Math.round((overCount / total) * 100),
+                          barColor: "bg-rose-600",
+                          badgeBg: "bg-rose-500/10 text-rose-700 dark:text-rose-300",
+                        },
+                      ];
+
+                      return (
+                        <div className="space-y-3">
+                          {/* Stacked Multi-Segment Progress Bar */}
+                          <div className="h-3 w-full rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden flex border border-slate-200 dark:border-slate-700">
+                            {metrics.map((m) =>
+                              m.count > 0 ? (
+                                <div
+                                  key={m.label}
+                                  className={`${m.barColor} h-full transition-all duration-500`}
+                                  style={{ width: `${Math.max(4, (m.count / total) * 100)}%` }}
+                                  title={`${m.label}: ${m.count} (${m.pct}%)`}
+                                />
+                              ) : null,
+                            )}
+                          </div>
+
+                          {/* Individual Metric Bars */}
+                          <div className="space-y-2.5 pt-1">
+                            {metrics.map((m) => (
+                              <div key={m.label} className="space-y-1">
+                                <div className="flex items-center justify-between text-xs">
+                                  <span className="font-semibold text-slate-700 dark:text-slate-300">
+                                    {m.label}
+                                  </span>
+                                  <div className="flex items-center gap-2">
+                                    <span className="font-bold text-slate-900 dark:text-slate-100">
+                                      {m.count} / {total}
+                                    </span>
+                                    <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${m.badgeBg}`}>
+                                      {m.pct}%
+                                    </span>
+                                  </div>
+                                </div>
+                                <div className="h-1.5 w-full rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden">
+                                  <div
+                                    className={`h-full rounded-full transition-all duration-500 ${m.barColor}`}
+                                    style={{ width: `${m.pct}%` }}
+                                  />
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      );
+                    })()}
+                  </div>
+
+                  {/* Right Card: Class Load Compliance Analytics */}
+                  <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs p-5 sm:p-6 space-y-4 transition-colors flex flex-col justify-between">
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-slate-800">
+                        <div>
+                          <h3 className="text-base sm:text-lg font-bold text-slate-900 dark:text-slate-100 tracking-tight flex items-center gap-2">
+                            <Activity className="h-5 w-5 text-[#800000] dark:text-amber-400" strokeWidth={2} />
+                            <span>Class Load Compliance</span>
+                          </h3>
+                          <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                            Per-class requirement validation rate for {activeAY} • {activeSem}
+                          </p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => navigateToView("status")}
+                          className="text-xs font-semibold text-[#800000] dark:text-amber-400 hover:underline cursor-pointer shrink-0"
+                        >
+                          Manage Classes
+                        </button>
+                      </div>
+
+                      {(() => {
+                        const activeClassList = facultyClasses.filter((c) => !c.is_archived);
+                        const normActiveAY = normalizeAcademicYear(activeAY);
+                        const normActiveSem = normalizeSemester(activeSem);
+                        const mandatoryCodes = mandatoryTemplates.map((t) => t.code);
+                        const totalMandatory = Math.max(mandatoryCodes.length, 1);
+
+                        if (activeClassList.length === 0) {
+                          return (
+                            <div className="rounded-xl border border-dashed border-slate-300 dark:border-slate-800 p-6 text-center space-y-2">
+                              <p className="text-xs sm:text-sm font-semibold text-slate-700 dark:text-slate-300">
+                                No active class loads registered yet
+                              </p>
+                              <p className="text-xs text-slate-500 dark:text-slate-400">
+                                Add your assigned subjects and sections in Documents to be Submitted to track per-class analytics.
+                              </p>
+                            </div>
+                          );
+                        }
+
+                        return (
+                          <div className="space-y-3 max-h-56 overflow-y-auto pr-1">
+                            {activeClassList.map((cls) => {
+                              const validatedForClass = mandatoryCodes.filter((code) => {
+                                const inPast = pastSubmissions.some((s) => {
+                                  if (s.requirementCode !== code || s.status !== "Validated") return false;
+                                  const matchTerm =
+                                    normalizeSemester(s.semester) === normActiveSem &&
+                                    normalizeAcademicYear(s.academicYear) === normActiveAY;
+                                  if (!matchTerm) return false;
+                                  const sClass = (s as any).classId || (s as any).class_id;
+                                  return sClass === cls.id;
+                                });
+                                if (inPast) return true;
+                                return requirementStatuses.some((r) => {
+                                  if (r.code !== code) return false;
+                                  if (r.status !== "Validated" && r.status !== "Exempted") return false;
+                                  const rClass = (r as any).classId || (r as any).class_id;
+                                  return rClass === cls.id;
+                                });
+                              }).length;
+
+                              const classPct = Math.round((validatedForClass / totalMandatory) * 100);
+                              const isClassComplete = validatedForClass >= mandatoryCodes.length && mandatoryCodes.length > 0;
+
+                              return (
+                                <div
+                                  key={cls.id}
+                                  onClick={() => {
+                                    setSelectedClassId(cls.id);
+                                    navigateToView("status");
+                                  }}
+                                  className="p-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/70 hover:bg-slate-100/80 dark:bg-slate-950/50 dark:hover:bg-slate-950 transition cursor-pointer space-y-2"
+                                >
+                                  <div className="flex items-center justify-between gap-2">
+                                    <div className="min-w-0">
+                                      <p className="text-xs sm:text-sm font-bold text-slate-900 dark:text-slate-100 truncate">
+                                        {cls.subject_code} • {cls.section_code}
+                                      </p>
+                                      <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate">
+                                        {cls.description} ({cls.units} units)
+                                      </p>
+                                    </div>
+                                    <span
+                                      className={`px-2 py-0.5 rounded-full text-[11px] font-bold shrink-0 ${
+                                        isClassComplete
+                                          ? "bg-[#0b5336] text-white"
+                                          : "bg-amber-500/20 text-amber-900 dark:text-amber-300"
+                                      }`}
+                                    >
+                                      {validatedForClass}/{mandatoryCodes.length} ({classPct}%)
+                                    </span>
+                                  </div>
+                                  <div className="h-1.5 w-full rounded-full bg-slate-200 dark:bg-slate-800 overflow-hidden">
+                                    <div
+                                      className={`h-full rounded-full transition-all duration-500 ${
+                                        isClassComplete ? "bg-emerald-500" : "bg-amber-500"
+                                      }`}
+                                      style={{ width: `${classPct}%` }}
+                                    />
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        );
+                      })()}
+                    </div>
+
+                    <div className="pt-3 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
+                      <span>
+                        Active Classes:{" "}
+                        <strong className="text-slate-900 dark:text-slate-100">
+                          {facultyClasses.filter((c) => !c.is_archived).length}
+                        </strong>
+                      </span>
+                      <span>
+                        Total Teaching Units:{" "}
+                        <strong className="text-slate-900 dark:text-slate-100">
+                          {facultyClasses
+                            .filter((c) => !c.is_archived)
+                            .reduce((sum, c) => sum + (Number(c.units) || 0), 0)}
+                        </strong>
+                      </span>
+                    </div>
+                  </div>
+                </section>
+
                 {/* Main Dashboard Body: Recent Activity */}
                 <section className="space-y-6">
                   {/* Activity Feed Card */}
-                  <div className="rounded-2xl border-2 border-amber-400 dark:border-amber-500/60 bg-white dark:bg-slate-900 shadow-xs p-5 sm:p-6 space-y-4 transition-colors">
+                  <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs p-5 sm:p-6 space-y-4 transition-colors">
                     <div className="flex items-center justify-between pb-3 border-b border-slate-300 dark:border-slate-800">
                       <h3 className="text-base sm:text-lg font-bold text-slate-900 dark:text-slate-100 tracking-tight">
                         Recent Activity
@@ -4236,7 +4474,7 @@ function FacultySubmissionPanelContent({
                         ))}
                       </div>
                     ) : facultyClasses.length === 0 ? (
-                      <div className="flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-amber-400/80 dark:border-amber-500/40 bg-white dark:bg-slate-900/60 p-8 sm:p-14 text-center">
+                      <div className="flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-slate-300 dark:border-slate-800 bg-white dark:bg-slate-900/60 p-8 sm:p-14 text-center">
                         <div className="h-16 w-16 rounded-2xl bg-amber-500/10 text-amber-700 dark:text-amber-300 border border-amber-500/30 flex items-center justify-center mb-4 shadow-2xs">
                           <AppIcon icon={TaskList} size="lg" color="inherit" />
                         </div>
@@ -4261,7 +4499,7 @@ function FacultySubmissionPanelContent({
                     ) : (
                       <div className="space-y-4">
                         {/* Header, Count Badges & Filter Controls */}
-                        <div className="flex flex-col gap-3 rounded-2xl border-2 border-amber-500 bg-white p-4 shadow-sm">
+                        <div className="flex flex-col gap-3 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 shadow-sm">
                           <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
                             <div>
                               <div className="flex items-center gap-2 flex-wrap">
@@ -4399,7 +4637,7 @@ function FacultySubmissionPanelContent({
 
                         {/* Class Grid or Empty View */}
                         {displayedClasses.length === 0 ? (
-                          <div className="flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-amber-400 bg-white p-8 text-center">
+                          <div className="flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-slate-300 dark:border-slate-800 bg-white dark:bg-slate-900 p-8 text-center">
                             <div className="h-12 w-12 rounded-xl bg-amber-400 text-amber-950 flex items-center justify-center mb-3">
                               <AppIcon icon={classTab === "archived" ? Archive : TaskList} size="md" color="inherit" />
                             </div>
@@ -4716,7 +4954,7 @@ function FacultySubmissionPanelContent({
                     </div>
 
                     {/* Class Context Navigation Bar (Between Header & Status Filter/Counts) */}
-                    <div className="rounded-2xl border-2 border-amber-500 bg-white p-3 sm:p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-sm">
+                    <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-3 sm:p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-sm">
                       <div className="flex items-center gap-2.5 min-w-0 flex-1">
                         <button
                           type="button"
@@ -5036,7 +5274,7 @@ function FacultySubmissionPanelContent({
                         </span>
                       </div>
                     )}
-                    <div className="bg-white border-2 border-amber-400 dark:border-amber-500/60 shadow-xs dark:bg-slate-900 dark:shadow-none rounded-xl overflow-hidden transition-colors">
+                    <div className="bg-white border border-slate-200 dark:border-slate-800 shadow-xs dark:bg-slate-900 dark:shadow-none rounded-xl overflow-hidden transition-colors">
                       <div className="overflow-x-auto">
                         <table className="w-full text-left text-sm min-w-[640px]">
                           <thead>
