@@ -115,12 +115,12 @@ export function DatabaseCapacityAlert({
   if (showCard) {
     return (
       <div
-        className={`rounded-2xl border-2 p-5 shadow-xs space-y-3 transition-colors ${
+        className={`rounded-2xl p-5 shadow-xs space-y-3 transition-colors ${
           isCritical
-            ? "border-red-500 bg-red-50/70 dark:bg-red-950/30"
+            ? "border-2 border-red-500 bg-red-50/70 dark:bg-red-950/30"
             : isWarning
-            ? "border-amber-500 bg-amber-50/70 dark:bg-amber-950/30"
-            : "border-amber-400 dark:border-amber-500/60 bg-white dark:bg-slate-900"
+            ? "border-2 border-amber-500 bg-amber-50/70 dark:bg-amber-950/30"
+            : "border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900"
         }`}
       >
         <div className="flex items-center justify-between">

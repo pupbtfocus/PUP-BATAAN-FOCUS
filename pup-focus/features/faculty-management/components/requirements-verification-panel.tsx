@@ -1647,7 +1647,7 @@ export function FacultyVerificationDrawer({
         </div>
       </div>
 
-      <div className="w-full flex flex-col rounded-2xl border-2 border-amber-400 dark:border-amber-500/60 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 shadow-xs transition-all animate-in fade-in duration-150 overflow-hidden">
+      <div className="w-full flex flex-col rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 shadow-xs transition-all animate-in fade-in duration-150 overflow-hidden">
         <AlertPopup
           type={actionFeedback?.type}
           message={actionFeedback?.message}
@@ -2230,7 +2230,7 @@ export function FacultyVerificationDrawer({
                     </div>
                   </div>
                 ) : (
-                  <div className="overflow-hidden rounded-2xl border-2 border-amber-400 dark:border-amber-500/60 bg-white dark:bg-slate-900 shadow-xs">
+                  <div className="overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs">
                     <div className="overflow-x-auto">
                       <table className="w-full text-left text-xs text-slate-600 dark:text-slate-300 min-w-[880px]">
                         <thead className="bg-slate-50/60 dark:bg-slate-950/50 border-b border-slate-200/80 dark:border-slate-800/80 text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
@@ -4163,7 +4163,7 @@ export function RequirementsPanel({
           </div>
 
           {/* 1. Top Control Bar */}
-          <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-3 p-4 rounded-2xl border-2 border-amber-400 dark:border-amber-500/60 bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-200 mb-4 shadow-xs">
+          <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-3 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-200 mb-4 shadow-xs">
         <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2.5 w-full lg:w-auto flex-wrap">
           {/* Search Input */}
           <input
@@ -4342,7 +4342,7 @@ export function RequirementsPanel({
       </div>
 
       {/* 2. Faculty List / Table View */}
-      <div className="w-full overflow-x-auto rounded-2xl border-2 border-amber-400 dark:border-amber-500/60 bg-white dark:bg-slate-900 shadow-xs dark:shadow-none">
+      <div className="w-full overflow-x-auto rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs dark:shadow-none">
         <table className="w-full text-left border-collapse text-xs text-slate-800 dark:text-slate-300 min-w-[750px]">
             <thead className="border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/60 uppercase tracking-wider text-[10px] text-slate-600 dark:text-slate-400">
               <tr>

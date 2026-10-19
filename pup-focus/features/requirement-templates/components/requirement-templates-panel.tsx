@@ -222,7 +222,7 @@ export function RequirementTemplatesPanel({
       {/* 3-Card Stat Summary Header matching AdminStatsCards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
         {/* 1. TOTAL TEMPLATES */}
-        <div className="rounded-2xl bg-white text-slate-900 border-2 border-amber-400 dark:border-amber-500/60 shadow-xs dark:bg-slate-900 dark:text-slate-100 p-5 transition-colors">
+        <div className="rounded-2xl bg-white text-slate-900 border border-slate-200 dark:border-slate-800 shadow-xs dark:bg-slate-900 dark:text-slate-100 p-5 transition-colors">
           <div className="flex items-center justify-between">
             <span className="text-slate-500 dark:text-slate-400 text-xs font-medium uppercase tracking-wider">
               Total Templates
@@ -238,7 +238,7 @@ export function RequirementTemplatesPanel({
         </div>
 
         {/* 2. ACTIVE REQUIREMENTS */}
-        <div className="rounded-2xl bg-white text-slate-900 border-2 border-amber-400 dark:border-amber-500/60 shadow-xs dark:bg-slate-900 dark:text-slate-100 p-5 transition-colors">
+        <div className="rounded-2xl bg-white text-slate-900 border border-slate-200 dark:border-slate-800 shadow-xs dark:bg-slate-900 dark:text-slate-100 p-5 transition-colors">
           <div className="flex items-center justify-between">
             <span className="text-slate-500 dark:text-slate-400 text-xs font-medium uppercase tracking-wider">
               Active Requirements
@@ -254,7 +254,7 @@ export function RequirementTemplatesPanel({
         </div>
 
         {/* 3. HIDDEN REQUIREMENTS */}
-        <div className="rounded-2xl bg-white text-slate-900 border-2 border-amber-400 dark:border-amber-500/60 shadow-xs dark:bg-slate-900 dark:text-slate-100 p-5 transition-colors">
+        <div className="rounded-2xl bg-white text-slate-900 border border-slate-200 dark:border-slate-800 shadow-xs dark:bg-slate-900 dark:text-slate-100 p-5 transition-colors">
           <div className="flex items-center justify-between">
             <span className="text-slate-500 dark:text-slate-400 text-xs font-medium uppercase tracking-wider">
               Hidden Requirements
@@ -330,7 +330,7 @@ export function RequirementTemplatesPanel({
       </div>
 
       {/* Main Data Table matching adaptive table standard */}
-      <div className="w-full overflow-x-auto rounded-2xl border-2 border-amber-400 dark:border-amber-500/60 bg-white dark:bg-slate-900 shadow-xs dark:shadow-none overflow-hidden transition-colors">
+      <div className="w-full overflow-x-auto rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs dark:shadow-none overflow-hidden transition-colors">
         <table className="w-full text-left border-collapse min-w-[700px]">
           <thead className="border-b border-slate-300 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/60 text-slate-700 dark:text-slate-300 text-[11px] font-bold uppercase tracking-wider">
             <tr>
