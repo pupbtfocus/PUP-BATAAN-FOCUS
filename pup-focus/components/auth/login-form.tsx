@@ -147,11 +147,11 @@ export function LoginForm({
         </div>
       ) : null}
 
-      <form className="mt-3 space-y-2.5" onSubmit={onSubmit}>
+      <form className="mt-1.5 sm:mt-3 space-y-2 sm:space-y-2.5" onSubmit={onSubmit}>
         {/* Universal Alert Banner */}
         {notice ? (
           <div
-            className={`rounded-xl p-3 text-xs flex items-start gap-2.5 border transition-all ${
+            className={`rounded-xl p-2.5 sm:p-3 text-xs flex items-start gap-2.5 border transition-all ${
               notice.type === "timeout"
                 ? "bg-amber-500/15 border-amber-500/30 text-amber-200"
                 : notice.type === "success"
@@ -169,7 +169,7 @@ export function LoginForm({
             <span className="leading-relaxed font-medium">{notice.message}</span>
           </div>
         ) : error ? (
-          <div className="rounded-xl p-3 text-xs flex items-start gap-2.5 border bg-rose-500/15 border-rose-500/30 text-rose-200 transition-all">
+          <div className="rounded-xl p-2.5 sm:p-3 text-xs flex items-start gap-2.5 border bg-rose-500/15 border-rose-500/30 text-rose-200 transition-all">
             <AppIcon icon={WarningCircle} size="md" color="danger" className="mt-0.5" />
             <span className="leading-relaxed font-medium">{error}</span>
           </div>
@@ -198,7 +198,7 @@ export function LoginForm({
               onChange={(event) => setEmail(event.target.value)}
               required
               placeholder="faculty@pup.edu.ph"
-              className="pup-login-input w-full rounded-xl border !border-amber-400/50 !bg-[#660000] pl-10 pr-4 py-2.5 text-sm !text-amber-50 shadow-[inset_0_2px_4px_rgba(0,0,0,0.3),0_1px_0_rgba(255,215,0,0.15)] outline-none transition-all duration-200 placeholder:!text-amber-200/50 hover:!border-amber-400 focus:!border-amber-400 focus:!ring-1 focus:!ring-amber-400/50"
+              className="pup-login-input w-full rounded-xl border !border-amber-400/50 !bg-[#660000] pl-10 pr-4 py-2 sm:py-2.5 text-sm !text-amber-50 shadow-[inset_0_2px_4px_rgba(0,0,0,0.3),0_1px_0_rgba(255,215,0,0.15)] outline-none transition-all duration-200 placeholder:!text-amber-200/50 hover:!border-amber-400 focus:!border-amber-400 focus:!ring-1 focus:!ring-amber-400/50"
             />
           </div>
         </div>
@@ -241,7 +241,7 @@ export function LoginForm({
               onBlur={() => setIsCapsLockOn(false)}
               required
               placeholder="Your password"
-              className="pup-login-input w-full rounded-xl border !border-amber-400/50 !bg-[#660000] pl-10 pr-12 py-2.5 text-sm !text-amber-50 shadow-[inset_0_2px_4px_rgba(0,0,0,0.3),0_1px_0_rgba(255,215,0,0.15)] outline-none transition-all duration-200 placeholder:!text-amber-200/50 hover:!border-amber-400 focus:!border-amber-400 focus:!ring-1 focus:!ring-amber-400/50"
+              className="pup-login-input w-full rounded-xl border !border-amber-400/50 !bg-[#660000] pl-10 pr-12 py-2 sm:py-2.5 text-sm !text-amber-50 shadow-[inset_0_2px_4px_rgba(0,0,0,0.3),0_1px_0_rgba(255,215,0,0.15)] outline-none transition-all duration-200 placeholder:!text-amber-200/50 hover:!border-amber-400 focus:!border-amber-400 focus:!ring-1 focus:!ring-amber-400/50"
             />
 
             <button
@@ -266,7 +266,7 @@ export function LoginForm({
         </div>
 
         {/* Remember me & Forgot password row */}
-        <div className="flex items-center justify-between mt-1 mb-3 text-xs">
+        <div className="flex items-center justify-between mt-0.5 mb-1.5 sm:mt-1 sm:mb-3 text-xs">
           <label className="flex items-center gap-2 cursor-pointer group select-none">
             <div className="relative flex items-center justify-center">
               <input
@@ -303,7 +303,7 @@ export function LoginForm({
         </div>
 
         {process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY && (
-          <div className="flex justify-center my-2 min-h-[65px] items-center">
+          <div className="flex justify-center my-1 sm:my-2 min-h-[56px] sm:min-h-[65px] items-center scale-[0.9] sm:scale-100 origin-center">
             <Turnstile
               ref={turnstileRef}
               siteKey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY}
@@ -320,17 +320,17 @@ export function LoginForm({
         )}
 
         <Button
-          className="mt-4 h-11 w-full max-w-[220px] mx-auto rounded-2xl bg-gradient-to-r from-amber-400 via-amber-500 to-amber-500 font-black text-[#3d0000] tracking-widest uppercase text-sm transition-all duration-300 hover:from-amber-300 hover:to-amber-400 active:scale-[0.98] cursor-pointer shadow-lg shadow-black/50 hover:shadow-black/60 border border-amber-300/30 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="mt-2 sm:mt-4 h-9.5 sm:h-11 w-full max-w-[200px] sm:max-w-[220px] mx-auto rounded-2xl bg-gradient-to-r from-amber-400 via-amber-500 to-amber-500 font-black text-[#3d0000] tracking-widest uppercase text-xs sm:text-sm transition-all duration-300 hover:from-amber-300 hover:to-amber-400 active:scale-[0.98] cursor-pointer shadow-lg shadow-black/50 hover:shadow-black/60 border border-amber-300/30 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
           type="submit"
           disabled={isLoading || (Boolean(process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY) && !captchaToken)}
         >
           {isLoading ? (
-            <span className="flex items-center justify-center gap-2 text-sm sm:text-base font-black">
+            <span className="flex items-center justify-center gap-2 text-xs sm:text-base font-black">
               <LazyLottie
                 animationData={loadingAnimation}
                 loop={true}
                 autoplay
-                className="h-6 w-6"
+                className="h-5 w-5 sm:h-6 sm:w-6"
               />
               Signing in...
             </span>
