@@ -4,7 +4,10 @@ import { getServiceRoleClient } from "@/lib/supabase/service-role";
 import { ROLE } from "@/config/roles";
 import { logger } from "@/lib/observability/logger";
 
-export const ACTION_CATEGORY_FILTERS: Record<string, string[]> = {
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
+const ACTION_CATEGORY_FILTERS: Record<string, string[]> = {
   auth: ["auth.login", "auth.logout", "user.password_reset"],
   uploads: ["submission.upload", "document.upload"],
   reviews: ["submission.approve", "submission.reject", "submission.review"],
