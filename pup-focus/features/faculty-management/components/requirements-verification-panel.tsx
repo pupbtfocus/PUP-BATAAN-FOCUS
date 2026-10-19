@@ -484,6 +484,8 @@ export function FacultyVerificationDrawer({
 
   // History Tab States
   const [historySubmissions, setHistorySubmissions] = useState<FacultyRequirementSubmission[]>([]);
+  const [historyClasses, setHistoryClasses] = useState<any[]>([]);
+  const [selectedHistoryClassId, setSelectedHistoryClassId] = useState<string | null>(null);
   const [isLoadingHistory, setIsLoadingHistory] = useState(false);
   const [historyAcademicYears, setHistoryAcademicYears] = useState<string[]>([]);
   const [selectedHistoryAy, setSelectedHistoryAy] = useState<string>(
@@ -767,6 +769,98 @@ export function FacultyVerificationDrawer({
     );
   }, [selectedClassId, classGroups]);
 
+  const historyClassGroups = useMemo<SubmissionClassGroup[]>(() => {
+    const groups: SubmissionClassGroup[] = [];
+    const classMap = new Map<string, SubmissionClassGroup>();
+
+    const targetClasses = historyClasses.length > 0 ? historyClasses : facultyClasses;
+
+    targetClasses
+      .filter((fc: any) => !fc.is_archived)
+      .forEach((fc) => {
+        const key = fc.id || `${fc.section_code}_${fc.subject_code}`;
+        const group: SubmissionClassGroup = {
+          key,
+          classId: fc.id || null,
+          sectionCode: fc.section_code,
+          subjectCode: fc.subject_code,
+          description: fc.description,
+          units: fc.units,
+          submissions: [],
+        };
+        groups.push(group);
+        classMap.set(key, group);
+        if (fc.id) classMap.set(fc.id, group);
+      });
+
+    historySubmissions.forEach((sub) => {
+      if (sub.faculty_class && !(sub.faculty_class as any).is_archived) {
+        const fc = sub.faculty_class;
+        const key = fc.id || `${fc.section_code}_${fc.subject_code}`;
+        if (!classMap.has(key) && !(fc.id && classMap.has(fc.id))) {
+          const group: SubmissionClassGroup = {
+            key,
+            classId: fc.id || null,
+            sectionCode: fc.section_code,
+            subjectCode: fc.subject_code,
+            description: fc.description,
+            units: fc.units,
+            submissions: [],
+          };
+          groups.push(group);
+          classMap.set(key, group);
+          if (fc.id) classMap.set(fc.id, group);
+        }
+      }
+    });
+
+    const unassignedSubmissions: FacultyRequirementSubmission[] = [];
+
+    historySubmissions.forEach((sub) => {
+      if (sub.faculty_class && Boolean((sub.faculty_class as any).is_archived)) {
+        return;
+      }
+
+      let target: SubmissionClassGroup | undefined;
+      if (sub.class_id && classMap.has(sub.class_id)) {
+        target = classMap.get(sub.class_id);
+      } else if (sub.faculty_class) {
+        const key = sub.faculty_class.id || `${sub.faculty_class.section_code}_${sub.faculty_class.subject_code}`;
+        target = classMap.get(key);
+      }
+
+      if (target) {
+        target.submissions.push(sub);
+      } else if (!sub.class_id) {
+        unassignedSubmissions.push(sub);
+      }
+    });
+
+    if (unassignedSubmissions.length > 0) {
+      groups.unshift({
+        key: "general",
+        classId: null,
+        sectionCode: "General Requirements",
+        subjectCode: "GENERAL",
+        description: "General / Institutional Requirements",
+        units: null,
+        submissions: unassignedSubmissions,
+        isGeneral: true,
+      });
+    }
+
+    return groups;
+  }, [historyClasses, facultyClasses, historySubmissions]);
+
+  const selectedHistoryGroup = useMemo<SubmissionClassGroup | null>(() => {
+    if (!selectedHistoryClassId) return null;
+    return (
+      historyClassGroups.find(
+        (g) => g.key === selectedHistoryClassId || (g.classId && g.classId === selectedHistoryClassId)
+      ) || null
+    );
+  }, [selectedHistoryClassId, historyClassGroups]);
+
   const selectedGroupPendingCount = useMemo(() => {
     if (!selectedGroup) return 0;
     return selectedGroup.submissions.filter((s) => {
@@ -954,9 +1048,9 @@ export function FacultyVerificationDrawer({
             setHistoryAcademicYears(Array.from(new Set([...years, activeAy])).sort().reverse());
             setSelectedHistoryAy((prev) => {
               if (prev) return prev;
-              const pastYear =
-                years.find((y) => y !== activeAy) || years[0] || "2025-2026";
-              return pastYear;
+              const defaultYear =
+                activeAy && years.includes(activeAy) ? activeAy : years[0] || "";
+              return defaultYear;
             });
           }
         }
@@ -986,6 +1080,9 @@ export function FacultyVerificationDrawer({
         if (res.ok) {
           const data = await res.json();
           setHistorySubmissions(data.submissions || []);
+          if (Array.isArray(data.classes)) {
+            setHistoryClasses(data.classes);
+          }
           hasLoadedHistoryRef.current = true;
         }
       } catch (err) {
@@ -1058,6 +1155,9 @@ export function FacultyVerificationDrawer({
           if (res.ok) {
             const data = await res.json();
             setHistorySubmissions(data.submissions || []);
+            if (Array.isArray(data.classes)) {
+              setHistoryClasses(data.classes);
+            }
           }
         }
       }
@@ -1391,19 +1491,28 @@ export function FacultyVerificationDrawer({
     setIsDownloadingHistoryZip(true);
     try {
       const sanitizedName = faculty.fullName.replace(/[\\/:*?"<>|]+/g, "_");
-      const zipFilename = `${sanitizedName}_Requirements_${selectedHistoryAy}_${selectedHistorySem}.zip`.replace(
+      const classSuffix = selectedHistoryGroup
+        ? `_${selectedHistoryGroup.isGeneral ? "General" : `${selectedHistoryGroup.sectionCode}_${selectedHistoryGroup.subjectCode}`}`
+        : "";
+      const zipFilename = `${sanitizedName}_Requirements_${selectedHistoryAy}_${selectedHistorySem}${classSuffix}.zip`.replace(
         /[\\/:*?"<>|]+/g,
         "_"
       );
 
-      const historySubmissionsWithDocs = historySubmissions.filter(
+      const targetHistorySubs = selectedHistoryGroup
+        ? selectedHistoryGroup.submissions
+        : historySubmissions;
+
+      const historySubmissionsWithDocs = targetHistorySubs.filter(
         (s) => Array.isArray(s.document_versions) && s.document_versions.length > 0
       );
 
       if (historySubmissionsWithDocs.length === 0) {
         setNoticeModalData({
           title: "No Downloadable Requirements",
-          message: `There are no uploaded requirement files available for download for ${faculty.fullName} for A.Y. ${selectedHistoryAy} • ${selectedHistorySem}.`,
+          message: selectedHistoryGroup
+            ? `There are no uploaded requirement files available for download for ${selectedHistoryGroup.isGeneral ? "General Requirements" : `${selectedHistoryGroup.sectionCode} • ${selectedHistoryGroup.subjectCode}`}.`
+            : `There are no uploaded requirement files available for download for ${faculty.fullName} for A.Y. ${selectedHistoryAy} • ${selectedHistorySem}.`,
         });
         return;
       }
@@ -1425,6 +1534,9 @@ export function FacultyVerificationDrawer({
       for (const sub of historySubmissionsWithDocs) {
         const label = getFriendlyRequirementName(sub.requirement_code);
         const docs = sub.document_versions || [];
+        const classFolder = sub.faculty_class
+          ? `${sub.faculty_class.section_code}_${sub.faculty_class.subject_code}`.replace(/[\\/:*?"<>|]+/g, "_")
+          : "General_Requirements";
 
         for (const doc of docs) {
           if (!doc.storage_path) continue;
@@ -1432,7 +1544,7 @@ export function FacultyVerificationDrawer({
           setZipProgressData({
             status: "zipping",
             title: "Packaging History ZIP",
-            message: `Fetching "${label}"...`,
+            message: `Fetching "${label}" (${classFolder})...`,
             progressText: `Processing file ${processedCount} of ${totalCount}...`,
           });
 
@@ -1444,7 +1556,7 @@ export function FacultyVerificationDrawer({
             const fileBlob = await fileRes.blob();
             const ext = doc.storage_path.match(/\.[^.]+$/)?.[0] || ".pdf";
             const fileName = `${label}${ext}`;
-            zip.file(`${label}/${fileName}`, fileBlob);
+            zip.file(`${classFolder}/${label}/${fileName}`, fileBlob);
           }
         }
       }
@@ -1666,7 +1778,7 @@ export function FacultyVerificationDrawer({
                 <AppIcon icon={NavArrowLeft} size="sm" color="white" />
                 <span>Back to Faculty List</span>
               </button>
-              <div className="h-6 w-px bg-slate-200 dark:bg-slate-800 hidden sm:block" />
+              <div className="h-8 w-px bg-slate-200 dark:bg-slate-800 hidden sm:block" />
               <div className="flex items-center gap-3">
                 <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 text-xs font-bold text-slate-800 dark:text-slate-200 shadow-2xs">
                   {faculty.profileImageUrl ? (
@@ -1679,20 +1791,20 @@ export function FacultyVerificationDrawer({
                     <span>{buildFacultyInitials(faculty.fullName)}</span>
                   )}
                 </div>
-                <div>
-                  <div className="flex items-center gap-2">
-                    <h3 className="text-base font-bold text-slate-900 dark:text-slate-100">
-                      {faculty.fullName}
-                    </h3>
-                    <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-semibold bg-slate-100 text-slate-700 border border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700">
-                      {departmentLabel}
-                    </span>
-                  </div>
-                  <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400 font-medium">
-                    Active Term: A.Y. {academicYear} &bull; {semester}
-                  </p>
+                <div className="flex flex-col justify-center">
+                  <h3 className="text-base font-bold leading-tight text-slate-900 dark:text-slate-100">
+                    {faculty.fullName}
+                  </h3>
+                  <span className="mt-0.5 text-xs font-medium text-slate-500 dark:text-slate-400">
+                    {departmentLabel}
+                  </span>
                 </div>
               </div>
+            </div>
+
+            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl border border-amber-600 bg-amber-500 text-slate-950 text-xs font-bold shadow-2xs">
+              <span className="h-2 w-2 rounded-full bg-[#0b5336]" />
+              <span>Active Term: A.Y. {academicYear} &bull; {semester}</span>
             </div>
           </div>
         ) : null}
@@ -1856,13 +1968,13 @@ export function FacultyVerificationDrawer({
 
                                   <div className="flex items-center gap-1.5 shrink-0">
                                     {groupPendingCount > 0 && (
-                                      <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/15 border border-amber-500/30 text-amber-800 dark:text-amber-300 px-2.5 py-0.5 text-[10.5px] font-bold">
-                                        <span className="h-1.5 w-1.5 rounded-full bg-amber-500 animate-pulse" />
+                                      <span className="inline-flex items-center gap-1 rounded-full bg-amber-500 border border-amber-600 text-slate-950 px-2.5 py-0.5 text-[10.5px] font-bold shadow-2xs">
+                                        <span className="h-1.5 w-1.5 rounded-full bg-[#780000] animate-pulse" />
                                         {groupPendingCount} Pending
                                       </span>
                                     )}
                                     {groupRevisionCount > 0 && (
-                                      <span className="inline-flex items-center gap-1 rounded-full bg-rose-500/15 border border-rose-500/30 text-rose-800 dark:text-rose-300 px-2.5 py-0.5 text-[10.5px] font-bold">
+                                      <span className="inline-flex items-center gap-1 rounded-full bg-[#780000] border border-[#5e0000] text-white px-2.5 py-0.5 text-[10.5px] font-bold shadow-2xs">
                                         {groupRevisionCount} Revision
                                       </span>
                                     )}
@@ -1909,13 +2021,13 @@ export function FacultyVerificationDrawer({
 
                               {/* Bottom Action Footer */}
                               <div className="pt-2">
-                                <div className="w-full flex items-center justify-between px-3.5 py-2 rounded-xl bg-amber-500/10 dark:bg-amber-500/15 border border-amber-500/20 group-hover:bg-amber-400 group-hover:border-amber-400 transition-all duration-200">
-                                  <span className="text-xs font-bold text-amber-900 dark:text-amber-200 group-hover:text-slate-950 flex items-center gap-2">
+                                <div className="w-full flex items-center justify-between px-3.5 py-2 rounded-xl bg-amber-400 group-hover:bg-amber-500 border border-amber-500 transition-all duration-200 shadow-2xs">
+                                  <span className="text-xs font-extrabold text-amber-950 flex items-center gap-2">
                                     <AppIcon icon={Folder} size="xs" color="inherit" />
                                     <span>View & Verify Documents</span>
                                   </span>
-                                  <span className="inline-flex items-center justify-center h-6 w-6 rounded-full bg-white dark:bg-slate-900 group-hover:bg-slate-950 text-amber-700 dark:text-amber-400 group-hover:text-amber-300 transition-colors shadow-2xs">
-                                    <AppIcon icon={NavArrowRight} size="xs" color="inherit" />
+                                  <span className="inline-flex items-center justify-center h-6 w-6 rounded-full bg-[#780000] text-white group-hover:bg-[#5e0000] transition-colors shadow-2xs">
+                                    <AppIcon icon={NavArrowRight} size="xs" color="white" />
                                   </span>
                                 </div>
                               </div>
@@ -2719,7 +2831,7 @@ export function FacultyVerificationDrawer({
 
 
 
-              {/* Past Submissions Compressed List Table */}
+              {/* Past Submissions Per Card Subjects or Detail View */}
               {isLoadingHistory || !selectedHistoryAy ? (
                 <div className="space-y-3 pt-2">
                   <div className="overflow-hidden rounded-2xl border-2 border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 animate-pulse space-y-4">
@@ -2731,306 +2843,501 @@ export function FacultyVerificationDrawer({
                     </div>
                   </div>
                 </div>
-              ) : (
-                <div className="overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xs">
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-left text-xs text-slate-600 dark:text-slate-300 min-w-[880px]">
-                      <thead className="bg-slate-50 dark:bg-slate-950/70 border-b border-slate-200 dark:border-slate-800 text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-                        <tr>
-                          <th className="px-4 py-3 w-[26%]">Requirement</th>
-                          <th className="px-3 py-3 w-[12%] text-center">Type</th>
-                          <th className="px-4 py-3 w-[24%]">File Versions</th>
-                          <th className="px-4 py-3 w-[22%]">Notes &amp; Remarks</th>
-                          <th className="px-4 py-3 w-[10%] text-center">Status</th>
-                          <th className="px-4 py-3 w-[6%] text-center">Actions</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-slate-100 dark:divide-slate-800/70">
-                        {allRequirements.map((req) => {
-                          const code = req.code;
-                          const reqLabel = req.title;
-                          const isMandatory = req.isMandatory;
-                          const matchingSub = historySubmissions.find(
-                            (s) => s.requirement_code === code
-                          );
-                          const docs = matchingSub?.document_versions ?? [];
-                          const latestReview =
-                            matchingSub?.review_decisions?.[0] ?? null;
-                          const rawStatus = matchingSub?.status ?? null;
-                          const submittedDateText = matchingSub
-                            ? formatFullDateTime(
-                                matchingSub.submitted_at || matchingSub.created_at
-                              )
-                            : null;
-                          const adminNote =
-                            latestReview?.remarks || matchingSub?.admin_remarks;
-                          const facultyNote =
-                            matchingSub?.remarks &&
-                            matchingSub.remarks !== adminNote
-                              ? matchingSub.remarks
-                              : null;
+              ) : selectedHistoryClassId === null || !selectedHistoryGroup ? (
+                /* History Step 1: Subject Cards Grid */
+                <div className="space-y-5 pt-1">
+                  {historyClassGroups.length === 0 ? (
+                    <div className="overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xs py-14 text-center text-slate-500 dark:text-slate-400">
+                      <div className="flex flex-col items-center justify-center gap-2 max-w-sm mx-auto">
+                        <AppIcon icon={InfoCircle} size="lg" color="muted" />
+                        <h5 className="text-sm font-bold text-slate-800 dark:text-slate-200">
+                          No Past Class Loads Found
+                        </h5>
+                        <p className="text-xs text-slate-500 dark:text-slate-400">
+                          No subject loads or submissions were recorded for A.Y. {selectedHistoryAy} &bull; {selectedHistorySem}.
+                        </p>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5 pt-2">
+                      {historyClassGroups.map((group) => {
+                        const groupValidatedCount = group.submissions.filter((s) => {
+                          const st = (s.status || "").toLowerCase();
+                          return st === "validated" || st === "approved";
+                        }).length;
 
-                          return (
-                            <tr
-                              key={code}
-                              className="hover:bg-slate-50/70 dark:hover:bg-slate-800/40 transition-colors"
-                            >
-                              {/* Requirement */}
-                              <td className="px-4 py-3.5 align-middle">
-                                <div className="space-y-1">
-                                  <span className="font-semibold text-slate-900 dark:text-slate-100 text-xs block leading-snug">
-                                    {reqLabel}
-                                  </span>
-                                  {submittedDateText ? (
-                                    <span className="text-[11px] text-slate-500 dark:text-slate-400 block">
-                                      Submitted: {submittedDateText}
+                        const totalReqs = allRequirements.length;
+                        const progressPct = totalReqs > 0 ? Math.round((groupValidatedCount / totalReqs) * 100) : 0;
+
+                        return (
+                          <div
+                            key={group.key}
+                            onClick={() => setSelectedHistoryClassId(group.key)}
+                            className="group relative flex flex-col cursor-pointer text-left transition-all duration-200 hover:-translate-y-1"
+                          >
+                            {/* Folder Top Tab with Smooth Slanted Shoulder */}
+                            <div className="flex items-end -mb-[2px] relative z-10 self-start">
+                              <div className="h-7.5 px-3.5 rounded-tl-xl flex items-center gap-2 text-xs font-black tracking-wide border-t-2 border-l-2 border-amber-500 dark:border-amber-600 bg-amber-400 dark:bg-amber-500 text-slate-950 shadow-2xs group-hover:bg-amber-300 transition-colors duration-200">
+                                <AppIcon icon={Folder} size="xs" color="inherit" />
+                                <span className="truncate max-w-[150px]">
+                                  {group.isGeneral ? "General Requirements" : group.sectionCode}
+                                </span>
+                              </div>
+
+                              <div className="relative w-5 h-7.5 shrink-0 -ml-[1px]">
+                                <svg
+                                  viewBox="0 0 20 30"
+                                  fill="none"
+                                  className="w-full h-full text-amber-400 dark:text-amber-500"
+                                >
+                                  <path
+                                    d="M 0,0 L 2,0 C 8,0 13,8 16,18 L 20,30 L 0,30 Z"
+                                    fill="currentColor"
+                                  />
+                                  <path
+                                    d="M 0,1 L 2,1 C 8,1 13,9 16,19 L 20,30"
+                                    stroke="#f59e0b"
+                                    strokeWidth="2"
+                                    fill="none"
+                                    className="text-amber-500 dark:text-amber-600"
+                                  />
+                                </svg>
+                              </div>
+                            </div>
+
+                            {/* Folder Main Body */}
+                            <div className="relative flex-1 flex flex-col justify-between rounded-2xl rounded-tl-none border-2 border-amber-500 dark:border-amber-600 transition-all duration-200 overflow-hidden bg-white dark:bg-slate-900 shadow-xs group-hover:shadow-lg group-hover:border-amber-400">
+                              <div className="p-5 flex-1 flex flex-col justify-between gap-4">
+                                <div className="space-y-3.5">
+                                  {/* Top Row: Units & Validated Count Badge */}
+                                  <div className="flex items-center justify-between gap-2">
+                                    <div className="flex items-center gap-1.5 flex-wrap">
+                                      {group.units !== null ? (
+                                        <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-bold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
+                                          {group.units.toFixed(1)} Units
+                                        </span>
+                                      ) : (
+                                        <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-bold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700">
+                                          Institutional
+                                        </span>
+                                      )}
+                                    </div>
+
+                                    <div className="flex items-center gap-1.5 shrink-0">
+                                      <span className="inline-flex items-center gap-1 rounded-full bg-[#0b5336] border border-[#08412a] text-white px-2.5 py-0.5 text-[10.5px] font-bold shadow-2xs">
+                                        <AppIcon icon={Check} size="xs" color="white" />
+                                        {groupValidatedCount} Validated
+                                      </span>
+                                    </div>
+                                  </div>
+
+                                  {/* Course Code & Subject Name Fields */}
+                                  <div className="space-y-2 pt-1">
+                                    <div>
+                                      <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 block mb-0.5">
+                                        Course Code:
+                                      </span>
+                                      <h3 className="text-xl sm:text-2xl font-black text-slate-950 dark:text-slate-100 group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors">
+                                        {group.isGeneral ? "General Requirements" : group.subjectCode}
+                                      </h3>
+                                    </div>
+
+                                    <div>
+                                      <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 block mb-0.5">
+                                        Subject Name / Description:
+                                      </span>
+                                      <p className="text-base sm:text-lg font-bold text-slate-800 dark:text-slate-200 line-clamp-2 leading-snug">
+                                        {group.description}
+                                      </p>
+                                    </div>
+                                  </div>
+
+                                  {/* Validation Progress Bar */}
+                                  <div className="pt-1">
+                                    <div className="flex items-center justify-between text-[11px] font-medium text-slate-500 dark:text-slate-400 mb-1.5">
+                                      <span>Validation Progress</span>
+                                      <span className="font-bold text-slate-700 dark:text-slate-300">
+                                        {progressPct}% ({groupValidatedCount}/{totalReqs} Validated)
+                                      </span>
+                                    </div>
+                                    <div className="h-1.5 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                                      <div
+                                        className="h-full bg-gradient-to-r from-amber-500 to-emerald-500 transition-all duration-300 rounded-full"
+                                        style={{ width: `${progressPct}%` }}
+                                      />
+                                    </div>
+                                  </div>
+                                </div>
+
+                                {/* Bottom Action Footer */}
+                                <div className="pt-2">
+                                  <div className="w-full flex items-center justify-between px-3.5 py-2 rounded-xl bg-amber-400 group-hover:bg-amber-500 border border-amber-500 transition-all duration-200 shadow-2xs">
+                                    <span className="text-xs font-extrabold text-amber-950 flex items-center gap-2">
+                                      <AppIcon icon={Folder} size="xs" color="inherit" />
+                                      <span>View Verified Documents</span>
+                                    </span>
+                                    <span className="inline-flex items-center justify-center h-6 w-6 rounded-full bg-[#780000] text-white group-hover:bg-[#5e0000] transition-colors shadow-2xs">
+                                      <AppIcon icon={NavArrowRight} size="xs" color="white" />
+                                    </span>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              ) : (
+                /* History Step 2: Subject Historical Requirements View */
+                <div className="space-y-4">
+                  {/* Top Context Navigation Bar */}
+                  <div className="rounded-2xl border-2 border-amber-400/80 dark:border-amber-500/60 bg-amber-50/80 dark:bg-amber-950/20 p-3 sm:p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs">
+                    <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                      <button
+                        type="button"
+                        onClick={() => setSelectedHistoryClassId(null)}
+                        className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-[#780000] hover:bg-[#5e0000] text-white border border-[#5e0000] text-xs font-bold transition-all cursor-pointer shadow-xs active:scale-95 shrink-0"
+                        title="Return to Class List"
+                      >
+                        <AppIcon icon={NavArrowLeft} size="sm" color="white" />
+                        <span>Back to Class List</span>
+                      </button>
+
+                      <div className="h-6 w-px bg-amber-400/60 dark:bg-amber-600/40 hidden sm:block shrink-0" />
+
+                      <div className="min-w-0 flex-1 pl-1">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="font-mono text-xs font-black px-2.5 py-0.5 rounded-md bg-amber-400 text-amber-950 shrink-0">
+                            {selectedHistoryGroup.isGeneral ? "GENERAL" : selectedHistoryGroup.sectionCode}
+                          </span>
+                          <span className="text-sm sm:text-base font-black text-slate-900 dark:text-slate-100 break-words">
+                            {selectedHistoryGroup.subjectCode} &bull; {selectedHistoryGroup.description}
+                          </span>
+                          {selectedHistoryGroup.units !== null && (
+                            <span className="text-xs font-semibold text-slate-600 dark:text-slate-400 shrink-0">
+                              ({selectedHistoryGroup.units} Units)
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Quick History Switcher Dropdown */}
+                    <div className="flex items-center gap-2 shrink-0">
+                      <select
+                        value={selectedHistoryClassId}
+                        onChange={(e) => setSelectedHistoryClassId(e.target.value)}
+                        className="rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-1.5 text-xs font-bold text-slate-800 dark:text-slate-200 outline-none focus:border-amber-500 cursor-pointer shadow-2xs"
+                      >
+                        {historyClassGroups.map((g) => (
+                          <option key={g.key} value={g.key}>
+                            {g.sectionCode} - {g.subjectCode}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+
+                  {/* Historical Requirements Table for Selected Class */}
+                  <div className="overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xs">
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-left text-xs text-slate-600 dark:text-slate-300 min-w-[880px]">
+                        <thead className="bg-slate-50 dark:bg-slate-950/70 border-b border-slate-200 dark:border-slate-800 text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                          <tr>
+                            <th className="px-4 py-3 w-[26%]">Requirement</th>
+                            <th className="px-3 py-3 w-[12%] text-center">Type</th>
+                            <th className="px-4 py-3 w-[24%]">File Versions</th>
+                            <th className="px-4 py-3 w-[22%]">Notes &amp; Remarks</th>
+                            <th className="px-4 py-3 w-[10%] text-center">Status</th>
+                            <th className="px-4 py-3 w-[6%] text-center">Actions</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100 dark:divide-slate-800/70">
+                          {allRequirements.map((req) => {
+                            const code = req.code;
+                            const reqLabel = req.title;
+                            const isMandatory = req.isMandatory;
+                            const matchingSub = selectedHistoryGroup.submissions.find(
+                              (s) => s.requirement_code === code
+                            );
+                            const docs = matchingSub?.document_versions ?? [];
+                            const latestReview =
+                              matchingSub?.review_decisions?.[0] ?? null;
+                            const rawStatus = matchingSub?.status ?? null;
+                            const submittedDateText = matchingSub
+                              ? formatFullDateTime(
+                                  matchingSub.submitted_at || matchingSub.created_at
+                                )
+                              : null;
+                            const adminNote =
+                              latestReview?.remarks || matchingSub?.admin_remarks;
+                            const facultyNote =
+                              matchingSub?.remarks &&
+                              matchingSub.remarks !== adminNote
+                                ? matchingSub.remarks
+                                : null;
+
+                            return (
+                              <tr
+                                key={code}
+                                className="hover:bg-slate-50/70 dark:hover:bg-slate-800/40 transition-colors"
+                              >
+                                {/* Requirement */}
+                                <td className="px-4 py-3.5 align-middle">
+                                  <div className="space-y-1">
+                                    <span className="font-semibold text-slate-900 dark:text-slate-100 text-xs block leading-snug">
+                                      {reqLabel}
+                                    </span>
+                                    {submittedDateText ? (
+                                      <span className="text-[11px] text-slate-500 dark:text-slate-400 block">
+                                        Submitted: {submittedDateText}
+                                      </span>
+                                    ) : (
+                                      <span className="text-[11px] text-slate-400 dark:text-slate-500 italic block">
+                                        Not submitted
+                                      </span>
+                                    )}
+                                  </div>
+                                </td>
+
+                                {/* Type */}
+                                <td className="px-3 py-3.5 align-middle text-center">
+                                  {isMandatory ? (
+                                    <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider bg-[#780000] text-white border border-[#5e0000] shadow-2xs">
+                                      Required
                                     </span>
                                   ) : (
-                                    <span className="text-[11px] text-slate-400 dark:text-slate-500 italic block">
-                                      Not submitted
+                                    <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider bg-slate-700 text-white border border-slate-600 shadow-2xs">
+                                      Optional
                                     </span>
                                   )}
-                                </div>
-                              </td>
+                                </td>
 
-                              {/* Type */}
-                              <td className="px-3 py-3.5 align-middle text-center">
-                                {isMandatory ? (
-                                  <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider bg-[#780000] text-white border border-[#5e0000] shadow-2xs">
-                                    Required
-                                  </span>
-                                ) : (
-                                  <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider bg-slate-700 text-white border border-slate-600 shadow-2xs">
-                                    Optional
-                                  </span>
-                                )}
-                              </td>
+                                {/* File Versions */}
+                                <td className="px-4 py-3.5 align-middle">
+                                  {docs.length > 0 ? (
+                                    <div className="space-y-1.5">
+                                      {docs.map((doc, idx) => {
+                                        const rawName =
+                                          doc.storage_path?.split("/").pop() || "Document";
+                                        const fileName = cleanDisplayFileName(rawName);
+                                        const fileSize = formatBytes(doc.size_bytes);
+                                        const downloadUrl = `/api/storage/download?path=${encodeURIComponent(
+                                          doc.storage_path
+                                        )}`;
 
-                              {/* File Versions */}
-                              <td className="px-4 py-3.5 align-middle">
-                                {docs.length > 0 ? (
-                                  <div className="space-y-1.5">
-                                    {docs.map((doc, idx) => {
-                                      const rawName =
-                                        doc.storage_path?.split("/").pop() || "Document";
-                                      const fileName = cleanDisplayFileName(rawName);
-                                      const fileSize = formatBytes(doc.size_bytes);
-                                      const versionLabel = doc.version_number
-                                        ? `v${doc.version_number}`
-                                        : `v1`;
-                                      const downloadUrl = `/api/storage/download?path=${encodeURIComponent(
-                                        doc.storage_path
-                                      )}`;
-
-                                      return (
-                                        <div
-                                          key={doc.id || idx}
-                                          className="flex items-center justify-between gap-2 rounded-lg border border-slate-200/80 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-950/60 px-2.5 py-1 text-xs"
-                                        >
-                                          <div className="flex items-center gap-1.5 min-w-0">
-                                            <span
-                                              className="truncate font-medium text-slate-800 dark:text-slate-200 text-xs max-w-[150px] xl:max-w-[200px]"
-                                              title={rawName}
-                                            >
-                                              {fileName}
-                                            </span>
-                                            {fileSize ? (
-                                              <span className="text-[10px] text-slate-400 shrink-0 font-mono">
-                                                ({fileSize})
+                                        return (
+                                          <div
+                                            key={doc.id || idx}
+                                            className="flex items-center justify-between gap-2 rounded-lg border border-slate-200/80 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-950/60 px-2.5 py-1 text-xs"
+                                          >
+                                            <div className="flex items-center gap-1.5 min-w-0">
+                                              <span
+                                                className="truncate font-medium text-slate-800 dark:text-slate-200 text-xs max-w-[150px] xl:max-w-[200px]"
+                                                title={rawName}
+                                              >
+                                                {fileName}
                                               </span>
-                                            ) : null}
-                                          </div>
+                                              {fileSize ? (
+                                                <span className="text-[10px] text-slate-400 shrink-0 font-mono">
+                                                  ({fileSize})
+                                                </span>
+                                              ) : null}
+                                            </div>
 
-                                          <div className="flex items-center gap-1 shrink-0">
-                                            <button
-                                              type="button"
-                                              onClick={() => {
-                                                const vAdminNote =
-                                                  matchingSub?.review_decisions?.[0]
-                                                    ?.remarks ||
-                                                  matchingSub?.admin_remarks;
-                                                const vFacultyNote =
-                                                  matchingSub?.notes ||
-                                                  matchingSub?.remarks ||
-                                                  null;
-                                                const versionSuffix = doc.version_number
-                                                  ? ` (v${doc.version_number})`
-                                                  : idx > 0
-                                                  ? ` (Revision ${docs.length - idx})`
-                                                  : "";
-                                                setPreviewSubmission({
-                                                  code: code,
-                                                  title: `${reqLabel}${versionSuffix}`,
-                                                  fileName: fileName,
-                                                  fileSize: doc.size_bytes || null,
-                                                  storagePath: doc.storage_path,
-                                                  fileUrl: downloadUrl,
-                                                  submittedAt:
-                                                    doc.created_at ||
-                                                    matchingSub?.submitted_at ||
-                                                    matchingSub?.created_at ||
-                                                    undefined,
-                                                  note: vFacultyNote,
-                                                  notes: vFacultyNote,
-                                                  remarks: vFacultyNote,
-                                                  facultyNote: vFacultyNote,
-                                                  feedback: vAdminNote,
-                                                  admin_remarks: vAdminNote,
-                                                  adminRemarks: vAdminNote,
-                                                  reviewedAt:
+                                            <div className="flex items-center gap-1 shrink-0">
+                                              <button
+                                                type="button"
+                                                onClick={() => {
+                                                  const vAdminNote =
                                                     matchingSub?.review_decisions?.[0]
-                                                      ?.created_at,
-                                                  latestSubmissionId:
-                                                    matchingSub?.id,
-                                                  status:
-                                                    matchingSub?.status ||
-                                                    "Pending",
-                                                  academicYear: selectedHistoryAy,
-                                                  semester: selectedHistorySem,
-                                                  facultyName: faculty.fullName,
-                                                  isAdminView: true,
-                                                  hasPriorRevision: Boolean(idx > 0),
-                                                  isRevision: Boolean(idx > 0),
-                                                });
-                                              }}
-                                              className="p-1 rounded text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-slate-200/60 dark:hover:bg-slate-800 transition cursor-pointer"
-                                              title="Preview"
-                                            >
-                                              <AppIcon icon={Eye} size="sm" color="inherit" />
-                                            </button>
-                                            <button
-                                              type="button"
-                                              onClick={() =>
-                                                handleSingleFileDownload(
-                                                  doc.storage_path,
-                                                  fileName
-                                                )
-                                              }
-                                              className="p-1 rounded text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-slate-200/60 dark:hover:bg-slate-800 transition cursor-pointer"
-                                              title="Download"
-                                            >
-                                              <AppIcon icon={Download} size="sm" color="inherit" />
-                                            </button>
+                                                      ?.remarks ||
+                                                    matchingSub?.admin_remarks;
+                                                  const vFacultyNote =
+                                                    matchingSub?.notes ||
+                                                    matchingSub?.remarks ||
+                                                    null;
+                                                  const versionSuffix = doc.version_number
+                                                    ? ` (v${doc.version_number})`
+                                                    : idx > 0
+                                                    ? ` (Revision ${docs.length - idx})`
+                                                    : "";
+                                                  setPreviewSubmission({
+                                                    code: code,
+                                                    title: `${reqLabel}${versionSuffix}`,
+                                                    fileName: fileName,
+                                                    fileSize: doc.size_bytes || null,
+                                                    storagePath: doc.storage_path,
+                                                    fileUrl: downloadUrl,
+                                                    submittedAt:
+                                                      doc.created_at ||
+                                                      matchingSub?.submitted_at ||
+                                                      matchingSub?.created_at ||
+                                                      undefined,
+                                                    note: vFacultyNote,
+                                                    notes: vFacultyNote,
+                                                    remarks: vFacultyNote,
+                                                    facultyNote: vFacultyNote,
+                                                    feedback: vAdminNote,
+                                                    admin_remarks: vAdminNote,
+                                                    adminRemarks: vAdminNote,
+                                                    reviewedAt:
+                                                      matchingSub?.review_decisions?.[0]
+                                                        ?.created_at,
+                                                    latestSubmissionId:
+                                                      matchingSub?.id,
+                                                    status:
+                                                      matchingSub?.status ||
+                                                      "Pending",
+                                                    academicYear: selectedHistoryAy,
+                                                    semester: selectedHistorySem,
+                                                    facultyName: faculty.fullName,
+                                                    isAdminView: true,
+                                                    hasPriorRevision: Boolean(idx > 0),
+                                                    isRevision: Boolean(idx > 0),
+                                                  });
+                                                }}
+                                                className="p-1 rounded text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-slate-200/60 dark:hover:bg-slate-800 transition cursor-pointer"
+                                                title="Preview"
+                                              >
+                                                <AppIcon icon={Eye} size="sm" color="inherit" />
+                                              </button>
+                                              <button
+                                                type="button"
+                                                onClick={() =>
+                                                  handleSingleFileDownload(
+                                                    doc.storage_path,
+                                                    fileName
+                                                  )
+                                                }
+                                                className="p-1 rounded text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-slate-200/60 dark:hover:bg-slate-800 transition cursor-pointer"
+                                                title="Download"
+                                              >
+                                                <AppIcon icon={Download} size="sm" color="inherit" />
+                                              </button>
+                                            </div>
                                           </div>
+                                        );
+                                      })}
+                                    </div>
+                                  ) : (
+                                    <span className="text-xs text-slate-400 dark:text-slate-500 italic block pt-0.5">
+                                      No documents
+                                    </span>
+                                  )}
+                                </td>
+
+                                {/* Notes */}
+                                <td className="px-4 py-3.5 align-middle">
+                                  {facultyNote || adminNote ? (
+                                    <div className="rounded-xl border border-slate-200/80 dark:border-slate-800/80 bg-slate-50/70 dark:bg-slate-900/60 p-2.5 text-xs max-w-[320px] space-y-1.5 shadow-2xs">
+                                      {facultyNote ? (
+                                        <div className="flex items-start gap-1.5 leading-snug">
+                                          <span className="font-bold text-[10.5px] text-amber-700 dark:text-amber-400 shrink-0 mt-0.5 flex items-center gap-1.5">
+                                            <span className="inline-flex items-center justify-center h-4 w-4 rounded-full bg-amber-500/20 text-amber-700 dark:text-amber-400 border border-amber-500/30 shrink-0 shadow-2xs [&>svg]:h-2.5 [&>svg]:w-2.5">
+                                              <AppIcon icon={ChatBubble} size="xs" color="active" />
+                                            </span>
+                                            Faculty Remarks:
+                                          </span>
+                                          <p className="text-slate-700 dark:text-slate-300 italic line-clamp-2" title={facultyNote}>
+                                            &ldquo;{facultyNote}&rdquo;
+                                          </p>
                                         </div>
-                                      );
-                                    })}
-                                  </div>
-                                ) : (
-                                  <span className="text-xs text-slate-400 dark:text-slate-500 italic block pt-0.5">
-                                    No documents
-                                  </span>
-                                )}
-                              </td>
-
-                              {/* Notes */}
-                              <td className="px-4 py-3.5 align-middle">
-                                {facultyNote || adminNote ? (
-                                  <div className="rounded-xl border border-slate-200/80 dark:border-slate-800/80 bg-slate-50/70 dark:bg-slate-900/60 p-2.5 text-xs max-w-[320px] space-y-1.5 shadow-2xs">
-                                    {facultyNote ? (
-                                      <div className="flex items-start gap-1.5 leading-snug">
-                                        <span className="font-bold text-[10.5px] text-amber-700 dark:text-amber-400 shrink-0 mt-0.5 flex items-center gap-1.5">
-                                          <span className="inline-flex items-center justify-center h-4 w-4 rounded-full bg-amber-500/20 text-amber-700 dark:text-amber-400 border border-amber-500/30 shrink-0 shadow-2xs [&>svg]:h-2.5 [&>svg]:w-2.5">
-                                            <AppIcon icon={ChatBubble} size="xs" color="active" />
+                                      ) : null}
+                                      {adminNote ? (
+                                        <div className={`flex items-start gap-1.5 leading-snug ${facultyNote ? "pt-1.5 border-t border-slate-200/70 dark:border-slate-800/80" : ""}`}>
+                                          <span className="font-bold text-[10.5px] text-[#0b5336] dark:text-emerald-400 shrink-0 mt-0.5 flex items-center gap-1.5">
+                                            <span className="inline-flex items-center justify-center h-4 w-4 rounded-full bg-[#0b5336]/15 dark:bg-[#0b5336]/30 text-[#0b5336] dark:text-emerald-400 border border-[#0b5336]/30 shrink-0 shadow-2xs [&>svg]:h-2.5 [&>svg]:w-2.5">
+                                              <AppIcon icon={Check} size="xs" color="success" strokeWidth={2.5} />
+                                            </span>
+                                            Validated Remarks:
                                           </span>
-                                          Faculty Remarks:
-                                        </span>
-                                        <p className="text-slate-700 dark:text-slate-300 italic line-clamp-2" title={facultyNote}>
-                                          &ldquo;{facultyNote}&rdquo;
-                                        </p>
-                                      </div>
-                                    ) : null}
-                                    {adminNote ? (
-                                      <div className={`flex items-start gap-1.5 leading-snug ${facultyNote ? "pt-1.5 border-t border-slate-200/70 dark:border-slate-800/80" : ""}`}>
-                                        <span className="font-bold text-[10.5px] text-[#0b5336] dark:text-emerald-400 shrink-0 mt-0.5 flex items-center gap-1.5">
-                                          <span className="inline-flex items-center justify-center h-4 w-4 rounded-full bg-[#0b5336]/15 dark:bg-[#0b5336]/30 text-[#0b5336] dark:text-emerald-400 border border-[#0b5336]/30 shrink-0 shadow-2xs [&>svg]:h-2.5 [&>svg]:w-2.5">
-                                            <AppIcon icon={Check} size="xs" color="success" strokeWidth={2.5} />
-                                          </span>
-                                          Validated Remarks:
-                                        </span>
-                                        <p className="text-slate-700 dark:text-slate-300 italic line-clamp-2" title={adminNote}>
-                                          &ldquo;{adminNote}&rdquo;
-                                        </p>
-                                      </div>
-                                    ) : null}
-                                  </div>
-                                ) : (
-                                  <span className="text-slate-400 dark:text-slate-600 text-xs italic block">&mdash;</span>
-                                )}
-                              </td>
+                                          <p className="text-slate-700 dark:text-slate-300 italic line-clamp-2" title={adminNote}>
+                                            &ldquo;{adminNote}&rdquo;
+                                          </p>
+                                        </div>
+                                      ) : null}
+                                    </div>
+                                  ) : (
+                                    <span className="text-slate-400 dark:text-slate-600 text-xs italic block">&mdash;</span>
+                                  )}
+                                </td>
 
-                              {/* Status */}
-                              <td className="px-4 py-3.5 align-middle text-center whitespace-nowrap">
-                                <div className="flex items-center justify-center">
-                                  <SubmissionStatusBadge status={rawStatus} size="md" />
-                                </div>
-                              </td>
-
-                              {/* Action */}
-                              <td className="px-4 py-3.5 align-middle text-center">
-                                {docs.length > 0 && docs[0]?.storage_path ? (
+                                {/* Status */}
+                                <td className="px-4 py-3.5 align-middle text-center whitespace-nowrap">
                                   <div className="flex items-center justify-center">
-                                    <button
-                                      type="button"
-                                      onClick={() => {
-                                        const first = docs[0];
-                                        const raw =
-                                          first.storage_path.split("/").pop() ||
-                                          `${reqLabel}.pdf`;
-                                        const clean = cleanDisplayFileName(raw);
-                                        setPreviewSubmission({
-                                          code: code,
-                                          title: reqLabel,
-                                          fileName: clean,
-                                          fileSize: first.size_bytes || null,
-                                          storagePath: first.storage_path,
-                                          fileUrl: `/api/storage/download?path=${encodeURIComponent(
-                                            first.storage_path
-                                          )}`,
-                                          submittedAt:
-                                            matchingSub?.submitted_at ||
-                                            matchingSub?.created_at ||
-                                            undefined,
-                                          note: facultyNote,
-                                          notes: facultyNote,
-                                          remarks: facultyNote,
-                                          facultyNote: facultyNote,
-                                          feedback: adminNote,
-                                          admin_remarks: adminNote,
-                                          adminRemarks: adminNote,
-                                          reviewedAt:
-                                            matchingSub?.review_decisions?.[0]
-                                              ?.created_at ||
-                                            matchingSub?.created_at ||
-                                            undefined,
-                                          latestSubmissionId:
-                                            matchingSub?.id,
-                                          status:
-                                            matchingSub?.status ||
-                                            "Validated",
-                                          academicYear: selectedHistoryAy,
-                                          semester: selectedHistorySem,
-                                          facultyName: faculty.fullName,
-                                          isAdminView: true,
-                                        });
-                                      }}
-                                      className="inline-flex items-center gap-1 rounded-xl border border-slate-200 bg-white hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-800 dark:hover:bg-slate-750 text-slate-800 dark:text-slate-200 px-2.5 py-1 text-xs font-semibold transition cursor-pointer shadow-2xs"
-                                    >
-                                      <AppIcon icon={Eye} size="sm" color="inherit" />
-                                      <span>Preview</span>
-                                    </button>
+                                    <SubmissionStatusBadge status={rawStatus} size="md" />
                                   </div>
-                                ) : (
-                                  <span className="text-xs text-slate-400 dark:text-slate-500 italic block pt-0.5">
-                                    &mdash;
-                                  </span>
-                                )}
-                              </td>
-                            </tr>
-                          );
-                        })}
-                      </tbody>
-                    </table>
+                                </td>
+
+                                {/* Action */}
+                                <td className="px-4 py-3.5 align-middle text-center">
+                                  {docs.length > 0 && docs[0]?.storage_path ? (
+                                    <div className="flex items-center justify-center">
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          const first = docs[0];
+                                          const raw =
+                                            first.storage_path.split("/").pop() ||
+                                            `${reqLabel}.pdf`;
+                                          const clean = cleanDisplayFileName(raw);
+                                          setPreviewSubmission({
+                                            code: code,
+                                            title: reqLabel,
+                                            fileName: clean,
+                                            fileSize: first.size_bytes || null,
+                                            storagePath: first.storage_path,
+                                            fileUrl: `/api/storage/download?path=${encodeURIComponent(
+                                              first.storage_path
+                                            )}`,
+                                            submittedAt:
+                                              matchingSub?.submitted_at ||
+                                              matchingSub?.created_at ||
+                                              undefined,
+                                            note: facultyNote,
+                                            notes: facultyNote,
+                                            remarks: facultyNote,
+                                            facultyNote: facultyNote,
+                                            feedback: adminNote,
+                                            admin_remarks: adminNote,
+                                            adminRemarks: adminNote,
+                                            reviewedAt:
+                                              matchingSub?.review_decisions?.[0]
+                                                ?.created_at ||
+                                              matchingSub?.created_at ||
+                                              undefined,
+                                            latestSubmissionId:
+                                              matchingSub?.id,
+                                            status:
+                                              matchingSub?.status ||
+                                              "Validated",
+                                            academicYear: selectedHistoryAy,
+                                            semester: selectedHistorySem,
+                                            facultyName: faculty.fullName,
+                                            isAdminView: true,
+                                          });
+                                        }}
+                                        className="inline-flex items-center gap-1 rounded-xl border border-slate-200 bg-white hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-800 dark:hover:bg-slate-750 text-slate-800 dark:text-slate-200 px-2.5 py-1 text-xs font-semibold transition cursor-pointer shadow-2xs"
+                                      >
+                                        <AppIcon icon={Eye} size="sm" color="inherit" />
+                                        <span>Preview</span>
+                                      </button>
+                                    </div>
+                                  ) : (
+                                    <span className="text-xs text-slate-400 dark:text-slate-500 italic block pt-0.5">
+                                      &mdash;
+                                    </span>
+                                  )}
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
                   </div>
                 </div>
               )}
@@ -3487,13 +3794,14 @@ export function RequirementsPanel({
   >("all");
 
   const [activePanelTab, setActivePanelTab] = useState<"current" | "history">("current");
-  const [activeTermAy, setActiveTermAy] = useState("2026-2027");
-  const [activeTermSem, setActiveTermSem] = useState<SemesterOption>("2nd Semester");
-  const [historyAy, setHistoryAy] = useState("2025-2026");
+  const [activeTermAy, setActiveTermAy] = useState("");
+  const [activeTermSem, setActiveTermSem] = useState<SemesterOption>("1st Semester");
+  const [historyAy, setHistoryAy] = useState("");
   const [historySem, setHistorySem] = useState<SemesterOption>("1st Semester");
   const [availableAcademicYears, setAvailableAcademicYears] = useState<string[]>([]);
-  const [academicYear, setAcademicYear] = useState("2026-2027");
-  const [semester, setSemester] = useState<SemesterOption>("2nd Semester");
+  const [termsByYear, setTermsByYear] = useState<Record<string, SemesterOption[]>>({});
+  const [academicYear, setAcademicYear] = useState("");
+  const [semester, setSemester] = useState<SemesterOption>("1st Semester");
 
   const [facultyStatuses, setFacultyStatuses] = useState<
     Record<string, Record<string, RequirementStatus>>
@@ -3583,9 +3891,28 @@ export function RequirementsPanel({
     const list = new Set<string>();
     if (activeTermAy) list.add(activeTermAy);
     availableAcademicYears.forEach((y) => list.add(y));
-    ["2026-2027", "2025-2026", "2024-2025", "2023-2024"].forEach((y) => list.add(y));
     return Array.from(list).sort().reverse();
   }, [activeTermAy, availableAcademicYears]);
+
+  const SEMESTER_SORT_ORDER: Record<string, number> = {
+    "1st Semester": 1,
+    "2nd Semester": 2,
+    "Summer Semester": 3,
+  };
+
+  const sortSemestersList = useCallback((sems: SemesterOption[]): SemesterOption[] => {
+    return [...sems].sort(
+      (a, b) => (SEMESTER_SORT_ORDER[a] ?? 99) - (SEMESTER_SORT_ORDER[b] ?? 99)
+    );
+  }, []);
+
+  const availableHistorySemesters = useMemo(() => {
+    const list =
+      termsByYear[historyAy] && termsByYear[historyAy].length > 0
+        ? termsByYear[historyAy]
+        : (["1st Semester", "2nd Semester"] as SemesterOption[]);
+    return sortSemestersList(list);
+  }, [termsByYear, historyAy, sortSemestersList]);
 
   // Load active term & statuses on mount
   useEffect(() => {
@@ -3618,7 +3945,7 @@ export function RequirementsPanel({
           const activeAy =
             data.currentAcademicYear || data.selectedAcademicYear || "2026-2027";
           const activeSem: SemesterOption =
-            data.currentSemester || data.selectedSemester || "2nd Semester";
+            data.currentSemester || data.selectedSemester || "1st Semester";
 
           setActiveTermAy(activeAy);
           setActiveTermSem(activeSem);
@@ -3627,19 +3954,36 @@ export function RequirementsPanel({
             setSemester(activeSem);
           }
 
-          if (Array.isArray(data.availableAcademicYears) && data.availableAcademicYears.length > 0) {
-            setAvailableAcademicYears(data.availableAcademicYears);
-            const pastYear =
-              data.availableAcademicYears.find((y: string) => y !== activeAy) ||
-              data.availableAcademicYears[0] ||
-              "2025-2026";
-            setHistoryAy((prev) => prev || pastYear);
+          if (data.termsByYear && typeof data.termsByYear === "object") {
+            setTermsByYear(data.termsByYear);
           }
 
-          // Batch load status for all faculty
-          const targetAy = activePanelTab === "history" ? historyAy : activeAy;
-          const targetSem = activePanelTab === "history" ? historySem : activeSem;
-          await fetchAllStatuses(targetAy, targetSem, { silent: hasExistingStatuses });
+          if (Array.isArray(data.availableAcademicYears) && data.availableAcademicYears.length > 0) {
+            setAvailableAcademicYears(data.availableAcademicYears);
+            const chosenAy =
+              (historyAy && data.availableAcademicYears.includes(historyAy))
+                ? historyAy
+                : (activeAy && data.availableAcademicYears.includes(activeAy))
+                  ? activeAy
+                  : data.availableAcademicYears[0];
+            setHistoryAy(chosenAy);
+
+            const validSemsForAy = sortSemestersList(
+              (data.termsByYear && data.termsByYear[chosenAy]) || ["1st Semester", "2nd Semester"]
+            );
+            // Default to current semester if available, otherwise first semester
+            const defaultSem = validSemsForAy.includes(activeSem) ? activeSem : validSemsForAy[0];
+            setHistorySem(defaultSem);
+
+            // Batch load status for all faculty
+            const targetAy = activePanelTab === "history" ? chosenAy : activeAy;
+            const targetSem = activePanelTab === "history" ? defaultSem : activeSem;
+            await fetchAllStatuses(targetAy, targetSem, { silent: hasExistingStatuses });
+          } else {
+            const targetAy = activePanelTab === "history" ? historyAy : activeAy;
+            const targetSem = activePanelTab === "history" ? historySem : activeSem;
+            await fetchAllStatuses(targetAy, targetSem, { silent: hasExistingStatuses });
+          }
         }
       } catch (err) {
         console.error("Failed to load active term:", err);
@@ -4094,9 +4438,23 @@ export function RequirementsPanel({
                 type="button"
                 onClick={() => {
                   setActivePanelTab("history");
-                  setAcademicYear(historyAy);
-                  setSemester(historySem);
-                  void fetchAllStatuses(historyAy, historySem, {
+                  const validAy =
+                    historyAy && allKnownYears.includes(historyAy)
+                      ? historyAy
+                      : activeTermAy && allKnownYears.includes(activeTermAy)
+                        ? activeTermAy
+                        : allKnownYears[0] || "";
+                  const validSems = sortSemestersList(
+                    termsByYear[validAy] || ["1st Semester", "2nd Semester"]
+                  );
+                  const validSem = validSems.includes(activeTermSem)
+                    ? activeTermSem
+                    : (validSems.includes(historySem) ? historySem : validSems[0]);
+                  setHistoryAy(validAy);
+                  setHistorySem(validSem);
+                  setAcademicYear(validAy);
+                  setSemester(validSem);
+                  void fetchAllStatuses(validAy, validSem, {
                     silent: Object.keys(facultyStatuses).length > 0,
                   });
                 }}
@@ -4113,8 +4471,8 @@ export function RequirementsPanel({
 
             {/* Academic Term Selector / Status Badge */}
             {activePanelTab === "current" ? (
-              <div className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl border border-amber-300 dark:border-amber-700 bg-amber-50/80 dark:bg-amber-950/30 text-amber-900 dark:text-amber-200 text-xs font-bold shadow-2xs">
-                <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+              <div className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl border border-amber-600 bg-amber-500 text-slate-950 text-xs font-bold shadow-2xs">
+                <span className="h-2 w-2 rounded-full bg-[#0b5336]" />
                 <span>Active Term: A.Y. {activeTermAy} &bull; {activeTermSem}</span>
               </div>
             ) : (
@@ -4128,7 +4486,15 @@ export function RequirementsPanel({
                     const newAy = e.target.value;
                     setHistoryAy(newAy);
                     setAcademicYear(newAy);
-                    void fetchAllStatuses(newAy, historySem, {
+                    const validSems = sortSemestersList(
+                      termsByYear[newAy] || ["1st Semester", "2nd Semester"]
+                    );
+                    const nextSem = validSems.includes(activeTermSem)
+                      ? activeTermSem
+                      : (validSems.includes(historySem) ? historySem : validSems[0]);
+                    setHistorySem(nextSem);
+                    setSemester(nextSem);
+                    void fetchAllStatuses(newAy, nextSem, {
                       silent: Object.keys(facultyStatuses).length > 0,
                     });
                   }}
@@ -4153,10 +4519,11 @@ export function RequirementsPanel({
                   }}
                   className="rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-1.5 text-xs text-slate-900 dark:text-slate-100 font-bold outline-none focus:border-amber-500 cursor-pointer shadow-2xs"
                 >
-                  <option value="1st Semester">1st Semester</option>
-                  <option value="2nd Semester">2nd Semester</option>
-                  <option value="Summer Semester">Summer Semester</option>
-                  <option value="Summer Term">Summer Term</option>
+                  {availableHistorySemesters.map((sem) => (
+                    <option key={sem} value={sem}>
+                      {sem}
+                    </option>
+                  ))}
                 </select>
               </div>
             )}
