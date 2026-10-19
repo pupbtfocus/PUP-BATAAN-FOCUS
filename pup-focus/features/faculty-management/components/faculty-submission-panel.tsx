@@ -3156,7 +3156,7 @@ function FacultySubmissionPanelContent({
           <button
             type="button"
             onClick={() => setIsUploadSectionVisible(true)}
-            className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl border-2 border-amber-500 bg-white dark:bg-slate-900 hover:bg-amber-50 dark:hover:bg-slate-800 text-slate-950 dark:text-amber-100 text-xs font-extrabold shadow-xs transition cursor-pointer active:scale-95"
+            className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-950 dark:text-amber-100 text-xs font-extrabold shadow-xs transition cursor-pointer active:scale-95"
             title="Show document upload progress and status"
           >
             <div className="p-1 rounded-md bg-amber-500 text-slate-950 font-bold shrink-0">
@@ -3184,14 +3184,14 @@ function FacultySubmissionPanelContent({
                 (0 Active)
               </span>
             )}
-            <AppIcon icon={NavArrowRight} size="xs" color="inherit" className="ml-0.5 text-amber-700 dark:text-amber-400" />
+            <AppIcon icon={NavArrowRight} size="xs" color="inherit" className="ml-0.5 text-slate-500 dark:text-slate-400" />
           </button>
         </div>
       );
     }
 
     return (
-      <div className="rounded-2xl border-2 border-amber-500 bg-white dark:bg-slate-900 p-4 sm:p-5 shadow-sm space-y-3 transition-all my-2">
+      <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 sm:p-5 shadow-sm space-y-3 transition-all my-2">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 pb-2 border-b border-slate-200 dark:border-slate-800">
           <div className="flex items-center gap-2.5">
             <div className="p-2 rounded-xl bg-amber-500 text-slate-950 font-bold shadow-xs">
@@ -3244,7 +3244,7 @@ function FacultySubmissionPanelContent({
 
         {/* Task items list or empty state */}
         {classUploadTasks.length === 0 ? (
-          <div className="p-5 rounded-xl border border-dashed border-amber-300/80 dark:border-amber-900/60 bg-white/70 dark:bg-slate-950/40 text-center space-y-1">
+          <div className="p-5 rounded-xl border border-dashed border-slate-200 dark:border-slate-800 bg-white/70 dark:bg-slate-950/40 text-center space-y-1">
             <p className="text-xs font-bold text-slate-700 dark:text-slate-300">
               No Active Document Uploads
             </p>
@@ -3262,7 +3262,7 @@ function FacultySubmissionPanelContent({
                     ? "bg-[#0b5336]/10 border-[#0b5336]/30 dark:bg-[#0b5336]/20 dark:border-[#0b5336]/40"
                     : task.status === "error"
                       ? "bg-[#780000]/10 border-[#780000]/30 dark:bg-[#780000]/20 dark:border-[#780000]/40"
-                      : "bg-white dark:bg-slate-950/60 border-amber-300/70 dark:border-amber-900/50 shadow-2xs"
+                      : "bg-white dark:bg-slate-950/60 border-slate-200 dark:border-slate-800 shadow-2xs"
                 }`}
               >
                 <div className="flex items-start sm:items-center gap-3 min-w-0 flex-1">
@@ -3868,8 +3868,8 @@ function FacultySubmissionPanelContent({
                   </div>
                 </section>
 
-                {/* Analytics Section: Compliance Distribution & Class Load Breakdown */}
-                <section className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-5">
+                {/* Analytics & Recent Activity Section */}
+                <section className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-5 items-stretch">
                   {/* Left Card: Document Status Analytics */}
                   <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs p-5 sm:p-6 space-y-4 transition-colors">
                     <div className="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-slate-800">
@@ -3882,7 +3882,7 @@ function FacultySubmissionPanelContent({
                           Distribution of your {totalRequirements || mandatoryTemplates.length} required documents this semester
                         </p>
                       </div>
-                      <span className="inline-flex items-center px-2.5 py-1 rounded-lg bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30 text-xs font-bold">
+                      <span className="inline-flex items-center px-2.5 py-1 rounded-lg bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30 text-xs font-bold shrink-0">
                         {isAllValidated
                           ? "100% Complete"
                           : `${Math.round((mandatoryValidatedCount / (mandatoryTemplates.length || 1)) * 100)}% Complete`}
@@ -3982,7 +3982,7 @@ function FacultySubmissionPanelContent({
                     })()}
                   </div>
 
-                  {/* Right Card: Class Load Compliance Analytics */}
+                  {/* Middle Card: Class Load Compliance Analytics */}
                   <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs p-5 sm:p-6 space-y-4 transition-colors flex flex-col justify-between">
                     <div className="space-y-4">
                       <div className="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-slate-800">
@@ -4110,39 +4110,41 @@ function FacultySubmissionPanelContent({
                       </span>
                     </div>
                   </div>
-                </section>
 
-                {/* Main Dashboard Body: Recent Activity */}
-                <section className="space-y-6">
-                  {/* Activity Feed Card */}
-                  <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs p-5 sm:p-6 space-y-4 transition-colors">
-                    <div className="flex items-center justify-between pb-3 border-b border-slate-300 dark:border-slate-800">
-                      <h3 className="text-base sm:text-lg font-bold text-slate-900 dark:text-slate-100 tracking-tight">
-                        Recent Activity
-                      </h3>
+                  {/* Right Card: Recent Activity */}
+                  <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs p-5 sm:p-6 space-y-4 transition-colors flex flex-col">
+                    <div className="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-slate-800">
+                      <div>
+                        <h3 className="text-base sm:text-lg font-bold text-slate-900 dark:text-slate-100 tracking-tight">
+                          Recent Activity
+                        </h3>
+                        <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                          Latest document submissions
+                        </p>
+                      </div>
                       <button
                         type="button"
                         onClick={openHistoryModal}
-                        className="text-xs sm:text-sm text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200 transition cursor-pointer font-semibold"
+                        className="text-xs font-semibold text-[#800000] dark:text-amber-400 hover:underline transition cursor-pointer shrink-0"
                       >
                         View all
                       </button>
                     </div>
                     {deduplicatedRecentActivities.length > 0 ? (
-                      <div className="space-y-3">
+                      <div className="space-y-2.5 max-h-64 overflow-y-auto pr-1">
                         {deduplicatedRecentActivities.map((sub) => (
                           <div
                             key={sub.id}
-                            className="flex items-start gap-3.5 p-3.5 rounded-xl bg-slate-50 hover:bg-slate-100/80 dark:bg-slate-950/60 dark:hover:bg-slate-950/90 border border-slate-300 dark:border-slate-800/80 transition-colors"
+                            className="flex items-start gap-3 p-3 rounded-xl bg-slate-50/70 hover:bg-slate-100/80 dark:bg-slate-950/60 dark:hover:bg-slate-950/90 border border-slate-200 dark:border-slate-800 transition-colors"
                           >
                             <div className="mt-0.5 shrink-0">
                               {renderStatusIconBadge(sub.status)}
                             </div>
                             <div className="flex-1 min-w-0">
-                              <p className="text-sm font-semibold text-slate-900 dark:text-slate-100 truncate">
+                              <p className="text-xs sm:text-sm font-semibold text-slate-900 dark:text-slate-100 truncate">
                                 {getRequirementTitle(sub.requirementCode)}
                               </p>
-                              <p className="text-xs text-slate-600 dark:text-slate-400 mt-0.5">
+                              <p className="text-[11px] text-slate-600 dark:text-slate-400 mt-0.5">
                                 Status:{" "}
                                 <span
                                   className={getStatusTextColor(sub.status)}
@@ -4150,7 +4152,7 @@ function FacultySubmissionPanelContent({
                                   {getStatusText(sub.status)}
                                 </span>
                               </p>
-                              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                              <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
                                 {formatSubmittedDateTime(sub.submittedAt) ??
                                   sub.submittedAt}
                               </p>
@@ -4159,9 +4161,11 @@ function FacultySubmissionPanelContent({
                         ))}
                       </div>
                     ) : (
-                      <p className="text-sm text-slate-500 dark:text-slate-400 py-3 text-center">
-                        No submission activity recorded yet.
-                      </p>
+                      <div className="flex-1 flex items-center justify-center rounded-xl border border-dashed border-slate-300 dark:border-slate-800 p-6 text-center">
+                        <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400">
+                          No submission activity recorded yet.
+                        </p>
+                      </div>
                     )}
                   </div>
                 </section>
@@ -4519,7 +4523,7 @@ function FacultySubmissionPanelContent({
                             </div>
 
                             {/* Active / Archive Toggle Pills */}
-                            <div className="inline-flex items-center p-1 bg-amber-50 rounded-xl border-2 border-amber-300 self-start lg:self-auto">
+                            <div className="inline-flex items-center p-1 bg-slate-100 rounded-xl border border-slate-200 self-start lg:self-auto">
                               <button
                                 type="button"
                                 onClick={() => {
@@ -4529,7 +4533,7 @@ function FacultySubmissionPanelContent({
                                 className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-black transition-all cursor-pointer ${
                                   classTab === "active"
                                     ? "bg-[#780000] text-white shadow-xs"
-                                    : "text-amber-950 hover:bg-amber-200"
+                                    : "text-slate-700 hover:bg-slate-200"
                                 }`}
                               >
                                 <span>Active</span>
@@ -4537,7 +4541,7 @@ function FacultySubmissionPanelContent({
                                   className={`px-1.5 py-0.5 rounded-md text-[10px] font-black ${
                                     classTab === "active"
                                       ? "bg-amber-400 text-amber-950"
-                                      : "bg-amber-200 text-amber-950"
+                                      : "bg-slate-200 text-slate-700"
                                   }`}
                                 >
                                   {activeFacultyClasses.length}
@@ -4553,7 +4557,7 @@ function FacultySubmissionPanelContent({
                                 className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-black transition-all cursor-pointer ${
                                   classTab === "archived"
                                     ? "bg-[#780000] text-white shadow-xs"
-                                    : "text-amber-950 hover:bg-amber-200"
+                                    : "text-slate-700 hover:bg-slate-200"
                                 }`}
                               >
                                 <AppIcon icon={Archive} size="sm" color="inherit" />
@@ -4562,7 +4566,7 @@ function FacultySubmissionPanelContent({
                                   className={`px-1.5 py-0.5 rounded-md text-[10px] font-black ${
                                     classTab === "archived"
                                       ? "bg-amber-400 text-amber-950"
-                                      : "bg-amber-200 text-amber-950"
+                                      : "bg-slate-200 text-slate-700"
                                   }`}
                                 >
                                   {archivedFacultyClasses.length}
@@ -4572,7 +4576,7 @@ function FacultySubmissionPanelContent({
                           </div>
 
                           {/* Search & Section Filter Row */}
-                          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 pt-2 border-t border-amber-200">
+                          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 pt-2 border-t border-slate-200">
                             <div className="relative flex-1">
                               <span className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-[#780000]">
                                 <AppIcon icon={Search} size="sm" color="inherit" />
@@ -4582,7 +4586,7 @@ function FacultySubmissionPanelContent({
                                 value={classSearchQuery}
                                 onChange={(e) => setClassSearchQuery(e.target.value)}
                                 placeholder="Search by subject code, description, or section..."
-                                className="w-full rounded-xl border-2 border-amber-300 bg-white pl-9 pr-8 py-2 text-xs font-bold text-slate-800 placeholder:text-slate-400 focus:border-[#780000] focus:outline-none"
+                                className="w-full rounded-xl border border-slate-200 bg-white pl-9 pr-8 py-2 text-xs font-bold text-slate-800 placeholder:text-slate-400 focus:border-[#780000] focus:outline-none"
                               />
                               {classSearchQuery && (
                                 <button
@@ -4605,7 +4609,7 @@ function FacultySubmissionPanelContent({
                                   value={classSectionFilter}
                                   onChange={(e) => setClassSectionFilter(e.target.value)}
                                   aria-label="Filter by section"
-                                  className="rounded-xl border-2 border-amber-300 bg-amber-50 pl-9 pr-8 py-2 text-xs font-black text-amber-950 focus:border-[#780000] focus:outline-none cursor-pointer"
+                                  className="rounded-xl border border-slate-200 bg-slate-50 pl-9 pr-8 py-2 text-xs font-black text-slate-800 focus:border-[#780000] focus:outline-none cursor-pointer"
                                 >
                                   <option value="ALL">
                                     All Sections ({classTab === "active" ? activeFacultyClasses.length : archivedFacultyClasses.length})
@@ -4696,7 +4700,7 @@ function FacultySubmissionPanelContent({
                                         className={`w-full h-full ${
                                           isArchived
                                             ? "text-slate-200 dark:text-slate-800"
-                                            : "text-amber-400 dark:text-amber-500"
+                                            : "text-amber-400 dark:bg-amber-500"
                                         }`}
                                       >
                                         <path
@@ -4983,7 +4987,7 @@ function FacultySubmissionPanelContent({
                                 ({selectedClass.units} Units)
                               </span>
                               {selectedClass.is_archived && (
-                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-black uppercase bg-amber-100 text-amber-950 border border-amber-300 shrink-0">
+                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-black uppercase bg-slate-100 text-slate-700 border border-slate-200 shrink-0">
                                   Archived
                                 </span>
                               )}
@@ -5010,7 +5014,7 @@ function FacultySubmissionPanelContent({
                                   className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg border text-[11px] font-extrabold transition cursor-pointer shadow-2xs active:scale-95 ${
                                     selectedClass.is_archived
                                       ? "bg-amber-500 hover:bg-amber-400 text-amber-950 border-amber-600"
-                                      : "border-amber-300 bg-amber-50 hover:bg-amber-100 text-amber-950"
+                                      : "border-slate-200 bg-slate-100 hover:bg-slate-200 text-slate-700"
                                   }`}
                                   title={selectedClass.is_archived ? "Restore to active loads" : "Archive class load"}
                                 >
@@ -5037,7 +5041,7 @@ function FacultySubmissionPanelContent({
                             setSelectedClassId(newClassId);
                             void fetchStatuses(activeAY, activeSem, newClassId, { silent: true });
                           }}
-                          className="rounded-xl border-2 border-amber-300 bg-amber-50 px-3 py-1.5 text-xs font-black text-amber-950 outline-none focus:border-[#780000] cursor-pointer shadow-2xs"
+                          className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-black text-slate-800 outline-none focus:border-[#780000] cursor-pointer shadow-2xs"
                         >
                           {facultyClasses.map((c) => (
                             <option key={c.id} value={c.id}>
