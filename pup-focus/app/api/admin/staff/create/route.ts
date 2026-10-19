@@ -258,19 +258,22 @@ export async function POST(request: NextRequest) {
           } catch {}
 
           // 2. Set user_roles (remove conflicting faculty role)
-          const { data: adminRoleRow } = await supabase
+          const { data: staffRoleRows } = await supabase
             .from("roles")
-            .select("id")
-            .eq("code", ROLE.ADMIN)
-            .maybeSingle();
+            .select("id, code")
+            .in("code", [ROLE.STAFF, ROLE.ADMIN]);
 
-          if (adminRoleRow?.id) {
+          const targetRoleRow =
+            staffRoleRows?.find((r) => r.code === ROLE.STAFF) ??
+            staffRoleRows?.[0];
+
+          if (targetRoleRow?.id) {
             try {
               await supabase
                 .from("user_roles")
                 .delete()
                 .eq("profile_id", newProfile.id)
-                .neq("role_id", adminRoleRow.id);
+                .neq("role_id", targetRoleRow.id);
             } catch {}
 
             await supabase
@@ -278,7 +281,7 @@ export async function POST(request: NextRequest) {
               .upsert(
                 {
                   profile_id: newProfile.id,
-                  role_id: adminRoleRow.id,
+                  role_id: targetRoleRow.id,
                 },
                 { onConflict: "profile_id,role_id" },
               );
@@ -347,7 +350,7 @@ export async function POST(request: NextRequest) {
         metadata: {
           target_email: normalizedEmail,
           target_full_name: fullName,
-          role: ROLE.ADMIN,
+          role: ROLE.STAFF,
           invite_sent: sent,
           send_error: sendError,
         },

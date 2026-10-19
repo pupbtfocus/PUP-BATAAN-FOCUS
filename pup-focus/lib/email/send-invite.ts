@@ -7,6 +7,7 @@ import {
   buildInviteEmailHtml,
   buildTempPasswordEmailHtml,
   buildForgotPasswordEmailHtml,
+  buildAdminPasswordResetEmailHtml,
   buildSubmissionWindowNotificationEmailHtml,
   buildEmailChangeVerificationHtml,
   buildEmailChangeTempPasswordHtml,
@@ -297,6 +298,72 @@ export async function sendForgotPasswordEmail({
   });
 
   return info;
+}
+
+type SendAdminPasswordResetOpts = {
+  to: string;
+  resetLink: string;
+  fullName?: string;
+  firstName?: string;
+  accountRoleLabel?: string;
+  from?: string;
+};
+
+export async function sendAdminPasswordResetEmail({
+  to,
+  resetLink,
+  fullName,
+  firstName,
+  accountRoleLabel = "Account",
+  from,
+}: SendAdminPasswordResetOpts) {
+  const host = normalizeSmtpValue(process.env.EMAIL_SMTP_HOST);
+  const port = normalizeSmtpValue(process.env.EMAIL_SMTP_PORT);
+  const user = normalizeSmtpValue(process.env.EMAIL_SMTP_USER);
+  const pass = normalizeSmtpPassword(process.env.EMAIL_SMTP_PASS);
+
+  if (!host || !port || !user || !pass) {
+    throw new Error(
+      "SMTP configuration missing (EMAIL_SMTP_HOST/PORT/USER/PASS)",
+    );
+  }
+
+  const transporter = nodemailer.createTransport({
+    host,
+    port: Number(port),
+    secure: Number(port) === 465,
+    auth: {
+      user,
+      pass,
+    },
+  });
+
+  const fromAddress = normalizeEmailAddress(
+    from || process.env.EMAIL_FROM || user,
+  );
+
+  const resolvedFirstName =
+    firstName?.trim() ||
+    fullName?.trim().split(/\s+/)[0] ||
+    "there";
+
+  const subject = `PUP FOCUS - ${accountRoleLabel} Password Reset Link`;
+  const text = `Hello ${resolvedFirstName},\n\nAn administrator has initiated a password reset for your PUP FOCUS ${accountRoleLabel.toLowerCase()} account (${to}).\n\nClick the link below to securely set a new password:\n\n${resetLink}\n\nIf you did not expect this reset, please contact your campus administrator.`;
+  const html = buildAdminPasswordResetEmailHtml({
+    fullName,
+    firstName: resolvedFirstName,
+    email: to,
+    accountRoleLabel,
+    resetLink,
+  });
+
+  return transporter.sendMail({
+    from: formatDisplayFromAddress(fromAddress),
+    to: normalizeEmailAddress(to),
+    subject,
+    text,
+    html,
+  });
 }
 
 type SendEmailChangeVerificationOpts = {

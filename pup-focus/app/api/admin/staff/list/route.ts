@@ -106,13 +106,19 @@ export async function GET() {
     }
 
     // Try fetching profiles for supplementary full_name and status
-    let profileMap = new Map<string, { full_name?: string | null; status?: string | null }>();
+    const profileByUserId = new Map<string, any>();
+    const profileByEmail = new Map<string, any>();
+    const profileById = new Map<string, any>();
     try {
       const { data: profiles } = await supabaseAdmin
         .from("profiles")
-        .select("id, full_name, status");
+        .select("id, user_id, email, full_name, status");
       if (profiles) {
-        profileMap = new Map(profiles.map((p) => [p.id, p]));
+        for (const p of profiles) {
+          if (p.id) profileById.set(p.id, p);
+          if (p.user_id) profileByUserId.set(p.user_id, p);
+          if (p.email) profileByEmail.set(p.email.toLowerCase().trim(), p);
+        }
       }
     } catch {
       // Ignore profiles table query error if schema differs
@@ -121,34 +127,43 @@ export async function GET() {
     const adminAccounts = await Promise.all(
       (users ?? [])
         .filter((u) => {
-          const userRole = u.user_metadata?.role || u.app_metadata?.role;
+          const userRole = String(
+            u.user_metadata?.role || u.app_metadata?.role || ""
+          ).toLowerCase().trim();
           const isAdminOrStaff = (
             userRole === ROLE.STAFF ||
             userRole === ROLE.ADMIN ||
             userRole === "staff" ||
             userRole === "admin" ||
-            userRole === "super_admin"
+            userRole === "super_admin" ||
+            userRole.includes("staff") ||
+            userRole.includes("admin")
           );
-          if (!isAdminOrStaff) return false;
-
-          // Don't show in the admin list until they accept the invitation!
-          const isPending = Boolean(
-            !u.email_confirmed_at &&
-            !u.confirmed_at &&
-            !u.last_sign_in_at
-          );
-          return !isPending;
+          return isAdminOrStaff;
         })
         .map(async (u) => {
+          const emailKey = (u.email || "").toLowerCase().trim();
+          const rawRole = String(
+            u.user_metadata?.role || u.app_metadata?.role || ROLE.STAFF
+          ).toLowerCase().trim();
+          const isSuperAdminEmail =
+            emailKey === "pupbataanfocus.superadmin@gmail.com" ||
+            emailKey === "pupbataanfocus.admin@gmail.com" ||
+            emailKey.startsWith("qa.superadmin");
           const userRole =
-            u.user_metadata?.role || u.app_metadata?.role || ROLE.ADMIN;
-          const profile = profileMap.get(u.id);
+            isSuperAdminEmail || rawRole.includes("super")
+              ? ROLE.ADMIN
+              : ROLE.STAFF;
+          const profile =
+            profileByUserId.get(u.id) ||
+            profileById.get(u.id) ||
+            (emailKey ? profileByEmail.get(emailKey) : null);
           const fullName =
             profile?.full_name ||
             u.user_metadata?.full_name ||
             u.user_metadata?.name ||
             u.email?.split("@")[0] ||
-            "Admin User";
+            "Staff User";
           const rawAvatarUrl =
             u.user_metadata?.avatar_url || u.user_metadata?.picture || null;
 

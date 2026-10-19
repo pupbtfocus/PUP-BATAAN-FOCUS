@@ -37,6 +37,14 @@ export async function createServerSupabaseClient() {
 
     if (error) {
       if (isInvalidRefreshTokenError(error)) {
+        try {
+          const { data: sessionData } = await client.auth.getSession();
+          if (sessionData?.session?.user) {
+            return { data: { user: sessionData.session.user }, error: null };
+          }
+        } catch {
+          // Ignore fallback errors
+        }
         return { data: { user: null }, error: null };
       }
     }

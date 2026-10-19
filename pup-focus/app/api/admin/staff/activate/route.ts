@@ -67,8 +67,23 @@ export async function POST(request: NextRequest) {
       await supabase
         .from("profiles")
         .update({ status: "active", updated_at: new Date().toISOString() })
-        .eq("id", profileId);
+        .or(`id.eq.${profileId},user_id.eq.${profileId}`);
     } catch {}
+
+    if (targetEmail) {
+      try {
+        await supabase
+          .from("staff")
+          .update({ is_active: true, updated_at: new Date().toISOString() })
+          .ilike("email", targetEmail);
+      } catch {}
+      try {
+        await supabase
+          .from("admins")
+          .update({ is_active: true, updated_at: new Date().toISOString() })
+          .ilike("email", targetEmail);
+      } catch {}
+    }
 
     try {
       await supabase.auth.admin.updateUserById(profileId, {

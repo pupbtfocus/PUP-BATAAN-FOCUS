@@ -92,20 +92,46 @@ export async function POST(request: NextRequest) {
       await supabase.from("notifications").delete().eq("user_id", profileId);
     } catch {}
 
+    let resolvedProfileId = profileId;
     try {
-      await supabase.from("user_roles").delete().eq("profile_id", profileId);
+      const { data: profRow } = await supabase
+        .from("profiles")
+        .select("id")
+        .or(`id.eq.${profileId},user_id.eq.${profileId}`)
+        .maybeSingle();
+      if (profRow?.id) {
+        resolvedProfileId = profRow.id;
+      }
     } catch {}
 
     try {
-      await supabase.from("faculty").delete().eq("profile_id", profileId);
+      await supabase.from("user_roles").delete().in("profile_id", [profileId, resolvedProfileId]);
     } catch {}
 
     try {
-      await supabase.from("app_users").delete().or(`profile_id.eq.${profileId},auth_user_id.eq.${profileId}`);
+      await supabase.from("staff").delete().in("profile_id", [profileId, resolvedProfileId]);
+      if (targetEmail) {
+        await supabase.from("staff").delete().ilike("email", targetEmail);
+      }
     } catch {}
 
     try {
-      await supabase.from("profiles").delete().or(`id.eq.${profileId},user_id.eq.${profileId}`);
+      await supabase.from("admins").delete().in("profile_id", [profileId, resolvedProfileId]);
+      if (targetEmail) {
+        await supabase.from("admins").delete().ilike("email", targetEmail);
+      }
+    } catch {}
+
+    try {
+      await supabase.from("faculty").delete().in("profile_id", [profileId, resolvedProfileId]);
+    } catch {}
+
+    try {
+      await supabase.from("app_users").delete().or(`profile_id.eq.${profileId},profile_id.eq.${resolvedProfileId},auth_user_id.eq.${profileId}`);
+    } catch {}
+
+    try {
+      await supabase.from("profiles").delete().or(`id.eq.${profileId},id.eq.${resolvedProfileId},user_id.eq.${profileId}`);
     } catch {}
 
     // Clean up avatar storage files
