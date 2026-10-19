@@ -765,6 +765,22 @@ export async function POST(request: NextRequest) {
           onboarding_option: onboardingOption || "default",
         },
       });
+
+      if (programRecord) {
+        await logAuditEvent({
+          actorId: user.id,
+          action: "program.assign",
+          entityType: "faculty_program",
+          entityId: createdAuthUser?.id || user.id,
+          metadata: {
+            faculty_email: normalizedEmail,
+            faculty_name: fullName,
+            program_id: programRecord.id,
+            program_code: programRecord.code,
+            program_name: programRecord.name,
+          },
+        });
+      }
     } catch (auditError) {
       logger.error("audit_log_faculty_create_failed", {
         email: normalizedEmail,

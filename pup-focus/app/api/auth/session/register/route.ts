@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { getServiceRoleClient } from "@/lib/supabase/service-role";
 import { setActiveSession } from "@/lib/auth/session-tracker";
+import { logTransactionEvent } from "@/features/transaction-logs/services/transaction-log.service";
 
 export async function POST(request: NextRequest) {
   try {
@@ -59,6 +60,18 @@ export async function POST(request: NextRequest) {
         : crypto.randomUUID();
 
     await setActiveSession(user.id, sessionId);
+
+    void logTransactionEvent({
+      actorId: user.id,
+      action: "auth.login",
+      entityType: "user",
+      entityId: user.id,
+      metadata: {
+        email: user.email,
+        role: user.user_metadata?.role || user.app_metadata?.role,
+        sessionId,
+      },
+    });
 
     const response = NextResponse.json({
       success: true,

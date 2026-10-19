@@ -56,14 +56,18 @@ interface LogAuditOptions {
 export async function logAudit(opts: LogAuditOptions): Promise<void> {
   try {
     const supabase = getServiceRoleClient();
-    await supabase.from("audit_logs").insert({
+    const payload = {
       actor_id: opts.actorId,
       action: opts.action,
       entity_type: opts.entityType,
       entity_id: opts.entityId ?? null,
       metadata: opts.metadata ?? {},
       created_at: new Date().toISOString(),
-    });
+    };
+    const { error } = await supabase.from("transaction_logs").insert(payload);
+    if (error && (error.code === "42P01" || error.message?.includes("transaction_logs") || error.message?.includes("does not exist"))) {
+      await supabase.from("audit_logs").insert(payload);
+    }
   } catch {
     // Silently ignore — audit log failures must not affect the main operation
   }

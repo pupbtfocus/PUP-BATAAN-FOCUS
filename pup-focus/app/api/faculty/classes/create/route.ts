@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { getServiceRoleClient } from "@/lib/supabase/service-role";
+import { logTransactionEvent } from "@/features/transaction-logs/services/transaction-log.service";
 
 export async function POST(request: NextRequest) {
   try {
@@ -128,6 +129,21 @@ export async function POST(request: NextRequest) {
     } else {
       createdClass = initialData;
     }
+
+    void logTransactionEvent({
+      actorId: user.id,
+      action: "class.create",
+      entityType: "faculty_class",
+      entityId: createdClass?.id || user.id,
+      metadata: {
+        subject_code: createdClass?.subject_code,
+        section_code: createdClass?.section_code,
+        description: createdClass?.description,
+        units: createdClass?.units,
+        academic_year: createdClass?.academic_year || academic_year,
+        semester: createdClass?.semester || semester,
+      },
+    });
 
     return NextResponse.json({
       success: true,

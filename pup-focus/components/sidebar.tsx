@@ -132,7 +132,9 @@ export function SidebarContent({
   const isAuditActive =
     activeSection === "audit" ||
     activeSection === "auditLogs" ||
-    activeSection === "audit-logs";
+    activeSection === "audit-logs" ||
+    activeSection === "transaction-logs" ||
+    activeSection === "transactionLogs";
   const isPreviewsActive =
     activeSection === "previews" ||
     activeSection === "preview" ||
