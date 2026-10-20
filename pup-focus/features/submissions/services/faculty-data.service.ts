@@ -122,7 +122,7 @@ export type FacultyInitialData = {
   requirementTemplates: RequirementTemplateData[];
   counts: StatusCountsData;
   academicYear: string;
-  semester: SubmissionWindowSemester;
+  semester: SubmissionWindowSemester | null;
   submissionWindow: SubmissionWindowStateData;
   pastSubmissions: PastSubmissionData[];
   hasActiveSchedule: boolean;
@@ -210,55 +210,44 @@ export async function getFacultyInitialData(
     .eq("status", "Current")
     .maybeSingle();
 
-  let dbTerm = dbCurrentTerm;
-  if (!dbTerm) {
-    const { data: latestTerm } = await supabase
-      .from("academic_terms")
-      .select("id, academic_year, semester")
-      .order("created_at", { ascending: false })
-      .limit(1)
-      .maybeSingle();
-    if (latestTerm) {
-      dbTerm = latestTerm;
-    }
-  }
-
   const activeAcademicYear =
     requestedAcademicYear ||
-    dbTerm?.academic_year ||
-    "2026-2027";
+    dbCurrentTerm?.academic_year ||
+    "";
 
   const rawSem =
     requestedSemester ||
-    dbTerm?.semester ||
-    "1st Semester";
+    dbCurrentTerm?.semester ||
+    "";
 
-  const activeSemester: SubmissionWindowSemester = normalizeSemester(rawSem);
+  const activeSemester: SubmissionWindowSemester | "" = rawSem ? normalizeSemester(rawSem) : "";
 
-  const normActiveYear = normalizeAcademicYear(activeAcademicYear);
-  const normActiveSem = normalizeSemester(activeSemester);
+  const normActiveYear = activeAcademicYear ? normalizeAcademicYear(activeAcademicYear) : "";
+  const normActiveSem = activeSemester ? normalizeSemester(activeSemester) : "";
 
   // 2. Submission Window strictly scoped to the active Academic Term
   let windowConfig = null;
-  try {
-    windowConfig = await getSubmissionWindow(supabase, {
-      academicYear: activeAcademicYear,
-      semester: activeSemester,
-    });
-  } catch (err) {
-    logger.warn("faculty_data_submission_window_failed", { error: String(err) });
+  if (activeAcademicYear && activeSemester) {
+    try {
+      windowConfig = await getSubmissionWindow(supabase, {
+        academicYear: activeAcademicYear,
+        semester: activeSemester,
+      });
+    } catch (err) {
+      logger.warn("faculty_data_submission_window_failed", { error: String(err) });
+    }
   }
   const evaluatedWindow = evaluateSubmissionWindow(
     windowConfig,
     undefined,
     undefined,
-    { academicYear: activeAcademicYear, semester: activeSemester },
+    activeAcademicYear && activeSemester ? { academicYear: activeAcademicYear, semester: activeSemester } : undefined,
   );
 
   const submissionWindow: SubmissionWindowStateData = {
     ...evaluatedWindow,
-    academicYear: activeAcademicYear,
-    semester: activeSemester,
+    academicYear: activeAcademicYear || null,
+    semester: (activeSemester as SubmissionWindowSemester) || null,
     startTimeLabel: evaluatedWindow.startTime
       ? format24HourTo12Hour(evaluatedWindow.startTime)
       : null,
@@ -369,7 +358,7 @@ export async function getFacultyInitialData(
 
   // Onboarding check: Ensure faculty has an active assignment for the active Academic Term
   const targetProfileId = facultyProfileId || facultyIdList[0];
-  if (currentTermAssignments.length === 0 && programInfo?.id && targetProfileId) {
+  if (activeAcademicYear && activeSemester && currentTermAssignments.length === 0 && programInfo?.id && targetProfileId) {
     try {
       const { data: newAssignment } = await supabase
         .from("faculty_program_assignments")
@@ -918,7 +907,7 @@ export async function getFacultyInitialData(
       startTime: "00:00:00",
       endTime: "23:59:59",
       academicYear: activeAcademicYear,
-      semester: activeSemester,
+      semester: activeSemester || null,
       startTimeLabel: "12:00 AM",
       endTimeLabel: "11:59 PM",
       currentTimeLabel: submissionWindow.currentTimeLabel,
@@ -941,7 +930,7 @@ export async function getFacultyInitialData(
     requirementTemplates: activeTemplates,
     counts,
     academicYear: activeAcademicYear,
-    semester: activeSemester,
+    semester: activeSemester || null,
     submissionWindow: effectiveSubmissionWindow,
     pastSubmissions,
     hasActiveSchedule: Boolean(hasActiveGracePeriod || (effectiveSubmissionWindow.isConfigured && effectiveSubmissionWindow.isOpen)),

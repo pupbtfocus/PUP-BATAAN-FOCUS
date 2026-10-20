@@ -77,8 +77,8 @@ export async function GET(request: NextRequest) {
       .eq("status", "Current")
       .maybeSingle();
 
-    const currentAcademicYear = currentTermRow?.academic_year || "2026-2027";
-    const currentSemester = currentTermRow?.semester || "1st Semester";
+    const currentAcademicYear = currentTermRow?.academic_year || null;
+    const currentSemester = currentTermRow?.semester || null;
 
     // 2. Fetch faculty profiles & auth users
     const { data: facultyRole } = await supabase

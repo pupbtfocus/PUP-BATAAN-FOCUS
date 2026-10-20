@@ -619,10 +619,10 @@ function FacultySubmissionPanelContent({
   }, []);
 
   const [form, setForm] = useState<SubmissionFormState>({
-    academicYear: initialData?.academicYear || academicYears[0] || "",
+    academicYear: initialData?.academicYear || "",
     semester:
       (initialData?.semester as (typeof SEMESTER_OPTIONS)[number]) ||
-      "1st Semester",
+      "",
     requirementCode:
       initialData?.requirementTemplates?.[0]?.code ||
       REQUIREMENT_CODE.GRADE_SHEET,
@@ -1343,20 +1343,14 @@ function FacultySubmissionPanelContent({
       currentAcademicTerm?.academic_year ||
       submissionWindow?.academicYear ||
       statusAcademicYear ||
-      (pastSubmissions.length > 0 && pastSubmissions[0].academicYear
-        ? pastSubmissions[0].academicYear
-        : null) ||
-      selectedAcademicYear ||
-      form.academicYear ||
-      "2026-2027"
+      initialData?.academicYear ||
+      ""
     );
   }, [
     currentAcademicTerm?.academic_year,
     submissionWindow?.academicYear,
     statusAcademicYear,
-    pastSubmissions,
-    selectedAcademicYear,
-    form.academicYear,
+    initialData?.academicYear,
   ]);
 
   const activeSem = useMemo(() => {
@@ -1364,26 +1358,20 @@ function FacultySubmissionPanelContent({
       currentAcademicTerm?.semester ||
       submissionWindow?.semester ||
       statusSemester ||
-      (pastSubmissions.length > 0 && pastSubmissions[0].semester
-        ? pastSubmissions[0].semester
-        : null) ||
-      selectedSemester ||
-      form.semester ||
-      "1st Semester"
+      initialData?.semester ||
+      ""
     );
   }, [
     currentAcademicTerm?.semester,
     submissionWindow?.semester,
     statusSemester,
-    pastSubmissions,
-    selectedSemester,
-    form.semester,
+    initialData?.semester,
   ]);
 
   const hasActiveAcademicTerm = Boolean(
-    currentAcademicTerm?.academic_year ||
+    (currentAcademicTerm?.academic_year && currentAcademicTerm.academic_year.trim() !== "") ||
     (submissionWindow?.isConfigured && submissionWindow?.academicYear) ||
-    initialData?.academicYear
+    (initialData?.academicYear && initialData.academicYear.trim() !== "")
   );
 
   const activeTemplates = useMemo<RequirementTemplateData[]>(() => {
@@ -3651,20 +3639,26 @@ function FacultySubmissionPanelContent({
 
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-0.5">
                     <p className="text-xs sm:text-sm text-amber-950 dark:text-amber-300 font-semibold">
-                      A.Y. {activeAY} • {activeSem}
-                      {hasActiveGracePeriod && !isAllValidated ? (
-                        <span className="ml-2 font-semibold">
-                          • (Personal Schedule Active)
-                        </span>
-                      ) : isWindowNotConfigured && !isAllValidated && !isEffectivelyOpen ? (
-                        <span className="ml-2 font-semibold">
-                          • (Awaiting Schedule)
-                        </span>
-                      ) : isWindowClosed && !isAllValidated && !isEffectivelyOpen ? (
-                        <span className="ml-2 font-semibold">
-                          • (Submission Window Closed)
-                        </span>
-                      ) : null}
+                      {hasActiveAcademicTerm && activeAY ? (
+                        <>
+                          A.Y. {activeAY} • {activeSem}
+                          {hasActiveGracePeriod && !isAllValidated ? (
+                            <span className="ml-2 font-semibold">
+                              • (Personal Schedule Active)
+                            </span>
+                          ) : isWindowNotConfigured && !isAllValidated && !isEffectivelyOpen ? (
+                            <span className="ml-2 font-semibold">
+                              • (Awaiting Schedule)
+                            </span>
+                          ) : isWindowClosed && !isAllValidated && !isEffectivelyOpen ? (
+                            <span className="ml-2 font-semibold">
+                              • (Submission Window Closed)
+                            </span>
+                          ) : null}
+                        </>
+                      ) : (
+                        <span>No Active Academic Term Configured</span>
+                      )}
                     </p>
 
                     <div className="flex flex-wrap items-center justify-end gap-2.5 shrink-0 sm:ml-auto w-full sm:w-auto">
@@ -4454,7 +4448,13 @@ function FacultySubmissionPanelContent({
 
                       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-0.5">
                         <p className="text-xs sm:text-sm text-amber-950/90 dark:text-amber-300/80 font-semibold">
-                          A.Y. {activeAY} • {activeSem} &bull; {facultyClasses.length} Registered Class Load{facultyClasses.length === 1 ? "" : "s"}
+                          {hasActiveAcademicTerm && activeAY ? (
+                            <>
+                              A.Y. {activeAY} • {activeSem} &bull; {facultyClasses.length} Registered Class Load{facultyClasses.length === 1 ? "" : "s"}
+                            </>
+                          ) : (
+                            <span>No Active Academic Term Configured</span>
+                          )}
                         </p>
 
                         <div className="flex flex-wrap items-center gap-2.5">
@@ -4897,20 +4897,26 @@ function FacultySubmissionPanelContent({
                       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-0.5">
                         <div className="flex items-center justify-between gap-2 w-full sm:w-auto">
                           <p className="text-xs sm:text-sm text-amber-950/90 font-semibold">
-                            A.Y. {activeAY} • {activeSem}
-                            {hasActiveGracePeriod && !isAllValidated ? (
-                              <span className="ml-2 font-semibold">
-                                • (Personal Schedule Active)
-                              </span>
-                            ) : isWindowNotConfigured && !isAllValidated && !isEffectivelyOpen ? (
-                              <span className="ml-2 font-semibold">
-                                • (Awaiting Schedule)
-                              </span>
-                            ) : isWindowClosed && !isAllValidated && !isEffectivelyOpen ? (
-                              <span className="ml-2 font-semibold">
-                                • (Submission Window Closed)
-                              </span>
-                            ) : null}
+                            {hasActiveAcademicTerm && activeAY ? (
+                              <>
+                                A.Y. {activeAY} • {activeSem}
+                                {hasActiveGracePeriod && !isAllValidated ? (
+                                  <span className="ml-2 font-semibold">
+                                    • (Personal Schedule Active)
+                                  </span>
+                                ) : isWindowNotConfigured && !isAllValidated && !isEffectivelyOpen ? (
+                                  <span className="ml-2 font-semibold">
+                                    • (Awaiting Schedule)
+                                  </span>
+                                ) : isWindowClosed && !isAllValidated && !isEffectivelyOpen ? (
+                                  <span className="ml-2 font-semibold">
+                                    • (Submission Window Closed)
+                                  </span>
+                                ) : null}
+                              </>
+                            ) : (
+                              <span>No Active Academic Term Configured</span>
+                            )}
                           </p>
                           <button
                             type="button"

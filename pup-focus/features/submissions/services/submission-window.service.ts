@@ -688,7 +688,7 @@ export type GlobalDeadline = {
 };
 
 export type OnboardingContext = {
-  term: { academicYear: string; semester: SubmissionWindowSemester };
+  term: { academicYear: string; semester: SubmissionWindowSemester } | null;
   windowState: SubmissionWindowState;
   /** True when the window is Open or Upcoming, i.e. submissions are not closed. */
   isWindowActive: boolean;
@@ -736,7 +736,7 @@ export function isValidManilaIso(value: string | null | undefined): value is str
 
 export async function resolveActiveTerm(
   supabase: SupabaseClient,
-): Promise<{ academicYear: string; semester: SubmissionWindowSemester }> {
+): Promise<{ academicYear: string; semester: SubmissionWindowSemester } | null> {
   try {
     const { data: termRows } = await supabase
       .from("academic_terms")
@@ -748,19 +748,18 @@ export async function resolveActiveTerm(
         const status = (t.status || "").trim().toLowerCase();
         return status === "current" || status === "active";
       });
-      const row = found || termRows[0];
-      if (row?.academic_year && row?.semester) {
+      if (found?.academic_year && found?.semester) {
         return {
-          academicYear: row.academic_year.trim(),
-          semester: normalizeSemester(row.semester),
+          academicYear: found.academic_year.trim(),
+          semester: normalizeSemester(found.semester),
         };
       }
     }
   } catch {
-    // Fall through to default term
+    // Fall through to null
   }
 
-  return { academicYear: "2026-2027", semester: "1st Semester" };
+  return null;
 }
 
 export async function getActiveRequirementTemplates(
@@ -794,7 +793,7 @@ export async function getActiveRequirementTemplates(
  */
 async function resolveGlobalDeadline(
   supabase: SupabaseClient,
-  term: { academicYear: string; semester: string },
+  term: { academicYear: string; semester: string } | null | undefined,
   config: SubmissionWindowConfig | null,
   state: SubmissionWindowState,
 ): Promise<{ deadline: GlobalDeadline; hasAnyScheduleHistory: boolean }> {
@@ -807,21 +806,23 @@ async function resolveGlobalDeadline(
     endTime = toTime24(config?.endTime ?? state.endTime);
     hasAnyScheduleHistory = true;
   } else {
-    try {
-      const { data: termWin } = await supabase
-        .from("submission_window_terms")
-        .select("end_date, end_time")
-        .eq("academic_year", term.academicYear)
-        .eq("semester", term.semester)
-        .maybeSingle();
+    if (term) {
+      try {
+        const { data: termWin } = await supabase
+          .from("submission_window_terms")
+          .select("end_date, end_time")
+          .eq("academic_year", term.academicYear)
+          .eq("semester", term.semester)
+          .maybeSingle();
 
-      if (termWin?.end_date) {
-        endDate = termWin.end_date;
-        endTime = toTime24(termWin.end_time);
-        hasAnyScheduleHistory = true;
+        if (termWin?.end_date) {
+          endDate = termWin.end_date;
+          endTime = toTime24(termWin.end_time);
+          hasAnyScheduleHistory = true;
+        }
+      } catch {
+        // Table may not exist yet
       }
-    } catch {
-      // Table may not exist yet
     }
 
     if (!endDate) {
@@ -834,6 +835,7 @@ async function resolveGlobalDeadline(
 
         if (globalWin?.end_date) {
           const matchesTerm =
+            !term ||
             !globalWin.academic_year ||
             (globalWin.academic_year === term.academicYear &&
               normalizeSemester(globalWin.semester) === normalizeSemester(term.semester));
@@ -872,15 +874,15 @@ export async function resolveOnboardingContext(
   supabase: SupabaseClient,
 ): Promise<OnboardingContext> {
   const term = await resolveActiveTerm(supabase);
-  const config = await getSubmissionWindow(supabase, term);
+  const config = term ? await getSubmissionWindow(supabase, term) : null;
   const windowState = evaluateSubmissionWindow(
     config,
     undefined,
     undefined,
-    term,
+    term || undefined,
   );
   const [{ deadline, hasAnyScheduleHistory }, templates] = await Promise.all([
-    resolveGlobalDeadline(supabase, term, config, windowState),
+    resolveGlobalDeadline(supabase, term || undefined, config, windowState),
     getActiveRequirementTemplates(supabase),
   ]);
 

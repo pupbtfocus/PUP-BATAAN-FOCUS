@@ -422,8 +422,8 @@ export function FacultyVerificationDrawer({
   onBack,
   onStatusUpdated,
 }: FacultyVerificationDrawerProps) {
-  const activeAy = academicYear || "2026-2027";
-  const activeSem = semester || "1st Semester";
+  const activeAy = academicYear || "";
+  const activeSem = semester || "";
   const [activeTab, setActiveTab] = useState<"current" | "history">(initialTab);
   const [submissions, setSubmissions] = useState<FacultyRequirementSubmission[]>([]);
   const [facultyClasses, setFacultyClasses] = useState<
@@ -1723,13 +1723,21 @@ export function FacultyVerificationDrawer({
             </h1>
           </div>
           <p className="mt-1.5 text-sm sm:text-base text-amber-950/90 dark:text-amber-200/90 font-medium leading-relaxed">
-            Select a class load below to review and verify submitted requirements for A.Y. {academicYear} &bull; {semester}.
+            {academicYear ? (
+              <>Select a class load below to review and verify submitted requirements for A.Y. {academicYear} &bull; {semester}.</>
+            ) : (
+              <>Select a class load below to review and verify submitted requirements.</>
+            )}
           </p>
         </div>
 
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-0.5">
           <p className="text-xs sm:text-sm text-amber-950/90 dark:text-amber-300/80 font-semibold">
-            A.Y. {academicYear} • {semester} &bull; {classGroups.length} Registered Class Load{classGroups.length === 1 ? "" : "s"}
+            {academicYear ? (
+              <>A.Y. {academicYear} • {semester} &bull; {classGroups.length} Registered Class Load{classGroups.length === 1 ? "" : "s"}</>
+            ) : (
+              <span>No Active Academic Term Configured</span>
+            )}
           </p>
 
           <div className="flex items-center gap-2">
@@ -1802,10 +1810,17 @@ export function FacultyVerificationDrawer({
               </div>
             </div>
 
-            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl border border-amber-600 bg-amber-500 text-slate-950 text-xs font-bold shadow-2xs">
-              <span className="h-2 w-2 rounded-full bg-[#0b5336]" />
-              <span>Active Term: A.Y. {academicYear} &bull; {semester}</span>
-            </div>
+            {academicYear ? (
+              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl border border-amber-600 bg-amber-500 text-slate-950 text-xs font-bold shadow-2xs">
+                <span className="h-2 w-2 rounded-full bg-[#0b5336]" />
+                <span>Active Term: A.Y. {academicYear} &bull; {semester}</span>
+              </div>
+            ) : (
+              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-xs font-bold shadow-2xs">
+                <span className="h-2 w-2 rounded-full bg-slate-400" />
+                <span>No Active Academic Term Configured</span>
+              </div>
+            )}
           </div>
         ) : null}
 
@@ -1872,7 +1887,9 @@ export function FacultyVerificationDrawer({
                         No Classes Registered
                       </h5>
                       <p className="text-xs text-slate-500 dark:text-slate-400">
-                        This faculty member does not have any classes or subject loads assigned for A.Y. {academicYear} &bull; {semester}.
+                        {academicYear
+                          ? `This faculty member does not have any classes or subject loads assigned for A.Y. ${academicYear} • ${semester}.`
+                          : "This faculty member does not have any classes or subject loads assigned."}
                       </p>
                     </div>
                   </div>
@@ -3595,7 +3612,7 @@ export function FacultyVerificationDrawer({
                 <span className="font-semibold text-slate-900 dark:text-slate-100">
                   {faculty.fullName}
                 </span>{" "}
-                (A.Y. {academicYear} &bull; {semester}).
+                {academicYear ? `(A.Y. ${academicYear} • ${semester}).` : "."}
               </p>
 
               <div>
@@ -3942,10 +3959,9 @@ export function RequirementsPanel({
         );
         if (res.ok && isMounted) {
           const data = await res.json();
-          const activeAy =
-            data.currentAcademicYear || data.selectedAcademicYear || "2026-2027";
+          const activeAy = data.currentAcademicYear || "";
           const activeSem: SemesterOption =
-            data.currentSemester || data.selectedSemester || "1st Semester";
+            data.currentSemester || "1st Semester";
 
           setActiveTermAy(activeAy);
           setActiveTermSem(activeSem);
@@ -4471,10 +4487,17 @@ export function RequirementsPanel({
 
             {/* Academic Term Selector / Status Badge */}
             {activePanelTab === "current" ? (
-              <div className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl border border-amber-600 bg-amber-500 text-slate-950 text-xs font-bold shadow-2xs">
-                <span className="h-2 w-2 rounded-full bg-[#0b5336]" />
-                <span>Active Term: A.Y. {activeTermAy} &bull; {activeTermSem}</span>
-              </div>
+              activeTermAy ? (
+                <div className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl border border-amber-600 bg-amber-500 text-slate-950 text-xs font-bold shadow-2xs">
+                  <span className="h-2 w-2 rounded-full bg-[#0b5336]" />
+                  <span>Active Term: A.Y. {activeTermAy} &bull; {activeTermSem}</span>
+                </div>
+              ) : (
+                <div className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-xs font-bold shadow-2xs">
+                  <span className="h-2 w-2 rounded-full bg-slate-400" />
+                  <span>No Active Academic Term Configured</span>
+                </div>
+              )
             ) : (
               <div className="flex items-center gap-2 flex-wrap">
                 <span className="text-xs font-bold text-slate-600 dark:text-slate-300">

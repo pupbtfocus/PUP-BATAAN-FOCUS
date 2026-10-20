@@ -849,12 +849,18 @@ export function AdminFacultyDashboard({
 
                       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-0.5">
                         <p className="text-xs sm:text-sm text-amber-950 dark:text-amber-300 font-semibold">
-                          A.Y. {dashboardStats?.currentAcademicYear || "2026-2027"} • {dashboardStats?.currentSemester || "1st Semester"}
-                          {windowStatus && (windowStatus.status === "Closed" || !windowStatus.isOpen) ? (
-                            <span className="ml-2 font-semibold">
-                              • (Submission Window Closed)
-                            </span>
-                          ) : null}
+                          {dashboardStats?.currentAcademicYear ? (
+                            <>
+                              A.Y. {dashboardStats.currentAcademicYear} • {dashboardStats?.currentSemester || "1st Semester"}
+                              {windowStatus && (windowStatus.status === "Closed" || !windowStatus.isOpen) ? (
+                                <span className="ml-2 font-semibold">
+                                  • (Submission Window Closed)
+                                </span>
+                              ) : null}
+                            </>
+                          ) : (
+                            <span>No Active Academic Term Configured</span>
+                          )}
                         </p>
 
                         <div className="flex flex-wrap items-center justify-end gap-2 shrink-0 sm:ml-auto">
