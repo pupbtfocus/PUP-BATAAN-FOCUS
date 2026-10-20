@@ -3,6 +3,7 @@
 import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { CampusBackground } from "@/components/shared/campus-background";
 import { CancelledInviteModal } from "@/components/auth/cancelled-invite-modal";
 import { EmailVerificationCard } from "@/components/auth/email-verification-card";
 
@@ -315,25 +316,32 @@ function AuthConfirmContent() {
   }, [router, searchParams]);
 
   return (
-    <main className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-4">
-      <CancelledInviteModal
-        isOpen={showCancelledModal}
-        email={userEmail || searchParams.get("email") || undefined}
-        fullName={userFullName || undefined}
-        onClose={() => setShowCancelledModal(false)}
-        onReturnToSignIn={() => router.push("/")}
-      />
+    <main className="relative min-h-screen w-full flex flex-col items-center justify-center p-4 text-[#fff8e7] overflow-x-hidden bg-[#1c0406]">
+      <CampusBackground />
+      {/* Overlay with Blur on top of the global body background */}
+      <div className="absolute inset-0 z-0 bg-transparent backdrop-blur-[6px] pointer-events-none" />
+      <div className="absolute inset-0 z-0 bg-gradient-to-t from-black/50 via-black/20 to-black/30 pointer-events-none" />
 
-      <EmailVerificationCard
-        status={showCancelledModal ? "cancelled" : status}
-        email={userEmail || undefined}
-        fullName={userFullName || undefined}
-        temporaryPassword={tempPassword}
-        errorMessage={statusMessage}
-        isEmailChange={isEmailChange}
-        onSignIn={() => router.push("/")}
-        onReturnToSignIn={() => router.push("/")}
-      />
+      <div className="relative z-10 w-full max-w-[420px] mx-auto my-auto py-3 sm:py-5 px-4 drop-shadow-2xl">
+        <CancelledInviteModal
+          isOpen={showCancelledModal}
+          email={userEmail || searchParams.get("email") || undefined}
+          fullName={userFullName || undefined}
+          onClose={() => setShowCancelledModal(false)}
+          onReturnToSignIn={() => router.push("/")}
+        />
+
+        <EmailVerificationCard
+          status={showCancelledModal ? "cancelled" : status}
+          email={userEmail || undefined}
+          fullName={userFullName || undefined}
+          temporaryPassword={tempPassword}
+          errorMessage={statusMessage}
+          isEmailChange={isEmailChange}
+          onSignIn={() => router.push("/")}
+          onReturnToSignIn={() => router.push("/")}
+        />
+      </div>
     </main>
   );
 }
@@ -342,8 +350,13 @@ export default function AuthConfirmPage() {
   return (
     <Suspense
       fallback={
-        <main className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-4">
-          <EmailVerificationCard status="loading" />
+        <main className="relative min-h-screen w-full flex flex-col items-center justify-center p-4 text-[#fff8e7] overflow-x-hidden bg-[#1c0406]">
+          <CampusBackground />
+          <div className="absolute inset-0 z-0 bg-transparent backdrop-blur-[6px] pointer-events-none" />
+          <div className="absolute inset-0 z-0 bg-gradient-to-t from-black/50 via-black/20 to-black/30 pointer-events-none" />
+          <div className="relative z-10 w-full max-w-[420px] mx-auto my-auto py-3 sm:py-5 px-4 drop-shadow-2xl">
+            <EmailVerificationCard status="loading" />
+          </div>
         </main>
       }
     >

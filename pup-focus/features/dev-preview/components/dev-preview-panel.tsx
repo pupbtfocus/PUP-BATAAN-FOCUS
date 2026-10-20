@@ -22,7 +22,9 @@ import {
   Group,
   Activity,
   Database,
+  LogOut,
 } from "iconoir-react";
+import { LogoutButton } from "@/components/shared/logout-button";
 import { AppIcon } from "@/components/ui/app-icon";
 import { Logo } from "@/components/ui/logo";
 import {
@@ -179,8 +181,9 @@ export function DevPreviewPanel() {
 
   // Modals Showcase State
   const [activeShowcaseModal, setActiveShowcaseModal] = useState<
-    "extension-logs" | "close-safety" | "warning-requirements" | "faculty-not-submitted" | null
+    "extension-logs" | "close-safety" | "warning-requirements" | "faculty-not-submitted" | "logout" | null
   >(null);
+  const [isSimulatingLogout, setIsSimulatingLogout] = useState(false);
   const [safetyCountdown, setSafetyCountdown] = useState(10);
 
   // Extract first name only for faculty/admin display
@@ -884,21 +887,32 @@ export function DevPreviewPanel() {
             </div>
           </div>
 
-          {/* Live Preview of /auth/confirm UI */}
-          <div className="relative rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/60 p-6 sm:p-12 flex items-center justify-center overflow-hidden min-h-[520px]">
-            <EmailVerificationCard
-              status={verifyStatus}
-              email="preview@pupfocus.dev"
-              fullName={recipientName}
-              temporaryPassword="PupFocus_TempPass_9823#"
-              errorMessage={
-                verifyStatus === "cancelled"
-                  ? "This account invitation has been cancelled or revoked by the institutional administrator. The link in your email is no longer active."
-                  : "This invitation link was already used or has expired. Please ask an administrator to send a new invite or sign in if your account is already set up."
-              }
-              onSignIn={() => setActiveTab("change-password")}
-              onReturnToSignIn={() => setActiveTab("login-feedback")}
+          {/* Live Preview of /auth/confirm UI with Campus Photo Background */}
+          <div className="relative rounded-2xl border border-slate-300 dark:border-slate-800 bg-[#5f0000] p-4 sm:p-10 flex items-center justify-center overflow-hidden min-h-[580px]">
+            {/* Campus photo background matching the login & first login screens */}
+            <div
+              className="absolute inset-0 bg-cover bg-center pointer-events-none"
+              style={{ backgroundImage: "url('/images/attachments/IMG_9399.jpeg')" }}
             />
+            {/* Overlay with Blur and Gradient matching Login Screen */}
+            <div className="absolute inset-0 z-0 bg-transparent backdrop-blur-[6px] pointer-events-none" />
+            <div className="absolute inset-0 z-0 bg-gradient-to-t from-black/50 via-black/20 to-black/30 pointer-events-none" />
+
+            <div className="relative z-10 w-full max-w-[420px] mx-auto my-auto drop-shadow-2xl">
+              <EmailVerificationCard
+                status={verifyStatus}
+                email="preview@pupfocus.dev"
+                fullName={recipientName}
+                temporaryPassword="PupFocus_TempPass_9823#"
+                errorMessage={
+                  verifyStatus === "cancelled"
+                    ? "This account invitation has been cancelled or revoked by the institutional administrator. The link in your email is no longer active."
+                    : "This invitation link was already used or has expired. Please ask an administrator to send a new invite or sign in if your account is already set up."
+                }
+                onSignIn={() => setActiveTab("change-password")}
+                onReturnToSignIn={() => setActiveTab("login-feedback")}
+              />
+            </div>
           </div>
         </div>
       )}
@@ -982,9 +996,9 @@ export function DevPreviewPanel() {
             <div className="absolute inset-0 z-0 bg-gradient-to-t from-black/50 via-black/20 to-black/30 pointer-events-none" />
 
             <div className="relative z-10 w-full max-w-[390px] sm:max-w-md mx-auto my-auto drop-shadow-2xl">
-              <div className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl overflow-hidden transition-all">
+              <div className="w-full bg-[#800000] border-2 border-amber-400 rounded-2xl shadow-2xl overflow-hidden transition-all text-[#fff8e7]">
                 {/* Email-style Maroon Header Banner (No Logo, matching Account Ready) */}
-                <div className="bg-gradient-to-br from-[#4d0000] to-[#780000] px-6 py-6 sm:px-8 sm:py-7 text-center">
+                <div className="bg-gradient-to-br from-[#680000] to-[#800000] border-b border-amber-400/30 px-6 py-6 sm:px-8 sm:py-7 text-center">
                   <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-[#fff8e7]">
                     Set New Password
                   </h2>
@@ -999,10 +1013,10 @@ export function DevPreviewPanel() {
                     {/* New Password Field */}
                     <div className="space-y-1.5 text-left">
                       <div className="flex items-center justify-between">
-                        <label className="text-xs uppercase font-semibold tracking-wider text-slate-600 dark:text-slate-300">
+                        <label className="text-xs uppercase font-bold tracking-wider text-amber-300">
                           New Password
                         </label>
-                        <span className="text-[10px] text-slate-400 font-medium">Min. 8 characters</span>
+                        <span className="text-[10px] text-amber-200/70 font-medium">Min. 8 characters</span>
                       </div>
                       <div className="relative flex items-center">
                         <input
@@ -1013,12 +1027,12 @@ export function DevPreviewPanel() {
                           minLength={8}
                           placeholder="Enter new password"
                           autoComplete="new-password"
-                          className="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 pl-3.5 pr-10 py-2.5 text-xs sm:text-sm text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#780000]/20 focus:border-[#780000] dark:focus:border-amber-400 transition"
+                          className="w-full rounded-xl border border-amber-400/40 bg-[#660000] pl-3.5 pr-10 py-2.5 text-xs sm:text-sm text-[#fff7ed] placeholder:text-amber-200/50 focus:outline-none focus:ring-2 focus:ring-amber-400/60 focus:border-amber-400 transition"
                         />
                         <button
                           type="button"
                           onClick={() => setShowNewPass(!showNewPass)}
-                          className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors cursor-pointer"
+                          className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-amber-300 hover:text-amber-100 transition-colors cursor-pointer"
                           title={showNewPass ? "Hide password" : "Show password"}
                           aria-label={showNewPass ? "Hide password" : "Show password"}
                         >
@@ -1032,8 +1046,8 @@ export function DevPreviewPanel() {
                     </div>
 
                     {/* Organized Password Requirements Checklist */}
-                    <div className="rounded-lg bg-slate-50 dark:bg-slate-950/60 border border-slate-200/80 dark:border-slate-800/80 px-2.5 py-1.5 space-y-1 text-left">
-                      <p className="font-semibold text-slate-600 dark:text-slate-300 text-[10px] tracking-wider uppercase">
+                    <div className="rounded-lg bg-[#660000] border border-amber-400/30 px-2.5 py-1.5 space-y-1 text-left">
+                      <p className="font-semibold text-amber-300 text-[10px] tracking-wider uppercase">
                         Requirements:
                       </p>
                       <div className="grid grid-cols-2 gap-x-2 gap-y-1 text-[10.5px]">
@@ -1043,16 +1057,16 @@ export function DevPreviewPanel() {
                             className={cn(
                               "flex items-center gap-1 transition-colors duration-150 whitespace-nowrap",
                               req.isValid
-                                ? "text-emerald-700 dark:text-emerald-400 font-medium"
-                                : "text-slate-500 dark:text-slate-400"
+                                ? "text-emerald-300 font-medium"
+                                : "text-amber-200/60"
                             )}
                           >
                             <span
                               className={cn(
                                 "w-3 h-3 rounded-full flex items-center justify-center text-[8px] font-bold shrink-0 transition-colors",
                                 req.isValid
-                                  ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/80 dark:text-emerald-300 border border-emerald-500/40"
-                                  : "bg-slate-200 text-slate-500 dark:bg-slate-800 dark:text-slate-500"
+                                  ? "bg-emerald-950 text-emerald-300 border border-emerald-400/60"
+                                  : "bg-[#500000] text-amber-200/60 border border-amber-400/20"
                               )}
                             >
                               {req.isValid ? "✓" : "•"}
@@ -1066,10 +1080,10 @@ export function DevPreviewPanel() {
                     {/* Confirm Password Field */}
                     <div className="space-y-1.5 text-left">
                       <div className="flex items-center justify-between">
-                        <label className="text-xs uppercase font-semibold tracking-wider text-slate-600 dark:text-slate-300">
+                        <label className="text-xs uppercase font-bold tracking-wider text-amber-300">
                           Confirm Password
                         </label>
-                        <span className="text-[10px] text-slate-400 font-medium">Must match</span>
+                        <span className="text-[10px] text-amber-200/70 font-medium">Must match</span>
                       </div>
                       <div className="relative flex items-center">
                         <input
@@ -1080,12 +1094,12 @@ export function DevPreviewPanel() {
                           minLength={8}
                           placeholder="Confirm new password"
                           autoComplete="new-password"
-                          className="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 pl-3.5 pr-10 py-2.5 text-xs sm:text-sm text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#780000]/20 focus:border-[#780000] dark:focus:border-amber-400 transition"
+                          className="w-full rounded-xl border border-amber-400/40 bg-[#660000] pl-3.5 pr-10 py-2.5 text-xs sm:text-sm text-[#fff7ed] placeholder:text-amber-200/50 focus:outline-none focus:ring-2 focus:ring-amber-400/60 focus:border-amber-400 transition"
                         />
                         <button
                           type="button"
                           onClick={() => setShowConfirmPass(!showConfirmPass)}
-                          className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors cursor-pointer"
+                          className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-amber-300 hover:text-amber-100 transition-colors cursor-pointer"
                           title={showConfirmPass ? "Hide password" : "Show password"}
                           aria-label={showConfirmPass ? "Hide password" : "Show password"}
                         >
@@ -1102,11 +1116,11 @@ export function DevPreviewPanel() {
                     <button
                       type="submit"
                       disabled={isSimulatingSave}
-                      className="w-full flex items-center justify-center gap-2 bg-[#780000] hover:bg-[#5E0000] text-white font-medium text-sm py-2.5 px-4 rounded-xl shadow-sm transition-all focus:outline-none focus:ring-2 focus:ring-[#780000]/30 cursor-pointer disabled:opacity-50 mt-2"
+                      className="w-full flex items-center justify-center gap-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-sm py-2.5 px-4 rounded-xl shadow-sm transition-all focus:outline-none focus:ring-2 focus:ring-amber-400/50 cursor-pointer disabled:opacity-50 mt-2"
                     >
                       {isSimulatingSave ? (
                         <>
-                          <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                          <div className="w-4 h-4 border-2 border-slate-950 border-t-transparent rounded-full animate-spin" />
                           <span>Saving Password...</span>
                         </>
                       ) : (
@@ -1119,7 +1133,7 @@ export function DevPreviewPanel() {
                   </form>
 
                   {/* Footer Note */}
-                  <div className="mt-6 pt-5 border-t border-slate-100 dark:border-slate-800 text-center">
+                  <div className="mt-6 pt-5 border-t border-amber-400/20 text-center">
                     <p className="text-[11px] text-slate-400 dark:text-slate-500 leading-relaxed">
                       If you have questions or need assistance, please contact your PUP Bataan campus administrator.
                     </p>
@@ -1219,22 +1233,31 @@ export function DevPreviewPanel() {
                 <AppIcon icon={Hourglass} size="sm" color="active" />
                 <span>Preview System Loading Screen</span>
               </button>
+
+              <button
+                type="button"
+                onClick={() => setActiveShowcaseModal("logout")}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 transition cursor-pointer shadow-2xs"
+              >
+                <AppIcon icon={LogOut} size="sm" color="inherit" />
+                <span>Launch Logout Modal</span>
+              </button>
             </div>
           </div>
 
-          {/* 3-Column Side-by-Side In-Page Inspection Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-5 items-stretch">
+          {/* 4-Column Side-by-Side In-Page Inspection Cards (PUP System Maroon Aesthetic) */}
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-5 items-stretch">
             {/* 1. LOADING CARD MOCKUP */}
-            <div className="flex flex-col justify-between p-6 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs min-h-[360px]">
-              <div className="w-full flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800 text-xs">
-                <span className="font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-2 text-xs">
-                  <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
-                  State 1: Loading & Verification
+            <div className="flex flex-col justify-between p-6 rounded-2xl border-2 border-amber-400 bg-[#800000] shadow-xs min-h-[360px] text-white">
+              <div className="w-full flex items-center justify-between pb-3 border-b border-amber-400/30 text-xs text-amber-200">
+                <span className="font-bold flex items-center gap-2 text-xs">
+                  <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
+                  State 1: Loading &amp; Verification
                 </span>
                 <button
                   type="button"
                   onClick={() => setPreviewAnimationKey(Date.now())}
-                  className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 flex items-center gap-1 text-[11px] cursor-pointer"
+                  className="text-amber-200/70 hover:text-white flex items-center gap-1 text-[11px] cursor-pointer"
                 >
                   <AppIcon icon={Refresh} size="xs" color="inherit" />
                   <span>Replay</span>
@@ -1243,8 +1266,8 @@ export function DevPreviewPanel() {
 
               <div className="flex flex-col items-center justify-center text-center my-auto py-4">
                 <div className="relative w-16 h-16 flex items-center justify-center my-2">
-                  <div className="absolute inset-0 rounded-full border-[3px] border-slate-200 dark:border-slate-800" />
-                  <div className="absolute inset-0 rounded-full border-[3px] border-transparent border-t-[#780000] border-r-[#780000] dark:border-t-amber-400 dark:border-r-amber-400 animate-spin" />
+                  <div className="absolute inset-0 rounded-full border-[3px] border-amber-400/20" />
+                  <div className="absolute inset-0 rounded-full border-[3px] border-transparent border-t-amber-400 border-r-amber-400 animate-spin" />
                   <div className="relative w-9 h-9 rounded-full overflow-hidden flex items-center justify-center bg-white shadow-xs p-0.5">
                     <img
                       src="/icons/pup-seal.png"
@@ -1254,16 +1277,16 @@ export function DevPreviewPanel() {
                   </div>
                 </div>
 
-                <h3 className="mt-3 text-base font-bold text-slate-900 dark:text-slate-100">
+                <h3 className="mt-3 text-base font-bold text-amber-200">
                   Authenticating...
                 </h3>
 
-                <p className="mt-1 text-xs text-slate-500 dark:text-slate-400 leading-relaxed max-w-[240px]">
+                <p className="mt-1 text-xs text-amber-100/90 leading-relaxed max-w-[240px]">
                   Verifying institutional credentials with campus directory...
                 </p>
 
-                <div className="mt-3.5 inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-[11px] font-medium text-slate-600 dark:text-slate-300">
-                  <AppIcon icon={SystemRestart} size="xs" color="inherit" className="animate-spin text-[#780000] dark:text-amber-400" />
+                <div className="mt-3.5 inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#660000] border border-amber-400/40 text-[11px] font-medium text-amber-200">
+                  <AppIcon icon={SystemRestart} size="xs" color="inherit" className="animate-spin text-amber-400" />
                   <span>Securing institutional session...</span>
                 </div>
               </div>
@@ -1277,7 +1300,7 @@ export function DevPreviewPanel() {
                     variant: "loading",
                   })
                 }
-                className="w-full mt-4 flex items-center justify-center gap-2 bg-[#780000] hover:bg-[#5E0000] text-white font-medium text-xs py-2.5 px-4 rounded-xl shadow-xs transition cursor-pointer"
+                className="w-full mt-4 flex items-center justify-center gap-2 bg-[#780000] hover:bg-[#5E0000] text-white border border-[#5E0000] font-bold text-xs py-2.5 px-4 rounded-xl shadow-xs transition cursor-pointer"
               >
                 <span>Launch Loading Modal</span>
                 <ArrowRight className="w-3.5 h-3.5" />
@@ -1285,16 +1308,16 @@ export function DevPreviewPanel() {
             </div>
 
             {/* 2. SUCCESS CARD MOCKUP */}
-            <div className="flex flex-col justify-between p-6 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs min-h-[360px]">
-              <div className="w-full flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800 text-xs">
-                <span className="font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-2 text-xs">
-                  <span className="w-2 h-2 rounded-full bg-emerald-500" />
+            <div className="flex flex-col justify-between p-6 rounded-2xl border-2 border-amber-400 bg-[#800000] shadow-xs min-h-[360px] text-white">
+              <div className="w-full flex items-center justify-between pb-3 border-b border-amber-400/30 text-xs text-amber-200">
+                <span className="font-bold flex items-center gap-2 text-xs">
+                  <span className="w-2 h-2 rounded-full bg-emerald-400" />
                   State 2: Success
                 </span>
                 <button
                   type="button"
                   onClick={() => setPreviewAnimationKey(Date.now())}
-                  className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 flex items-center gap-1 text-[11px] cursor-pointer"
+                  className="text-amber-200/70 hover:text-white flex items-center gap-1 text-[11px] cursor-pointer"
                 >
                   <AppIcon icon={Refresh} size="xs" color="inherit" />
                   <span>Replay</span>
@@ -1309,36 +1332,36 @@ export function DevPreviewPanel() {
                   </div>
                 </div>
 
-                <h3 className="mt-3 text-base font-bold text-slate-900 dark:text-slate-100">
+                <h3 className="mt-3 text-base font-bold text-amber-200">
                   Login Successful
                 </h3>
 
-                <p className="mt-1 text-xs text-slate-500 dark:text-slate-400 leading-relaxed max-w-[240px]">
+                <p className="mt-1 text-xs text-amber-100/90 leading-relaxed max-w-[240px]">
                   Welcome back to PUP FOCUS. Securing institutional session...
                 </p>
 
-                <div className="mt-3.5 inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/60 text-[11px] font-medium text-emerald-700 dark:text-emerald-300">
+                <div className="mt-3.5 inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-950/80 border border-emerald-400/60 text-[11px] font-medium text-emerald-200">
                   <AppIcon icon={SystemRestart} size="xs" color="inherit" className="animate-spin" />
                   <span>Redirecting to your portal...</span>
                 </div>
               </div>
 
-              <div className="w-full mt-4 h-9 flex items-center justify-center text-xs text-slate-400">
+              <div className="w-full mt-4 h-9 flex items-center justify-center text-xs text-amber-200/70">
                 <span>Auto-redirecting to dashboard</span>
               </div>
             </div>
 
             {/* 3. FAIL CARD MOCKUP */}
-            <div className="flex flex-col justify-between p-6 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs min-h-[360px]">
-              <div className="w-full flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800 text-xs">
-                <span className="font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-2 text-xs">
-                  <span className="w-2 h-2 rounded-full bg-rose-500" />
+            <div className="flex flex-col justify-between p-6 rounded-2xl border-2 border-amber-400 bg-[#800000] shadow-xs min-h-[360px] text-white">
+              <div className="w-full flex items-center justify-between pb-3 border-b border-amber-400/30 text-xs text-amber-200">
+                <span className="font-bold flex items-center gap-2 text-xs">
+                  <span className="w-2 h-2 rounded-full bg-rose-400" />
                   State 3: Failed
                 </span>
                 <button
                   type="button"
                   onClick={() => setPreviewAnimationKey(Date.now())}
-                  className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 flex items-center gap-1 text-[11px] cursor-pointer"
+                  className="text-amber-200/70 hover:text-white flex items-center gap-1 text-[11px] cursor-pointer"
                 >
                   <AppIcon icon={Refresh} size="xs" color="inherit" />
                   <span>Replay</span>
@@ -1353,15 +1376,15 @@ export function DevPreviewPanel() {
                   </div>
                 </div>
 
-                <h3 className="mt-3 text-base font-bold text-slate-900 dark:text-slate-100">
+                <h3 className="mt-3 text-base font-bold text-amber-200">
                   Login Failed
                 </h3>
 
-                <p className="mt-1 text-xs text-slate-500 dark:text-slate-400 leading-relaxed max-w-[240px]">
+                <p className="mt-1 text-xs text-amber-100/90 leading-relaxed max-w-[240px]">
                   Invalid institutional email address or password. Please verify credentials.
                 </p>
 
-                <div className="mt-3.5 inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800/60 text-[11px] font-medium text-rose-700 dark:text-rose-300">
+                <div className="mt-3.5 inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-rose-950/80 border border-rose-400/60 text-[11px] font-medium text-rose-200">
                   <span>Invalid Credentials</span>
                 </div>
               </div>
@@ -1377,10 +1400,51 @@ export function DevPreviewPanel() {
                     variant: "error",
                   })
                 }
-                className="w-full mt-4 flex items-center justify-center gap-2 bg-[#780000] hover:bg-[#5E0000] text-white font-medium text-xs py-2.5 px-4 rounded-xl shadow-xs transition cursor-pointer"
+                className="w-full mt-4 flex items-center justify-center gap-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs py-2.5 px-4 rounded-xl shadow-xs transition cursor-pointer"
               >
                 <AppIcon icon={Refresh} size="xs" color="inherit" />
                 <span>Try Again</span>
+              </button>
+            </div>
+
+            {/* 4. LOGOUT MODAL CARD MOCKUP */}
+            <div className="flex flex-col justify-between p-6 rounded-2xl border-2 border-amber-400 bg-[#800000] shadow-xs min-h-[360px] text-white">
+              <div className="w-full flex items-center justify-between pb-3 border-b border-amber-400/30 text-xs text-amber-200">
+                <span className="font-bold flex items-center gap-2 text-xs">
+                  <span className="w-2 h-2 rounded-full bg-amber-400" />
+                  State 4: Logout Modal
+                </span>
+                <span className="text-[11px] text-amber-200/70">Session End</span>
+              </div>
+
+              <div className="flex flex-col items-center justify-center text-center my-auto py-4">
+                <div className="relative w-16 h-16 flex items-center justify-center my-2">
+                  <div className="absolute inset-0 rounded-full border-[3px] border-amber-400/30 bg-amber-400/10" />
+                  <div className="relative z-10 w-11 h-11 rounded-full bg-[#650000] border border-amber-400/40 text-amber-300 flex items-center justify-center shadow-md">
+                    <AppIcon icon={LogOut} size="md" color="inherit" />
+                  </div>
+                </div>
+
+                <h3 className="mt-3 text-base font-bold text-amber-200">
+                  Confirm Logout
+                </h3>
+
+                <p className="mt-1 text-xs text-amber-100/90 leading-relaxed max-w-[240px]">
+                  Are you sure you want to log out of PUP FOCUS? Requires credentials to sign back in.
+                </p>
+
+                <div className="mt-3.5 inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#660000] border border-amber-400/40 text-[11px] font-medium text-amber-200">
+                  <span>End Active Session</span>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setActiveShowcaseModal("logout")}
+                className="w-full mt-4 flex items-center justify-center gap-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs py-2.5 px-4 rounded-xl shadow-xs transition cursor-pointer"
+              >
+                <span>Launch Logout Modal</span>
+                <ArrowRight className="w-3.5 h-3.5" />
               </button>
             </div>
           </div>
@@ -1503,6 +1567,16 @@ export function DevPreviewPanel() {
               >
                 <AppIcon icon={Hourglass} size="md" color="active" />
                 <span>Preview System Loading Screen</span>
+              </button>
+
+              {/* Logout Confirmation Modal Tester */}
+              <button
+                type="button"
+                onClick={() => setActiveShowcaseModal("logout")}
+                className="px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs transition cursor-pointer shadow-md flex items-center gap-1.5"
+              >
+                <AppIcon icon={LogOut} size="md" color="inherit" />
+                <span>Test Logout Confirmation Modal</span>
               </button>
             </div>
           </div>
@@ -1858,6 +1932,34 @@ export function DevPreviewPanel() {
               >
                 Open DB Capacity Tester
               </button>
+            </div>
+
+            {/* Modal Card 14: Logout Confirmation Modal */}
+            <div className="rounded-2xl border border-amber-400/60 dark:border-amber-500/60 bg-white dark:bg-slate-900 p-5 shadow-xs flex flex-col justify-between space-y-4">
+              <div className="space-y-2">
+                <div className="flex items-center gap-2 text-[#800000] dark:text-amber-400">
+                  <AppIcon icon={LogOut} size="lg" color="inherit" />
+                  <h4 className="text-sm font-bold text-slate-900 dark:text-slate-100">
+                    Logout Confirmation Modal
+                  </h4>
+                </div>
+                <p className="text-xs text-slate-500 dark:text-slate-400">
+                  Inspect the confirmation modal displayed before terminating an active session across Faculty, Staff, and Admin portals.
+                </p>
+              </div>
+              <div className="space-y-2.5">
+                <button
+                  type="button"
+                  onClick={() => setActiveShowcaseModal("logout")}
+                  className="w-full py-2 px-3 text-xs font-bold rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 transition cursor-pointer shadow-xs active:scale-[0.98]"
+                >
+                  Launch Logout Modal
+                </button>
+                <div className="flex items-center justify-between pt-2 border-t border-slate-100 dark:border-slate-800 text-[11px] text-slate-500 dark:text-slate-400">
+                  <span>Live Component:</span>
+                  <LogoutButton />
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -2462,6 +2564,92 @@ export function DevPreviewPanel() {
         pendingValidationCount={2}
         deadlineDisplay="Oct 15, 2026, 11:59 PM"
       />
+
+      {/* SHOWCASE MODAL 5: LOGOUT CONFIRMATION MODAL */}
+      {activeShowcaseModal === "logout" && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-xs animate-in fade-in duration-150"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="logout-preview-dialog-title"
+          onClick={() => {
+            if (!isSimulatingLogout) setActiveShowcaseModal(null);
+          }}
+        >
+          <div
+            className="w-full max-w-sm rounded-2xl bg-[#800000] border-2 border-amber-400 shadow-[0_20px_50px_rgba(0,0,0,0.6),0_0_30px_rgba(128,0,0,0.4)] overflow-hidden animate-in zoom-in-95 duration-150 text-left text-white"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header */}
+            <div className="flex items-center justify-between border-b border-amber-400/30 px-5 py-4 bg-[#680000]/70">
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-xl bg-[#650000] text-amber-300 border border-amber-400/40 flex items-center justify-center">
+                  <AppIcon icon={LogOut} size="md" color="inherit" />
+                </div>
+                <div>
+                  <h3 id="logout-preview-dialog-title" className="text-base font-bold text-amber-200">
+                    Confirm Logout
+                  </h3>
+                  <p className="text-xs text-amber-100/70">
+                    End your active session
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                disabled={isSimulatingLogout}
+                onClick={() => setActiveShowcaseModal(null)}
+                className="p-1.5 rounded-lg border border-[#5e0000] bg-[#780000] hover:bg-[#5e0000] text-white transition-colors cursor-pointer shadow-xs disabled:opacity-50"
+                aria-label="Close"
+              >
+                <AppIcon icon={Xmark} size="sm" color="inherit" />
+              </button>
+            </div>
+
+            {/* Body */}
+            <div className="p-5 text-xs sm:text-sm text-amber-50/95 leading-relaxed">
+              Are you sure you want to log out of PUP FOCUS? You will need to enter your institutional credentials again to sign back in.
+            </div>
+
+            {/* Footer Actions */}
+            <div className="flex items-center justify-end gap-2.5 px-5 py-3.5 border-t border-amber-400/30 bg-[#680000]/70">
+              <button
+                type="button"
+                disabled={isSimulatingLogout}
+                onClick={() => setActiveShowcaseModal(null)}
+                className="px-4 py-2 rounded-xl bg-[#780000] hover:bg-[#5e0000] text-white border border-[#5e0000] text-xs font-bold transition-all shadow-xs active:scale-95 cursor-pointer disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={isSimulatingLogout}
+                onClick={() => {
+                  setIsSimulatingLogout(true);
+                  setTimeout(() => {
+                    setIsSimulatingLogout(false);
+                    setActiveShowcaseModal(null);
+                    setDevToast({
+                      type: "success",
+                      message: "Logout simulation complete. Session cleared.",
+                    });
+                  }, 1200);
+                }}
+                className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 border border-amber-600 text-xs font-bold transition-all shadow-xs active:scale-95 cursor-pointer disabled:opacity-50"
+              >
+                {isSimulatingLogout ? (
+                  <>
+                    <div className="w-3.5 h-3.5 border-2 border-slate-950 border-t-transparent rounded-full animate-spin" />
+                    <span>Logging out...</span>
+                  </>
+                ) : (
+                  <span>Log Out</span>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* FULL-SCREEN SYSTEM LOADING PREVIEW OVERLAY */}
       {showSystemLoadingScreen && (

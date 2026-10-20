@@ -47,7 +47,7 @@ export function AuthFeedbackModal({ modal, onClose }: AuthFeedbackModalProps) {
       onClick={isSuccess ? undefined : onClose}
     >
       <div
-        className="relative w-full max-w-[360px] overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 sm:p-7 text-slate-900 dark:text-slate-100 shadow-2xl transition-all duration-300 animate-in zoom-in-95 cursor-default text-center"
+        className="relative w-full max-w-[360px] overflow-hidden rounded-2xl border-2 border-amber-400 bg-[#800000] p-6 sm:p-7 text-white shadow-2xl transition-all duration-300 animate-in zoom-in-95 cursor-default text-center"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Top-Right Dismiss 'X' Button (hidden on success) */}
@@ -55,7 +55,7 @@ export function AuthFeedbackModal({ modal, onClose }: AuthFeedbackModalProps) {
           <button
             type="button"
             onClick={onClose}
-            className="absolute top-3.5 right-3.5 p-1.5 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+            className="absolute top-3.5 right-3.5 p-1.5 rounded-lg border border-[#5e0000] bg-[#780000] hover:bg-[#5e0000] text-white transition-colors cursor-pointer"
             aria-label="Close modal"
           >
             <AppIcon icon={Xmark} size="md" color="inherit" />
@@ -66,8 +66,8 @@ export function AuthFeedbackModal({ modal, onClose }: AuthFeedbackModalProps) {
           {/* Circular Icon */}
           {isLoading ? (
             <div className="relative w-16 h-16 flex items-center justify-center my-2">
-              <div className="absolute inset-0 rounded-full border-[3px] border-slate-200 dark:border-slate-800" />
-              <div className="absolute inset-0 rounded-full border-[3px] border-transparent border-t-[#780000] border-r-[#780000] dark:border-t-amber-400 dark:border-r-amber-400 animate-spin" />
+              <div className="absolute inset-0 rounded-full border-[3px] border-amber-400/20" />
+              <div className="absolute inset-0 rounded-full border-[3px] border-transparent border-t-amber-400 border-r-amber-400 animate-spin" />
               <div className="relative w-9 h-9 rounded-full overflow-hidden flex items-center justify-center bg-white shadow-xs p-0.5">
                 <img
                   src="/icons/pup-seal.png"
@@ -93,7 +93,7 @@ export function AuthFeedbackModal({ modal, onClose }: AuthFeedbackModalProps) {
           )}
 
           {/* Title */}
-          <h3 className="mt-3 text-lg font-bold text-slate-900 dark:text-slate-100">
+          <h3 className="mt-3 text-lg font-bold text-amber-200">
             {isLoading
               ? modal.title || "Authenticating..."
               : isSuccess
@@ -102,7 +102,7 @@ export function AuthFeedbackModal({ modal, onClose }: AuthFeedbackModalProps) {
           </h3>
 
           {/* Message */}
-          <p className="mt-1.5 text-xs text-slate-500 dark:text-slate-400 leading-relaxed max-w-[280px]">
+          <p className="mt-1.5 text-xs text-amber-100/90 leading-relaxed max-w-[280px]">
             {modal.message ||
               (isLoading
                 ? "Verifying institutional credentials with campus security..."
@@ -113,14 +113,14 @@ export function AuthFeedbackModal({ modal, onClose }: AuthFeedbackModalProps) {
 
           {/* Status Indicator & Action Button */}
           {isLoading && (
-            <div className="mt-4 inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-[11px] font-medium text-slate-600 dark:text-slate-300">
-              <AppIcon icon={SystemRestart} size="xs" color="inherit" className="animate-spin text-[#780000] dark:text-amber-400" />
+            <div className="mt-4 inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#660000] border border-amber-400/40 text-[11px] font-medium text-amber-200">
+              <AppIcon icon={SystemRestart} size="xs" color="inherit" className="animate-spin text-amber-400" />
               <span>Securing institutional session...</span>
             </div>
           )}
 
           {isSuccess && (
-            <div className="mt-4 inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/60 text-[11px] font-medium text-emerald-700 dark:text-emerald-300">
+            <div className="mt-4 inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-950/80 border border-emerald-400/60 text-[11px] font-medium text-emerald-200">
               <AppIcon icon={SystemRestart} size="xs" color="inherit" className="animate-spin" />
               <span>Redirecting to your portal...</span>
             </div>
@@ -130,7 +130,7 @@ export function AuthFeedbackModal({ modal, onClose }: AuthFeedbackModalProps) {
             <button
               type="button"
               onClick={onClose}
-              className="mt-5 w-full flex items-center justify-center gap-2 bg-[#780000] hover:bg-[#5E0000] text-white font-medium text-xs py-2.5 px-4 rounded-xl shadow-xs transition cursor-pointer"
+              className="mt-5 w-full flex items-center justify-center gap-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs py-2.5 px-4 rounded-xl shadow-xs transition cursor-pointer"
             >
               <AppIcon icon={Refresh} size="xs" color="inherit" />
               <span>{modal.actionLabel || "Try Again"}</span>
