@@ -125,21 +125,21 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    // 4. Fetch audit logs for invite events, cancellations, and deletions
+    // 4. Fetch transaction logs for invite events, cancellations, and deletions
     const { data: inviteAuditLogs } = await supabase
-      .from("audit_logs")
+      .from("transaction_logs")
       .select("id, actor_id, action, entity_id, metadata, created_at")
       .in("action", ["faculty.create", "admin.create", "staff.create", "user.invite"])
       .order("created_at", { ascending: false });
 
     const { data: cancelledAuditLogs } = await supabase
-      .from("audit_logs")
+      .from("transaction_logs")
       .select("id, metadata, created_at")
       .eq("action", "user.invite_cancelled")
       .order("created_at", { ascending: false });
 
     const { data: deletedAuditLogs } = await supabase
-      .from("audit_logs")
+      .from("transaction_logs")
       .select("id, entity_id, metadata, created_at")
       .in("action", ["user.delete", "faculty.delete", "admin.delete", "staff.delete"])
       .order("created_at", { ascending: false });

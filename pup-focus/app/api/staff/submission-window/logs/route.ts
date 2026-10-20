@@ -136,7 +136,7 @@ export async function GET() {
       });
     }
 
-    // 4. Query audit_logs table for schedule related actions
+    // 4. Query transaction_logs table for schedule related actions
     const scheduleActions = [
       "submission_window.update",
       "submission_window.close",
@@ -147,8 +147,8 @@ export async function GET() {
       "faculty.create",
     ];
 
-    const { data: auditLogsData } = await supabase
-      .from("audit_logs")
+    const { data: transactionLogsData } = await supabase
+      .from("transaction_logs")
       .select("*")
       .in("action", scheduleActions)
       .order("created_at", { ascending: false })
@@ -173,7 +173,7 @@ export async function GET() {
     (windowLogsData || []).forEach((row: any) => {
       if (row.extended_by) actorIds.add(row.extended_by);
     });
-    (auditLogsData || []).forEach((log: any) => {
+    (transactionLogsData || []).forEach((log: any) => {
       if (log.actor_id) actorIds.add(log.actor_id);
     });
     (termsData || []).forEach((term: any) => {
@@ -241,8 +241,8 @@ export async function GET() {
       });
     });
 
-    // B. Map from audit_logs table
-    (auditLogsData || []).forEach((log: any) => {
+    // B. Map from transaction_logs table
+    (transactionLogsData || []).forEach((log: any) => {
       const meta = log.metadata || {};
       const actor =
         meta.extended_by_name ||

@@ -65,6 +65,9 @@ export async function POST(request: NextRequest) {
 
     // 1. Clean up dependent references in public tables
     try {
+      await supabase.from("transaction_logs").update({ actor_id: null }).eq("actor_id", profileId);
+    } catch {}
+    try {
       await supabase.from("audit_logs").update({ actor_id: null }).eq("actor_id", profileId);
     } catch {}
 
