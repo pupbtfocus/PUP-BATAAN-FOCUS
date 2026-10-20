@@ -628,7 +628,7 @@ export default function Home() {
 
       <div className="relative z-10 w-full max-w-[420px] sm:max-w-[460px] md:max-w-4xl lg:max-w-5xl mx-auto my-auto py-0.5 md:py-3">
         {/* Wide Open-Book Card Container */}
-        <div className="relative w-full mx-auto opacity-[0.88]">
+        <div className="relative w-full mx-auto">
           {/* Desktop Curved Card Top Header SVG (>= md) */}
           <div className="hidden md:block relative -mb-[8px] z-10">
             <svg

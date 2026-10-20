@@ -214,10 +214,8 @@ export function ForgotPasswordModal({
             >
               <defs>
                 <linearGradient id="forgotPassTopGrad" x1="0%" y1="0%" x2="0%" y2="100%">
-                  <stop offset="0%" stopColor="#8a0c0c" />
-                  <stop offset="40%" stopColor="#780000" />
-                  <stop offset="85%" stopColor="#680000" />
-                  <stop offset="100%" stopColor="#680000" />
+                  <stop offset="0%" stopColor="#800000" />
+                  <stop offset="100%" stopColor="#800000" />
                 </linearGradient>
                 <linearGradient id="forgotPassTopGoldCrest" x1="0%" y1="0%" x2="100%" y2="0%">
                   <stop offset="0%" stopColor="#D97706" stopOpacity="0.8" />
@@ -278,7 +276,7 @@ export function ForgotPasswordModal({
           </div>
 
           {/* Card Body - Vibrant PUP Brand Maroon matching System Aesthetic */}
-          <section className="relative rounded-b-[1.75rem] sm:rounded-b-[2rem] border-x-2 border-b-2 border-amber-400/80 bg-gradient-to-b from-[#680000] via-[#5e0000] to-[#4d0000] p-6 pt-7 sm:p-8 sm:pt-8 backdrop-blur-xl text-[#fff8e7]">
+          <section className="relative rounded-b-[1.75rem] sm:rounded-b-[2rem] border-x-2 border-b-2 border-amber-400/80 bg-[#800000] p-6 pt-7 sm:p-8 sm:pt-8 backdrop-blur-xl text-[#fff8e7]">
             <div className="mt-1 mb-5 sm:mb-6 text-center">
               <h2 className="text-2xl sm:text-3xl font-black tracking-wider text-amber-300 uppercase mb-1 drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">
                 Reset Password
