@@ -32,12 +32,15 @@ export async function POST(req: Request) {
       email: bodyEmail,
       mode: bodyMode,
       token,
+      recoverIfPending: bodyRecoverIfPending,
+      recover: bodyRecover,
     } = body;
 
     const requestedUserId = bodyUserId || bodyUserIdSnake || bodyId;
     const requestedFullName = bodyFullNameSnake || bodyFullNameCamel || bodyName;
     const requestedPassword = bodyPassword;
     const requestedEmail = (bodyEmail as string | undefined)?.trim().toLowerCase();
+    const isRecoveryRequest = Boolean(bodyRecoverIfPending || bodyRecover);
 
     // 2. Use @supabase/supabase-js initialized with process.env.SUPABASE_SERVICE_ROLE_KEY to grant admin privileges
     const supabaseUrl =
@@ -65,11 +68,28 @@ export async function POST(req: Request) {
       },
     });
 
-    // Identify target user by provided userId or token/session
+    // Identify target user:
+    // When an email is supplied (via link query param, cached session, or recovery input),
+    // prioritize looking up that specific invited user instead of using an ambient active session.
     let targetUserId: string | null = requestedUserId || null;
     let authUser: any = null;
 
-    if (targetUserId) {
+    if (requestedEmail) {
+      try {
+        const { data: listData } = await supabaseAdmin.auth.admin.listUsers({ perPage: 1000 });
+        const match = listData?.users?.find(
+          (u) => u.email?.trim().toLowerCase() === requestedEmail
+        );
+        if (match) {
+          authUser = match;
+          targetUserId = match.id;
+        }
+      } catch {
+        // Ignored
+      }
+    }
+
+    if (!authUser && targetUserId) {
       const { data: userData, error: getUserError } =
         await supabaseAdmin.auth.admin.getUserById(targetUserId);
 
@@ -82,8 +102,8 @@ export async function POST(req: Request) {
         );
       }
       authUser = userData.user;
-    } else {
-      // Fallback to active session user if userId is not in request body
+    } else if (!authUser) {
+      // Fallback to active session user if userId/email is not in request body
       try {
         const serverSupabase = await createServerSupabaseClient();
         const {
@@ -99,28 +119,28 @@ export async function POST(req: Request) {
       }
     }
 
-    if ((!targetUserId || !authUser) && requestedEmail) {
-      try {
-        const { data: listData } = await supabaseAdmin.auth.admin.listUsers({ perPage: 1000 });
-        const match = listData?.users?.find(
-          (u) => u.email?.trim().toLowerCase() === requestedEmail
-        );
-        if (match) {
-          authUser = match;
-          targetUserId = match.id;
-        }
-      } catch {
-        // Ignored
-      }
-    }
-
     if (!targetUserId || !authUser) {
       return NextResponse.json(
         {
           error:
-            "Missing target user identification. Please supply userId in the request body or ensure an active session exists.",
+            "Missing target user identification. Please supply your institutional email or click the link in your email.",
         },
         { status: 400 }
+      );
+    }
+
+    const hasCompletedSetup =
+      authUser.user_metadata?.must_change_password === false &&
+      authUser.user_metadata?.force_password_change !== true;
+
+    if (isRecoveryRequest && hasCompletedSetup) {
+      return NextResponse.json(
+        {
+          alreadySetup: true,
+          error:
+            "This invitation link has expired because your account is already set up. Please sign in with your password.",
+        },
+        { status: 400 },
       );
     }
 

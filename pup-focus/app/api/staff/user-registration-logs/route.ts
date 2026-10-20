@@ -489,7 +489,10 @@ export async function POST(request: NextRequest) {
         },
       });
 
-    let actionLink = genData?.properties?.action_link ?? null;
+    const hashedToken = genData?.properties?.hashed_token;
+    let actionLink = hashedToken
+      ? `${siteUrl.replace(/\/$/, "")}/auth/confirm?token_hash=${encodeURIComponent(hashedToken)}&type=invite&email=${encodeURIComponent(email)}`
+      : genData?.properties?.action_link ?? null;
     let sent = false;
     let sendError: string | null = null;
     let isTempPasswordReset = false;

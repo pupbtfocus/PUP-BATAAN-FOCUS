@@ -314,7 +314,10 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    const actionLink = genData?.properties?.action_link ?? null;
+    const hashedToken = genData?.properties?.hashed_token;
+    const actionLink = hashedToken
+      ? `${siteUrl.replace(/\/$/, "")}/auth/confirm?token_hash=${encodeURIComponent(hashedToken)}&type=invite&email=${encodeURIComponent(normalizedEmail)}`
+      : genData?.properties?.action_link ?? null;
 
     let sent = false;
     let sendError: string | null = null;
