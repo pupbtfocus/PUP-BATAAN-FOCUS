@@ -55,11 +55,8 @@ export async function POST(request: NextRequest) {
 
     const profileId = profile?.id || user.id;
 
-    // 2. Resolve target academic term (id, academic_year & semester)
-    let termId = academic_term_id || null;
-    let targetYear = (typeof academic_year === "string" ? academic_year.trim() : "") || null;
-    let targetSem = (typeof semester === "string" ? semester.trim() : "") || null;
-
+    // 2. Strictly resolve the active academic term configured by the administrator
+    let activeTermRow: any = null;
     try {
       const { data: activeTerm } = await supabaseAdmin
         .from("academic_terms")
@@ -67,14 +64,24 @@ export async function POST(request: NextRequest) {
         .eq("status", "Current")
         .maybeSingle();
 
-      if (activeTerm) {
-        termId = termId || (activeTerm as any).id || null;
-        targetYear = targetYear || (activeTerm as any).academic_year || null;
-        targetSem = targetSem || (activeTerm as any).semester || null;
-      }
-    } catch {
-      // Safe fallback if table structure differs
+      activeTermRow = activeTerm;
+    } catch (termQueryErr) {
+      console.warn("Failed to query active academic term:", termQueryErr);
     }
+
+    if (!activeTermRow) {
+      return NextResponse.json(
+        {
+          error:
+            "No active academic term configured by the administrator yet. Subject loads cannot be registered until an administrator sets the current academic year and semester.",
+        },
+        { status: 400 }
+      );
+    }
+
+    const termId = (activeTermRow as any).id || null;
+    const targetYear = activeTermRow.academic_year;
+    const targetSem = activeTermRow.semester;
 
     // 3. Insert class record into faculty_classes
     const insertPayload: Record<string, any> = {
@@ -97,7 +104,15 @@ export async function POST(request: NextRequest) {
       .single();
 
     if (insertError) {
-      if (insertError.message.includes("column") || insertError.code === "42703") {
+      // Fallback: if error is due to missing column, foreign key constraint on academic term, or schema mismatch
+      const isRecoverableError =
+        insertError.code === "23503" ||
+        insertError.code === "42703" ||
+        insertError.message.includes("column") ||
+        insertError.message.includes("foreign key") ||
+        insertError.message.includes("academic_term");
+
+      if (isRecoverableError) {
         const fallbackPayload = {
           faculty_profile_id: profileId,
           subject_code: subject_code.trim(),
