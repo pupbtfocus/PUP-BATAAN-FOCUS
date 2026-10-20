@@ -628,8 +628,14 @@ export async function POST(request: NextRequest) {
           // Resolve the active term + window state once so the assignment and
           // every submission row use identical, consistent values.
           const ctx = await resolveOnboardingContext(supabase);
-          const academicYear = ctx.term.academicYear;
-          const term = ctx.term.semester;
+          const academicYear =
+            ctx.term?.academicYear ||
+            ctx.windowState.academicYear ||
+            "2026-2027";
+          const term =
+            ctx.term?.semester ||
+            ctx.windowState.semester ||
+            "1st Semester";
 
           const normalizedOpt = (onboardingOption || "").toLowerCase().trim();
           const isStandardOption =
