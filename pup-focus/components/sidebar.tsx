@@ -214,10 +214,6 @@ export function SidebarContent({
               {getSidebarInitials(adminName, "AD")}
             </div>
           )}
-          <span
-            className="absolute bottom-0.5 right-0.5 w-3.5 h-3.5 rounded-full bg-emerald-500 border-2 border-[#6b0000] ring-1 ring-emerald-400/40"
-            title="Active"
-          />
         </button>
 
         <span className="text-xs sm:text-sm font-semibold text-amber-200/90 tracking-wide">

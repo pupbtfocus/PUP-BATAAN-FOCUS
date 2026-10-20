@@ -682,6 +682,10 @@ function FacultySubmissionPanelContent({
   const [statusSemester, setStatusSemester] = useState<string>(
     () => initialData?.semester || "",
   );
+  const [currentAcademicTerm, setCurrentAcademicTerm] = useState<{
+    academic_year: string;
+    semester: string;
+  } | null>(null);
   const [isLoadingSubmissionWindow, setIsLoadingSubmissionWindow] =
     useState(!initialData);
   const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(() => {
@@ -1336,6 +1340,7 @@ function FacultySubmissionPanelContent({
   }, [pastSubmissions]);
   const activeAY = useMemo(() => {
     return (
+      currentAcademicTerm?.academic_year ||
       submissionWindow?.academicYear ||
       statusAcademicYear ||
       (pastSubmissions.length > 0 && pastSubmissions[0].academicYear
@@ -1346,6 +1351,7 @@ function FacultySubmissionPanelContent({
       "2026-2027"
     );
   }, [
+    currentAcademicTerm?.academic_year,
     submissionWindow?.academicYear,
     statusAcademicYear,
     pastSubmissions,
@@ -1355,6 +1361,7 @@ function FacultySubmissionPanelContent({
 
   const activeSem = useMemo(() => {
     return (
+      currentAcademicTerm?.semester ||
       submissionWindow?.semester ||
       statusSemester ||
       (pastSubmissions.length > 0 && pastSubmissions[0].semester
@@ -1365,12 +1372,19 @@ function FacultySubmissionPanelContent({
       "1st Semester"
     );
   }, [
+    currentAcademicTerm?.semester,
     submissionWindow?.semester,
     statusSemester,
     pastSubmissions,
     selectedSemester,
     form.semester,
   ]);
+
+  const hasActiveAcademicTerm = Boolean(
+    currentAcademicTerm?.academic_year ||
+    (submissionWindow?.isConfigured && submissionWindow?.academicYear) ||
+    initialData?.academicYear
+  );
 
   const activeTemplates = useMemo<RequirementTemplateData[]>(() => {
     if (requirementTemplates && requirementTemplates.length > 0) {
@@ -1454,6 +1468,9 @@ function FacultySubmissionPanelContent({
       if (res.ok) {
         const data = await res.json();
         setFacultyClasses(data.classes || []);
+        if (data.activeTerm) {
+          setCurrentAcademicTerm(data.activeTerm);
+        }
       }
     } catch (err) {
       console.error("Failed to load faculty classes:", err);
@@ -1514,6 +1531,12 @@ function FacultySubmissionPanelContent({
 
   const handleAddClassSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!hasActiveAcademicTerm) {
+      setClassFormError(
+        "No active academic term configured by the administrator yet. Subject loads cannot be registered until an administrator sets the current academic year and semester."
+      );
+      return;
+    }
     if (!classForm.subject_code.trim()) {
       setClassFormError("Subject Code is required.");
       return;
@@ -3408,10 +3431,6 @@ function FacultySubmissionPanelContent({
                 {facultyInitials}
               </div>
             )}
-            <span
-              className="absolute bottom-0.5 right-0.5 w-3.5 h-3.5 rounded-full bg-emerald-500 border-2 border-[#6b0000] ring-1 ring-emerald-400/40"
-              title="Active"
-            />
           </button>
           <span className="text-xs sm:text-sm font-semibold text-amber-200/90 tracking-wide">
             Welcome,
@@ -3526,10 +3545,6 @@ function FacultySubmissionPanelContent({
                     {facultyInitials}
                   </div>
                 )}
-                <span
-                  className="absolute bottom-0.5 right-0.5 w-3.5 h-3.5 rounded-full bg-emerald-500 border-2 border-[#6b0000] ring-1 ring-emerald-400/40"
-                  title="Active"
-                />
               </button>
               <span className="text-xs sm:text-sm font-semibold text-amber-200/90 tracking-wide">
                 Welcome,
@@ -4479,7 +4494,7 @@ function FacultySubmissionPanelContent({
                       </div>
                     ) : facultyClasses.length === 0 ? (
                       <div className="flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-slate-300 dark:border-slate-800 bg-white dark:bg-slate-900/60 p-8 sm:p-14 text-center">
-                        <div className="h-16 w-16 rounded-2xl bg-amber-500/10 text-amber-700 dark:text-amber-300 border border-amber-500/30 flex items-center justify-center mb-4 shadow-2xs">
+                        <div className="h-16 w-16 rounded-2xl bg-amber-500 text-slate-950 flex items-center justify-center mb-4 shadow-md">
                           <AppIcon icon={TaskList} size="lg" color="inherit" />
                         </div>
                         <h3 className="text-base sm:text-lg font-black text-slate-900 dark:text-slate-100">
@@ -6450,7 +6465,11 @@ function FacultySubmissionPanelContent({
                   <ModalHeader
                     icon={Plus}
                     title="Add Class / Subject Load"
-                    subtitle={`Register a subject load for A.Y. ${activeAY} • ${activeSem}`}
+                    subtitle={
+                      hasActiveAcademicTerm
+                        ? `Register a subject load for A.Y. ${activeAY} • ${activeSem}`
+                        : "No active academic term configured"
+                    }
                     onClose={() => {
                       if (!isSubmittingClass) {
                         setIsAddClassModalOpen(false);
@@ -6461,10 +6480,24 @@ function FacultySubmissionPanelContent({
                   />
 
                   <form onSubmit={handleAddClassSubmit} className="p-5 sm:p-6 space-y-4">
+                    {!hasActiveAcademicTerm && (
+                      <div className="rounded-xl border-2 border-amber-400 bg-[#780000] p-3.5 flex items-start gap-2.5 text-xs text-white shadow-lg shadow-black/20">
+                        <AppIcon icon={WarningCircle} size="md" color="white" className="shrink-0 mt-0.5 text-amber-300 drop-shadow-[0_0_6px_rgba(251,191,36,0.6)]" />
+                        <div className="space-y-0.5">
+                          <p className="font-bold text-amber-300 uppercase tracking-wide text-[11px]">
+                            No Active Academic Term Configured
+                          </p>
+                          <p className="text-xs leading-relaxed text-amber-50 font-medium">
+                            Subject loads cannot be registered until a campus administrator sets the current academic year and semester. Please contact your campus administrator.
+                          </p>
+                        </div>
+                      </div>
+                    )}
+
                     {classFormError && (
-                      <div className="rounded-xl border border-rose-300 dark:border-rose-900/60 bg-rose-50 dark:bg-rose-950/30 p-3 flex items-center gap-2 text-xs text-[#780000] dark:text-rose-400 font-medium">
-                        <AppIcon icon={WarningCircle} size="sm" color="danger" className="shrink-0" />
-                        <span>{classFormError}</span>
+                      <div className="rounded-xl border-2 border-amber-400 bg-[#780000] p-3.5 flex items-start sm:items-center gap-2.5 text-xs text-white font-semibold shadow-lg shadow-black/20">
+                        <AppIcon icon={WarningCircle} size="md" color="white" className="shrink-0 text-amber-300 drop-shadow-[0_0_6px_rgba(251,191,36,0.6)]" />
+                        <span className="leading-relaxed text-amber-50">{classFormError}</span>
                       </div>
                     )}
 
@@ -6538,13 +6571,13 @@ function FacultySubmissionPanelContent({
                           setIsAddClassModalOpen(false);
                           setClassFormError(null);
                         }}
-                        className="px-4 py-2 rounded-xl border border-slate-300 dark:border-slate-700 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer"
+                        className="px-4 py-2 rounded-xl text-xs font-semibold bg-[#780000] hover:bg-[#5e0000] text-white border border-[#5e0000] shadow-xs transition-colors cursor-pointer disabled:opacity-50"
                       >
                         Cancel
                       </button>
                       <button
                         type="submit"
-                        disabled={isSubmittingClass}
+                        disabled={isSubmittingClass || !hasActiveAcademicTerm}
                         className="inline-flex items-center justify-center gap-1.5 px-4.5 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-bold shadow-xs transition cursor-pointer disabled:opacity-50"
                       >
                         {isSubmittingClass ? (
@@ -6601,9 +6634,9 @@ function FacultySubmissionPanelContent({
                   </div>
 
                   {editClassError && (
-                    <div className="rounded-xl border border-rose-300 dark:border-rose-900/60 bg-rose-50 dark:bg-rose-950/30 p-3 text-xs text-rose-800 dark:text-rose-300 flex items-center gap-2">
-                      <AppIcon icon={WarningCircle} size="sm" color="inherit" />
-                      <span>{editClassError}</span>
+                    <div className="rounded-xl border-2 border-amber-400 bg-[#780000] p-3.5 text-xs text-white font-semibold flex items-center gap-2.5 shadow-lg shadow-black/20 mb-4">
+                      <AppIcon icon={WarningCircle} size="md" color="white" className="shrink-0 text-amber-300 drop-shadow-[0_0_6px_rgba(251,191,36,0.6)]" />
+                      <span className="leading-relaxed text-amber-50">{editClassError}</span>
                     </div>
                   )}
 
@@ -6685,7 +6718,7 @@ function FacultySubmissionPanelContent({
                           setClassToEdit(null);
                           setEditClassError(null);
                         }}
-                        className="px-4 py-2 rounded-xl border border-slate-300 dark:border-slate-700 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer"
+                        className="px-4 py-2 rounded-xl text-xs font-semibold bg-[#780000] hover:bg-[#5e0000] text-white border border-[#5e0000] shadow-xs transition-colors cursor-pointer disabled:opacity-50"
                       >
                         Cancel
                       </button>
@@ -6745,7 +6778,7 @@ function FacultySubmissionPanelContent({
                         setIsArchiveModalOpen(false);
                         setClassToArchive(null);
                       }}
-                      className="px-4 py-2 rounded-xl border border-slate-300 dark:border-slate-700 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer"
+                      className="px-4 py-2 rounded-xl text-xs font-semibold bg-[#780000] hover:bg-[#5e0000] text-white border border-[#5e0000] shadow-xs transition-colors cursor-pointer disabled:opacity-50"
                     >
                       Cancel
                     </button>
