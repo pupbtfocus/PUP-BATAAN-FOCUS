@@ -5,7 +5,14 @@ import { NextResponse, type NextRequest } from "next/server";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { getServiceRoleClient } from "@/lib/supabase/service-role";
 import { DEFAULT_REQUIREMENTS } from "@/config/compliance";
-import { ROLE } from "@/config/roles";
+import {
+  ROLE,
+  isOriginalAdmin,
+  isOriginalSuperAdmin,
+  isQaAdmin,
+  isQaSuperAdmin,
+} from "@/config/roles";
+import { APP_CONFIG } from "@/config/app";
 import {
   FACULTY_PROFILE_IMAGE_BUCKET,
   buildFacultyFullName,
@@ -88,6 +95,19 @@ export async function GET(request: NextRequest) {
         user = session?.user ?? null;
       }
 
+      // Fallback: check Authorization: Bearer <token>
+      if (!user) {
+        const authHeader =
+          request.headers.get("authorization") ||
+          request.headers.get("Authorization");
+        if (authHeader?.startsWith("Bearer ")) {
+          const token = authHeader.substring(7).trim();
+          const adminSupabase = getServiceRoleClient();
+          const { data: tokenData } = await adminSupabase.auth.getUser(token);
+          user = tokenData?.user ?? null;
+        }
+      }
+
       if (!user) {
         return NextResponse.json({ error: "Forbidden" }, { status: 403 });
       }
@@ -98,60 +118,75 @@ export async function GET(request: NextRequest) {
       const normalizedRequesterRole = (requesterRole ?? "").toLowerCase().trim();
 
       const normalizedEmail = (user?.email ?? "").toLowerCase().trim();
+      const configuredSuperAdmin = (APP_CONFIG.superAdminEmail ?? "").toLowerCase().trim();
+
       let isAllowed =
         normalizedRequesterRole === ROLE.STAFF ||
         normalizedRequesterRole === ROLE.ADMIN ||
         normalizedRequesterRole === ROLE.SUPER_ADMIN ||
+        normalizedRequesterRole === "super_admin" ||
+        normalizedRequesterRole === "superadmin" ||
         normalizedRequesterRole.includes("staff") ||
         normalizedRequesterRole.includes("admin") ||
-        normalizedEmail === "preview@pupfocus.dev";
+        normalizedRequesterRole.includes("super") ||
+        isOriginalAdmin(normalizedEmail) ||
+        isOriginalSuperAdmin(normalizedEmail) ||
+        isQaAdmin(normalizedEmail) ||
+        isQaSuperAdmin(normalizedEmail) ||
+        (configuredSuperAdmin !== "" && normalizedEmail === configuredSuperAdmin) ||
+        normalizedEmail === "preview@pupfocus.dev" ||
+        user?.app_metadata?.claims_admin === true;
 
       // Fallback: check database user_roles, profiles, and admins tables if metadata is missing/incomplete
       if (!isAllowed) {
         const adminSupabase = getServiceRoleClient();
-        const { data: dbUserRoles } = await adminSupabase
-          .from("user_roles")
-          .select("roles(code)")
-          .eq("profile_id", user.id);
 
-        const dbRoles = (dbUserRoles ?? []).map((r: any) =>
-          String(r.roles?.code ?? "").toLowerCase().trim(),
-        );
-        if (
-          dbRoles.some(
-            (r) =>
-              r === ROLE.STAFF ||
-              r === ROLE.ADMIN ||
-              r === ROLE.SUPER_ADMIN ||
-              r.includes("staff") ||
-              r.includes("admin"),
+        const { data: profileRecord } = await adminSupabase
+          .from("profiles")
+          .select("id, email, role")
+          .or(
+            user.email
+              ? `user_id.eq.${user.id},id.eq.${user.id},email.ilike.${user.email}`
+              : `user_id.eq.${user.id},id.eq.${user.id}`
           )
+          .maybeSingle();
+
+        const profileRole = String(profileRecord?.role ?? "").toLowerCase().trim();
+        if (
+          profileRole === ROLE.STAFF ||
+          profileRole === ROLE.ADMIN ||
+          profileRole === "super_admin" ||
+          profileRole.includes("staff") ||
+          profileRole.includes("admin") ||
+          profileRole.includes("super")
         ) {
           isAllowed = true;
         }
 
         if (!isAllowed) {
-          const { data: profile } = await adminSupabase
-            .from("profiles")
-            .select("id, user_roles(roles(code))")
-            .or(
-              user.email
-                ? `user_id.eq.${user.id},id.eq.${user.id},email.ilike.${user.email}`
-                : `user_id.eq.${user.id},id.eq.${user.id}`,
-            )
-            .maybeSingle();
+          const profileIds = [user.id];
+          if (profileRecord?.id && profileRecord.id !== user.id) {
+            profileIds.push(profileRecord.id);
+          }
 
-          const pRoles = ((profile?.user_roles as any[]) ?? []).map((r: any) =>
+          const { data: dbUserRoles } = await adminSupabase
+            .from("user_roles")
+            .select("roles(code)")
+            .in("profile_id", profileIds);
+
+          const dbRoles = (dbUserRoles ?? []).map((r: any) =>
             String(r.roles?.code ?? "").toLowerCase().trim(),
           );
           if (
-            pRoles.some(
+            dbRoles.some(
               (r) =>
                 r === ROLE.STAFF ||
                 r === ROLE.ADMIN ||
                 r === ROLE.SUPER_ADMIN ||
+                r === "super_admin" ||
                 r.includes("staff") ||
-                r.includes("admin"),
+                r.includes("admin") ||
+                r.includes("super"),
             )
           ) {
             isAllowed = true;
