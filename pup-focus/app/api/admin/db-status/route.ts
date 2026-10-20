@@ -38,7 +38,7 @@ const ALL_PUBLIC_TABLES: Array<{ name: string; avgRowBytes: number }> = [
   { name: "extension_requests", avgRowBytes: 1024 },
   { name: "extension_audit_logs", avgRowBytes: 1024 },
   { name: "notifications", avgRowBytes: 1024 },
-  { name: "audit_logs", avgRowBytes: 1024 },
+  { name: "transaction_logs", avgRowBytes: 1024 },
   { name: "system_backups", avgRowBytes: 2048 },
   { name: "system_settings", avgRowBytes: 512 },
   { name: "archive_records", avgRowBytes: 2048 },

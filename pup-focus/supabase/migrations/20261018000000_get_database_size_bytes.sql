@@ -128,8 +128,8 @@ BEGIN
 END;
 $$;
 
-REVOKE ALL ON FUNCTION public.get_database_size_bytes() FROM PUBLIC;
-GRANT EXECUTE ON FUNCTION public.get_database_size_bytes() TO authenticated, service_role;
+REVOKE EXECUTE ON FUNCTION public.get_database_size_bytes() FROM PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.get_database_size_bytes() TO service_role;
 
-REVOKE ALL ON FUNCTION public.get_storage_capacity_breakdown() FROM PUBLIC;
-GRANT EXECUTE ON FUNCTION public.get_storage_capacity_breakdown() TO authenticated, service_role;
+REVOKE EXECUTE ON FUNCTION public.get_storage_capacity_breakdown() FROM PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.get_storage_capacity_breakdown() TO service_role;

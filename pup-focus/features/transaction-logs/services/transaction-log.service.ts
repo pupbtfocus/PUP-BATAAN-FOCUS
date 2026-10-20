@@ -80,14 +80,8 @@ export async function logTransactionEvent(
       created_at: createdAt,
     };
 
-    // Primary: attempt insert into transaction_logs
-    let { error } = await supabase.from("transaction_logs").insert(payload);
-
-    // If transaction_logs does not exist yet in DB, seamlessly fallback to audit_logs
-    if (error && (error.code === "42P01" || error.message.includes("relation \"transaction_logs\" does not exist") || error.message.includes("does not exist"))) {
-      const fallbackResult = await supabase.from("audit_logs").insert(payload);
-      error = fallbackResult.error;
-    }
+    // Insert into transaction_logs
+    const { error } = await supabase.from("transaction_logs").insert(payload);
 
     if (error) {
       logger.error("transaction_log_insert_failed", {
@@ -142,24 +136,7 @@ export async function getTransactionLogs(params?: {
       query = query.eq("entity_type", params.entityType);
     }
 
-    let { data, error } = await query;
-
-    if (error && (error.code === "42P01" || error.message.includes("does not exist"))) {
-      let fallbackQuery = supabase
-        .from("audit_logs")
-        .select("*")
-        .order("created_at", { ascending: false })
-        .limit(params?.limit ?? 50);
-      if (params?.actorId) {
-        fallbackQuery = fallbackQuery.eq("actor_id", ensureValidUuid(params.actorId));
-      }
-      if (params?.entityType) {
-        fallbackQuery = fallbackQuery.eq("entity_type", params.entityType);
-      }
-      const fallbackResult = await fallbackQuery;
-      data = fallbackResult.data;
-      error = fallbackResult.error;
-    }
+    const { data, error } = await query;
 
     if (error) {
       logger.error("get_transaction_logs_failed", { error: error.message });

@@ -14,7 +14,7 @@ export async function GET(request: NextRequest) {
     if (!email) {
       // If email parameter wasn't preserved in URL, check if there was a recent cancelled invite
       const { data: recentCancelled } = await supabase
-        .from("audit_logs")
+        .from("transaction_logs")
         .select("id, created_at, metadata")
         .eq("action", "user.invite_cancelled")
         .order("created_at", { ascending: false })
@@ -55,15 +55,15 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ isCancelled: false, isAccepted: true });
     }
 
-    // 2. Check audit logs for user.invite_cancelled
-    const { data: auditLogs } = await supabase
-      .from("audit_logs")
+    // 2. Check transaction logs for user.invite_cancelled
+    const { data: transactionLogs } = await supabase
+      .from("transaction_logs")
       .select("id, created_at, metadata")
       .eq("action", "user.invite_cancelled")
       .order("created_at", { ascending: false })
       .limit(50);
 
-    const cancelledLog = (auditLogs ?? []).find((log: any) => {
+    const cancelledLog = (transactionLogs ?? []).find((log: any) => {
       const targetEmail = (
         log.metadata?.target_email ||
         log.metadata?.email ||

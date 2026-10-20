@@ -51,8 +51,5 @@ BEGIN
   CREATE POLICY "Admins can view all transaction logs"
     ON public.transaction_logs FOR SELECT
     TO authenticated
-    USING (
-      (auth.jwt() -> 'user_metadata' ->> 'role') IN ('Admin', 'Super Admin', 'Staff')
-      OR (auth.jwt() -> 'app_metadata' ->> 'role') IN ('Admin', 'Super Admin', 'Staff')
-    );
+    USING (public.is_admin_or_super_admin());
 END $$;

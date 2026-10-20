@@ -50,15 +50,15 @@ export async function GET() {
         error: error.message,
       });
 
-      // Fallback to audit_logs table
-      const { data: auditLogs } = await supabase
-        .from("audit_logs")
+      // Fallback to transaction_logs table
+      const { data: transactionLogs } = await supabase
+        .from("transaction_logs")
         .select("*")
         .eq("action", "submission_window.extend")
         .order("created_at", { ascending: false })
         .limit(30);
 
-      const mappedAuditLogs = (auditLogs || []).map((log: any) => ({
+      const mappedAuditLogs = (transactionLogs || []).map((log: any) => ({
         id: log.id,
         action_type: "EXTENSION",
         created_at: log.created_at,
