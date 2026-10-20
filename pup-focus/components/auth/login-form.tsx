@@ -141,7 +141,7 @@ export function LoginForm({
       `}</style>
 
       {!publicEnvConfigured ? (
-        <div className="mt-4 rounded-2xl border border-amber-400/40 bg-amber-400/10 px-4 py-3 text-sm text-amber-100">
+        <div className="mt-4 rounded-2xl border-2 border-amber-400 bg-[#2d1b00] px-4 py-3 text-sm font-semibold text-amber-100 shadow-[0_4px_16px_rgba(0,0,0,0.5),0_0_12px_rgba(251,191,36,0.3)]">
           Supabase is not configured yet. Add NEXT_PUBLIC_SUPABASE_URL and
           NEXT_PUBLIC_SUPABASE_ANON_KEY in .env.local before using sign in.
         </div>
@@ -151,27 +151,31 @@ export function LoginForm({
         {/* Universal Alert Banner */}
         {notice ? (
           <div
-            className={`rounded-xl p-2.5 sm:p-3 text-xs flex items-start gap-2.5 border transition-all ${
+            className={`rounded-xl p-3 text-xs flex items-start gap-2.5 border-2 transition-all shadow-[0_4px_16px_rgba(0,0,0,0.5)] ${
               notice.type === "timeout"
-                ? "bg-amber-500/15 border-amber-500/30 text-amber-200"
+                ? "bg-[#2d1b00] border-amber-400 text-amber-50 shadow-amber-950/40"
                 : notice.type === "success"
-                ? "bg-emerald-500/15 border-emerald-500/30 text-emerald-200"
-                : "bg-rose-500/15 border-rose-500/30 text-rose-200"
+                ? "bg-[#062c1d] border-emerald-400 text-emerald-50 shadow-emerald-950/40"
+                : notice.type === "info"
+                ? "bg-[#082845] border-sky-400 text-sky-50 shadow-sky-950/40"
+                : "bg-[#3b070c] border-rose-400 text-rose-50 shadow-rose-950/40"
             }`}
           >
             {notice.type === "timeout" ? (
-              <AppIcon icon={Hourglass} size="md" color="active" className="mt-0.5" />
+              <AppIcon icon={Hourglass} size="md" color="inherit" className="mt-0.5 !text-amber-300 shrink-0 drop-shadow-[0_0_8px_rgba(251,191,36,0.7)]" />
             ) : notice.type === "success" ? (
-              <AppIcon icon={CheckCircle} size="md" color="success" className="mt-0.5" />
+              <AppIcon icon={CheckCircle} size="md" color="inherit" className="mt-0.5 !text-emerald-300 shrink-0 drop-shadow-[0_0_8px_rgba(16,185,129,0.7)]" />
+            ) : notice.type === "info" ? (
+              <AppIcon icon={WarningCircle} size="md" color="inherit" className="mt-0.5 !text-sky-300 shrink-0 drop-shadow-[0_0_8px_rgba(56,189,248,0.7)]" />
             ) : (
-              <AppIcon icon={WarningCircle} size="md" color="danger" className="mt-0.5" />
+              <AppIcon icon={WarningCircle} size="md" color="inherit" className="mt-0.5 !text-rose-300 shrink-0 drop-shadow-[0_0_8px_rgba(244,63,94,0.7)]" />
             )}
-            <span className="leading-relaxed font-medium">{notice.message}</span>
+            <span className="leading-relaxed font-semibold tracking-wide drop-shadow-[0_1px_2px_rgba(0,0,0,0.7)]">{notice.message}</span>
           </div>
         ) : error ? (
-          <div className="rounded-xl p-2.5 sm:p-3 text-xs flex items-start gap-2.5 border bg-rose-500/15 border-rose-500/30 text-rose-200 transition-all">
-            <AppIcon icon={WarningCircle} size="md" color="danger" className="mt-0.5" />
-            <span className="leading-relaxed font-medium">{error}</span>
+          <div className="rounded-xl p-3 text-xs flex items-start gap-2.5 border-2 border-rose-400 bg-[#3b070c] text-rose-50 shadow-[0_4px_16px_rgba(0,0,0,0.5),0_0_12px_rgba(244,63,94,0.3)] transition-all">
+            <AppIcon icon={WarningCircle} size="md" color="inherit" className="mt-0.5 !text-rose-300 shrink-0 drop-shadow-[0_0_8px_rgba(244,63,94,0.7)]" />
+            <span className="leading-relaxed font-semibold tracking-wide text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.7)]">{error}</span>
           </div>
         ) : null}
 

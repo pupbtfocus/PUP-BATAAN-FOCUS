@@ -27,6 +27,64 @@ const PREFETCH_ROUTES = [
   "/admin/dashboard",
 ] as const;
 
+const MAX_LOGIN_ATTEMPTS = 5;
+const LOGIN_LOCKOUT_MS = 15 * 60 * 1000; // 15-minute lockout
+
+function getLoginLockoutKey(email: string) {
+  return `pup_auth_lockout_${email.trim().toLowerCase()}`;
+}
+
+function checkLoginLockout(email: string): { isLocked: boolean; remainingSeconds: number } {
+  if (typeof window === "undefined" || !email) return { isLocked: false, remainingSeconds: 0 };
+  try {
+    const raw = localStorage.getItem(getLoginLockoutKey(email));
+    if (!raw) return { isLocked: false, remainingSeconds: 0 };
+    const data = JSON.parse(raw);
+    const now = Date.now();
+    if (data.lockedUntil && data.lockedUntil > now) {
+      return { isLocked: true, remainingSeconds: Math.ceil((data.lockedUntil - now) / 1000) };
+    }
+  } catch {
+    // ignore
+  }
+  return { isLocked: false, remainingSeconds: 0 };
+}
+
+function registerFailedLoginAttempt(email: string): { isLocked: boolean; count: number; remainingSeconds: number } {
+  if (typeof window === "undefined" || !email) return { isLocked: false, count: 1, remainingSeconds: 0 };
+  try {
+    const key = getLoginLockoutKey(email);
+    const raw = localStorage.getItem(key);
+    let count = 0;
+    const now = Date.now();
+    if (raw) {
+      const data = JSON.parse(raw);
+      if (!data.lockedUntil || data.lockedUntil <= now) {
+        count = typeof data.count === "number" ? data.count : 0;
+      }
+    }
+    count += 1;
+    if (count >= MAX_LOGIN_ATTEMPTS) {
+      const lockedUntil = now + LOGIN_LOCKOUT_MS;
+      localStorage.setItem(key, JSON.stringify({ count, lockedUntil }));
+      return { isLocked: true, count, remainingSeconds: Math.ceil(LOGIN_LOCKOUT_MS / 1000) };
+    }
+    localStorage.setItem(key, JSON.stringify({ count }));
+    return { isLocked: false, count, remainingSeconds: 0 };
+  } catch {
+    return { isLocked: false, count: 1, remainingSeconds: 0 };
+  }
+}
+
+function resetLoginAttempts(email: string) {
+  if (typeof window === "undefined" || !email) return;
+  try {
+    localStorage.removeItem(getLoginLockoutKey(email));
+  } catch {
+    // ignore
+  }
+}
+
 export default function Home() {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
@@ -279,6 +337,21 @@ export default function Home() {
 
     const normalizedEmail = email.trim().toLowerCase();
 
+    const lockout = checkLoginLockout(normalizedEmail);
+    if (lockout.isLocked) {
+      const mins = Math.ceil(lockout.remainingSeconds / 60);
+      const lockMsg = `Account temporarily locked due to consecutive failed attempts. Please try again in ${mins} minute${mins > 1 ? "s" : ""}.`;
+      setError(lockMsg);
+      setNotice({ type: "timeout", message: lockMsg });
+      setAuthModal({
+        title: "Account Locked",
+        message: lockMsg,
+        actionLabel: "Understood",
+        variant: "error",
+      });
+      return;
+    }
+
     if (!isValidEmailAddress(normalizedEmail)) {
       const errorMsg = "Please provide a real email address.";
       setError(errorMsg);
@@ -363,6 +436,23 @@ export default function Home() {
     const currentPassword = creds.password;
     const activeRememberMe = creds.rememberMe;
 
+    const lockout = checkLoginLockout(normalizedEmail);
+    if (lockout.isLocked) {
+      const mins = Math.ceil(lockout.remainingSeconds / 60);
+      const lockMsg = `Account temporarily locked due to consecutive failed attempts. Please try again in ${mins} minute${mins > 1 ? "s" : ""}.`;
+      setError(lockMsg);
+      setNotice({ type: "timeout", message: lockMsg });
+      setAuthModal({
+        title: "Account Locked",
+        message: lockMsg,
+        actionLabel: "Understood",
+        variant: "error",
+      });
+      setIsSubmitting(false);
+      pendingCredentialsRef.current = null;
+      return;
+    }
+
     const startTime = Date.now();
     const ensureMinLoadingTime = async () => {
       const elapsed = Date.now() - startTime;
@@ -378,31 +468,6 @@ export default function Home() {
       let signInData: { user: any; session: any } | null = null;
       let signInError: any = null;
 
-      try {
-      const res = await supabase.auth.signInWithPassword({
-        email: normalizedEmail,
-        password: currentPassword,
-        options: token ? { captchaToken: token } : undefined,
-      });
-      signInData = res.data;
-      signInError = res.error;
-    } catch (err: unknown) {
-      signInError = err instanceof Error ? err : new Error(String(err));
-    }
-
-    const rawErrorMsg = (signInError?.message || "").toLowerCase();
-    const isCaptchaIssue =
-      rawErrorMsg.includes("captcha") ||
-      rawErrorMsg.includes("disallowed");
-    const isFetchIssue =
-      rawErrorMsg.includes("fetch") ||
-      rawErrorMsg.includes("network") ||
-      rawErrorMsg.includes("failed to fetch");
-
-    // If client-side Supabase failed due to Captcha token issues (common on mobile) or network drops,
-    // seamlessly fall back to server-side authentication route
-    if (signInError && (isCaptchaIssue || isFetchIssue)) {
-      console.warn("[Auth] Client-side auth issue, attempting server-side fallback:", signInError.message);
       try {
         const res = await fetch("/api/auth/login", {
           method: "POST",
@@ -421,25 +486,40 @@ export default function Home() {
           signInError = null;
         } else {
           signInError = new Error(json.error || "Invalid login credentials.");
+          (signInError as any).status = res.status;
         }
-      } catch (serverErr) {
-        console.error("[Auth] Server-side fallback failed:", serverErr);
+      } catch (err: unknown) {
+        signInError = err instanceof Error ? err : new Error(String(err));
       }
-    }
 
       if (signInError || !signInData?.user) {
         await ensureMinLoadingTime();
         const rawMessage = signInError?.message ?? "Sign in failed";
+        const isLockout =
+          (signInError as any)?.status === 429 ||
+          rawMessage.toLowerCase().includes("locked") ||
+          rawMessage.toLowerCase().includes("too many failed");
         const isInvalidCredentials =
           rawMessage.toLowerCase().includes("invalid login credentials") ||
           rawMessage.toLowerCase().includes("invalid credentials");
         const isInvalidSecret = rawMessage.toLowerCase().includes("invalid-input-secret");
 
-        if (isInvalidCredentials) {
-          console.warn("[Auth] Supabase sign-in failed:", rawMessage);
+        if (isLockout) {
+          setError(rawMessage);
+          setNotice({ type: "timeout", message: rawMessage });
+          setAuthModal({
+            title: "Account Locked",
+            message: rawMessage,
+            actionLabel: "Understood",
+            variant: "error",
+          });
+        } else if (isInvalidCredentials) {
+          console.warn("[Auth] Login attempt failed:", rawMessage);
+          setError(rawMessage);
+          setNotice({ type: "error", message: rawMessage });
           setAuthModal({
             title: "Login Failed",
-            message: "Invalid institutional email address or password. Please verify credentials.",
+            message: rawMessage,
             actionLabel: "Try Again",
             variant: "error",
           });
@@ -474,6 +554,7 @@ export default function Home() {
       }
 
       const user = signInData.user;
+      resetLoginAttempts(normalizedEmail);
       console.log("[Auth] Sign in successful for user:", user.id);
 
       const mustChange =

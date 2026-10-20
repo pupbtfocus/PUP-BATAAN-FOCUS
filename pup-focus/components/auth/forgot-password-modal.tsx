@@ -5,10 +5,9 @@ import { Turnstile, type TurnstileInstance } from "@/components/auth/turnstile";
 import { Button } from "@/components/ui/button";
 import { createClient } from "@/lib/supabase/client";
 import { isValidEmailAddress } from "@/lib/validation/email";
-import { Logo } from "@/components/ui/logo";
 import { AppIcon } from "@/components/ui/app-icon";
 import { AlertPopup } from "@/components/ui/alert-popup";
-import { Mail, NavArrowRight, SystemRestart, Xmark } from "iconoir-react";
+import { Lock, Mail, NavArrowRight, SystemRestart, Xmark } from "iconoir-react";
 
 interface ForgotPasswordModalProps {
   isOpen: boolean;
@@ -205,83 +204,31 @@ export function ForgotPasswordModal({
 
       {/* Modal Backdrop */}
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-3 sm:p-4 backdrop-blur-md animate-in fade-in duration-200">
-        <div className="relative w-full max-w-[390px] sm:max-w-md mx-auto drop-shadow-[0_25px_35px_rgba(0,0,0,0.85)] animate-in zoom-in-95 duration-200">
-          {/* Curved Card Top Header SVG with 3D Golden Crest Lighting */}
-          <div className="relative">
-            <svg
-              viewBox="0 0 400 64"
-              className="w-full h-auto block -mb-1 pointer-events-none overflow-visible"
-            >
-              <defs>
-                <linearGradient id="forgotPassTopGrad" x1="0%" y1="0%" x2="0%" y2="100%">
-                  <stop offset="0%" stopColor="#800000" />
-                  <stop offset="100%" stopColor="#800000" />
-                </linearGradient>
-                <linearGradient id="forgotPassTopGoldCrest" x1="0%" y1="0%" x2="100%" y2="0%">
-                  <stop offset="0%" stopColor="#D97706" stopOpacity="0.8" />
-                  <stop offset="15%" stopColor="#F59E0B" stopOpacity="0.95" />
-                  <stop offset="35%" stopColor="#FDE68A" stopOpacity="1" />
-                  <stop offset="50%" stopColor="#FFFBEB" stopOpacity="1" />
-                  <stop offset="65%" stopColor="#FDE68A" stopOpacity="1" />
-                  <stop offset="85%" stopColor="#F59E0B" stopOpacity="0.95" />
-                  <stop offset="100%" stopColor="#D97706" stopOpacity="0.8" />
-                </linearGradient>
-                <linearGradient id="forgotPassTopAmbientSheen" x1="0%" y1="0%" x2="0%" y2="100%">
-                  <stop offset="0%" stopColor="#FBBF24" stopOpacity="0.65" />
-                  <stop offset="60%" stopColor="#F59E0B" stopOpacity="0.25" />
-                  <stop offset="100%" stopColor="#780000" stopOpacity="0" />
-                </linearGradient>
-              </defs>
+        <div className="relative w-full max-w-[400px] sm:max-w-[430px] mx-auto drop-shadow-[0_25px_35px_rgba(0,0,0,0.85)] animate-in zoom-in-95 duration-200">
+          {/* Main Card Container */}
+          <section className="relative rounded-3xl border-2 border-amber-400 bg-gradient-to-b from-[#8a0000] via-[#800000] to-[#5a0000] p-6 pt-7 sm:p-8 sm:pt-8 backdrop-blur-xl text-[#fff8e7] shadow-2xl overflow-hidden">
+            {/* Top ambient gold glow */}
+            <div className="pointer-events-none absolute -top-12 left-1/2 -translate-x-1/2 w-48 h-24 bg-amber-400/20 blur-2xl rounded-full" />
 
-              <path
-                d="M 0,64 L 0,20 Q 0,0 20,0 L 142,0 C 158,0 162,37 200,37 C 238,37 242,0 258,0 L 380,0 Q 400,0 400,20 L 400,64 Z"
-                fill="url(#forgotPassTopGrad)"
-              />
-              <path
-                d="M 2,20 Q 2,2 20,2 L 142,2 C 158,2 162,37 200,37 C 238,37 242,2 258,2 L 380,2 Q 398,2 398,20"
-                fill="none"
-                stroke="url(#forgotPassTopAmbientSheen)"
-                strokeWidth="5"
-                strokeLinecap="round"
-              />
-              <path
-                d="M 1,64 L 1,20 Q 1,1 20,1 L 142,1 C 158,1 162,37 200,37 C 238,37 242,1 258,1 L 380,1 Q 399,1 399,20 L 399,64"
-                fill="none"
-                stroke="rgba(245, 158, 11, 0.75)"
-                strokeWidth="2"
-              />
-              <path
-                d="M 1,20 Q 1,1 20,1 L 142,1 C 158,1 162,37 200,37 C 238,37 242,1 258,1 L 380,1 Q 399,1 399,20"
-                fill="none"
-                stroke="url(#forgotPassTopGoldCrest)"
-                strokeWidth="2.5"
-                strokeLinecap="round"
-              />
-            </svg>
-
-            {/* Centered Logo Badge */}
-            <div className="absolute -top-8 left-1/2 -translate-x-1/2 z-20">
-              <Logo size={110} className="mb-0 drop-shadow-[0_10px_20px_rgba(0,0,0,0.9)]" />
-            </div>
-
-            {/* Dismiss 'X' Button */}
+            {/* Dismiss 'X' Button - High contrast, matching theme */}
             <button
               type="button"
               onClick={onClose}
-              className="absolute top-2 right-2 rounded-xl border border-[#5e0000] bg-[#780000] hover:bg-[#5e0000] p-2 text-white transition-all cursor-pointer z-30 shadow-xs"
+              className="absolute top-4 right-4 rounded-xl border-2 border-amber-400/80 bg-amber-400/15 hover:bg-amber-400 text-amber-300 hover:text-[#5a0000] p-2 transition-all duration-200 cursor-pointer z-30 shadow-md hover:scale-105 active:scale-95 group"
               aria-label="Close modal"
             >
-              <AppIcon icon={Xmark} size="sm" color="inherit" />
+              <AppIcon icon={Xmark} size="sm" color="inherit" strokeWidth={2.5} />
             </button>
-          </div>
 
-          {/* Card Body - Vibrant PUP Brand Maroon matching System Aesthetic */}
-          <section className="relative rounded-b-[1.75rem] sm:rounded-b-[2rem] border-x-2 border-b-2 border-amber-400/80 bg-[#800000] p-6 pt-7 sm:p-8 sm:pt-8 backdrop-blur-xl text-[#fff8e7]">
-            <div className="mt-1 mb-5 sm:mb-6 text-center">
+            {/* Header with Centered Lock Badge */}
+            <div className="mb-5 sm:mb-6 text-center">
+              <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-2xl border-2 border-amber-400/70 bg-amber-400/15 shadow-[0_0_16px_rgba(251,191,36,0.3)]">
+                <AppIcon icon={Lock} size="lg" color="inherit" className="!text-amber-300 drop-shadow-[0_0_8px_rgba(251,191,36,0.6)]" />
+              </div>
               <h2 className="text-2xl sm:text-3xl font-black tracking-wider text-amber-300 uppercase mb-1 drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">
                 Reset Password
               </h2>
-              <div className="mx-auto my-2.5 h-0.5 w-14 rounded-full bg-gradient-to-r from-transparent via-amber-400 to-transparent shadow-[0_0_8px_rgba(251,191,36,0.6)]" />
+              <div className="mx-auto my-2.5 h-0.5 w-16 rounded-full bg-gradient-to-r from-transparent via-amber-400 to-transparent shadow-[0_0_8px_rgba(251,191,36,0.6)]" />
               <p className="text-amber-100/90 text-xs sm:text-sm font-medium tracking-wide leading-relaxed max-w-[320px] mx-auto">
                 Enter your institutional email address to receive a secure password recovery link.
               </p>
@@ -293,7 +240,7 @@ export function ForgotPasswordModal({
                   htmlFor="reset-email"
                   className="text-[11px] uppercase font-bold tracking-wider text-amber-300 flex items-center gap-1.5"
                 >
-                  <AppIcon icon={Mail} size="sm" color="active" />
+                  <AppIcon icon={Mail} size="sm" color="inherit" className="!text-amber-300" />
                   <span>Institutional Email Address</span>
                 </label>
                 <div className="relative flex items-center">
@@ -306,7 +253,7 @@ export function ForgotPasswordModal({
                     onChange={(e) => setResetEmail(e.target.value)}
                     required
                     placeholder="e.g. faculty@pup.edu.ph"
-                    className="pup-login-input w-full rounded-xl border !border-amber-500/40 !bg-[#2b0000] px-4 py-3 text-xs sm:text-sm !text-amber-50 shadow-[inset_0_2px_4px_rgba(0,0,0,0.6),0_1px_0_rgba(255,215,0,0.12)] outline-none transition-all duration-200 placeholder:!text-amber-200/40 hover:!border-amber-400/80 focus:!border-amber-400 focus:!ring-1 focus:!ring-amber-400/50"
+                    className="pup-login-input w-full rounded-xl border-2 !border-amber-400/60 !bg-[#500000] px-4 py-3 text-xs sm:text-sm !text-amber-50 shadow-[inset_0_2px_4px_rgba(0,0,0,0.6),0_1px_0_rgba(255,215,0,0.15)] outline-none transition-all duration-200 placeholder:!text-amber-200/50 hover:!border-amber-400 focus:!border-amber-400 focus:!ring-1 focus:!ring-amber-400/50"
                   />
                 </div>
               </div>
@@ -333,7 +280,7 @@ export function ForgotPasswordModal({
                 <Button
                   type="button"
                   onClick={onClose}
-                  className="h-11 sm:h-12 flex-1 rounded-2xl border border-[#5e0000] bg-[#780000] hover:bg-[#5e0000] text-white font-extrabold uppercase text-xs tracking-wider transition-all cursor-pointer shadow-xs"
+                  className="h-11 sm:h-12 flex-1 rounded-2xl border-2 border-amber-400/60 bg-[#5e0000] hover:bg-amber-400 hover:text-[#500000] text-amber-200 font-extrabold uppercase text-xs tracking-wider transition-all cursor-pointer shadow-md active:scale-95"
                 >
                   Cancel
                 </Button>

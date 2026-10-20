@@ -491,9 +491,18 @@ export function SuperAdminDashboard({
   async function loadFacultyFromDatabase(silent = false, isRetry = false) {
     try {
       if (!silent) setIsLoadingFaculty(true);
+      const supabase = createClient();
+      const { data: sessionData } = await supabase.auth.getSession();
+      const token = sessionData?.session?.access_token;
+      const headers: Record<string, string> = {};
+      if (token) {
+        headers["Authorization"] = `Bearer ${token}`;
+      }
+
       const response = await fetch(`/api/staff/faculty/list?_t=${Date.now()}`, {
         cache: "no-store",
         credentials: "include",
+        headers,
       });
       if (response.ok) {
         const data = await response.json();
