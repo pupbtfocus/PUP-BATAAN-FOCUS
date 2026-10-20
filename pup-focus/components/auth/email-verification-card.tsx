@@ -24,6 +24,7 @@ export interface EmailVerificationCardProps {
   isEmailChange?: boolean;
   onSignIn?: () => void;
   onReturnToSignIn?: () => void;
+  onRecoverCredentials?: (email: string) => Promise<{ success: boolean; message?: string }>;
 }
 
 export function EmailVerificationCard({
@@ -35,11 +36,17 @@ export function EmailVerificationCard({
   isEmailChange = false,
   onSignIn,
   onReturnToSignIn,
+  onRecoverCredentials,
 }: EmailVerificationCardProps) {
   const [showPassword, setShowPassword] = useState(false);
   const [copiedEmail, setCopiedEmail] = useState(false);
   const [copiedPassword, setCopiedPassword] = useState(false);
   const [copiedAll, setCopiedAll] = useState(false);
+  const [recoveryEmailInput, setRecoveryEmailInput] = useState(
+    email && email !== "preview@pupfocus.dev" ? email : ""
+  );
+  const [isRecovering, setIsRecovering] = useState(false);
+  const [recoveryError, setRecoveryError] = useState<string | null>(null);
 
   const copyToClipboard = async (text: string, type: "email" | "password" | "all") => {
     try {
@@ -272,14 +279,62 @@ export function EmailVerificationCard({
         {/* State 3: Verification Failed / Expired Link */}
         {status === "error" && (
           <div className="flex flex-col items-center text-center">
-            <div className="w-full bg-[#660000] border border-amber-400/40 rounded-xl p-4 text-xs text-amber-100 text-left leading-relaxed mb-5">
+            <div className="w-full bg-[#660000] border border-amber-400/40 rounded-xl p-4 text-xs text-amber-100 text-left leading-relaxed mb-4">
               {errorMessage || defaultErrorMessage}
             </div>
+
+            {onRecoverCredentials && (
+              <div className="w-full bg-[#550000] border border-amber-400/30 rounded-xl p-3.5 mb-4 text-left">
+                <span className="block text-xs font-bold text-amber-300 uppercase tracking-wider mb-1">
+                  Didn't receive your temporary password?
+                </span>
+                <p className="text-[11px] text-amber-200/80 mb-2.5">
+                  Enter your institutional email below to reissue and receive your login credentials.
+                </p>
+                <form
+                  onSubmit={async (e) => {
+                    e.preventDefault();
+                    const trimmed = recoveryEmailInput.trim().toLowerCase();
+                    if (!trimmed || isRecovering) return;
+                    setIsRecovering(true);
+                    setRecoveryError(null);
+                    const res = await onRecoverCredentials(trimmed);
+                    setIsRecovering(false);
+                    if (!res.success) {
+                      setRecoveryError(res.message || "Failed to recover credentials.");
+                    }
+                  }}
+                  className="space-y-2"
+                >
+                  <input
+                    type="email"
+                    value={recoveryEmailInput}
+                    onChange={(e) => {
+                      setRecoveryError(null);
+                      setRecoveryEmailInput(e.target.value);
+                    }}
+                    placeholder="e.g. yourname@pup.edu.ph"
+                    required
+                    className="w-full px-3 py-2 text-xs rounded-lg bg-[#3d0000] border border-amber-400/40 text-[#fff8e7] placeholder-amber-200/40 focus:outline-none focus:border-amber-400"
+                  />
+                  {recoveryError && (
+                    <p className="text-[11px] text-red-300 font-medium">{recoveryError}</p>
+                  )}
+                  <button
+                    type="submit"
+                    disabled={isRecovering}
+                    className="w-full py-2 px-3 text-xs font-semibold rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 transition-colors disabled:opacity-50 cursor-pointer"
+                  >
+                    {isRecovering ? "Checking & Sending..." : "Send & Show My Credentials"}
+                  </button>
+                </form>
+              </div>
+            )}
 
             <button
               type="button"
               onClick={onReturnToSignIn}
-              className="w-full flex items-center justify-center gap-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-sm py-2.5 px-4 rounded-xl shadow-sm transition-all focus:outline-none focus:ring-2 focus:ring-amber-400/50 cursor-pointer"
+              className="w-full flex items-center justify-center gap-2 bg-[#660000] hover:bg-[#770000] text-amber-200 border border-amber-400/40 font-bold text-sm py-2.5 px-4 rounded-xl shadow-sm transition-all focus:outline-none focus:ring-2 focus:ring-amber-400/50 cursor-pointer"
             >
               <span>Return to Sign In</span>
               <ArrowRight className="w-4 h-4" />

@@ -72,8 +72,24 @@ function AuthConfirmContent() {
       const passedEmail =
         searchParams.get("email") ?? hashParams.get("email") ?? "";
 
+      let resolvedEmail = passedEmail;
       if (passedEmail) {
         setUserEmail(passedEmail);
+        try {
+          sessionStorage.setItem("pup_pending_invite_email", passedEmail);
+          localStorage.setItem("pup_pending_invite_email", passedEmail);
+        } catch {}
+      } else {
+        try {
+          const cached =
+            sessionStorage.getItem("pup_pending_invite_email") ||
+            localStorage.getItem("pup_pending_invite_email") ||
+            "";
+          if (cached) {
+            resolvedEmail = cached;
+            setUserEmail(cached);
+          }
+        } catch {}
       }
 
       const isExplicitCancelled =
@@ -81,10 +97,51 @@ function AuthConfirmContent() {
         searchParams.get("status") === "cancelled" ||
         error?.toLowerCase().includes("cancel");
 
+      async function tryRecoverPendingInvite(emailToRecover: string): Promise<boolean> {
+        if (!emailToRecover) return false;
+        try {
+          const res = await fetch("/api/auth/invite/complete", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              email: emailToRecover,
+              mode: modeParam === "email_change" ? "email_change" : undefined,
+              recoverIfPending: true,
+            }),
+          });
+          const body = await res.json().catch(() => ({}));
+          if (res.ok && body.success && body.tempPassword) {
+            setUserEmail(body.email || emailToRecover);
+            if (body.fullName) setUserFullName(body.fullName);
+            setTempPassword(body.tempPassword);
+            if (body.isEmailChange) setIsEmailChange(true);
+            setStatus("success");
+            setStatusMessage(
+              body.tempPasswordEmailSent
+                ? "Your institutional account is verified and ready. A copy of your credentials has also been sent to your email."
+                : "Your institutional account is verified and ready. Please save your temporary login credentials below.",
+            );
+            return true;
+          }
+        } catch {
+          // ignore recovery error
+        }
+        return false;
+      }
+
       async function checkAndSetError(errorMessage: string) {
         if (cancelled) return;
         let isCancelled = false;
-        const checkEmail = userEmail || passedEmail;
+        let checkEmail = userEmail || resolvedEmail;
+        if (!checkEmail) {
+          try {
+            checkEmail =
+              sessionStorage.getItem("pup_pending_invite_email") ||
+              localStorage.getItem("pup_pending_invite_email") ||
+              "";
+          } catch {}
+        }
+
         try {
           const checkUrl = checkEmail
             ? `/api/auth/invite/check-cancelled?email=${encodeURIComponent(checkEmail)}`
@@ -103,7 +160,6 @@ function AuthConfirmContent() {
         }
 
         // Only genuine admin cancellations open the "Invitation Cancelled" modal.
-        // Expired / already-used links (access_denied, otp_expired) get their own message.
         const isCancelledError =
           isCancelled ||
           isExplicitCancelled ||
@@ -115,10 +171,20 @@ function AuthConfirmContent() {
             "This invitation was cancelled by an institutional administrator. The link you clicked is no longer valid."
           );
           setShowCancelledModal(true);
-        } else {
-          setStatus("error");
-          setStatusMessage(formatInviteError(errorMessage));
+          return;
         }
+
+        // If the one-time token expired because the user already clicked or navigated away before seeing the temp password,
+        // recover the pending account, generate/send credentials to email, and display the credentials card.
+        if (checkEmail) {
+          const recovered = await tryRecoverPendingInvite(checkEmail);
+          if (recovered) {
+            return;
+          }
+        }
+
+        setStatus("error");
+        setStatusMessage(formatInviteError(errorMessage));
       }
 
       if (isExplicitCancelled) {
@@ -315,6 +381,44 @@ function AuthConfirmContent() {
     };
   }, [router, searchParams]);
 
+  const handleRecoverCredentials = async (emailToRecover: string) => {
+    try {
+      const res = await fetch("/api/auth/invite/complete", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: emailToRecover,
+          recoverIfPending: true,
+        }),
+      });
+      const body = await res.json().catch(() => ({}));
+      if (res.ok && body.success && body.tempPassword) {
+        setUserEmail(body.email || emailToRecover);
+        if (body.fullName) setUserFullName(body.fullName);
+        setTempPassword(body.tempPassword);
+        if (body.isEmailChange) setIsEmailChange(true);
+        setStatus("success");
+        setStatusMessage(
+          body.tempPasswordEmailSent
+            ? "Your institutional account is verified and ready. A copy of your credentials has also been sent to your email."
+            : "Your institutional account is verified and ready. Please save your temporary login credentials below.",
+        );
+        return { success: true };
+      }
+      return {
+        success: false,
+        message:
+          body.error ||
+          "Could not verify or recover this account. Please check your email address or contact an administrator.",
+      };
+    } catch (err: any) {
+      return {
+        success: false,
+        message: err?.message || "Failed to reach verification service.",
+      };
+    }
+  };
+
   return (
     <main className="relative min-h-screen w-full flex flex-col items-center justify-center p-4 text-[#fff8e7] overflow-x-hidden bg-[#1c0406]">
       <CampusBackground />
@@ -340,6 +444,7 @@ function AuthConfirmContent() {
           isEmailChange={isEmailChange}
           onSignIn={() => router.push("/")}
           onReturnToSignIn={() => router.push("/")}
+          onRecoverCredentials={handleRecoverCredentials}
         />
       </div>
     </main>
