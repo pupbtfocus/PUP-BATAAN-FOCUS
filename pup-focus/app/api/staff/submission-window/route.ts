@@ -27,7 +27,7 @@ function isAdminRole(role: string | undefined) {
 async function resolveActiveAcademicTerm(supabase: any): Promise<{
   academicYear: string;
   semester: SubmissionWindowSemester;
-}> {
+} | null> {
   try {
     const { data: termRows, error } = await supabase
       .from("academic_terms")
@@ -38,11 +38,10 @@ async function resolveActiveAcademicTerm(supabase: any): Promise<{
       const currentTerm = termRows.find(
         (t: any) => (t.status || "").trim().toLowerCase() === "current",
       );
-      const row = currentTerm || termRows[0];
-      if (row?.academic_year && row?.semester) {
+      if (currentTerm?.academic_year && currentTerm?.semester) {
         return {
-          academicYear: row.academic_year.trim(),
-          semester: normalizeSemester(row.semester),
+          academicYear: currentTerm.academic_year.trim(),
+          semester: normalizeSemester(currentTerm.semester),
         };
       }
     }
@@ -50,10 +49,7 @@ async function resolveActiveAcademicTerm(supabase: any): Promise<{
     console.error("Failed to query academic_terms in submission-window route:", err);
   }
 
-  return {
-    academicYear: "2026-2027",
-    semester: "1st Semester",
-  };
+  return null;
 }
 
 export async function GET() {
@@ -74,12 +70,12 @@ export async function GET() {
     const supabase = getServiceRoleClient();
     const activeTerm = await resolveActiveAcademicTerm(supabase);
 
-    let config = await getSubmissionWindow(supabase, activeTerm);
+    let config = activeTerm ? await getSubmissionWindow(supabase, activeTerm) : null;
     let status = evaluateSubmissionWindow(
       config,
       undefined,
       undefined,
-      activeTerm,
+      activeTerm || undefined,
     );
 
     if (config && status.status === "Closed") {
@@ -89,11 +85,11 @@ export async function GET() {
         console.error("Failed to auto-reset expired submission window:", deleteErr);
       }
       config = null;
-      status = evaluateSubmissionWindow(null, undefined, undefined, activeTerm);
+      status = evaluateSubmissionWindow(null, undefined, undefined, activeTerm || undefined);
     }
 
-    status.academicYear = activeTerm.academicYear;
-    status.semester = activeTerm.semester;
+    status.academicYear = activeTerm?.academicYear || null;
+    status.semester = activeTerm?.semester || null;
 
     let usedTerms: Array<{ academicYear: string; semester: string }> = [];
     try {
@@ -166,6 +162,15 @@ export async function PUT(request: NextRequest) {
 
     const supabase = getServiceRoleClient();
     const activeTerm = await resolveActiveAcademicTerm(supabase);
+    if (!activeTerm) {
+      return NextResponse.json(
+        {
+          error:
+            "No active academic term configured. Please configure an academic term first before scheduling a submission window.",
+        },
+        { status: 400 },
+      );
+    }
     const academicYear = activeTerm.academicYear;
     const semester = activeTerm.semester;
 
@@ -567,32 +572,36 @@ export async function DELETE() {
     }
 
     // Clear the active schedule in submission_window_terms while preserving the term record
-    try {
-      await supabase.from("submission_window_terms").upsert(
-        {
-          academic_year: existingWin?.academic_year || activeTerm.academicYear,
-          semester: existingWin?.semester || activeTerm.semester,
-          start_date: null,
-          end_date: null,
-          start_time: null,
-          end_time: null,
-          created_by: user.id,
-          updated_at: new Date().toISOString(),
-        },
-        { onConflict: "academic_year,semester" },
-      );
-    } catch {
-      // Best-effort update
+    const winAy = existingWin?.academic_year || activeTerm?.academicYear;
+    const winSem = existingWin?.semester || activeTerm?.semester;
+    if (winAy && winSem) {
+      try {
+        await supabase.from("submission_window_terms").upsert(
+          {
+            academic_year: winAy,
+            semester: winSem,
+            start_date: null,
+            end_date: null,
+            start_time: null,
+            end_time: null,
+            created_by: user.id,
+            updated_at: new Date().toISOString(),
+          },
+          { onConflict: "academic_year,semester" },
+        );
+      } catch {
+        // Best-effort update
+      }
     }
 
     const status = evaluateSubmissionWindow(
       null,
       undefined,
       undefined,
-      activeTerm,
+      activeTerm || undefined,
     );
-    status.academicYear = activeTerm.academicYear;
-    status.semester = activeTerm.semester;
+    status.academicYear = activeTerm?.academicYear || null;
+    status.semester = activeTerm?.semester || null;
 
     let usedTerms: Array<{ academicYear: string; semester: string }> = [];
     try {
