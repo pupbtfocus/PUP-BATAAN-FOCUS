@@ -92,10 +92,12 @@ export async function GET() {
       isWindowActive,
       isWindowOpen: windowState.isOpen,
       windowStatus: windowState.status,
-      activeTerm: {
-        academicYear: term.academicYear,
-        semester: term.semester,
-      },
+      activeTerm: term
+        ? {
+            academicYear: term.academicYear,
+            semester: term.semester,
+          }
+        : null,
       globalDeadline: {
         endDate: deadline.endDate,
         endTime: deadline.endTime,
