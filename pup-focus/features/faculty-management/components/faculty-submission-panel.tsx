@@ -777,6 +777,15 @@ function FacultySubmissionPanelContent({
     section_code: "",
   });
   const [classFormError, setClassFormError] = useState<string | null>(null);
+  const [isConfirmCreateClassModalOpen, setIsConfirmCreateClassModalOpen] = useState(false);
+  const [isCreateClassSuccessModalOpen, setIsCreateClassSuccessModalOpen] = useState(false);
+  const [createdClassSuccessData, setCreatedClassSuccessData] = useState<{
+    id: string;
+    subject_code: string;
+    description: string;
+    section_code: string;
+    units: number;
+  } | null>(null);
 
   // Class Edit, Archive, Delete, and Filter States
   const [classTab, setClassTab] = useState<"active" | "archived">("active");
@@ -784,6 +793,8 @@ function FacultySubmissionPanelContent({
   const [classSectionFilter, setClassSectionFilter] = useState<string>("ALL");
   const [isEditClassModalOpen, setIsEditClassModalOpen] = useState(false);
   const [classToEdit, setClassToEdit] = useState<FacultyClass | null>(null);
+  const [classToView, setClassToView] = useState<FacultyClass | null>(null);
+  const [isViewClassModalOpen, setIsViewClassModalOpen] = useState(false);
   const [editClassForm, setEditClassForm] = useState({
     subject_code: "",
     description: "",
@@ -798,9 +809,31 @@ function FacultySubmissionPanelContent({
   const [classToDelete, setClassToDelete] = useState<FacultyClass | null>(null);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [isDeletingClass, setIsDeletingClass] = useState(false);
+  const [deleteCountdown, setDeleteCountdown] = useState(0);
+  const [deleteConfirmText, setDeleteConfirmText] = useState("");
   const [classActionLoadingId, setClassActionLoadingId] = useState<string | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isRefreshingHistory, setIsRefreshingHistory] = useState(false);
+
+  useEffect(() => {
+    if (!isDeleteModalOpen || !classToDelete) {
+      setDeleteCountdown(0);
+      setDeleteConfirmText("");
+      return;
+    }
+    setDeleteCountdown(5);
+    setDeleteConfirmText("");
+    const interval = setInterval(() => {
+      setDeleteCountdown((prev) => {
+        if (prev <= 1) {
+          clearInterval(interval);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [isDeleteModalOpen, classToDelete]);
 
   const activeFacultyClasses = useMemo(() => {
     return facultyClasses.filter((c) => !c.is_archived);
@@ -1517,7 +1550,7 @@ function FacultySubmissionPanelContent({
     }
   };
 
-  const handleAddClassSubmit = async (e: React.FormEvent) => {
+  const handleAddClassSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!hasActiveAcademicTerm) {
       setClassFormError(
@@ -1535,6 +1568,19 @@ function FacultySubmissionPanelContent({
     }
     if (!classForm.section_code.trim()) {
       setClassFormError("Section Code is required.");
+      return;
+    }
+    setClassFormError(null);
+    setIsSubmittingClass(false);
+    setIsConfirmCreateClassModalOpen(true);
+  };
+
+  const handleConfirmCreateClass = async () => {
+    if (!hasActiveAcademicTerm) {
+      setClassFormError(
+        "No active academic term configured by the administrator yet."
+      );
+      setIsConfirmCreateClassModalOpen(false);
       return;
     }
     setIsSubmittingClass(true);
@@ -1573,7 +1619,16 @@ function FacultySubmissionPanelContent({
         classId: newClass.id,
         timestamp: Date.now(),
       });
+      setIsConfirmCreateClassModalOpen(false);
       setIsAddClassModalOpen(false);
+      setCreatedClassSuccessData({
+        id: newClass.id,
+        subject_code: newClass.subject_code,
+        description: newClass.description,
+        section_code: newClass.section_code,
+        units: Number(newClass.units) || Number(classForm.units) || 3.0,
+      });
+      setIsCreateClassSuccessModalOpen(true);
       setClassForm({
         subject_code: "",
         description: "",
@@ -1583,9 +1638,16 @@ function FacultySubmissionPanelContent({
       setSubmissionMessage(`Class ${newClass.subject_code} (${newClass.section_code}) created successfully.`);
     } catch (err) {
       setClassFormError(err instanceof Error ? err.message : "Failed to create class load.");
+      setIsConfirmCreateClassModalOpen(false);
     } finally {
       setIsSubmittingClass(false);
     }
+  };
+
+  const handleOpenViewClass = (cls: FacultyClass, e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
+    setClassToView(cls);
+    setIsViewClassModalOpen(true);
   };
 
   const handleOpenEditClass = (cls: FacultyClass, e?: React.MouseEvent) => {
@@ -1717,11 +1779,19 @@ function FacultySubmissionPanelContent({
   const handleOpenDeleteModal = (cls: FacultyClass, e?: React.MouseEvent) => {
     if (e) e.stopPropagation();
     setClassToDelete(cls);
+    setDeleteCountdown(5);
+    setDeleteConfirmText("");
     setIsDeleteModalOpen(true);
   };
 
   const handleDeleteClassConfirm = async () => {
-    if (!classToDelete) return;
+    if (
+      !classToDelete ||
+      deleteCountdown > 0 ||
+      deleteConfirmText.trim().toLowerCase() !== "delete"
+    ) {
+      return;
+    }
     setIsDeletingClass(true);
     try {
       const res = await fetch(`/api/faculty/classes?id=${encodeURIComponent(classToDelete.id)}`, {
@@ -1744,6 +1814,8 @@ function FacultySubmissionPanelContent({
         timestamp: Date.now(),
       });
       setIsDeleteModalOpen(false);
+      setDeleteCountdown(0);
+      setDeleteConfirmText("");
       setSubmissionMessage(`Class ${classToDelete.subject_code} (${classToDelete.section_code}) deleted.`);
       setClassToDelete(null);
     } catch (err) {
@@ -3632,8 +3704,8 @@ function FacultySubmissionPanelContent({
                         </span>
                       )}
                     </div>
-                    <p className="mt-1.5 text-sm sm:text-base text-amber-950/90 dark:text-amber-200/90 font-medium leading-relaxed">
-                      Overview of your faculty compliance status, submission timeline, and recent document activity.
+                    <p className="mt-1 text-xs sm:text-sm text-amber-950/90 dark:text-amber-200/90 font-medium leading-relaxed">
+                      Track your requirements, submissions, and deadlines.
                     </p>
                   </div>
 
@@ -3780,8 +3852,8 @@ function FacultySubmissionPanelContent({
                       </div>
                       <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1 font-medium">
                         {isAllValidated
-                          ? `All ${mandatoryTemplates.length} mandatory requirements approved`
-                          : `${mandatoryTemplates.length - mandatoryValidatedCount} required items awaiting completion`}
+                          ? `All ${mandatoryTemplates.length} requirements approved`
+                          : `${mandatoryTemplates.length - mandatoryValidatedCount} left to complete`}
                       </p>
                     </div>
                     <div className="h-2.5 w-full overflow-hidden rounded-full bg-slate-200 dark:bg-slate-800/90 border border-slate-300 dark:border-slate-700">
@@ -3794,7 +3866,7 @@ function FacultySubmissionPanelContent({
                     </div>
                   </div>
 
-                  {/* Card 2: Submission Window Status */}
+                  {/* Card 2: Schedule */}
                   <div className={`rounded-2xl ${
                     hasActiveGracePeriod
                       ? "border-2 border-emerald-400 dark:border-emerald-500/60"
@@ -3802,7 +3874,7 @@ function FacultySubmissionPanelContent({
                   } bg-white dark:bg-slate-900 shadow-xs p-5 sm:p-6 space-y-3 transition-colors`}>
                     <div className="flex items-center justify-between">
                       <span className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-                        Window Status
+                        Schedule
                       </span>
                       {hasActiveGracePeriod ? (
                         <Check className="h-5 w-5 text-emerald-500" strokeWidth={2.5} />
@@ -3819,60 +3891,60 @@ function FacultySubmissionPanelContent({
                           : "text-slate-900 dark:text-slate-100"
                       }`}>
                         {hasActiveGracePeriod
-                          ? "Personal Deadline Active"
+                          ? "Extended Deadline"
                           : isWindowNotConfigured
                             ? "Schedule Not Set"
                             : isWindowClosed
                               ? "Window Closed"
-                              : "Submission Open"}
+                              : "Submissions Open"}
                       </h3>
                       <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1 font-medium">
                         {hasActiveGracePeriod && personalDeadlineFormatted
                           ? `Due: ${personalDeadlineFormatted}`
                           : windowDeadlineDisplay
                             ? `Deadline: ${windowDeadlineDisplay}${windowDaysRemaining !== null ? ` (${windowDaysRemaining === 0 ? "Due today" : `${windowDaysRemaining}d left`})` : ""}`
-                            : "Awaiting admin schedule"}
+                            : "Waiting for admin schedule"}
                       </p>
                     </div>
                     <p className="text-xs text-slate-500 dark:text-slate-400">
                       {isAllValidated
-                        ? "All submissions finalized and locked for this term"
+                        ? "All done for this term"
                         : hasActiveGracePeriod
-                          ? "Uploads are currently unlocked"
+                          ? "Uploads unlocked"
                           : isSubmissionAvailable
-                            ? "Uploads and resubmissions are currently enabled"
+                            ? "Uploads enabled"
                             : isWindowNotConfigured
-                              ? "Submissions will unlock when scheduled"
-                              : "Document submissions are currently locked"}
+                              ? "Opens when scheduled"
+                              : "Uploads closed"}
                     </p>
                   </div>
 
-                  {/* Card 3: Action Required */}
+                  {/* Card 3: To-Do */}
                   <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs p-5 sm:p-6 space-y-3 transition-colors">
                     <div className="flex items-center justify-between">
                       <span className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-                        Action Required
+                        To-Do
                       </span>
                       <TaskList className="h-5 w-5 text-slate-400" strokeWidth={2} />
                     </div>
                     <div>
                       <h3 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">
                         {isAllValidated
-                          ? "0 Pending Actions"
+                          ? "All Done"
                           : `${lackingRequirements.length} ${lackingRequirements.length === 1 ? "Item" : "Items"}`}
                       </h3>
                       <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1 font-medium">
                         {isAllValidated
-                          ? "No pending revisions or missing uploads"
-                          : `${lackingRequirements.filter((r) => r.status === "Overdue").length > 0 ? `${lackingRequirements.filter((r) => r.status === "Overdue").length} Overdue • ` : ""}${lackingRequirements.filter((r) => r.status === "Pending" || r.status === "Not Submitted").length} Pending • ${lackingRequirements.filter((r) => r.status === "Rejected").length} Needs Revision`}
+                          ? "No pending items"
+                          : `${lackingRequirements.filter((r) => r.status === "Overdue").length > 0 ? `${lackingRequirements.filter((r) => r.status === "Overdue").length} Overdue • ` : ""}${lackingRequirements.filter((r) => r.status === "Pending" || r.status === "Not Submitted").length} to submit${lackingRequirements.filter((r) => r.status === "Rejected").length > 0 ? ` • ${lackingRequirements.filter((r) => r.status === "Rejected").length} needs fix` : ""}`}
                       </p>
                     </div>
                     <p className="text-xs text-slate-500 dark:text-slate-400">
                       {isAllValidated
-                        ? "You are 100% compliant for the current semester"
+                        ? "You are all caught up for this term"
                         : (displayedStatusCounts?.pending ?? 0) > 0
-                          ? `${displayedStatusCounts?.pending} item(s) currently under admin review`
-                          : "Direct upload available for pending items"}
+                          ? `${displayedStatusCounts?.pending} item(s) awaiting review`
+                          : "Ready to upload"}
                     </p>
                   </div>
                 </section>
@@ -3885,16 +3957,16 @@ function FacultySubmissionPanelContent({
                       <div>
                         <h3 className="text-base sm:text-lg font-bold text-slate-900 dark:text-slate-100 tracking-tight flex items-center gap-2">
                           <Reports className="h-5 w-5 text-[#800000] dark:text-amber-400" strokeWidth={2} />
-                          <span>Compliance Status Breakdown</span>
+                          <span>Document Status</span>
                         </h3>
                         <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                          Distribution of your {totalRequirements || mandatoryTemplates.length} required documents this semester
+                          Your {totalRequirements || mandatoryTemplates.length} requirements this term
                         </p>
                       </div>
                       <span className="inline-flex items-center px-2.5 py-1 rounded-lg bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30 text-xs font-bold shrink-0">
                         {isAllValidated
-                          ? "100% Complete"
-                          : `${Math.round((mandatoryValidatedCount / (mandatoryTemplates.length || 1)) * 100)}% Complete`}
+                          ? "100% Done"
+                          : `${Math.round((mandatoryValidatedCount / (mandatoryTemplates.length || 1)) * 100)}% Done`}
                       </span>
                     </div>
 
@@ -3915,14 +3987,14 @@ function FacultySubmissionPanelContent({
                           badgeBg: "bg-[#0b5336]/10 text-[#0b5336] dark:bg-emerald-500/15 dark:text-emerald-300",
                         },
                         {
-                          label: "Pending Review",
+                          label: "In Review",
                           count: pendCount,
                           pct: Math.round((pendCount / total) * 100),
                           barColor: "bg-amber-500",
                           badgeBg: "bg-amber-500/15 text-amber-800 dark:text-amber-300",
                         },
                         {
-                          label: "Needs Revision",
+                          label: "Needs Fix",
                           count: revCount,
                           pct: Math.round((revCount / total) * 100),
                           barColor: "bg-[#780000]",
@@ -3991,17 +4063,17 @@ function FacultySubmissionPanelContent({
                     })()}
                   </div>
 
-                  {/* Middle Card: Class Load Compliance Analytics */}
+                  {/* Middle Card: My Classes */}
                   <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs p-5 sm:p-6 space-y-4 transition-colors flex flex-col justify-between">
                     <div className="space-y-4">
                       <div className="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-slate-800">
                         <div>
                           <h3 className="text-base sm:text-lg font-bold text-slate-900 dark:text-slate-100 tracking-tight flex items-center gap-2">
                             <Activity className="h-5 w-5 text-[#800000] dark:text-amber-400" strokeWidth={2} />
-                            <span>Class Load Compliance</span>
+                            <span>My Classes</span>
                           </h3>
                           <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                            Per-class requirement validation rate for {activeAY} • {activeSem}
+                            Progress per subject for {activeAY} • {activeSem}
                           </p>
                         </div>
                         <button
@@ -4104,13 +4176,13 @@ function FacultySubmissionPanelContent({
 
                     <div className="pt-3 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
                       <span>
-                        Active Classes:{" "}
+                        Classes:{" "}
                         <strong className="text-slate-900 dark:text-slate-100">
                           {facultyClasses.filter((c) => !c.is_archived).length}
                         </strong>
                       </span>
                       <span>
-                        Total Teaching Units:{" "}
+                        Total Units:{" "}
                         <strong className="text-slate-900 dark:text-slate-100">
                           {facultyClasses
                             .filter((c) => !c.is_archived)
@@ -4128,7 +4200,7 @@ function FacultySubmissionPanelContent({
                           Recent Activity
                         </h3>
                         <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                          Latest document submissions
+                          Latest submissions
                         </p>
                       </div>
                       <button
@@ -4172,7 +4244,7 @@ function FacultySubmissionPanelContent({
                     ) : (
                       <div className="flex-1 flex items-center justify-center rounded-xl border border-dashed border-slate-300 dark:border-slate-800 p-6 text-center">
                         <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400">
-                          No submission activity recorded yet.
+                          No submissions yet.
                         </p>
                       </div>
                     )}
@@ -4447,15 +4519,29 @@ function FacultySubmissionPanelContent({
                       </div>
 
                       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-0.5">
-                        <p className="text-xs sm:text-sm text-amber-950/90 dark:text-amber-300/80 font-semibold">
-                          {hasActiveAcademicTerm && activeAY ? (
-                            <>
-                              A.Y. {activeAY} • {activeSem} &bull; {facultyClasses.length} Registered Class Load{facultyClasses.length === 1 ? "" : "s"}
-                            </>
-                          ) : (
-                            <span>No Active Academic Term Configured</span>
-                          )}
-                        </p>
+                        <div className="flex items-center justify-between gap-2 w-full sm:w-auto">
+                          <p className="text-xs sm:text-sm text-amber-950/90 dark:text-amber-300/80 font-semibold">
+                            {hasActiveAcademicTerm && activeAY ? (
+                              <>
+                                A.Y. {activeAY} • {activeSem} &bull; {facultyClasses.length} Registered Class Load{facultyClasses.length === 1 ? "" : "s"}
+                              </>
+                            ) : (
+                              <span>No Active Academic Term Configured</span>
+                            )}
+                          </p>
+                          <button
+                            type="button"
+                            onClick={() => void handleManualRefresh()}
+                            disabled={isRefreshing}
+                            title="Refresh status and classes"
+                            className="sm:hidden inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold rounded-xl border border-slate-300 dark:border-slate-700 bg-white hover:bg-slate-50 dark:bg-slate-900 dark:hover:bg-slate-800 text-slate-800 dark:text-slate-100 transition-all disabled:opacity-50 cursor-pointer shadow-xs active:scale-[0.98] shrink-0"
+                          >
+                            <Refresh
+                              className={`h-3.5 w-3.5 ${isRefreshing ? "animate-spin" : ""}`}
+                            />
+                            <span>{isRefreshing ? "Refreshing..." : "Refresh"}</span>
+                          </button>
+                        </div>
 
                         <div className="flex flex-wrap items-center gap-2.5">
                           <button
@@ -4477,6 +4563,18 @@ function FacultySubmissionPanelContent({
                           >
                             <AppIcon icon={CheckCircle} size="md" color="white" />
                             <span>Validation History</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => void handleManualRefresh()}
+                            disabled={isRefreshing}
+                            title="Refresh status and classes"
+                            className="hidden sm:inline-flex items-center justify-center gap-1.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white hover:bg-slate-50 dark:bg-slate-900 dark:hover:bg-slate-800 text-slate-800 dark:text-slate-100 px-4 py-2 sm:px-4.5 sm:py-2.5 text-xs sm:text-sm font-semibold transition-all disabled:opacity-50 cursor-pointer whitespace-nowrap shadow-xs active:scale-[0.98]"
+                          >
+                            <Refresh
+                              className={`h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`}
+                            />
+                            <span>{isRefreshing ? "Refreshing..." : "Refresh"}</span>
                           </button>
                         </div>
                       </div>
@@ -4741,16 +4839,16 @@ function FacultySubmissionPanelContent({
                                         : "border-amber-500 dark:border-amber-600 group-hover:border-amber-400"
                                     }`}
                                   >
-                                    <div className="p-5 flex-1 flex flex-col justify-between gap-4">
+                                    <div className="p-4 sm:p-5 flex-1 flex flex-col justify-between gap-4">
                                       <div className="space-y-3.5">
                                         {/* Top Row: Units & Action Buttons */}
-                                        <div className="flex items-center justify-between gap-2">
-                                          <div className="flex items-center gap-1.5 flex-wrap">
+                                        <div className="flex flex-wrap items-center justify-between gap-1.5">
+                                          <div className="flex items-center gap-1.5 shrink-0">
                                             <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-bold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
                                               {cls.units} Units
                                             </span>
                                             {isArchived && (
-                                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-300 dark:border-slate-700">
+                                              <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-300 dark:border-slate-700">
                                                 <AppIcon icon={Archive} size="xs" color="inherit" />
                                                 Archived
                                               </span>
@@ -4759,14 +4857,25 @@ function FacultySubmissionPanelContent({
 
                                           {/* Action Buttons Toolbar with Labels */}
                                           <div
-                                            className="flex items-center gap-1.5 shrink-0"
+                                            className="flex flex-wrap items-center justify-end gap-1"
                                             onClick={(e) => e.stopPropagation()}
                                           >
+                                            {/* Details button */}
+                                            <button
+                                              type="button"
+                                              onClick={(e) => handleOpenViewClass(cls, e)}
+                                              className="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] font-bold text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 transition cursor-pointer shadow-2xs active:scale-95"
+                                              title="View subject details"
+                                            >
+                                              <AppIcon icon={Eye} size="xs" color="inherit" />
+                                              <span>Details</span>
+                                            </button>
+
                                             {/* Edit button */}
                                             <button
                                               type="button"
                                               onClick={(e) => handleOpenEditClass(cls, e)}
-                                              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 transition cursor-pointer shadow-2xs active:scale-95"
+                                              className="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] font-bold text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 transition cursor-pointer shadow-2xs active:scale-95"
                                               title="Edit class load"
                                             >
                                               <AppIcon icon={EditPencil} size="xs" color="inherit" />
@@ -4784,7 +4893,7 @@ function FacultySubmissionPanelContent({
                                                   handleOpenArchiveModal(cls, e);
                                                 }
                                               }}
-                                              className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold transition cursor-pointer shadow-2xs active:scale-95 border ${
+                                              className={`inline-flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] font-bold transition cursor-pointer shadow-2xs active:scale-95 border ${
                                                 isArchived
                                                   ? "bg-amber-500 hover:bg-amber-400 text-slate-950 border-amber-600/50 shadow-xs"
                                                   : "bg-slate-100 hover:bg-slate-200 text-slate-700 border-slate-200 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700 dark:border-slate-700"
@@ -4809,7 +4918,7 @@ function FacultySubmissionPanelContent({
                                             <button
                                               type="button"
                                               onClick={(e) => handleOpenDeleteModal(cls, e)}
-                                              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold text-white bg-[#780000] hover:bg-[#5e0000] border border-[#5e0000] transition cursor-pointer shadow-2xs active:scale-95"
+                                              className="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] font-bold text-white bg-[#780000] hover:bg-[#5e0000] border border-[#5e0000] transition cursor-pointer shadow-2xs active:scale-95"
                                               title="Delete class load"
                                             >
                                               <AppIcon icon={Trash} size="xs" color="inherit" />
@@ -4996,6 +5105,15 @@ function FacultySubmissionPanelContent({
                             <div className="flex sm:hidden items-center gap-1.5 shrink-0">
                               <button
                                 type="button"
+                                onClick={(e) => handleOpenViewClass(selectedClass, e)}
+                                className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-xs font-extrabold text-slate-700 dark:text-slate-200 transition cursor-pointer shadow-2xs active:scale-95"
+                                title="View subject details"
+                              >
+                                <AppIcon icon={Eye} size="xs" color="inherit" />
+                                <span>Details</span>
+                              </button>
+                              <button
+                                type="button"
                                 onClick={(e) => handleOpenEditClass(selectedClass, e)}
                                 className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-amber-600 bg-amber-500 hover:bg-amber-400 text-xs font-extrabold text-amber-950 transition cursor-pointer shadow-2xs active:scale-95"
                                 title="Edit this class load"
@@ -5045,6 +5163,15 @@ function FacultySubmissionPanelContent({
                                 </span>
                               )}
                               <div className="hidden sm:inline-flex items-center gap-1.5 shrink-0 whitespace-nowrap">
+                                <button
+                                  type="button"
+                                  onClick={(e) => handleOpenViewClass(selectedClass, e)}
+                                  className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-[11px] font-extrabold text-slate-700 dark:text-slate-200 transition cursor-pointer shadow-2xs active:scale-95"
+                                  title="View subject details"
+                                >
+                                  <AppIcon icon={Eye} size="xs" color="inherit" />
+                                  <span>Details</span>
+                                </button>
                                 <button
                                   type="button"
                                   onClick={(e) => handleOpenEditClass(selectedClass, e)}
@@ -6583,23 +6710,316 @@ function FacultySubmissionPanelContent({
                       </button>
                       <button
                         type="submit"
-                        disabled={isSubmittingClass || !hasActiveAcademicTerm}
-                        className="inline-flex items-center justify-center gap-1.5 px-4.5 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-bold shadow-xs transition cursor-pointer disabled:opacity-50"
+                        disabled={!hasActiveAcademicTerm}
+                        className="inline-flex items-center justify-center gap-1.5 px-4.5 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-bold shadow-xs transition cursor-pointer disabled:opacity-50 active:scale-[0.98]"
                       >
-                        {isSubmittingClass ? (
-                          <>
-                            <AppIcon icon={SystemRestart} size="sm" color="inherit" className="animate-spin" />
-                            <span>Saving...</span>
-                          </>
-                        ) : (
-                          <>
-                            <AppIcon icon={Check} size="sm" color="inherit" />
-                            <span>Save Class Load</span>
-                          </>
-                        )}
+                        <AppIcon icon={Check} size="sm" color="inherit" />
+                        <span>Save Class Load</span>
                       </button>
                     </div>
                   </form>
+                </div>
+              </div>
+            )}
+
+            {/* Confirm Create Class / Subject Load Modal */}
+            {isConfirmCreateClassModalOpen && (
+              <div
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="confirm-create-class-title"
+                className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-slate-950/75 backdrop-blur-xs animate-in fade-in duration-200"
+              >
+                <div
+                  className="w-full max-w-md rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xl p-6 space-y-4 animate-in zoom-in-95 duration-200"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <div className="flex items-start gap-3.5">
+                    <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-amber-500 text-slate-950 shadow-md border-2 border-amber-600">
+                      <AppIcon icon={TaskList} size="md" color="inherit" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <h3
+                        id="confirm-create-class-title"
+                        className="text-base sm:text-lg font-black text-slate-900 dark:text-slate-100"
+                      >
+                        Confirm Subject Load Registration
+                      </h3>
+                      <p className="mt-1 text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
+                        Are you sure you want to save and register this subject load for this academic term?
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="rounded-2xl border-2 border-amber-500 bg-amber-400 p-4 space-y-2.5 text-xs shadow-md shadow-amber-500/20 text-slate-950">
+                    <div className="flex items-center justify-between gap-2 border-b border-amber-500/50 pb-2">
+                      <span className="text-amber-950 font-bold">Subject Code:</span>
+                      <span className="font-mono font-black text-slate-950 text-sm">
+                        {classForm.subject_code.trim().toUpperCase()}
+                      </span>
+                    </div>
+                    <div className="flex items-start justify-between gap-2 border-b border-amber-500/50 pb-2">
+                      <span className="text-amber-950 font-bold shrink-0">Description:</span>
+                      <span className="font-bold text-slate-950 text-right">
+                        {classForm.description.trim()}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between gap-2 border-b border-amber-500/50 pb-2">
+                      <span className="text-amber-950 font-bold">Section:</span>
+                      <span className="font-mono font-black text-slate-950">
+                        {classForm.section_code.trim().toUpperCase()}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between gap-2 border-b border-amber-500/50 pb-2">
+                      <span className="text-amber-950 font-bold">Credit Units:</span>
+                      <span className="font-black text-slate-950">
+                        {Number(classForm.units || 3.0).toFixed(1)} Units
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-amber-950 font-bold">Academic Term:</span>
+                      <span className="font-black text-slate-950">
+                        A.Y. {activeAY} • {activeSem}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-slate-200 dark:border-slate-800">
+                    <button
+                      type="button"
+                      disabled={isSubmittingClass}
+                      onClick={() => {
+                        setIsSubmittingClass(false);
+                        setIsConfirmCreateClassModalOpen(false);
+                      }}
+                      className="px-4.5 py-2.5 rounded-xl text-xs font-bold bg-[#780000] hover:bg-[#5e0000] text-white border border-[#5e0000] shadow-sm transition-all cursor-pointer disabled:cursor-not-allowed active:scale-[0.98]"
+                    >
+                      Back to Edit
+                    </button>
+                    <button
+                      type="button"
+                      disabled={isSubmittingClass}
+                      onClick={handleConfirmCreateClass}
+                      className={`inline-flex items-center justify-center gap-1.5 px-5 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-black shadow-md border border-amber-600/40 transition-all cursor-pointer ${
+                        isSubmittingClass ? "opacity-50 cursor-not-allowed" : "active:scale-[0.98]"
+                      }`}
+                    >
+                      {isSubmittingClass ? (
+                        <>
+                          <AppIcon icon={SystemRestart} size="sm" color="inherit" className="animate-spin" />
+                          <span>Saving...</span>
+                        </>
+                      ) : (
+                        <>
+                          <AppIcon icon={Check} size="sm" color="inherit" />
+                          <span>Save</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Create Class Success Modal */}
+            {isCreateClassSuccessModalOpen && createdClassSuccessData && (
+              <div
+                className="fixed inset-0 z-[60] overflow-y-auto bg-slate-950/80 p-4 sm:p-6 flex min-h-full items-center justify-center backdrop-blur-sm animate-in fade-in duration-200"
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="class-created-success-title"
+                onClick={() => {
+                  setIsCreateClassSuccessModalOpen(false);
+                  setCreatedClassSuccessData(null);
+                }}
+              >
+                <div
+                  className="w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-8 sm:p-10 text-center shadow-2xl my-auto space-y-6 animate-in zoom-in-95 duration-200"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <div className="mx-auto flex h-24 w-24 sm:h-28 sm:w-28 items-center justify-center rounded-3xl bg-[#0b5336] text-white shadow-xl shadow-[#0b5336]/30 border-2 border-[#08412a] animate-in zoom-in duration-300">
+                    <CheckCircle className="w-12 h-12 sm:w-14 sm:h-14 stroke-[2.5]" />
+                  </div>
+                  <div className="space-y-2">
+                    <h3
+                      id="class-created-success-title"
+                      className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-slate-100 tracking-tight"
+                    >
+                      Subject Load Created!
+                    </h3>
+                    <p className="text-sm sm:text-base text-slate-600 dark:text-slate-300 leading-relaxed max-w-md mx-auto px-2">
+                      <strong className="text-slate-900 dark:text-slate-100">
+                        {createdClassSuccessData.subject_code} &bull; {createdClassSuccessData.section_code}
+                      </strong>{" "}
+                      ({createdClassSuccessData.description}) has been registered successfully.
+                    </p>
+                  </div>
+                  <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsCreateClassSuccessModalOpen(false);
+                        setCreatedClassSuccessData(null);
+                      }}
+                      className="w-full sm:w-1/2 py-3 px-4 rounded-xl border border-[#5e0000] bg-[#780000] hover:bg-[#5e0000] text-white font-bold text-xs sm:text-sm shadow-md transition-all cursor-pointer active:scale-[0.98]"
+                    >
+                      Done
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const targetId = createdClassSuccessData.id;
+                        setIsCreateClassSuccessModalOpen(false);
+                        setCreatedClassSuccessData(null);
+                        setSelectedClassId(targetId);
+                        selectedClassIdRef.current = targetId;
+                      }}
+                      className="w-full sm:w-1/2 py-3 px-4 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs sm:text-sm rounded-xl shadow-md transition-all cursor-pointer active:scale-[0.98]"
+                    >
+                      Upload Documents
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* View Subject Load Details Modal */}
+            {isViewClassModalOpen && classToView && (
+              <div
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="view-class-modal-title"
+                className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/75 backdrop-blur-xs animate-in fade-in duration-200"
+                onClick={() => {
+                  setIsViewClassModalOpen(false);
+                  setClassToView(null);
+                }}
+              >
+                <div
+                  className="w-full max-w-lg rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xl p-6 space-y-4 animate-in zoom-in-95 duration-200 my-auto"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  {/* Header */}
+                  <div className="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-slate-800">
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-amber-500 text-slate-950 shadow-md border-2 border-amber-600">
+                        <AppIcon icon={Eye} size="md" color="inherit" />
+                      </div>
+                      <div>
+                        <h3
+                          id="view-class-modal-title"
+                          className="text-base sm:text-lg font-black text-slate-900 dark:text-slate-100"
+                        >
+                          Subject Load Details
+                        </h3>
+                        <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">
+                          {classToView.subject_code} &bull; {classToView.section_code}
+                        </p>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsViewClassModalOpen(false);
+                        setClassToView(null);
+                      }}
+                      className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer"
+                    >
+                      <AppIcon icon={Xmark} size="md" color="inherit" />
+                    </button>
+                  </div>
+
+                  {/* Solid Amber Card Content */}
+                  <div className="rounded-2xl border-2 border-amber-500 bg-amber-400 p-4 space-y-2.5 text-xs shadow-md shadow-amber-500/20 text-slate-950">
+                    <div className="flex items-center justify-between gap-2 border-b border-amber-500/50 pb-2">
+                      <span className="text-amber-950 font-bold">Course / Subject Code:</span>
+                      <span className="font-mono font-black text-slate-950 text-sm">
+                        {classToView.subject_code}
+                      </span>
+                    </div>
+                    <div className="flex items-start justify-between gap-2 border-b border-amber-500/50 pb-2">
+                      <span className="text-amber-950 font-bold shrink-0">Subject Name / Description:</span>
+                      <span className="font-bold text-slate-950 text-right">
+                        {classToView.description}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between gap-2 border-b border-amber-500/50 pb-2">
+                      <span className="text-amber-950 font-bold">Assigned Section:</span>
+                      <span className="font-mono font-black text-slate-950">
+                        {classToView.section_code}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between gap-2 border-b border-amber-500/50 pb-2">
+                      <span className="text-amber-950 font-bold">Credit Units:</span>
+                      <span className="font-black text-slate-950">
+                        {Number(classToView.units || 3.0).toFixed(1)} Units
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between gap-2 border-b border-amber-500/50 pb-2">
+                      <span className="text-amber-950 font-bold">Academic Term:</span>
+                      <span className="font-black text-slate-950">
+                        A.Y. {classToView.academic_year || activeAY || "Active Term"} &bull; {classToView.semester || activeSem || ""}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-amber-950 font-bold">Status:</span>
+                      <span
+                        className={`px-2 py-0.5 rounded-md text-[11px] font-black uppercase tracking-wider ${
+                          classToView.is_archived
+                            ? "bg-slate-700 text-white"
+                            : "bg-[#0b5336] text-white"
+                        }`}
+                      >
+                        {classToView.is_archived ? "Archived" : "Active"}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Modal Footer Actions */}
+                  <div className="flex flex-wrap items-center justify-end gap-2.5 pt-3 border-t border-slate-200 dark:border-slate-800">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsViewClassModalOpen(false);
+                        setClassToView(null);
+                      }}
+                      className="px-4 py-2 rounded-xl text-xs font-bold bg-[#780000] hover:bg-[#5e0000] text-white border border-[#5e0000] shadow-sm transition cursor-pointer active:scale-95"
+                    >
+                      Close
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const target = classToView;
+                        setIsViewClassModalOpen(false);
+                        setClassToView(null);
+                        handleOpenEditClass(target);
+                      }}
+                      className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 shadow-2xs transition cursor-pointer active:scale-95"
+                    >
+                      <AppIcon icon={EditPencil} size="xs" color="inherit" />
+                      <span>Edit</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const targetId = classToView.id;
+                        setIsViewClassModalOpen(false);
+                        setClassToView(null);
+                        selectedClassIdRef.current = targetId;
+                        setRequirementStatuses(
+                          classStatusesCacheRef.current[targetId] || [],
+                        );
+                        setIsUploadSectionVisible(false);
+                        setSelectedClassId(targetId);
+                        void fetchStatuses(activeAY, activeSem, targetId, { silent: true });
+                      }}
+                      className="inline-flex items-center gap-1.5 px-4.5 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-black shadow-md border border-amber-600/40 transition cursor-pointer active:scale-95"
+                    >
+                      <AppIcon icon={Folder} size="xs" color="inherit" />
+                      <span>View & Upload Documents</span>
+                    </button>
+                  </div>
                 </div>
               </div>
             )}
@@ -6760,20 +7180,21 @@ function FacultySubmissionPanelContent({
               >
                 <div className="w-full max-w-md rounded-3xl border border-amber-300 dark:border-amber-700/60 bg-white dark:bg-slate-900 shadow-2xl p-6 space-y-4">
                   <div className="flex items-start gap-3.5">
-                    <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-amber-500/15 text-amber-700 dark:text-amber-400 border border-amber-500/30">
+                    <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-amber-500 text-slate-950 shadow-md border-2 border-amber-600">
                       <AppIcon icon={Archive} size="md" color="inherit" />
                     </div>
-                    <div>
+                    <div className="min-w-0 flex-1">
                       <h3 className="text-base sm:text-lg font-black text-slate-900 dark:text-slate-100">
                         Archive Subject Load?
                       </h3>
                       <p className="mt-1 text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
                         Are you sure you want to archive <strong className="text-slate-900 dark:text-slate-200">{classToArchive.subject_code} ({classToArchive.section_code})</strong>?
                       </p>
-                      <p className="mt-2 text-[11px] text-amber-800 dark:text-amber-300 bg-amber-500/10 p-2.5 rounded-xl border border-amber-500/20 leading-relaxed">
-                        Archiving will hide this subject load from your active list and lock requirement uploads until unarchived. You can find and unarchive it anytime under the <strong>Archived</strong> tab.
-                      </p>
                     </div>
+                  </div>
+
+                  <div className="rounded-2xl border-2 border-amber-500 bg-amber-400 p-3.5 text-xs text-slate-950 font-medium leading-relaxed shadow-xs">
+                    Archiving will hide this subject load from your active list and lock requirement uploads until unarchived. You can find and unarchive it anytime under the <strong className="font-black text-slate-950">Archived</strong> tab.
                   </div>
 
                   <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-slate-200 dark:border-slate-800">
@@ -6820,20 +7241,42 @@ function FacultySubmissionPanelContent({
               >
                 <div className="w-full max-w-md rounded-3xl border border-rose-200 dark:border-rose-900/60 bg-white dark:bg-slate-900 shadow-2xl p-6 space-y-4">
                   <div className="flex items-start gap-3.5">
-                    <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-rose-500/15 text-rose-600 dark:text-rose-400 border border-rose-500/30">
+                    <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-[#780000] text-white shadow-md border-2 border-[#5e0000]">
                       <AppIcon icon={Trash} size="md" color="inherit" />
                     </div>
-                    <div>
+                    <div className="min-w-0 flex-1">
                       <h3 className="text-base sm:text-lg font-black text-slate-900 dark:text-slate-100">
                         Delete Subject Load?
                       </h3>
                       <p className="mt-1 text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
                         Are you sure you want to delete <strong className="text-slate-900 dark:text-slate-200">{classToDelete.subject_code} ({classToDelete.section_code})</strong>?
                       </p>
-                      <p className="mt-2 text-[11px] text-amber-700 dark:text-amber-400 bg-amber-500/10 p-2.5 rounded-xl border border-amber-500/20">
-                        Note: Previously uploaded documents will remain preserved in your submission history, but will no longer be linked to this deleted subject load.
-                      </p>
                     </div>
+                  </div>
+
+                  <div className="rounded-2xl border-2 border-amber-500 bg-amber-400 p-3.5 text-xs text-slate-950 font-medium leading-relaxed shadow-xs">
+                    <strong className="font-black text-slate-950">Note:</strong> Previously uploaded documents will remain preserved in your submission history, but will no longer be linked to this deleted subject load.
+                  </div>
+
+                  <div className="space-y-1.5 pt-1">
+                    <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
+                      Type <span className="font-mono font-black text-rose-600 dark:text-rose-400 select-all">Delete</span> to confirm:
+                    </label>
+                    <input
+                      type="text"
+                      value={deleteConfirmText}
+                      onChange={(e) => setDeleteConfirmText(e.target.value)}
+                      placeholder='Type "Delete" here'
+                      disabled={isDeletingClass}
+                      autoFocus
+                      className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-3.5 py-2 text-xs sm:text-sm text-slate-900 dark:text-slate-100 font-mono outline-none focus:border-rose-500 focus:ring-2 focus:ring-rose-500/20 transition"
+                    />
+                    {deleteCountdown > 0 && (
+                      <p className="text-[11px] font-semibold text-amber-600 dark:text-amber-400 flex items-center gap-1 pt-0.5">
+                        <AppIcon icon={Hourglass} size="xs" color="inherit" />
+                        <span>Please wait <strong>{deleteCountdown}s</strong> before confirming deletion...</span>
+                      </p>
+                    )}
                   </div>
 
                   <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-slate-200 dark:border-slate-800">
@@ -6843,16 +7286,22 @@ function FacultySubmissionPanelContent({
                       onClick={() => {
                         setIsDeleteModalOpen(false);
                         setClassToDelete(null);
+                        setDeleteCountdown(0);
+                        setDeleteConfirmText("");
                       }}
-                      className="px-4 py-2 rounded-xl border border-slate-300 dark:border-slate-700 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer"
+                      className="px-4 py-2 rounded-xl text-xs font-semibold bg-[#780000] hover:bg-[#5e0000] text-white border border-[#5e0000] shadow-xs transition-colors cursor-pointer disabled:opacity-50 active:scale-95"
                     >
                       Cancel
                     </button>
                     <button
                       type="button"
-                      disabled={isDeletingClass}
+                      disabled={
+                        isDeletingClass ||
+                        deleteCountdown > 0 ||
+                        deleteConfirmText.trim().toLowerCase() !== "delete"
+                      }
                       onClick={handleDeleteClassConfirm}
-                      className="inline-flex items-center justify-center gap-1.5 px-4.5 py-2 rounded-xl bg-[#780000] hover:bg-[#5e0000] border border-[#5e0000] text-white text-xs font-bold shadow-xs transition cursor-pointer disabled:opacity-50"
+                      className="inline-flex items-center justify-center gap-1.5 px-4.5 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 border border-rose-700 text-white text-xs font-bold shadow-xs transition cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed active:scale-95"
                     >
                       {isDeletingClass ? (
                         <>
@@ -6862,7 +7311,11 @@ function FacultySubmissionPanelContent({
                       ) : (
                         <>
                           <AppIcon icon={Trash} size="sm" color="inherit" />
-                          <span>Delete Class</span>
+                          <span>
+                            {deleteCountdown > 0
+                              ? `Delete Class (${deleteCountdown}s)`
+                              : "Delete Class"}
+                          </span>
                         </>
                       )}
                     </button>

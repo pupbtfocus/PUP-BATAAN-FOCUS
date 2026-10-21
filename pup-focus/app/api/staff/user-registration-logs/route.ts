@@ -110,20 +110,58 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    // 3. Fetch faculty assignments with program details
+    // 3. Fetch programs reference & faculty assignments
+    const { data: allPrograms } = await supabase
+      .from("programs")
+      .select("id, code, name");
+
+    const programMap = new Map<string, string>();
+    if (allPrograms) {
+      for (const p of allPrograms) {
+        if (p.id && p.code) programMap.set(p.id, p.code);
+        if (p.code) programMap.set(p.code.toUpperCase(), p.code);
+        if (p.name && p.code) programMap.set(p.name.toLowerCase(), p.code);
+      }
+    }
+
     const { data: programAssignments } = await supabase
       .from("faculty_program_assignments")
-      .select("faculty_profile_id, programs(code, name)");
+      .select("faculty_profile_id, program_id, programs(code, name)");
 
     const programByProfileId = new Map<string, string>();
     if (programAssignments) {
       for (const pa of programAssignments as any[]) {
         const prog = Array.isArray(pa.programs) ? pa.programs[0] : pa.programs;
-        if (prog?.code) {
-          programByProfileId.set(pa.faculty_profile_id, prog.code);
+        const code = prog?.code || (pa.program_id ? programMap.get(pa.program_id) : null);
+        if (code && pa.faculty_profile_id) {
+          programByProfileId.set(pa.faculty_profile_id, code);
         }
       }
     }
+
+    const facultyDepartmentByProfileId = new Map<string, string>();
+    const facultyDepartmentByUserId = new Map<string, string>();
+    const facultyDepartmentByEmail = new Map<string, string>();
+    try {
+      const { data: facultyRows } = await supabase
+        .from("faculty")
+        .select("profile_id, user_id, email, department");
+      if (facultyRows) {
+        for (const f of facultyRows) {
+          const dept = f.department?.trim();
+          if (dept) {
+            const mappedCode =
+              programMap.get(dept) ||
+              programMap.get(dept.toUpperCase()) ||
+              programMap.get(dept.toLowerCase()) ||
+              dept;
+            if (f.profile_id) facultyDepartmentByProfileId.set(f.profile_id, mappedCode);
+            if (f.user_id) facultyDepartmentByUserId.set(f.user_id, mappedCode);
+            if (f.email) facultyDepartmentByEmail.set(f.email.toLowerCase().trim(), mappedCode);
+          }
+        }
+      }
+    } catch {}
 
     // 4. Fetch transaction logs for invite events, cancellations, and deletions
     const { data: inviteAuditLogs } = await supabase
@@ -293,9 +331,28 @@ export async function GET(request: NextRequest) {
       const lastLoginAt = u.last_sign_in_at || null;
 
       // Program (if faculty)
+      const rawUserProg =
+        u.user_metadata?.program_code ||
+        u.user_metadata?.program ||
+        u.user_metadata?.programId ||
+        u.user_metadata?.program_id ||
+        u.user_metadata?.department;
+
+      const userProgMapped = rawUserProg
+        ? programMap.get(rawUserProg) ||
+          programMap.get(String(rawUserProg).toUpperCase()) ||
+          programMap.get(String(rawUserProg).toLowerCase()) ||
+          rawUserProg
+        : null;
+
       const progCode =
         (profile ? programByProfileId.get(profile.id) : null) ||
+        (profile ? facultyDepartmentByProfileId.get(profile.id) : null) ||
+        facultyDepartmentByUserId.get(u.id) ||
+        facultyDepartmentByEmail.get(email) ||
+        userProgMapped ||
         auditLog?.metadata?.program_code ||
+        (auditLog?.metadata?.program_id ? programMap.get(auditLog.metadata.program_id) : null) ||
         null;
 
       // Inviter Actor
@@ -726,6 +783,268 @@ export async function DELETE(request: NextRequest) {
   } catch (error: any) {
     return NextResponse.json(
       { error: error.message || "Failed to cancel invitation" },
+      { status: 500 }
+    );
+  }
+}
+
+export async function PATCH(request: NextRequest) {
+  try {
+    const sessionClient = await createServerSupabaseClient();
+    const {
+      data: { user: currentUser },
+    } = await sessionClient.auth.getUser();
+
+    const requesterRole =
+      (currentUser?.user_metadata?.role as string | undefined) ??
+      (currentUser?.app_metadata?.role as string | undefined);
+
+    if (
+      !currentUser ||
+      (requesterRole !== ROLE.STAFF && requesterRole !== ROLE.ADMIN && requesterRole !== ROLE.SUPER_ADMIN && requesterRole !== "staff")
+    ) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+
+    const body = await request.json();
+    const email = (body.email || "").trim().toLowerCase();
+    const newEmail = (body.newEmail || email).trim().toLowerCase();
+    const newFullName = (body.newFullName || body.fullName || "").trim();
+    const newProgram = (body.newProgram || body.program || "").trim();
+    const resendNow = Boolean(body.resendNow);
+    const targetId = body.id;
+
+    if (!email && !targetId) {
+      return NextResponse.json(
+        { error: "Original email or User ID is required" },
+        { status: 400 }
+      );
+    }
+
+    if (!newEmail || !isValidEmailAddress(newEmail)) {
+      return NextResponse.json(
+        { error: "A valid email address is required" },
+        { status: 400 }
+      );
+    }
+
+    if (!newFullName) {
+      return NextResponse.json(
+        { error: "Full name is required" },
+        { status: 400 }
+      );
+    }
+
+    const supabase = getServiceRoleClient();
+
+    // Check duplicate email if email is being changed
+    if (newEmail !== email) {
+      const { data: usersData } = await supabase.auth.admin.listUsers({ page: 1, perPage: 1000 });
+      const duplicateAuthUser = usersData?.users?.find(
+        (u) => u.email?.trim().toLowerCase() === newEmail && u.id !== targetId
+      );
+      if (duplicateAuthUser) {
+        return NextResponse.json(
+          { error: `Account with email ${newEmail} already exists` },
+          { status: 400 }
+        );
+      }
+
+      const { data: duplicateProfile } = await supabase
+        .from("profiles")
+        .select("id, user_id")
+        .ilike("email", newEmail)
+        .maybeSingle();
+
+      if (duplicateProfile && duplicateProfile.user_id !== targetId) {
+        return NextResponse.json(
+          { error: `Profile with email ${newEmail} already exists` },
+          { status: 400 }
+        );
+      }
+    }
+
+    // 1. Locate program row if newProgram is provided
+    let progRow: { id: string; code: string; name: string } | null = null;
+    if (newProgram) {
+      const { data: pData } = await supabase
+        .from("programs")
+        .select("id, code, name")
+        .or(`code.ilike.${newProgram},id.eq.${newProgram}`)
+        .maybeSingle();
+      progRow = pData;
+    }
+
+    // 2. Locate and update auth user
+    const { data: usersData } = await supabase.auth.admin.listUsers({ page: 1, perPage: 1000 });
+    const authUser = usersData?.users?.find(
+      (u) =>
+        (email && u.email?.trim().toLowerCase() === email) ||
+        (targetId && u.id === targetId)
+    );
+
+    let updatedUserId = targetId || authUser?.id;
+
+    if (authUser) {
+      updatedUserId = authUser.id;
+      const updatePayload: any = {
+        user_metadata: {
+          ...(authUser.user_metadata || {}),
+          full_name: newFullName,
+          ...(progRow ? { program_id: progRow.id, program_code: progRow.code } : {}),
+        },
+      };
+
+      if (newEmail !== authUser.email?.trim().toLowerCase()) {
+        updatePayload.email = newEmail;
+        updatePayload.email_confirm = false;
+      }
+
+      const { error: updateAuthErr } = await supabase.auth.admin.updateUserById(
+        authUser.id,
+        updatePayload
+      );
+
+      if (updateAuthErr) {
+        return NextResponse.json(
+          { error: `Failed to update auth user: ${updateAuthErr.message}` },
+          { status: 500 }
+        );
+      }
+    }
+
+    // 3. Update profiles table
+    const { data: existingProf } = await supabase
+      .from("profiles")
+      .select("id")
+      .or(`user_id.eq.${updatedUserId || "none"},email.ilike.${email}`)
+      .maybeSingle();
+
+    if (existingProf?.id) {
+      await supabase
+        .from("profiles")
+        .update({
+          email: newEmail,
+          full_name: newFullName,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", existingProf.id);
+
+      await supabase.from("staff").update({ email: newEmail, full_name: newFullName, updated_at: new Date().toISOString() }).eq("profile_id", existingProf.id);
+      await supabase.from("admins").update({ email: newEmail, full_name: newFullName, updated_at: new Date().toISOString() }).eq("profile_id", existingProf.id);
+      
+      const facultyUpdate: any = { email: newEmail, full_name: newFullName, updated_at: new Date().toISOString() };
+      if (progRow) {
+        facultyUpdate.department = progRow.name || progRow.code;
+      }
+      await supabase.from("faculty").update(facultyUpdate).eq("profile_id", existingProf.id);
+
+      if (progRow) {
+        await supabase
+          .from("faculty_program_assignments")
+          .delete()
+          .eq("faculty_profile_id", existingProf.id);
+
+        await supabase
+          .from("faculty_program_assignments")
+          .insert({
+            faculty_profile_id: existingProf.id,
+            program_id: progRow.id,
+            academic_year: "2026-2027",
+            term: "1st Semester",
+          });
+      }
+    } else {
+      await supabase.from("staff").update({ email: newEmail, full_name: newFullName }).ilike("email", email);
+      await supabase.from("admins").update({ email: newEmail, full_name: newFullName }).ilike("email", email);
+      if (progRow) {
+        await supabase.from("faculty").update({ email: newEmail, full_name: newFullName, department: progRow.name || progRow.code }).ilike("email", email);
+      } else {
+        await supabase.from("faculty").update({ email: newEmail, full_name: newFullName }).ilike("email", email);
+      }
+    }
+
+    // 3. Log audit event
+    try {
+      await logAuditEvent({
+        actorId: currentUser.id,
+        action: "user.invite_updated",
+        entityType: "user",
+        entityId: updatedUserId || currentUser.id,
+        metadata: {
+          previous_email: email,
+          updated_email: newEmail,
+          updated_full_name: newFullName,
+          updated_program: newProgram || null,
+          program_code: progRow?.code || newProgram || null,
+          program_id: progRow?.id || null,
+          resend_requested: resendNow,
+        },
+      });
+    } catch {}
+
+    // 4. Optionally resend invite immediately
+    let sent = false;
+    let sendError: string | null = null;
+    let actionLink: string | null = null;
+
+    if (resendNow) {
+      const siteUrl =
+        process.env.NEXT_PUBLIC_SITE_URL ||
+        process.env.NEXT_PUBLIC_APP_URL ||
+        (request.url ? new URL(request.url).origin : "https://pupfocus.cjaayy.dev");
+      const callbackUrl = `${siteUrl.replace(/\/$/, "")}/auth/confirm?email=${encodeURIComponent(newEmail)}`;
+
+      const { data: genData, error: genError } =
+        await supabase.auth.admin.generateLink({
+          type: "invite",
+          email: newEmail,
+          options: {
+            data: {
+              full_name: newFullName,
+              ...(progRow ? { program_id: progRow.id, program_code: progRow.code } : {}),
+            },
+            redirectTo: callbackUrl,
+          },
+        });
+
+      const hashedToken = genData?.properties?.hashed_token;
+      actionLink = hashedToken
+        ? `${siteUrl.replace(/\/$/, "")}/auth/confirm?token_hash=${encodeURIComponent(hashedToken)}&type=invite&email=${encodeURIComponent(newEmail)}`
+        : genData?.properties?.action_link ?? null;
+
+      if (actionLink) {
+        try {
+          await sendInviteEmail({
+            to: newEmail,
+            link: actionLink,
+            fullName: newFullName,
+            invitedRole: (body.role || ROLE.FACULTY) as any,
+          });
+          sent = true;
+        } catch (err: any) {
+          sendError = err?.message || "Failed to send email";
+        }
+      } else if (genError) {
+        sendError = genError.message || "Failed to generate invite link";
+      }
+    }
+
+    return NextResponse.json({
+      success: true,
+      sent,
+      sendError,
+      link: actionLink,
+      message: resendNow
+        ? (sent
+            ? `Details updated and invitation email resent to ${newEmail} successfully!`
+            : `Details updated. Email delivery failed: ${sendError || "Check SMTP settings"}`)
+        : `Invitation details updated for ${newEmail} successfully.`,
+    });
+  } catch (error: any) {
+    console.error("User registration log update error:", error);
+    return NextResponse.json(
+      { error: error.message || "Failed to update invitation details" },
       { status: 500 }
     );
   }

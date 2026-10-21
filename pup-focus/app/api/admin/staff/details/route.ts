@@ -233,8 +233,47 @@ export async function PATCH(request: NextRequest) {
   }
 
   try {
-    const body = await request.json();
-    const { profileId, fullName, email, password, resendVerification } = body;
+    const contentType = request.headers.get("content-type") ?? "";
+    let profileId = "";
+    let fullName = "";
+    let firstName = "";
+    let middleName = "";
+    let lastName = "";
+    let email = "";
+    let password = "";
+    let resendVerification = false;
+    let role = "";
+    let profileImage: File | null = null;
+
+    if (contentType.includes("multipart/form-data")) {
+      const formData = await request.formData();
+      profileId = String(formData.get("profileId") || formData.get("profile_id") || "").trim();
+      fullName = String(formData.get("fullName") || formData.get("full_name") || "").trim();
+      firstName = String(formData.get("firstName") || formData.get("first_name") || "").trim();
+      middleName = String(formData.get("middleName") || formData.get("middle_name") || "").trim();
+      lastName = String(formData.get("lastName") || formData.get("last_name") || "").trim();
+      email = String(formData.get("email") || "").trim();
+      password = String(formData.get("password") || "").trim();
+      resendVerification =
+        formData.get("resendVerification") === "true" ||
+        formData.get("resend_verification") === "true";
+      role = String(formData.get("role") || "").trim();
+      const file = formData.get("profileImage");
+      if (file instanceof File && file.size > 0) {
+        profileImage = file;
+      }
+    } else {
+      const body = await request.json();
+      profileId = String(body.profileId || body.profile_id || "").trim();
+      fullName = String(body.fullName || body.full_name || "").trim();
+      firstName = String(body.firstName || body.first_name || "").trim();
+      middleName = String(body.middleName || body.middle_name || "").trim();
+      lastName = String(body.lastName || body.last_name || "").trim();
+      email = String(body.email || "").trim();
+      password = String(body.password || "").trim();
+      resendVerification = Boolean(body.resendVerification || body.resend_verification);
+      role = String(body.role || "").trim();
+    }
 
     if (!profileId) {
       return NextResponse.json(
@@ -243,7 +282,14 @@ export async function PATCH(request: NextRequest) {
       );
     }
 
-    const trimmedFullName = (fullName ?? "").trim();
+    const derivedFullName =
+      firstName || lastName
+        ? [firstName.trim(), middleName.trim() ? `${middleName.trim()[0]}.` : "", lastName.trim()]
+            .filter(Boolean)
+            .join(" ")
+        : (fullName ?? "").trim();
+
+    const trimmedFullName = derivedFullName || (fullName ?? "").trim();
     const normalizedNewEmail = (email ?? "").trim().toLowerCase();
 
     if (!trimmedFullName || !normalizedNewEmail) {
@@ -352,15 +398,49 @@ export async function PATCH(request: NextRequest) {
       }
     }
 
+    // Upload profile image if provided
+    let uploadedImageUrl: string | null = null;
+    if (profileImage && profileImage.size > 0) {
+      try {
+        const safeFileName = profileImage.name.replace(/[^a-zA-Z0-9._-]/g, "_");
+        const storagePath = `admin-profile-images/${normalizedNewEmail}/${Date.now()}-${crypto.randomUUID()}-${safeFileName}`;
+        const arrayBuffer = await profileImage.arrayBuffer();
+
+        const { error: uploadError } = await supabase.storage
+          .from("profile-pictures")
+          .upload(storagePath, arrayBuffer, {
+            contentType: profileImage.type || "application/octet-stream",
+            upsert: true,
+          });
+
+        if (!uploadError) {
+          const { data: signedData } = await supabase.storage
+            .from("profile-pictures")
+            .createSignedUrl(storagePath, 60 * 60 * 24 * 365);
+          if (signedData?.signedUrl) {
+            uploadedImageUrl = signedData.signedUrl;
+          }
+        }
+      } catch (imgErr) {
+        console.warn("Could not upload staff profile image:", imgErr);
+      }
+    }
+
     // Update profiles table
     try {
+      const profileUpdates: Record<string, unknown> = {
+        full_name: trimmedFullName,
+        email: normalizedNewEmail,
+        updated_at: new Date().toISOString(),
+      };
+      if (firstName !== undefined) profileUpdates.first_name = firstName ? firstName.trim() : null;
+      if (middleName !== undefined) profileUpdates.middle_name = middleName ? middleName.trim() : null;
+      if (lastName !== undefined) profileUpdates.last_name = lastName ? lastName.trim() : null;
+      if (uploadedImageUrl) profileUpdates.avatar_url = uploadedImageUrl;
+
       await supabase
         .from("profiles")
-        .update({
-          full_name: trimmedFullName,
-          email: normalizedNewEmail,
-          updated_at: new Date().toISOString(),
-        })
+        .update(profileUpdates)
         .or(`id.eq.${profile?.id || profileId},user_id.eq.${authUserId}`);
     } catch (profileErr) {
       console.warn("Could not update profile table:", profileErr);
@@ -369,13 +449,18 @@ export async function PATCH(request: NextRequest) {
     // Update admins table if present
     if (previousEmail) {
       try {
+        const adminUpdates: Record<string, unknown> = {
+          full_name: trimmedFullName,
+          email: normalizedNewEmail,
+          updated_at: new Date().toISOString(),
+        };
+        if (role) {
+          adminUpdates.role = role;
+        }
+
         await supabase
           .from("admins")
-          .update({
-            full_name: trimmedFullName,
-            email: normalizedNewEmail,
-            updated_at: new Date().toISOString(),
-          })
+          .update(adminUpdates)
           .ilike("email", previousEmail);
       } catch {}
     }
@@ -397,6 +482,16 @@ export async function PATCH(request: NextRequest) {
         ...targetUser.user_metadata,
         full_name: trimmedFullName,
         name: trimmedFullName,
+        ...(firstName !== undefined ? { first_name: firstName?.trim() || null } : {}),
+        ...(middleName !== undefined ? { middle_name: middleName?.trim() || null } : {}),
+        ...(lastName !== undefined ? { last_name: lastName?.trim() || null } : {}),
+        ...(role ? { role } : {}),
+        ...(uploadedImageUrl
+          ? {
+              avatar_url: uploadedImageUrl,
+              picture: uploadedImageUrl,
+            }
+          : {}),
         ...(shouldSendVerification
           ? {
               pending_email_change_verification: true,
@@ -493,6 +588,7 @@ export async function PATCH(request: NextRequest) {
         full_name: trimmedFullName,
         email: normalizedNewEmail,
         role: targetRole,
+        ...(uploadedImageUrl ? { profileImageUrl: uploadedImageUrl, avatar_url: uploadedImageUrl } : {}),
       },
     });
   } catch (error) {
