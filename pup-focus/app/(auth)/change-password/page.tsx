@@ -469,7 +469,10 @@ export default function ChangePasswordPage() {
                     <input
                       type={showPassword ? "text" : "password"}
                       value={password}
-                      onChange={(e) => setPassword(e.target.value)}
+                      onChange={(e) => setPassword(e.target.value.replace(/\s/g, ""))}
+                      onKeyDown={(e) => {
+                        if (e.key === " ") e.preventDefault();
+                      }}
                       required
                       minLength={8}
                       placeholder="Enter new password"
@@ -536,7 +539,10 @@ export default function ChangePasswordPage() {
                     <input
                       type={showConfirm ? "text" : "password"}
                       value={confirm}
-                      onChange={(e) => setConfirm(e.target.value)}
+                      onChange={(e) => setConfirm(e.target.value.replace(/\s/g, ""))}
+                      onKeyDown={(e) => {
+                        if (e.key === " ") e.preventDefault();
+                      }}
                       required
                       minLength={8}
                       placeholder="Confirm new password"

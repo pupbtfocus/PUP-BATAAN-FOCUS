@@ -666,6 +666,11 @@ export function SuperAdminSettings({
       isValid: passwordValidation.hasSpecialChar,
     },
     {
+      id: "noSpaces",
+      label: "No spaces allowed",
+      isValid: passwordValidation.hasNoSpaces,
+    },
+    {
       id: "match",
       label: "New passwords match",
       isValid: isMatching,
@@ -1142,7 +1147,10 @@ export function SuperAdminSettings({
                       : "bg-slate-50 dark:bg-slate-950/60 border-slate-200 dark:border-slate-800 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/80 dark:focus:ring-amber-500/60"
                   }`}
                   value={newPassword}
-                  onChange={(e) => setNewPassword(e.target.value)}
+                  onChange={(e) => setNewPassword(e.target.value.replace(/\s/g, ""))}
+                  onKeyDown={(e) => {
+                    if (e.key === " ") e.preventDefault();
+                  }}
                   placeholder="Minimum 8 characters"
                 />
                 <button
@@ -1176,7 +1184,10 @@ export function SuperAdminSettings({
                       : "bg-slate-50 dark:bg-slate-950/60 border-slate-200 dark:border-slate-800 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/80 dark:focus:ring-amber-500/60"
                   }`}
                   value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  onChange={(e) => setConfirmPassword(e.target.value.replace(/\s/g, ""))}
+                  onKeyDown={(e) => {
+                    if (e.key === " ") e.preventDefault();
+                  }}
                   placeholder="Re-enter new password"
                 />
                 <button

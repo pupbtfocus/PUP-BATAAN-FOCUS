@@ -12,6 +12,7 @@ export interface PasswordValidationResult {
   hasLowercase: boolean;
   hasNumber: boolean;
   hasSpecialChar: boolean;
+  hasNoSpaces: boolean;
   missingRequirements: string[];
   requirements: PasswordRequirement[];
 }
@@ -25,6 +26,7 @@ export function validatePasswordRequirements(password: string): PasswordValidati
   const hasLowercase = /[a-z]/.test(password);
   const hasNumber = /[0-9]/.test(password);
   const hasSpecialChar = /[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?`~]/.test(password);
+  const hasNoSpaces = !/\s/.test(password);
 
   const requirements: PasswordRequirement[] = [
     { id: "length", label: "At least 8 characters", shortLabel: "8+ characters", isValid: hasMinLength },
@@ -32,6 +34,7 @@ export function validatePasswordRequirements(password: string): PasswordValidati
     { id: "lowercase", label: "One lowercase letter (a–z)", shortLabel: "Lowercase (a–z)", isValid: hasLowercase },
     { id: "number", label: "One number (0–9)", shortLabel: "Number (0–9)", isValid: hasNumber },
     { id: "special", label: "One special character (!@#$%...)", shortLabel: "Symbol (!@#$%...)", isValid: hasSpecialChar },
+    { id: "noSpaces", label: "No spaces allowed", shortLabel: "No spaces", isValid: hasNoSpaces },
   ];
 
   const missingRequirements = requirements
@@ -45,6 +48,7 @@ export function validatePasswordRequirements(password: string): PasswordValidati
     hasLowercase,
     hasNumber,
     hasSpecialChar,
+    hasNoSpaces,
     missingRequirements,
     requirements,
   };
@@ -83,12 +87,15 @@ export function formatPasswordError(rawMessage?: string | null): string {
     ) {
       missing.push("• One special character (!@#$%...)");
     }
+    if (trimmed.toLowerCase().includes("space") || trimmed.toLowerCase().includes("whitespace")) {
+      missing.push("• No spaces allowed");
+    }
 
     if (missing.length > 0) {
       return `Password must include:\n${missing.join("\n")}`;
     }
 
-    return "Password must include:\n• At least 8 characters\n• One uppercase letter (A–Z)\n• One lowercase letter (a–z)\n• One number (0–9)\n• One special character (!@#$%...)";
+    return "Password must include:\n• At least 8 characters\n• One uppercase letter (A–Z)\n• One lowercase letter (a–z)\n• One number (0–9)\n• One special character (!@#$%...)\n• No spaces allowed";
   }
 
   return trimmed;

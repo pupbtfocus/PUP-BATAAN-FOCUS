@@ -72,6 +72,11 @@ export function SignUpForm() {
       return;
     }
 
+    if (/\s/.test(password)) {
+      setToast({ type: "error", message: "Password cannot contain spaces." });
+      return;
+    }
+
     if (password !== confirmPassword) {
       setToast({ type: "error", message: "Password confirmation does not match." });
       return;
@@ -246,7 +251,10 @@ export function SignUpForm() {
               name="password"
               autoComplete="new-password"
               value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              onChange={(e) => setPassword(e.target.value.replace(/\s/g, ""))}
+              onKeyDown={(e) => {
+                if (e.key === " ") e.preventDefault();
+              }}
               onKeyUp={handleKeyUp}
               required
               placeholder="••••••••"
@@ -289,7 +297,10 @@ export function SignUpForm() {
               name="confirmPassword"
               autoComplete="new-password"
               value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
+              onChange={(e) => setConfirmPassword(e.target.value.replace(/\s/g, ""))}
+              onKeyDown={(e) => {
+                if (e.key === " ") e.preventDefault();
+              }}
               required
               placeholder="••••••••"
               className="pup-login-input w-full rounded-xl border !border-amber-500/40 !bg-[#2b0000] px-4 py-2.5 pr-10 text-xs sm:text-sm !text-amber-50 shadow-[inset_0_2px_4px_rgba(0,0,0,0.6),0_1px_0_rgba(255,215,0,0.12)] outline-none transition-all duration-200 placeholder:!text-amber-200/40 hover:!border-amber-400/80 focus:!border-amber-400 focus:!ring-1 focus:!ring-amber-400/50"
