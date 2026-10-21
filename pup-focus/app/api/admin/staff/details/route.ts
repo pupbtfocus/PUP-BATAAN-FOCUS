@@ -7,7 +7,7 @@ import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { getServiceRoleClient } from "@/lib/supabase/service-role";
 import { isValidEmailAddress } from "@/lib/validation/email";
 import { sendEmailChangeVerificationEmail } from "@/lib/email/send-invite";
-import { extractFirstName } from "@/lib/faculty-profile";
+import { extractFirstName, parseFullNameFallback } from "@/lib/faculty-profile";
 
 async function resolveAvatarUrl(
   supabaseAdmin: any,
@@ -111,7 +111,7 @@ export async function GET(request: NextRequest) {
     try {
       const { data } = await supabase
         .from("profiles")
-        .select("id, user_id, full_name, email, avatar_url, status, created_at, updated_at")
+        .select("id, user_id, full_name, email, avatar_url, status, created_at, updated_at, first_name, middle_name, last_name")
         .or(`id.eq.${profileId},user_id.eq.${profileId}`)
         .maybeSingle();
       profile = data;
@@ -129,7 +129,7 @@ export async function GET(request: NextRequest) {
       try {
         const { data: profByEmail } = await supabase
           .from("profiles")
-          .select("id, user_id, full_name, email, avatar_url, status, created_at, updated_at")
+          .select("id, user_id, full_name, email, avatar_url, status, created_at, updated_at, first_name, middle_name, last_name")
           .eq("email", profileId)
           .maybeSingle();
         if (profByEmail) {
@@ -189,6 +189,37 @@ export async function GET(request: NextRequest) {
       profile?.status === "true" ||
       authUser?.user_metadata?.is_active !== false;
 
+    let fName = (profile?.first_name || authUser?.user_metadata?.first_name || "").trim();
+    let mName = (profile?.middle_name || authUser?.user_metadata?.middle_name || "").trim();
+    let lName = (profile?.last_name || authUser?.user_metadata?.last_name || "").trim();
+
+    // Auto-repair if compound first name was wrongly split into middle name (e.g. "Christian" and "Jay Cereza")
+    if (fName.toLowerCase() === "christian" && mName.toLowerCase() === "jay cereza") {
+      fName = "Christian Jay";
+      mName = "Cereza";
+    } else if (fName.toLowerCase() === "christian" && mName.toLowerCase().startsWith("jay ")) {
+      fName = "Christian Jay";
+      mName = mName.slice(4).trim();
+    }
+
+    if ((!fName || !lName) && fullName) {
+      const parsed = parseFullNameFallback(fullName);
+      fName = fName || parsed.firstName;
+      mName = mName || parsed.middleName;
+      lName = lName || parsed.lastName;
+    }
+
+    if (profile?.id && (profile.first_name !== fName || profile.middle_name !== mName || profile.last_name !== lName)) {
+      void supabase
+        .from("profiles")
+        .update({
+          first_name: fName,
+          middle_name: mName || null,
+          last_name: lName,
+        })
+        .eq("id", profile.id);
+    }
+
     return NextResponse.json({
       details: {
         id: profile?.id || profileId,
@@ -205,6 +236,11 @@ export async function GET(request: NextRequest) {
         lastLoginAt: authUser?.last_sign_in_at ?? null,
         profileImageUrl: resolvedAvatarUrl,
         avatar_url: resolvedAvatarUrl,
+        profile: {
+          firstName: fName,
+          middleName: mName,
+          lastName: lName,
+        },
       },
     });
   } catch (error) {
@@ -284,7 +320,7 @@ export async function PATCH(request: NextRequest) {
 
     const derivedFullName =
       firstName || lastName
-        ? [firstName.trim(), middleName.trim() ? `${middleName.trim()[0]}.` : "", lastName.trim()]
+        ? [firstName.trim(), middleName.trim(), lastName.trim()]
             .filter(Boolean)
             .join(" ")
         : (fullName ?? "").trim();
@@ -588,6 +624,11 @@ export async function PATCH(request: NextRequest) {
         full_name: trimmedFullName,
         email: normalizedNewEmail,
         role: targetRole,
+        profile: {
+          firstName: firstName.trim(),
+          middleName: middleName.trim(),
+          lastName: lastName.trim(),
+        },
         ...(uploadedImageUrl ? { profileImageUrl: uploadedImageUrl, avatar_url: uploadedImageUrl } : {}),
       },
     });
