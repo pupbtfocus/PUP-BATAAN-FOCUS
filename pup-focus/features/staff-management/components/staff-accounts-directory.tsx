@@ -12,6 +12,7 @@ import {
   Xmark,
 } from "iconoir-react";
 import { AppIcon } from "@/components/ui/app-icon";
+import { AlertPopup } from "@/components/ui/alert-popup";
 import { ROLE, type AppRole, canManageAdminAccount } from "@/config/roles";
 import { exportReportToExcel, exportReportToPdf } from "@/lib/report-export";
 
@@ -114,7 +115,7 @@ export function AdminStatsCards({
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
       {/* 1. TOTAL STAFF */}
-      <div className="rounded-2xl bg-white text-slate-900 border border-slate-200 shadow-xs dark:bg-slate-900 dark:text-slate-100 dark:border-slate-800 p-5 transition-colors">
+      <div className="rounded-xl bg-white text-slate-900 border border-slate-200 shadow-xs dark:bg-slate-900 dark:text-slate-100 dark:border-slate-800 p-5 transition-colors">
         <p className="text-slate-500 dark:text-slate-400 text-xs font-medium uppercase tracking-wider">
           Total Staff
         </p>
@@ -124,7 +125,7 @@ export function AdminStatsCards({
       </div>
 
       {/* 2. ACTIVE STAFF */}
-      <div className="rounded-2xl bg-white text-slate-900 border border-slate-200 shadow-xs dark:bg-slate-900 dark:text-slate-100 dark:border-slate-800 p-5 transition-colors">
+      <div className="rounded-xl bg-white text-slate-900 border border-slate-200 shadow-xs dark:bg-slate-900 dark:text-slate-100 dark:border-slate-800 p-5 transition-colors">
         <p className="text-slate-500 dark:text-slate-400 text-xs font-medium uppercase tracking-wider">
           Active Staff
         </p>
@@ -134,7 +135,7 @@ export function AdminStatsCards({
       </div>
 
       {/* 3. INACTIVE STAFF */}
-      <div className="rounded-2xl bg-white text-slate-900 border border-slate-200 shadow-xs dark:bg-slate-900 dark:text-slate-100 dark:border-slate-800 p-5 transition-colors">
+      <div className="rounded-xl bg-white text-slate-900 border border-slate-200 shadow-xs dark:bg-slate-900 dark:text-slate-100 dark:border-slate-800 p-5 transition-colors">
         <p className="text-slate-500 dark:text-slate-400 text-xs font-medium uppercase tracking-wider">
           Inactive Staff
         </p>
@@ -168,7 +169,7 @@ export function AdminFilterBar({
   placeholder?: string;
 }) {
   return (
-    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-4 bg-white text-slate-900 border border-slate-200 dark:border-slate-800 shadow-xs dark:bg-slate-900 dark:text-slate-100 rounded-2xl mb-6 transition-colors">
+    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-4 bg-white text-slate-900 border border-slate-200 dark:border-slate-800 shadow-xs dark:bg-slate-900 dark:text-slate-100 rounded-xl mb-6 transition-colors">
       <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2.5 w-full sm:w-auto flex-wrap">
         <input
           type="text"
@@ -361,53 +362,23 @@ export function AdminAccountsTable({
 
   return (
     <div className="space-y-3">
-      {accountsError ? (
-        <div className="rounded-xl border border-red-700/60 bg-red-950/30 px-3.5 py-2 text-xs text-red-300 flex justify-between items-center">
-          <span>{accountsError}</span>
-          {onClearMessages ? (
-            <button
-              type="button"
-              onClick={onClearMessages}
-              className="rounded-md border border-[#5e0000] bg-[#780000] hover:bg-[#5e0000] text-white p-1 transition-colors cursor-pointer shadow-xs"
-              aria-label="Dismiss alert"
-            >
-              <AppIcon icon={Xmark} size="sm" color="inherit" />
-            </button>
-          ) : null}
-        </div>
-      ) : null}
+      <AlertPopup
+        type="error"
+        message={accountsError}
+        onClose={onClearMessages}
+      />
 
-      {accountActionError ? (
-        <div className="rounded-xl border border-red-700/60 bg-red-950/30 px-3.5 py-2 text-xs text-red-300 flex justify-between items-center">
-          <span>{accountActionError}</span>
-          {onClearMessages ? (
-            <button
-              type="button"
-              onClick={onClearMessages}
-              className="rounded-md border border-[#5e0000] bg-[#780000] hover:bg-[#5e0000] text-white p-1 transition-colors cursor-pointer shadow-xs"
-              aria-label="Dismiss alert"
-            >
-              <AppIcon icon={Xmark} size="sm" color="inherit" />
-            </button>
-          ) : null}
-        </div>
-      ) : null}
+      <AlertPopup
+        type="error"
+        message={accountActionError}
+        onClose={onClearMessages}
+      />
 
-      {accountActionSuccess ? (
-        <div className="rounded-xl border border-emerald-700/60 bg-emerald-950/30 px-3.5 py-2 text-xs text-emerald-300 flex justify-between items-center">
-          <span>{accountActionSuccess}</span>
-          {onClearMessages ? (
-            <button
-              type="button"
-              onClick={onClearMessages}
-              className="rounded-md border border-[#5e0000] bg-[#780000] hover:bg-[#5e0000] text-white p-1 transition-colors cursor-pointer shadow-xs"
-              aria-label="Dismiss alert"
-            >
-              <AppIcon icon={Xmark} size="sm" color="inherit" />
-            </button>
-          ) : null}
-        </div>
-      ) : null}
+      <AlertPopup
+        type="success"
+        message={accountActionSuccess}
+        onClose={onClearMessages}
+      />
 
       {/* 3 Stat Cards */}
       <AdminStatsCards adminAccounts={adminAccounts} isLoading={isLoading} />

@@ -3,7 +3,9 @@
 import { useEffect, useState, useMemo, useCallback } from "react";
 import {
   Check,
+  CheckCircle,
   Clock,
+  EditPencil,
   Eye,
   NavArrowLeft,
   NavArrowRight,
@@ -17,6 +19,7 @@ import {
 } from "iconoir-react";
 import { AppIcon } from "@/components/ui/app-icon";
 import { ModalHeader } from "@/components/ui/modal-header";
+import { AlertPopup } from "@/components/ui/alert-popup";
 import type { RegistrationLogItem } from "@/app/api/staff/user-registration-logs/route";
 
 export interface UserRegistrationLogsModalProps {
@@ -48,6 +51,42 @@ function getInitials(name?: string | null): string {
   }
   return parts[0].slice(0, 2).toUpperCase();
 }
+
+function parseFullName(fullName?: string | null): {
+  firstName: string;
+  middleName: string;
+  lastName: string;
+} {
+  if (!fullName || !fullName.trim()) {
+    return { firstName: "", middleName: "", lastName: "" };
+  }
+  const parts = fullName.trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 1) {
+    return { firstName: parts[0], middleName: "", lastName: "" };
+  }
+  if (parts.length === 2) {
+    return { firstName: parts[0], middleName: "", lastName: parts[1] };
+  }
+  if (parts.length === 3) {
+    return { firstName: parts[0], middleName: parts[1], lastName: parts[2] };
+  }
+  const lastName = parts[parts.length - 1];
+  const middleName = parts[parts.length - 2];
+  const firstName = parts.slice(0, parts.length - 2).join(" ");
+  return { firstName, middleName, lastName };
+}
+
+const DEFAULT_PROGRAMS: { id: string; code: string; name: string }[] = [
+  { id: "BEED", code: "BEED", name: "Bachelor of Elementary Education" },
+  { id: "BSA", code: "BSA", name: "Bachelor of Science in Accountancy" },
+  { id: "BSMA", code: "BSMA", name: "Bachelor of Science in Management Accounting" },
+  { id: "BSIE", code: "BSIE", name: "Bachelor of Science in Industrial Engineering" },
+  { id: "BSIT", code: "BSIT", name: "Bachelor of Science in Information Technology" },
+  { id: "BSBAHRM", code: "BSBAHRM", name: "Bachelor of Science in Business Administration major in Human Resource Management" },
+  { id: "BSEnt", code: "BSEnt", name: "Bachelor of Science in Entrepreneurship" },
+  { id: "DIT", code: "DIT", name: "Diploma in Information Technology" },
+  { id: "DOMT-LOM", code: "DOMT-LOM", name: "Diploma in Office Management Technology major in Legal Office Management" },
+];
 
 function getPageNumbers(currentPage: number, totalPages: number): (number | string)[] {
   if (totalPages <= 5) {
@@ -150,6 +189,120 @@ export function UserRegistrationLogsModal({
   const [pendingCancelLog, setPendingCancelLog] = useState<RegistrationLogItem | null>(null);
   const [isCancelling, setIsCancelling] = useState(false);
   const [cancelError, setCancelError] = useState<string | null>(null);
+  const [pendingResendLog, setPendingResendLog] = useState<RegistrationLogItem | null>(null);
+  const [resendError, setResendError] = useState<string | null>(null);
+
+  // Edit modal state
+  const [editingLog, setEditingLog] = useState<RegistrationLogItem | null>(null);
+  const [editFirstName, setEditFirstName] = useState("");
+  const [editMiddleName, setEditMiddleName] = useState("");
+  const [editLastName, setEditLastName] = useState("");
+  const [editNameAlert, setEditNameAlert] = useState<string | null>(null);
+  const [editEmail, setEditEmail] = useState("");
+  const [editProgram, setEditProgram] = useState("");
+  const [isSavingEdit, setIsSavingEdit] = useState(false);
+  const [editError, setEditError] = useState<string | null>(null);
+  const [programsList, setProgramsList] = useState<{ id: string; code: string; name: string }[]>(DEFAULT_PROGRAMS);
+
+  useEffect(() => {
+    void fetch("/api/programs")
+      .then((res) => res.json())
+      .then((data) => {
+        if (Array.isArray(data.programs) && data.programs.length > 0) {
+          setProgramsList(data.programs);
+        }
+      })
+      .catch(() => {});
+  }, []);
+
+  const openEditModal = (log: RegistrationLogItem) => {
+    setEditingLog(log);
+    const parsed = parseFullName(log.fullName);
+    setEditFirstName(parsed.firstName);
+    setEditMiddleName(parsed.middleName);
+    setEditLastName(parsed.lastName);
+    setEditEmail(log.email || "");
+
+    const targetProg = (log.program || "").trim();
+    const matched = programsList.find(
+      (p) =>
+        p.code.toLowerCase() === targetProg.toLowerCase() ||
+        p.id.toLowerCase() === targetProg.toLowerCase() ||
+        p.name.toLowerCase() === targetProg.toLowerCase()
+    );
+    setEditProgram(matched ? matched.code : targetProg);
+    setEditError(null);
+    setEditNameAlert(null);
+  };
+
+  const handleEditNameInput = (
+    setter: (val: string) => void,
+    raw: string
+  ) => {
+    if (/[^a-zA-Z\sñÑ]/.test(raw)) {
+      setEditNameAlert("Cannot use numbers or special characters in name");
+    } else {
+      if (editNameAlert === "Cannot use numbers or special characters in name") {
+        setEditNameAlert(null);
+      }
+    }
+    const clean = raw.replace(/[^a-zA-Z\sñÑ]/g, "");
+    setter(clean);
+  };
+
+  const handleSaveEdit = async (resendNow: boolean) => {
+    if (!editingLog) return;
+    setEditError(null);
+
+    if (!editFirstName.trim() || !editLastName.trim()) {
+      setEditError("First name and last name are required");
+      return;
+    }
+
+    if (!editEmail.trim()) {
+      setEditError("Email address is required");
+      return;
+    }
+
+    const computedFullName = [editFirstName.trim(), editMiddleName.trim(), editLastName.trim()]
+      .filter(Boolean)
+      .join(" ");
+
+    setIsSavingEdit(true);
+
+    try {
+      const res = await fetch("/api/staff/user-registration-logs", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          id: editingLog.id,
+          email: editingLog.email,
+          newEmail: editEmail.trim(),
+          newFullName: computedFullName,
+          newProgram: editProgram.trim(),
+          role: editingLog.role,
+          resendNow,
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || "Failed to update details");
+      }
+
+      setFeedbackMessage({
+        text: data.message || "Invitation details updated successfully!",
+        type: "success",
+      });
+
+      setEditingLog(null);
+      await fetchLogs();
+    } catch (err: any) {
+      setEditError(err?.message || "Failed to update details");
+    } finally {
+      setIsSavingEdit(false);
+    }
+  };
 
   const fetchLogs = useCallback(async () => {
     setIsLoading(true);
@@ -185,11 +338,15 @@ export function UserRegistrationLogsModal({
       setSelectedLogForDetails(null);
       setPendingCancelLog(null);
       setCancelError(null);
+      setPendingResendLog(null);
+      setResendError(null);
       void fetchLogs();
     } else {
       setSelectedLogForDetails(null);
       setPendingCancelLog(null);
       setCancelError(null);
+      setPendingResendLog(null);
+      setResendError(null);
     }
   }, [isOpen, fetchLogs]);
 
@@ -198,17 +355,23 @@ export function UserRegistrationLogsModal({
     setCurrentPage(1);
   }, [statusFilter, adminRoleFilter, searchTerm]);
 
-  const handleResendInvite = async (log: RegistrationLogItem) => {
-    setResendingEmail(log.email);
-    setFeedbackMessage(null);
+  const openResendModal = (log: RegistrationLogItem) => {
+    setResendError(null);
+    setPendingResendLog(log);
+  };
+
+  const handleConfirmResendInvite = async () => {
+    if (!pendingResendLog) return;
+    setResendingEmail(pendingResendLog.email);
+    setResendError(null);
     try {
       const res = await fetch("/api/staff/user-registration-logs", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          email: log.email,
-          fullName: log.fullName,
-          role: log.role.toLowerCase(),
+          email: pendingResendLog.email,
+          fullName: pendingResendLog.fullName,
+          role: pendingResendLog.role.toLowerCase(),
         }),
       });
       const data = await res.json();
@@ -217,15 +380,13 @@ export function UserRegistrationLogsModal({
       }
 
       setFeedbackMessage({
-        text: `Invitation resent to ${log.email} successfully!`,
+        text: `Invitation resent to ${pendingResendLog.email} successfully!`,
         type: "success",
       });
+      setPendingResendLog(null);
       void fetchLogs();
     } catch (err: any) {
-      setFeedbackMessage({
-        text: err?.message || "Error resending invitation",
-        type: "error",
-      });
+      setResendError(err?.message || "Error resending invitation");
     } finally {
       setResendingEmail(null);
     }
@@ -379,31 +540,38 @@ export function UserRegistrationLogsModal({
               </div>
             ) : null}
 
-            {/* Stats Summary Bar - Gold Bordered Cards */}
+            {/* Stats Summary Bar */}
             <div className="grid grid-cols-3 gap-2 sm:gap-3 mt-3">
-              <div className="rounded-xl border-2 border-amber-400 dark:border-amber-500/60 bg-white dark:bg-slate-900 p-2.5 sm:p-3 text-center sm:text-left shadow-xs transition-colors">
-                <span className="text-[10px] sm:text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider block">
-                  Total
+              <div className="rounded-xl bg-slate-100/70 dark:bg-slate-800/50 p-2.5 sm:p-3 text-center sm:text-left shadow-2xs transition-colors">
+                <span className="text-[10px] sm:text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider flex items-center justify-center sm:justify-start gap-1.5">
+                  <span className="w-5 h-5 rounded-md bg-slate-700 dark:bg-slate-600 text-white shrink-0 flex items-center justify-center shadow-2xs">
+                    <User className="h-3 w-3 text-white" />
+                  </span>
+                  <span>Total</span>
                 </span>
-                <p className="text-lg sm:text-xl font-bold text-slate-900 dark:text-slate-100 mt-0.5">
+                <p className="text-lg sm:text-xl font-bold text-slate-900 dark:text-slate-100 mt-1">
                   {stats.total}
                 </p>
               </div>
-              <div className="rounded-xl border-2 border-amber-400 dark:border-amber-500/60 bg-white dark:bg-slate-900 p-2.5 sm:p-3 text-center sm:text-left shadow-xs transition-colors">
+              <div className="rounded-xl bg-slate-100/70 dark:bg-slate-800/50 p-2.5 sm:p-3 text-center sm:text-left shadow-2xs transition-colors">
                 <span className="text-[10px] sm:text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider flex items-center justify-center sm:justify-start gap-1.5">
-                  <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
-                  Accepted
+                  <span className="w-5 h-5 rounded-md bg-[#0b5336] text-white shrink-0 flex items-center justify-center shadow-2xs">
+                    <Check className="h-3 w-3 text-white" />
+                  </span>
+                  <span>Accepted</span>
                 </span>
-                <p className="text-lg sm:text-xl font-bold text-slate-900 dark:text-slate-100 mt-0.5">
+                <p className="text-lg sm:text-xl font-bold text-slate-900 dark:text-slate-100 mt-1">
                   {stats.accepted}
                 </p>
               </div>
-              <div className="rounded-xl border-2 border-amber-400 dark:border-amber-500/60 bg-white dark:bg-slate-900 p-2.5 sm:p-3 text-center sm:text-left shadow-xs transition-colors">
+              <div className="rounded-xl bg-slate-100/70 dark:bg-slate-800/50 p-2.5 sm:p-3 text-center sm:text-left shadow-2xs transition-colors">
                 <span className="text-[10px] sm:text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider flex items-center justify-center sm:justify-start gap-1.5">
-                  <span className="w-2 h-2 rounded-full bg-amber-500 shrink-0" />
-                  Pending
+                  <span className="w-5 h-5 rounded-md bg-amber-500 text-slate-950 shrink-0 flex items-center justify-center shadow-2xs">
+                    <Clock className="h-3 w-3 text-slate-950" />
+                  </span>
+                  <span>Pending</span>
                 </span>
-                <p className="text-lg sm:text-xl font-bold text-slate-900 dark:text-slate-100 mt-0.5">
+                <p className="text-lg sm:text-xl font-bold text-slate-900 dark:text-slate-100 mt-1">
                   {stats.pending}
                 </p>
               </div>
@@ -586,7 +754,17 @@ export function UserRegistrationLogsModal({
                           </button>
 
                           {!isAccepted ? (
-                            <div className="flex items-center gap-1.5">
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              <button
+                                type="button"
+                                onClick={() => openEditModal(log)}
+                                title="Edit Details"
+                                className="bg-slate-800 hover:bg-slate-700 text-white font-semibold border border-slate-700 text-xs rounded-lg px-2.5 py-1.5 transition-colors cursor-pointer inline-flex items-center justify-center gap-1.5 shadow-2xs"
+                              >
+                                <AppIcon icon={EditPencil} size="sm" color="white" />
+                                <span>Edit</span>
+                              </button>
+
                               <button
                                 type="button"
                                 onClick={() => {
@@ -602,7 +780,7 @@ export function UserRegistrationLogsModal({
 
                               <button
                                 type="button"
-                                onClick={() => void handleResendInvite(log)}
+                                onClick={() => openResendModal(log)}
                                 disabled={isResending}
                                 title="Resend invitation email"
                                 className="bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold border border-amber-600 text-xs rounded-lg px-2.5 py-1.5 transition-colors cursor-pointer inline-flex items-center justify-center gap-1.5 shadow-2xs disabled:opacity-50"
@@ -612,7 +790,17 @@ export function UserRegistrationLogsModal({
                               </button>
                             </div>
                           ) : !log.lastLoginAt ? (
-                            <div className="flex items-center gap-1.5">
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              <button
+                                type="button"
+                                onClick={() => openEditModal(log)}
+                                title="Edit Details"
+                                className="bg-slate-800 hover:bg-slate-700 text-white font-semibold border border-slate-700 text-xs rounded-lg px-2.5 py-1.5 transition-colors cursor-pointer inline-flex items-center justify-center gap-1.5 shadow-2xs"
+                              >
+                                <AppIcon icon={EditPencil} size="sm" color="white" />
+                                <span>Edit</span>
+                              </button>
+
                               <button
                                 type="button"
                                 onClick={() => {
@@ -628,7 +816,7 @@ export function UserRegistrationLogsModal({
 
                               <button
                                 type="button"
-                                onClick={() => void handleResendInvite(log)}
+                                onClick={() => openResendModal(log)}
                                 disabled={isResending}
                                 title="Resend login credentials email"
                                 className="bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold border border-amber-600 text-xs rounded-lg px-2.5 py-1.5 transition-colors cursor-pointer inline-flex items-center justify-center gap-1.5 shadow-2xs disabled:opacity-50"
@@ -754,6 +942,17 @@ export function UserRegistrationLogsModal({
 
                                 {!isAccepted ? (
                                   <>
+                                    {/* Edit Invite Button - Solid Slate */}
+                                    <button
+                                      type="button"
+                                      onClick={() => openEditModal(log)}
+                                      title="Edit Details"
+                                      className="bg-slate-800 hover:bg-slate-700 text-white font-semibold border border-slate-700 text-xs rounded-md px-2.5 py-1 transition-colors cursor-pointer inline-flex items-center gap-1.5 shadow-2xs"
+                                    >
+                                      <AppIcon icon={EditPencil} size="sm" color="white" />
+                                      <span>Edit</span>
+                                    </button>
+
                                     {/* Cancel Invite Button - Solid Maroon */}
                                     <button
                                       type="button"
@@ -771,7 +970,7 @@ export function UserRegistrationLogsModal({
                                     {/* Resend Invite Button - Solid Gold */}
                                     <button
                                       type="button"
-                                      onClick={() => void handleResendInvite(log)}
+                                      onClick={() => openResendModal(log)}
                                       disabled={isResending}
                                       title="Resend invitation email"
                                       className="bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold border border-amber-600 text-xs rounded-md px-2.5 py-1 transition-colors cursor-pointer inline-flex items-center gap-1.5 shadow-2xs disabled:opacity-50"
@@ -789,6 +988,17 @@ export function UserRegistrationLogsModal({
                                   </>
                                 ) : !log.lastLoginAt ? (
                                   <>
+                                    {/* Edit Details Button - Solid Slate */}
+                                    <button
+                                      type="button"
+                                      onClick={() => openEditModal(log)}
+                                      title="Edit Details"
+                                      className="bg-slate-800 hover:bg-slate-700 text-white font-semibold border border-slate-700 text-xs rounded-md px-2.5 py-1 transition-colors cursor-pointer inline-flex items-center gap-1.5 shadow-2xs"
+                                    >
+                                      <AppIcon icon={EditPencil} size="sm" color="white" />
+                                      <span>Edit</span>
+                                    </button>
+
                                     {/* Cancel / Delete bugged or unlogged account */}
                                     <button
                                       type="button"
@@ -806,7 +1016,7 @@ export function UserRegistrationLogsModal({
                                     {/* Resend Credentials Button - Solid Gold */}
                                     <button
                                       type="button"
-                                      onClick={() => void handleResendInvite(log)}
+                                      onClick={() => openResendModal(log)}
                                       disabled={isResending}
                                       title="Resend login credentials email"
                                       className="bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold border border-amber-600 text-xs rounded-md px-2.5 py-1 transition-colors cursor-pointer inline-flex items-center gap-1.5 shadow-2xs disabled:opacity-50"
@@ -1053,10 +1263,24 @@ export function UserRegistrationLogsModal({
                 </div>
 
                 <div className="flex items-center gap-2 w-full sm:w-auto">
+                  {selectedLogForDetails.status === "Pending" ? (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const target = selectedLogForDetails;
+                        setSelectedLogForDetails(null);
+                        openEditModal(target);
+                      }}
+                      className="flex-1 sm:flex-initial bg-slate-800 hover:bg-slate-700 text-white font-semibold border border-slate-700 text-xs rounded-xl px-3.5 py-2 transition-colors cursor-pointer inline-flex items-center justify-center gap-1.5 shadow-2xs"
+                    >
+                      <AppIcon icon={EditPencil} size="sm" color="white" />
+                      <span>Edit Details</span>
+                    </button>
+                  ) : null}
                   {selectedLogForDetails.status === "Pending" || !selectedLogForDetails.lastLoginAt ? (
                     <button
                       type="button"
-                      onClick={() => void handleResendInvite(selectedLogForDetails)}
+                      onClick={() => openResendModal(selectedLogForDetails)}
                       disabled={resendingEmail === selectedLogForDetails.email}
                       className="flex-1 sm:flex-initial bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold border border-amber-600 text-xs rounded-xl px-3.5 py-2 transition-colors cursor-pointer inline-flex items-center justify-center gap-1.5 shadow-2xs disabled:opacity-50"
                     >
@@ -1084,6 +1308,156 @@ export function UserRegistrationLogsModal({
         </div>
       ) : null}
 
+      {/* ── Edit Registration Details Modal ── */}
+      {editingLog ? (
+        <div
+          className="fixed inset-0 z-70 flex items-center justify-center bg-black/75 p-3 sm:p-4 backdrop-blur-sm animate-in fade-in duration-150"
+          role="dialog"
+          aria-modal="true"
+        >
+          <div className="w-full max-w-xl sm:max-w-2xl rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xl text-slate-900 dark:text-slate-100 overflow-hidden flex flex-col animate-in zoom-in-95 duration-150">
+            <ModalHeader
+              icon={EditPencil}
+              title="Edit Registration Details"
+              subtitle={`Update credentials for ${editingLog.role}`}
+              onClose={() => !isSavingEdit && setEditingLog(null)}
+              closeDisabled={isSavingEdit}
+              className="rounded-t-2xl shrink-0"
+            />
+
+            <div className="p-4 sm:p-6 overflow-y-auto space-y-4">
+              <AlertPopup
+                type="error"
+                message={editError}
+                position="inline"
+                onClose={() => setEditError(null)}
+              />
+              <AlertPopup
+                type="warning"
+                message={editNameAlert}
+                position="inline"
+                autoCloseMs={3500}
+                onClose={() => setEditNameAlert(null)}
+              />
+
+              {/* Row 1: Name Grid (3 Columns) - Matching Add Faculty & Add Staff format */}
+              <div className="grid gap-3 sm:grid-cols-3">
+                <div>
+                  <label className="text-xs font-semibold uppercase tracking-wider text-slate-700 dark:text-slate-300 block" htmlFor="editFirstName">
+                    First Name <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    id="editFirstName"
+                    type="text"
+                    value={editFirstName}
+                    onChange={(e) => handleEditNameInput(setEditFirstName, e.target.value)}
+                    placeholder="e.g. Juan"
+                    className="mt-1.5 w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-800 focus:border-slate-900 dark:focus:border-slate-100 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 rounded-xl px-4 py-2.5 text-sm outline-none transition-all focus:ring-2 focus:ring-slate-900/10 dark:focus:ring-slate-100/10"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-xs font-semibold uppercase tracking-wider text-slate-700 dark:text-slate-300 block" htmlFor="editMiddleName">
+                    Middle Name
+                  </label>
+                  <input
+                    id="editMiddleName"
+                    type="text"
+                    value={editMiddleName}
+                    onChange={(e) => handleEditNameInput(setEditMiddleName, e.target.value)}
+                    placeholder="e.g. Santos"
+                    className="mt-1.5 w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-800 focus:border-slate-900 dark:focus:border-slate-100 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 rounded-xl px-4 py-2.5 text-sm outline-none transition-all focus:ring-2 focus:ring-slate-900/10 dark:focus:ring-slate-100/10"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-xs font-semibold uppercase tracking-wider text-slate-700 dark:text-slate-300 block" htmlFor="editLastName">
+                    Last Name <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    id="editLastName"
+                    type="text"
+                    value={editLastName}
+                    onChange={(e) => handleEditNameInput(setEditLastName, e.target.value)}
+                    placeholder="e.g. Dela Cruz"
+                    className="mt-1.5 w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-800 focus:border-slate-900 dark:focus:border-slate-100 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 rounded-xl px-4 py-2.5 text-sm outline-none transition-all focus:ring-2 focus:ring-slate-900/10 dark:focus:ring-slate-100/10"
+                  />
+                </div>
+              </div>
+
+              {/* Email Address */}
+              <div>
+                <label className="text-xs font-semibold uppercase tracking-wider text-slate-700 dark:text-slate-300 block" htmlFor="editEmail">
+                  Email Address <span className="text-red-500">*</span>
+                </label>
+                <input
+                  id="editEmail"
+                  type="email"
+                  value={editEmail}
+                  onChange={(e) => setEditEmail(e.target.value)}
+                  placeholder="e.g. user@pup.edu.ph"
+                  className="mt-1.5 w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-800 focus:border-slate-900 dark:focus:border-slate-100 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 rounded-xl px-4 py-2.5 text-sm outline-none transition-all focus:ring-2 focus:ring-slate-900/10 dark:focus:ring-slate-100/10"
+                />
+              </div>
+
+              {/* Program for Faculty */}
+              {editingLog.role === "Faculty" ? (
+                <div>
+                  <label className="text-xs font-semibold uppercase tracking-wider text-slate-700 dark:text-slate-300 block" htmlFor="editProgram">
+                    Department / Program
+                  </label>
+                  <select
+                    id="editProgram"
+                    value={editProgram}
+                    onChange={(e) => setEditProgram(e.target.value)}
+                    className="mt-1.5 w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-800 focus:border-slate-900 dark:focus:border-slate-100 text-slate-900 dark:text-slate-100 rounded-xl px-4 py-2.5 text-sm outline-none transition-all focus:ring-2 focus:ring-slate-900/10 dark:focus:ring-slate-100/10 cursor-pointer"
+                  >
+                    <option value="">Select Department / Program</option>
+                    {editProgram && !programsList.some((p) => p.code.toLowerCase() === editProgram.toLowerCase()) ? (
+                      <option value={editProgram}>{editProgram}</option>
+                    ) : null}
+                    {programsList.map((prog) => (
+                      <option key={prog.id || prog.code} value={prog.code}>
+                        {prog.code} — {prog.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              ) : null}
+
+              {/* Action Buttons */}
+              <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-end gap-2 pt-3 border-t border-slate-200 dark:border-slate-800">
+                <button
+                  type="button"
+                  onClick={() => setEditingLog(null)}
+                  disabled={isSavingEdit}
+                  className="px-4 py-2 rounded-xl text-xs font-semibold text-white bg-slate-600 hover:bg-slate-500 border border-slate-700 transition cursor-pointer text-center shadow-2xs"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={() => void handleSaveEdit(false)}
+                  disabled={isSavingEdit || !editEmail.trim() || !editFirstName.trim() || !editLastName.trim()}
+                  className="px-4 py-2 rounded-xl text-xs font-bold text-white bg-[#780000] hover:bg-[#5e0000] border border-[#5e0000] transition cursor-pointer disabled:opacity-50 shadow-xs text-center"
+                >
+                  {isSavingEdit ? "Saving..." : "Save Changes"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => void handleSaveEdit(true)}
+                  disabled={isSavingEdit || !editEmail.trim() || !editFirstName.trim() || !editLastName.trim()}
+                  className="px-4 py-2 rounded-xl text-xs font-bold text-slate-950 bg-amber-500 hover:bg-amber-400 border border-amber-600 transition cursor-pointer disabled:opacity-50 shadow-xs inline-flex items-center justify-center gap-1.5"
+                >
+                  <AppIcon icon={SendMail} size="sm" color="inherit" className="text-slate-950" />
+                  <span>{isSavingEdit ? "Saving & Sending..." : "Save & Resend Invite"}</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
       {/* ── Cancel Invite Modal ── */}
       {pendingCancelLog ? (
         <div
@@ -1102,52 +1476,54 @@ export function UserRegistrationLogsModal({
             />
 
             <div className="space-y-4">
-              {/* Member Card */}
-              <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 p-3.5 flex items-center gap-3">
+              {/* Member Card - Centered Content */}
+              <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 p-4 flex flex-col items-center justify-center text-center">
                 <UserLogAvatar
                   avatarUrl={pendingCancelLog.avatarUrl}
                   name={pendingCancelLog.fullName}
-                  size="md"
+                  size="lg"
                 />
-                <div className="min-w-0 flex-1">
+                <div className="min-w-0 w-full mt-2.5">
                   <p className="text-sm font-semibold text-slate-900 dark:text-white truncate">
                     {pendingCancelLog.fullName}
                   </p>
-                  <p className="text-xs text-slate-500 dark:text-slate-400 font-mono truncate">
+                  <p className="text-xs text-slate-500 dark:text-slate-400 font-mono truncate mt-0.5">
                     {pendingCancelLog.email}
                   </p>
-                  <p className="text-[10px] text-amber-600 dark:text-amber-400 font-medium mt-0.5">
+                  <p className="text-[11px] text-amber-600 dark:text-amber-400 font-medium mt-1">
                     {pendingCancelLog.role}{" "}
                     {pendingCancelLog.program ? `• ${pendingCancelLog.program}` : ""}
                   </p>
                 </div>
               </div>
 
-              {/* Revoke Notice */}
-              <div className="rounded-xl border border-red-200 dark:border-red-900/50 bg-red-50/80 dark:bg-red-950/30 p-3.5 text-xs leading-relaxed text-red-800 dark:text-red-300">
-                <p className="font-semibold text-red-900 dark:text-red-200 flex items-center gap-1.5 mb-1">
-                  <AppIcon icon={WarningTriangle} size="sm" color="inherit" />
+              {/* Revoke Notice - Solid Maroon Banner */}
+              <div className="rounded-xl border border-[#5e0000] bg-[#780000] p-3.5 text-xs leading-relaxed text-white text-center shadow-2xs">
+                <p className="font-bold text-white flex items-center justify-center gap-1.5 mb-1 text-center">
+                  <AppIcon icon={WarningTriangle} size="sm" color="white" />
                   <span>Revoke Invitation Notice</span>
                 </p>
-                Are you sure you want to cancel the invitation for{" "}
-                <strong>{pendingCancelLog.fullName}</strong>? The invitation link will be
-                invalidated immediately. The user will not be able to activate this account,
-                and their pending registration record will be removed.
+                <p className="text-white/95">
+                  Are you sure you want to cancel the invitation for{" "}
+                  <strong className="text-white font-bold underline decoration-white/40">{pendingCancelLog.fullName}</strong>? The invitation link will be
+                  invalidated immediately. The user will not be able to activate this account,
+                  and their pending registration record will be removed.
+                </p>
               </div>
 
               {cancelError ? (
-                <div className="p-3 rounded-xl text-xs font-semibold bg-red-50 text-red-800 border border-red-200 dark:bg-red-950/60 dark:text-red-300 dark:border-red-800/60">
+                <div className="p-3 rounded-xl text-xs font-semibold bg-red-50 text-red-800 border border-red-200 dark:bg-red-950/60 dark:text-red-300 dark:border-red-800/60 text-center">
                   {cancelError}
                 </div>
               ) : null}
 
               {/* Confirmation Buttons */}
-              <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-end gap-2.5 pt-2">
+              <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-center gap-2.5 pt-2">
                 <button
                   type="button"
                   onClick={() => setPendingCancelLog(null)}
                   disabled={isCancelling}
-                  className="w-full sm:w-auto rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 px-4 py-2 text-xs font-semibold text-slate-700 dark:text-slate-200 transition cursor-pointer disabled:opacity-50 text-center"
+                  className="w-full sm:w-auto rounded-xl border border-slate-700 bg-slate-800 hover:bg-slate-700 px-4 py-2 text-xs font-semibold text-white transition cursor-pointer disabled:opacity-50 text-center shadow-2xs"
                 >
                   Keep Invitation
                 </button>
@@ -1159,6 +1535,103 @@ export function UserRegistrationLogsModal({
                 >
                   <AppIcon icon={Trash} size="sm" color="white" />
                   <span>{isCancelling ? "Cancelling..." : "Yes, Cancel Invite"}</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {/* ── Resend Invite Confirmation Modal ── */}
+      {pendingResendLog ? (
+        <div
+          className="fixed inset-0 z-70 flex items-center justify-center bg-black/75 p-3 sm:p-4 backdrop-blur-sm animate-in fade-in duration-150"
+          role="dialog"
+          aria-modal="true"
+        >
+          <div className="w-full max-w-md rounded-2xl border-2 border-amber-400 dark:border-amber-500/70 bg-white dark:bg-slate-900 p-4 sm:p-6 shadow-2xl text-slate-900 dark:text-slate-100 animate-in zoom-in-95 duration-150">
+            <ModalHeader
+              icon={SendMail}
+              title={pendingResendLog.status === "Pending" ? "Resend Invitation?" : "Resend Credentials?"}
+              subtitle={
+                pendingResendLog.status === "Pending"
+                  ? "Dispatch fresh activation email"
+                  : "Dispatch account credentials email"
+              }
+              onClose={() => !resendingEmail && setPendingResendLog(null)}
+              closeDisabled={Boolean(resendingEmail)}
+              className="-mx-4 -mt-4 sm:-mx-6 sm:-mt-6 mb-4 sm:mb-5 rounded-t-2xl"
+            />
+
+            <div className="space-y-4">
+              {/* Member Card - Centered Content */}
+              <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 p-4 flex flex-col items-center justify-center text-center">
+                <UserLogAvatar
+                  avatarUrl={pendingResendLog.avatarUrl}
+                  name={pendingResendLog.fullName}
+                  size="lg"
+                />
+                <div className="min-w-0 w-full mt-2.5">
+                  <p className="text-sm font-semibold text-slate-900 dark:text-white truncate">
+                    {pendingResendLog.fullName}
+                  </p>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 font-mono truncate mt-0.5">
+                    {pendingResendLog.email}
+                  </p>
+                  <p className="text-[11px] text-amber-600 dark:text-amber-400 font-medium mt-1">
+                    {pendingResendLog.role}{" "}
+                    {pendingResendLog.program ? `• ${pendingResendLog.program}` : ""}
+                  </p>
+                </div>
+              </div>
+
+              {/* Delivery Notice - Solid Amber Banner */}
+              <div className="rounded-xl border border-amber-600 bg-amber-500 p-3.5 text-xs leading-relaxed text-slate-950 text-center shadow-2xs">
+                <p className="font-bold text-slate-950 flex items-center justify-center gap-1.5 mb-1 text-center">
+                  <AppIcon icon={SendMail} size="sm" color="inherit" className="text-slate-950" />
+                  <span>Email Dispatch Notice</span>
+                </p>
+                <div className="text-slate-950/95 font-medium">
+                  {pendingResendLog.status === "Pending" ? (
+                    <>
+                      Are you sure you want to resend the invitation email to{" "}
+                      <strong className="text-slate-950 font-bold underline decoration-slate-950/40">{pendingResendLog.fullName}</strong>? An updated activation link will be sent to{" "}
+                      <strong className="text-slate-950 font-bold underline decoration-slate-950/40">{pendingResendLog.email}</strong>.
+                    </>
+                  ) : (
+                    <>
+                      Are you sure you want to resend credentials to{" "}
+                      <strong className="text-slate-950 font-bold underline decoration-slate-950/40">{pendingResendLog.fullName}</strong>? An email with login instructions will be sent to{" "}
+                      <strong className="text-slate-950 font-bold underline decoration-slate-950/40">{pendingResendLog.email}</strong>.
+                    </>
+                  )}
+                </div>
+              </div>
+
+              {resendError ? (
+                <div className="p-3 rounded-xl text-xs font-semibold bg-red-50 text-red-800 border border-red-200 dark:bg-red-950/60 dark:text-red-300 dark:border-red-800/60 text-center">
+                  {resendError}
+                </div>
+              ) : null}
+
+              {/* Confirmation Buttons - Solid Colors & Centered */}
+              <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-center gap-2.5 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setPendingResendLog(null)}
+                  disabled={Boolean(resendingEmail)}
+                  className="w-full sm:w-auto rounded-xl border border-slate-700 bg-slate-800 hover:bg-slate-700 px-4 py-2 text-xs font-semibold text-white transition cursor-pointer disabled:opacity-50 text-center shadow-2xs"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={() => void handleConfirmResendInvite()}
+                  disabled={Boolean(resendingEmail)}
+                  className="w-full sm:w-auto bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold border border-amber-600 text-xs rounded-xl px-4 py-2 transition-colors cursor-pointer inline-flex items-center justify-center gap-1.5 shadow-2xs disabled:opacity-50"
+                >
+                  <AppIcon icon={SendMail} size="sm" color="inherit" className="text-slate-950" />
+                  <span>{resendingEmail ? "Sending..." : "Yes, Resend Email"}</span>
                 </button>
               </div>
             </div>

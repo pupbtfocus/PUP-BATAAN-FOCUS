@@ -41,6 +41,8 @@ import {
   DeleteAdminModal,
   type PendingAdminAction,
 } from "@/features/staff-management/components/delete-staff-modal";
+import { StaffDetailsModal } from "@/features/staff-management/components/staff-modals/staff-details-modal";
+import { EditStaffModal } from "@/features/staff-management/components/staff-modals/edit-staff-modal";
 import { InviteStatusModal } from "@/features/faculty-management/components/faculty-modals/invite-status-modal";
 import { UserRegistrationLogsModal } from "@/features/admin-management/components/user-registration-logs-modal";
 import { SubmissionScheduleLogsModal } from "@/features/faculty-management/components/submission-schedule-logs-modal";
@@ -189,7 +191,14 @@ function normalizeSuperAdminSection(
   if (!raw) return null;
   const val = raw.toLowerCase().trim();
   if (val === "dashboard") return "dashboard";
-  if (val === "accounts" || val === "admin-accounts" || val === "admins") return "accounts";
+  if (
+    val === "accounts" ||
+    val === "admin-accounts" ||
+    val === "admins" ||
+    val === "staff" ||
+    val === "staff-management"
+  )
+    return "accounts";
   if (val === "faculty" || val === "facultymanagement" || val === "faculty-management") return "faculty";
   if (val === "verification" || val === "requirements" || val === "requirements-verification") return "verification";
   if (val === "terms" || val === "academicterms" || val === "academic-terms") return "terms";
@@ -285,6 +294,10 @@ export function SuperAdminDashboard({
     [adminAccounts, pendingAdminAction],
   );
   const [isDeletingAdminAccount, setIsDeletingAdminAccount] = useState(false);
+  const [viewStaffDetailsModalOpen, setViewStaffDetailsModalOpen] = useState(false);
+  const [viewStaffDetailsId, setViewStaffDetailsId] = useState<string | null>(null);
+  const [editStaffModalOpen, setEditStaffModalOpen] = useState(false);
+  const [editStaffId, setEditStaffId] = useState<string | null>(null);
   const [adminDetails, setAdminDetails] = useState<AdminDetails | null>(null);
   const [isLoadingAdminDetails, setIsLoadingAdminDetails] = useState(false);
   const [adminDetailsOpen, setAdminDetailsOpen] = useState(false);
@@ -802,6 +815,16 @@ export function SuperAdminDashboard({
     useState<string | null>(null);
   const [adminNameAlert, setAdminNameAlert] = useState<string | null>(null);
 
+  const isStaffEmailValid = Boolean(
+    email && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())
+  );
+  const areAllRequiredStaffFieldsFilled = Boolean(
+    createAdminFirstName.trim() &&
+    createAdminLastName.trim() &&
+    isStaffEmailValid
+  );
+  const canSubmitStaff = areAllRequiredStaffFieldsFilled;
+
   function handleAdminNameInput(
     setter: (val: string) => void,
     rawVal: string,
@@ -847,15 +870,35 @@ export function SuperAdminDashboard({
       if (!silent) setIsLoadingAccounts(true);
       setAccountsError(null);
 
+      const supabase = createClient();
+      const { data: sessionData } = await supabase.auth.getSession();
+      const token = sessionData?.session?.access_token;
+      const headers: Record<string, string> = {
+        "Cache-Control": "no-cache",
+        Pragma: "no-cache",
+      };
+      if (token) {
+        headers["Authorization"] = `Bearer ${token}`;
+      }
+
       let response = await fetch(`/api/admin/accounts?_t=${Date.now()}`, {
         cache: "no-store",
+        credentials: "include",
+        headers,
       });
       if (response.ok) {
         const data = await response.json();
         const rawAccounts = Array.isArray(data)
           ? data
           : data.accounts || data.data || [];
-        const mapped = rawAccounts.map((acc: any) => {
+        const mapped = rawAccounts
+          .filter((acc: any) => {
+            if (acc.is_pending_invite) return false;
+            const status = (acc.status || "").toLowerCase().trim();
+            if (status === "pending") return false;
+            return true;
+          })
+          .map((acc: any) => {
           const rawRole = (acc.role || "").toLowerCase().trim();
           const normalizedRole =
             rawRole === "staff" || rawRole.includes("staff")
@@ -891,6 +934,8 @@ export function SuperAdminDashboard({
 
       response = await fetch(`/api/admin/staff/list?_t=${Date.now()}`, {
         cache: "no-store",
+        credentials: "include",
+        headers,
       });
       if (!response.ok) {
         setAccountsError("Failed to load admin accounts");
@@ -898,7 +943,14 @@ export function SuperAdminDashboard({
       }
 
       const data = await response.json();
-      const rawAdmins = (data.admins || []).map((a: any) => ({
+      const rawAdmins = (data.admins || [])
+        .filter((a: any) => {
+          if (a.is_pending_invite) return false;
+          const status = (a.status || "").toLowerCase().trim();
+          if (status === "pending") return false;
+          return true;
+        })
+        .map((a: any) => ({
         ...a,
         profileImageUrl: a.profileImageUrl || a.avatar_url || null,
         avatar_url: a.avatar_url || a.profileImageUrl || null,
@@ -1995,9 +2047,9 @@ export function SuperAdminDashboard({
                     <button
                       type="button"
                       onClick={openCreateAdminModal}
-                      className="w-full sm:w-auto inline-flex items-center justify-center gap-1 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 border border-amber-600/50 px-4 py-2 text-xs font-bold transition cursor-pointer shadow-sm active:scale-[0.98]"
+                      className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 rounded-xl bg-[#780000] hover:bg-[#5e0000] text-white border border-[#5e0000] px-4 py-2 sm:py-1.5 text-xs font-bold transition cursor-pointer shadow-sm active:scale-[0.98]"
                     >
-                      + Create Staff
+                      + Add Staff
                     </button>
                     <button
                       type="button"
@@ -2005,9 +2057,9 @@ export function SuperAdminDashboard({
                         setRegistrationLogsInitialRole("admin");
                         setRegistrationLogsModalOpen(true);
                       }}
-                      className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 border border-amber-600/50 px-4 py-2 text-xs font-bold transition cursor-pointer shadow-sm active:scale-[0.98]"
+                      className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white hover:bg-slate-50 dark:bg-slate-800 dark:hover:bg-slate-750 text-slate-800 dark:text-slate-100 px-3.5 py-2 sm:py-1.5 text-xs font-semibold transition cursor-pointer shadow-xs active:scale-[0.98]"
                     >
-                      <Page className="h-3.5 w-3.5 text-slate-950" />
+                      <Page className="h-3.5 w-3.5 text-slate-700 dark:text-slate-300" />
                       <span>User Registration Logs</span>
                     </button>
                     <button
@@ -2025,8 +2077,14 @@ export function SuperAdminDashboard({
                 <AdminAccountsTable
                   adminAccounts={adminAccounts}
                   isLoading={isLoadingAccounts}
-                  onEditAdmin={(profileId) => void onEditAdmin(profileId)}
-                  onViewDetails={(profileId) => void onViewAdminDetails(profileId)}
+                  onEditAdmin={(profileId) => {
+                    setEditStaffId(profileId);
+                    setEditStaffModalOpen(true);
+                  }}
+                  onViewDetails={(profileId) => {
+                    setViewStaffDetailsId(profileId);
+                    setViewStaffDetailsModalOpen(true);
+                  }}
                   onDeactivateAdmin={(profileId) => void onDeactivateAdmin(profileId)}
                   onActivateAdmin={(profileId) => void onActivateAdmin(profileId)}
                   onDeleteAdmin={(profileId) => void onDeleteAdmin(profileId)}
@@ -2065,7 +2123,7 @@ export function SuperAdminDashboard({
                         setCreateFacultySuccess(null);
                         setAddFacultyModalOpen(true);
                       }}
-                      className="w-full sm:w-auto inline-flex items-center justify-center gap-1 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 border border-amber-600/50 px-4 py-2 text-xs font-bold transition cursor-pointer shadow-sm active:scale-[0.98]"
+                      className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 rounded-xl bg-[#780000] hover:bg-[#5e0000] text-white border border-[#5e0000] px-4 py-2 sm:py-1.5 text-xs font-bold transition cursor-pointer shadow-sm active:scale-[0.98]"
                     >
                       + Add Faculty
                     </button>
@@ -2075,24 +2133,24 @@ export function SuperAdminDashboard({
                         setRegistrationLogsInitialRole("faculty");
                         setRegistrationLogsModalOpen(true);
                       }}
-                      className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 border border-amber-600/50 px-4 py-2 text-xs font-bold transition cursor-pointer shadow-sm active:scale-[0.98]"
+                      className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white hover:bg-slate-50 dark:bg-slate-800 dark:hover:bg-slate-750 text-slate-800 dark:text-slate-100 px-3.5 py-2 sm:py-1.5 text-xs font-semibold transition cursor-pointer shadow-xs active:scale-[0.98]"
                     >
-                      <Page className="h-3.5 w-3.5 text-slate-950" />
+                      <Page className="h-3.5 w-3.5 text-slate-700 dark:text-slate-300" />
                       <span>User Registration Logs</span>
                     </button>
                     <button
                       type="button"
                       onClick={() => setSubmissionScheduleLogsModalOpen(true)}
-                      className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 border border-amber-600/50 px-4 py-2 text-xs font-bold transition cursor-pointer shadow-sm active:scale-[0.98]"
+                      className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white hover:bg-slate-50 dark:bg-slate-800 dark:hover:bg-slate-750 text-slate-800 dark:text-slate-100 px-3.5 py-2 sm:py-1.5 text-xs font-semibold transition cursor-pointer shadow-xs active:scale-[0.98]"
                     >
-                      <ClockRotateRight className="h-3.5 w-3.5 text-slate-950" />
+                      <ClockRotateRight className="h-3.5 w-3.5 text-slate-700 dark:text-slate-300" />
                       <span>Submission Schedule Logs</span>
                     </button>
                     <button
                       type="button"
                       onClick={() => void refreshCurrentPanel()}
                       disabled={isRefreshing}
-                      className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 rounded-xl border border-amber-600/40 bg-white/90 hover:bg-white dark:bg-slate-800 dark:hover:bg-slate-750 text-slate-900 dark:text-slate-100 px-3.5 py-2 sm:py-1.5 text-xs font-semibold transition-all disabled:opacity-50 cursor-pointer shadow-xs active:scale-[0.98]"
+                      className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white hover:bg-slate-50 dark:bg-slate-800 dark:hover:bg-slate-750 text-slate-700 dark:text-slate-200 px-3.5 py-2 sm:py-1.5 text-xs font-semibold transition-all disabled:opacity-50 cursor-pointer shadow-xs active:scale-[0.98]"
                     >
                       <Refresh className={`h-3.5 w-3.5 ${isRefreshing ? "animate-spin" : ""}`} />
                       <span>{isRefreshing ? "Refreshing..." : "Refresh"}</span>
@@ -2300,244 +2358,252 @@ export function SuperAdminDashboard({
       </div>
 
       {createAdminModalOpen ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4 backdrop-blur-sm">
-          <div className="w-full max-w-xl rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xl text-slate-900 dark:text-slate-100 overflow-hidden flex flex-col">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="w-full max-w-3xl sm:max-w-4xl rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xl text-slate-900 dark:text-slate-100 max-h-[85vh] flex flex-col overflow-hidden">
             <ModalHeader
               title="Add Staff Account"
+              subtitle="Create credentials and assign staff privileges"
               icon={UserPlus}
               onClose={closeCreateAdminModal}
+              className="rounded-t-2xl shrink-0"
               closeAriaLabel="Close modal"
             />
-            <div className="p-6 overflow-y-auto">
-
-            <form className="flex flex-col gap-4" onSubmit={onSubmit}>
-              <AlertPopup
-                type="warning"
-                message={adminNameAlert}
-                position="inline"
-                autoCloseMs={3500}
-                onClose={() => setAdminNameAlert(null)}
-              />
-
-              {/* Row 1: Name Grid (3 Columns) */}
-              <div className="grid gap-3 md:grid-cols-3">
-                <div>
-                  <label
-                    className="text-xs font-semibold uppercase tracking-wider text-slate-700 dark:text-slate-300 block"
-                    htmlFor="adminFirstName"
-                  >
-                    First Name <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    id="adminFirstName"
-                    type="text"
-                    value={createAdminFirstName}
-                    onChange={(event) =>
-                      handleAdminNameInput(
-                        setCreateAdminFirstName,
-                        event.target.value,
-                      )
-                    }
-                    required
-                    placeholder="e.g. Juan"
-                    className="mt-1.5 w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-800 focus:border-slate-900 dark:focus:border-slate-100 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 rounded-xl px-4 py-2.5 text-sm outline-none transition-all focus:ring-2 focus:ring-slate-900/10 dark:focus:ring-slate-100/10"
+            <div className="flex flex-1 flex-col overflow-hidden min-h-0 w-full">
+              <form className="flex flex-1 flex-col overflow-hidden min-h-0 w-full" onSubmit={onSubmit}>
+                <div className="flex-1 overflow-y-auto p-6 space-y-5">
+                  <AlertPopup
+                    type="warning"
+                    message={adminNameAlert}
+                    position="inline"
+                    autoCloseMs={3500}
+                    onClose={() => setAdminNameAlert(null)}
                   />
-                </div>
 
-                <div>
-                  <label
-                    className="text-xs font-semibold uppercase tracking-wider text-slate-700 dark:text-slate-300 block"
-                    htmlFor="adminMiddleName"
-                  >
-                    Middle Name
-                  </label>
-                  <input
-                    id="adminMiddleName"
-                    type="text"
-                    value={createAdminMiddleName}
-                    onChange={(event) =>
-                      handleAdminNameInput(
-                        setCreateAdminMiddleName,
-                        event.target.value,
-                      )
-                    }
-                    placeholder="e.g. Santos"
-                    className="mt-1.5 w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-800 focus:border-slate-900 dark:focus:border-slate-100 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 rounded-xl px-4 py-2.5 text-sm outline-none transition-all focus:ring-2 focus:ring-slate-900/10 dark:focus:ring-slate-100/10"
-                  />
-                </div>
-
-                <div>
-                  <label
-                    className="text-xs font-semibold uppercase tracking-wider text-slate-700 dark:text-slate-300 block"
-                    htmlFor="adminLastName"
-                  >
-                    Last Name <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    id="adminLastName"
-                    type="text"
-                    value={createAdminLastName}
-                    onChange={(event) =>
-                      handleAdminNameInput(
-                        setCreateAdminLastName,
-                        event.target.value,
-                      )
-                    }
-                    required
-                    placeholder="e.g. Dela Cruz"
-                    className="mt-1.5 w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-800 focus:border-slate-900 dark:focus:border-slate-100 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 rounded-xl px-4 py-2.5 text-sm outline-none transition-all focus:ring-2 focus:ring-slate-900/10 dark:focus:ring-slate-100/10"
-                  />
-                </div>
-              </div>
-
-              {/* Row 2: Profile Photo Dashed Container */}
-              <div>
-                <label className="text-xs font-semibold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1.5 block">
-                  Profile Photo
-                </label>
-                <div className="border-2 border-dashed border-slate-200 dark:border-slate-700/80 rounded-xl p-4 bg-slate-50/50 dark:bg-slate-950/40 flex items-center gap-3">
-                  {createAdminProfileImagePreview ? (
-                    <img
-                      src={createAdminProfileImagePreview}
-                      alt="Preview"
-                      className="w-12 h-12 rounded-full object-cover border border-slate-300 dark:border-slate-700 shrink-0"
-                    />
-                  ) : (
-                    <div className="w-12 h-12 rounded-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 flex items-center justify-center font-bold text-xs shrink-0">
-                      IMG
+                  {/* Row 1: Name Grid (3 Columns) */}
+                  <div className="grid gap-3 md:grid-cols-3">
+                    <div>
+                      <label
+                        className="text-xs font-semibold uppercase tracking-wider text-slate-700 dark:text-slate-300 block"
+                        htmlFor="adminFirstName"
+                      >
+                        First Name <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        id="adminFirstName"
+                        type="text"
+                        value={createAdminFirstName}
+                        onChange={(event) =>
+                          handleAdminNameInput(
+                            setCreateAdminFirstName,
+                            event.target.value,
+                          )
+                        }
+                        placeholder="e.g. Juan"
+                        className="mt-1.5 w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-800 focus:border-slate-900 dark:focus:border-slate-100 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 rounded-xl px-4 py-2.5 text-sm outline-none transition-all focus:ring-2 focus:ring-slate-900/10 dark:focus:ring-slate-100/10"
+                      />
                     </div>
-                  )}
-                  <div className="flex-1 min-w-0">
+
+                    <div>
+                      <label
+                        className="text-xs font-semibold uppercase tracking-wider text-slate-700 dark:text-slate-300 block"
+                        htmlFor="adminMiddleName"
+                      >
+                        Middle Name
+                      </label>
+                      <input
+                        id="adminMiddleName"
+                        type="text"
+                        value={createAdminMiddleName}
+                        onChange={(event) =>
+                          handleAdminNameInput(
+                            setCreateAdminMiddleName,
+                            event.target.value,
+                          )
+                        }
+                        placeholder="e.g. Santos"
+                        className="mt-1.5 w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-800 focus:border-slate-900 dark:focus:border-slate-100 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 rounded-xl px-4 py-2.5 text-sm outline-none transition-all focus:ring-2 focus:ring-slate-900/10 dark:focus:ring-slate-100/10"
+                      />
+                    </div>
+
+                    <div>
+                      <label
+                        className="text-xs font-semibold uppercase tracking-wider text-slate-700 dark:text-slate-300 block"
+                        htmlFor="adminLastName"
+                      >
+                        Last Name <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        id="adminLastName"
+                        type="text"
+                        value={createAdminLastName}
+                        onChange={(event) =>
+                          handleAdminNameInput(
+                            setCreateAdminLastName,
+                            event.target.value,
+                          )
+                        }
+                        placeholder="e.g. Dela Cruz"
+                        className="mt-1.5 w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-800 focus:border-slate-900 dark:focus:border-slate-100 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 rounded-xl px-4 py-2.5 text-sm outline-none transition-all focus:ring-2 focus:ring-slate-900/10 dark:focus:ring-slate-100/10"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Row 2: Profile Photo Dashed Container */}
+                  <div>
+                    <label className="text-xs font-semibold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1.5 block">
+                      Profile Photo
+                    </label>
+                    <div className="border-2 border-dashed border-slate-200 dark:border-slate-700/80 rounded-xl p-4 bg-slate-50/50 dark:bg-slate-950/40 flex items-center gap-3">
+                      {createAdminProfileImagePreview ? (
+                        <img
+                          src={createAdminProfileImagePreview}
+                          alt="Preview"
+                          className="w-12 h-12 rounded-full object-cover border border-slate-300 dark:border-slate-700 shrink-0"
+                        />
+                      ) : (
+                        <div className="w-12 h-12 rounded-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 flex items-center justify-center font-bold text-xs shrink-0">
+                          IMG
+                        </div>
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <label
+                          htmlFor="adminPhotoInput"
+                          className="bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-200 text-xs font-semibold px-3 py-1.5 rounded-lg cursor-pointer inline-block transition-all"
+                        >
+                          Choose Profile Photo
+                        </label>
+                        <input
+                          id="adminPhotoInput"
+                          type="file"
+                          accept="image/*"
+                          onChange={(event) => {
+                            const file = event.target.files?.[0] ?? null;
+                            setCreateAdminProfileImage(file);
+                            if (createAdminProfileImagePreview) {
+                              URL.revokeObjectURL(createAdminProfileImagePreview);
+                            }
+                            setCreateAdminProfileImagePreview(
+                              file ? URL.createObjectURL(file) : null,
+                            );
+                          }}
+                          className="hidden"
+                        />
+                        {createAdminProfileImage ? (
+                          <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1 truncate">
+                            {createAdminProfileImage.name}
+                          </p>
+                        ) : null}
+                      </div>
+                      {createAdminProfileImage ? (
+                        <button
+                          type="button"
+                          className="text-xs font-semibold text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-300 dark:border-slate-700 px-2.5 py-1.5 rounded-lg transition-all shrink-0 cursor-pointer"
+                          onClick={() => {
+                            if (createAdminProfileImagePreview) {
+                              URL.revokeObjectURL(createAdminProfileImagePreview);
+                            }
+                            setCreateAdminProfileImage(null);
+                            setCreateAdminProfileImagePreview(null);
+                          }}
+                        >
+                          Remove
+                        </button>
+                      ) : null}
+                    </div>
+                  </div>
+
+                  {/* Row 3: Email Input */}
+                  <div>
                     <label
-                      htmlFor="adminPhotoInput"
-                      className="bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-200 text-xs font-semibold px-3 py-1.5 rounded-lg cursor-pointer inline-block transition-all"
+                      className="text-xs font-semibold uppercase tracking-wider text-slate-700 dark:text-slate-300 block"
+                      htmlFor="adminEmail"
                     >
-                      Choose Profile Photo
+                      Email Address <span className="text-red-500">*</span>
                     </label>
                     <input
-                      id="adminPhotoInput"
-                      type="file"
-                      accept="image/*"
-                      onChange={(event) => {
-                        const file = event.target.files?.[0] ?? null;
-                        setCreateAdminProfileImage(file);
-                        if (createAdminProfileImagePreview) {
-                          URL.revokeObjectURL(createAdminProfileImagePreview);
-                        }
-                        setCreateAdminProfileImagePreview(
-                          file ? URL.createObjectURL(file) : null,
-                        );
-                      }}
-                      className="hidden"
+                      id="adminEmail"
+                      type="email"
+                      value={email}
+                      onChange={(event) => setEmail(event.target.value)}
+                      placeholder="staff@pup.edu.ph"
+                      className="mt-1.5 w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-800 focus:border-slate-900 dark:focus:border-slate-100 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 rounded-xl px-4 py-2.5 text-sm outline-none transition-all focus:ring-2 focus:ring-slate-900/10 dark:focus:ring-slate-100/10"
                     />
-                    {createAdminProfileImage ? (
-                      <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1 truncate">
-                        {createAdminProfileImage.name}
-                      </p>
-                    ) : null}
                   </div>
-                  {createAdminProfileImage ? (
-                    <button
-                      type="button"
-                      className="text-xs font-semibold text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-300 dark:border-slate-700 px-2.5 py-1.5 rounded-lg transition-all shrink-0 cursor-pointer"
-                      onClick={() => {
-                        if (createAdminProfileImagePreview) {
-                          URL.revokeObjectURL(createAdminProfileImagePreview);
-                        }
-                        setCreateAdminProfileImage(null);
-                        setCreateAdminProfileImagePreview(null);
-                      }}
-                    >
-                      Remove
-                    </button>
-                  ) : null}
+
+                  <AlertPopup
+                    type="error"
+                    message={error}
+                    position="inline"
+                    onClose={() => setError(null)}
+                  />
+
+                  {/* Action Button - Exact same styling and logic as Add Faculty */}
+                  <button
+                    className={`py-2.5 px-6 rounded-xl transition-all shadow-md text-xs tracking-wide font-bold ${
+                      !canSubmitStaff || isSubmitting
+                        ? "bg-slate-200 dark:bg-slate-800 text-slate-400 dark:text-slate-500 cursor-not-allowed border border-slate-300 dark:border-slate-700"
+                        : "bg-amber-500 hover:bg-amber-400 text-slate-950 cursor-pointer active:scale-[0.99]"
+                    }`}
+                    type="submit"
+                    disabled={!canSubmitStaff || isSubmitting}
+                  >
+                    {isSubmitting
+                      ? "Creating Staff Account..."
+                      : !areAllRequiredStaffFieldsFilled
+                      ? "Fill All Required Fields"
+                      : "Create Staff Account"}
+                  </button>
                 </div>
-              </div>
-
-              {/* Row 3: Email Input */}
-              <div>
-                <label
-                  className="text-xs font-semibold uppercase tracking-wider text-slate-700 dark:text-slate-300 block"
-                  htmlFor="adminEmail"
-                >
-                  Email Address <span className="text-red-500">*</span>
-                </label>
-                <input
-                  id="adminEmail"
-                  type="email"
-                  value={email}
-                  onChange={(event) => setEmail(event.target.value)}
-                  required
-                  placeholder="admin@pup.edu.ph"
-                  className="mt-1.5 w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-800 focus:border-slate-900 dark:focus:border-slate-100 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 rounded-xl px-4 py-2.5 text-sm outline-none transition-all focus:ring-2 focus:ring-slate-900/10 dark:focus:ring-slate-100/10"
-                />
-              </div>
-
-              <AlertPopup
-                type="error"
-                message={error}
-                position="inline"
-                onClose={() => setError(null)}
-              />
-
-              <AlertPopup
-                type="success"
-                message={success}
-                position="inline"
-                onClose={() => setSuccess(null)}
-              />
-
-              {/* Full-Width Action Button */}
-              <button
-                type="submit"
-                disabled={isSubmitting}
-                className="w-full bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold py-3 rounded-xl transition-all shadow-md mt-2 disabled:opacity-50 cursor-pointer text-sm tracking-wide"
-              >
-                {isSubmitting ? "Creating Staff..." : "Create Staff Account"}
-              </button>
-            </form>
+              </form>
             </div>
           </div>
         </div>
       ) : null}
 
-      {adminDetailsOpen ? (
-        <AdminDetailsModal
-          details={adminDetails}
-          isLoading={isLoadingAdminDetails}
-          onClose={() => setAdminDetailsOpen(false)}
-          onSaved={() => void loadAdminAccounts(true)}
-          editable={adminDetailsEditable}
+      {/* Staff Modals */}
+      {viewStaffDetailsModalOpen && viewStaffDetailsId ? (
+        <StaffDetailsModal
+          profileId={viewStaffDetailsId}
+          adminAccounts={adminAccounts}
+          isOpen={viewStaffDetailsModalOpen}
+          onClose={() => setViewStaffDetailsModalOpen(false)}
+          onEdit={(profileId) => {
+            setViewStaffDetailsModalOpen(false);
+            setEditStaffId(profileId);
+            setEditStaffModalOpen(true);
+          }}
           currentAdminEmail={currentAdminEmail}
         />
       ) : null}
 
-      {inviteModalOpen ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 p-4 backdrop-blur-sm">
-          <div className="w-full max-w-md rounded-2xl border border-slate-400 dark:border-slate-800 bg-white dark:bg-slate-950 shadow-2xl text-slate-900 dark:text-slate-100 overflow-hidden flex flex-col">
-            <ModalHeader
-              title={inviteWasSent ? "Email sent successfully" : "Email delivery failed"}
-              subtitle={inviteWasSent ? "Invitation Sent" : "Invite Link Generated"}
-              icon={inviteWasSent ? SendMail : Key}
-            />
-            <div className="p-6">
-              <p className="whitespace-pre-wrap text-xs text-slate-600 dark:text-slate-400">
-                {inviteModalMessage}
-              </p>
-
-              <div className="mt-6 flex justify-end">
-                <button
-                  type="button"
-                  onClick={() => setInviteModalOpen(false)}
-                  className="bg-[#780000] hover:bg-[#5e0000] text-white border border-[#5e0000] font-semibold rounded-xl px-5 py-2 text-xs transition cursor-pointer shadow-xs"
-                >
-                  OK
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
+      {editStaffModalOpen && editStaffId ? (
+        <EditStaffModal
+          profileId={editStaffId}
+          adminAccounts={adminAccounts}
+          isOpen={editStaffModalOpen}
+          onClose={() => setEditStaffModalOpen(false)}
+          onSave={async (updatedAdmin) => {
+            if (updatedAdmin) {
+              setAdminAccounts((prev) =>
+                prev.map((a) =>
+                  a.profile_id === updatedAdmin.profile_id || a.id === updatedAdmin.profile_id
+                    ? { ...a, ...updatedAdmin }
+                    : a,
+                ),
+              );
+            }
+            await loadAdminAccounts(true);
+          }}
+          currentAdminEmail={currentAdminEmail}
+        />
       ) : null}
+
+      <InviteStatusModal
+        isOpen={inviteModalOpen}
+        onClose={() => setInviteModalOpen(false)}
+        inviteWasSent={inviteWasSent}
+        inviteModalMessage={inviteModalMessage}
+      />
 
       {/* Faculty Modals */}
       {viewFacultyDetailsModalOpen && viewFacultyDetailsId ? (
@@ -2622,7 +2688,10 @@ export function SuperAdminDashboard({
 
       <UserRegistrationLogsModal
         isOpen={registrationLogsModalOpen}
-        onClose={() => setRegistrationLogsModalOpen(false)}
+        onClose={() => {
+          setRegistrationLogsModalOpen(false);
+          void loadAdminAccounts(true);
+        }}
         targetRole={registrationLogsInitialRole}
         onInviteCancelled={() => {
           void loadAdminAccounts(true);
@@ -2707,376 +2776,9 @@ function SettingsOptionButton({
   );
 }
 
-function PasswordToggleButton({
-  shown,
-  onClick,
-}: {
-  shown: boolean;
-  onClick: () => void;
-}) {
-  return (
-    <button
-      type="button"
-      aria-label={shown ? "Hide password" : "Show password"}
-      onClick={onClick}
-      className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full border border-[rgba(255,255,255,0.18)] bg-[rgba(255,255,255,0.06)] p-1.5 text-white"
-    >
-      {shown ? (
-        <Eye className="h-4 w-4 text-white" strokeWidth={2} />
-      ) : (
-        <EyeClosed className="h-4 w-4 text-white" strokeWidth={2} />
-      )}
-    </button>
-  );
-}
-
-function AdminDetailsModal({
-  details,
-  isLoading,
-  onClose,
-  onSaved,
-  editable,
-  currentAdminEmail,
-}: {
-  details: AdminDetails | null;
-  isLoading: boolean;
-  onClose: () => void;
-  onSaved: () => Promise<void> | void;
-  editable?: boolean;
-  currentAdminEmail?: string | null;
-}) {
-  const [fullName, setFullName] = useState(details?.full_name ?? "");
-  const [email, setEmail] = useState(details?.email ?? "");
-  const [password, setPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
-  const [isResendingVerification, setIsResendingVerification] = useState(false);
-  const [isSendingPasswordReset, setIsSendingPasswordReset] = useState(false);
-  const [hasReverifiedPendingSave, setHasReverifiedPendingSave] = useState(false);
-  const [reverifySuccessMessage, setReverifySuccessMessage] = useState<string | null>(null);
-  const [closeReminder, setCloseReminder] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState<string | null>(null);
-  const [modalAvatarError, setModalAvatarError] = useState(false);
-  const [savedBaseline, setSavedBaseline] = useState({
-    fullName: details?.full_name ?? "",
-    email: details?.email ?? "",
-  });
-
-  const canEdit =
-    Boolean(editable) &&
-    canManageAdminAccount({
-      targetEmail: savedBaseline.email || details?.email,
-      targetRole: details?.role,
-      actorEmail: currentAdminEmail,
-      action: "edit",
-    });
-
-  const fullNameInputRef = useRef<HTMLInputElement>(null);
-  const emailInputRef = useRef<HTMLInputElement>(null);
-  const [activeField, setActiveField] = useState<"fullName" | "email" | null>(null);
-
-  useEffect(() => {
-    const initName = details?.full_name ?? "";
-    const initEmail = (details?.email ?? "").trim();
-    setFullName(initName);
-    setEmail(initEmail);
-    setSavedBaseline({ fullName: initName, email: initEmail });
-    setPassword("");
-    setError(null);
-    setSuccess(null);
-    setHasReverifiedPendingSave(false);
-    setReverifySuccessMessage(null);
-    setCloseReminder(null);
-    setShowPassword(false);
-    setModalAvatarError(false);
-    setActiveField(null);
-  }, [details]);
-
-  const normalizedEmail = email.trim().toLowerCase();
-  const normalizedInitialEmail = savedBaseline.email.trim().toLowerCase();
-  const isEmailModified =
-    normalizedEmail.length > 0 && normalizedEmail !== normalizedInitialEmail;
-  const isEmailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmail);
-
-  const hasChanges =
-    fullName.trim() !== savedBaseline.fullName.trim() ||
-    isEmailModified ||
-    hasReverifiedPendingSave ||
-    password.trim().length > 0;
-
-  function handleAttemptClose() {
-    if (canEdit && hasChanges) {
-      setCloseReminder(
-        "You have unsaved changes. Please click 'Save Changes' first before closing.",
-      );
-      return;
-    }
-    onClose();
-  }
-
-  function handleFocusField(
-    fieldKey: "fullName" | "email",
-    ref: React.RefObject<HTMLInputElement | null>,
-  ) {
-    setActiveField(fieldKey);
-    setTimeout(() => {
-      if (ref.current) {
-        ref.current.focus();
-        try {
-          const length = ref.current.value.length;
-          ref.current.setSelectionRange(length, length);
-        } catch {
-          // Input type (e.g., email) does not support setSelectionRange
-        }
-      }
-    }, 0);
-  }
-
-  function handleCancelEdit(fieldKey: "fullName" | "email") {
-    if (fieldKey === "fullName") setFullName(savedBaseline.fullName);
-    if (fieldKey === "email") {
-      setEmail(savedBaseline.email);
-      setHasReverifiedPendingSave(false);
-      setReverifySuccessMessage(null);
-    }
-    setCloseReminder(null);
-    setActiveField(null);
-  }
-
-  async function handleReverifyEmail() {
-    if (!details?.profile_id || !isEmailModified || !isEmailValid) return;
-    setIsResendingVerification(true);
-    setError(null);
-    setCloseReminder(null);
-
-    try {
-      setHasReverifiedPendingSave(true);
-      setReverifySuccessMessage(
-        `Re-verification prepared for ${normalizedEmail}. Please click "Save Changes" below to apply and send the verification link.`,
-      );
-      setActiveField(null);
-    } finally {
-      setIsResendingVerification(false);
-    }
-  }
-
-  async function handleSendPasswordReset() {
-    const targetResetEmail = savedBaseline.email.trim().toLowerCase() || normalizedEmail;
-    if (!details?.profile_id || !targetResetEmail) return;
-
-    setIsSendingPasswordReset(true);
-    setError(null);
-    setSuccess(null);
-    setCloseReminder(null);
-
-    try {
-      const response = await fetch("/api/admin/reset-password", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          profileId: details.profile_id,
-          email: targetResetEmail,
-          fullName: fullName.trim() || details.full_name,
-          accountType: "Staff",
-        }),
-      });
-      const data = await response.json();
-      if (!response.ok) {
-        setError(data.error ?? "Failed to send password reset email");
-        return;
-      }
-      setSuccess(
-        data.message || `Password reset link sent to ${targetResetEmail}.`,
-      );
-    } catch {
-      setError("Failed to send password reset email.");
-    } finally {
-      setIsSendingPasswordReset(false);
-    }
-  }
-
-  async function onSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    setError(null);
-    setSuccess(null);
-    setCloseReminder(null);
-
-    if (!details?.profile_id) {
-      setError("Staff details are not available.");
-      return;
-    }
-
-    if (!canEdit) {
-      setError("You do not have permission to edit this account.");
-      return;
-    }
-
-    if (!fullName.trim() || !normalizedEmail) {
-      setError("Full name and email are required.");
-      return;
-    }
-
-    if (!isEmailValid) {
-      setError("Please provide a valid email address.");
-      return;
-    }
-
-    if (password && password.length < 8) {
-      setError("Password must be at least 8 characters.");
-      return;
-    }
-
-    setIsSaving(true);
-
-    try {
-      const response = await fetch("/api/admin/staff/details", {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          profileId: details.profile_id,
-          fullName: fullName.trim(),
-          email: normalizedEmail,
-          resendVerification: hasReverifiedPendingSave || isEmailModified,
-          ...(password ? { password } : {}),
-        }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        setError(data.error ?? "Failed to update staff details");
-        setIsSaving(false);
-        return;
-      }
-
-      const nextName = data.details?.full_name ?? fullName.trim();
-      const nextEmail = data.details?.email ?? normalizedEmail;
-
-      setFullName(nextName);
-      setEmail(nextEmail);
-      setSavedBaseline({ fullName: nextName, email: nextEmail });
-      setPassword("");
-      setHasReverifiedPendingSave(false);
-      setReverifySuccessMessage(null);
-      setCloseReminder(null);
-      setActiveField(null);
-
-      if (data.emailChanged) {
-        setSuccess(
-          data.verificationSent
-            ? `Staff email updated to ${nextEmail} and a new verification link has been sent.`
-            : `Staff email updated to ${nextEmail}.`,
-        );
-      } else {
-        setSuccess("Staff account updated successfully.");
-      }
-
-      await onSaved();
-      setIsSaving(false);
-    } catch {
-      setError("Unexpected error while updating staff details.");
-      setIsSaving(false);
-    }
-  }
-
-  return (
-    <div className="fixed inset-0 z-40 flex items-center justify-center bg-slate-950/80 p-3 sm:p-4 backdrop-blur-sm">
-      <div className="w-full max-w-xl max-h-[94vh] rounded-2xl border-2 border-amber-400 dark:border-amber-500/70 bg-white dark:bg-slate-950 shadow-2xl text-slate-900 dark:text-slate-100 overflow-hidden flex flex-col">
-        <ModalHeader
-          title={canEdit ? "Edit Staff Account" : "View Staff Account"}
-          subtitle="Manage staff profile, email recovery, and account credentials"
-          icon={User}
-          onClose={handleAttemptClose}
-          className="shrink-0"
-        />
-        <div className="p-4 sm:p-5 overflow-y-auto overflow-x-hidden flex-1">
-          {isLoading ? (
-            <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">Loading details...</p>
-          ) : details ? (
-            <div className="space-y-3">
-              {error ? (
-                <AlertPopup
-                  type="error"
-                  message={error}
-                  position="inline"
-                  onClose={() => setError(null)}
-                />
-              ) : null}
-
-              {closeReminder ? (
-                <AlertPopup
-                  type="warning"
-                  message={closeReminder}
-                  position="inline"
-                  onClose={() => setCloseReminder(null)}
-                />
-              ) : null}
-
-              {reverifySuccessMessage ? (
-                <AlertPopup
-                  type="info"
-                  message={reverifySuccessMessage}
-                  position="inline"
-                  onClose={() => setReverifySuccessMessage(null)}
-                />
-              ) : null}
-
-              {success ? (
-                <AlertPopup
-                  type="success"
-                  message={success}
-                  position="inline"
-                  onClose={() => setSuccess(null)}
-                />
-              ) : null}
-
-              <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-300 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 p-3.5 min-w-0">
-                <div className="flex items-center gap-3 min-w-0">
-                  {details.profileImageUrl && !modalAvatarError ? (
-                    <img
-                      src={details.profileImageUrl}
-                      alt={details.full_name ?? "Staff"}
-                      className="w-12 h-12 rounded-full object-cover border-2 border-amber-500/60 bg-slate-100 dark:bg-slate-950 shadow-md ring-2 ring-white dark:ring-slate-950 shrink-0"
-                      onError={() => setModalAvatarError(true)}
-                    />
-                  ) : (
-                    <div className="w-12 h-12 rounded-full bg-slate-100 dark:bg-slate-800 border-2 border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 font-bold text-sm flex items-center justify-center shadow-md ring-2 ring-white dark:ring-slate-950 shrink-0">
-                      {getInitials(
-                        details.full_name,
-                        details.role === ROLE.ADMIN ? "SA" : "AD",
-                      )}
-                    </div>
-                  )}
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <h4 className="text-sm sm:text-base font-bold text-slate-900 dark:text-slate-100 truncate">
-                        {savedBaseline.fullName || details.full_name || "Staff User"}
-                      </h4>
-                      <span className="inline-block px-2 py-0.5 rounded-full text-[10px] font-semibold bg-slate-200/70 text-slate-900 dark:bg-slate-800 dark:text-slate-300 border border-slate-300 dark:border-slate-700">
-                        {details.role ? ROLE_LABEL[details.role as AppRole] : "Staff"}
-                      </span>
-                    </div>
-                    <p className="text-xs text-slate-500 dark:text-slate-400 break-all select-all font-mono mt-0.5">
-                      {savedBaseline.email || details.email}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-3">
-                  <span
-                    className={`inline-flex items-center px-2 py-0.5 text-xs font-semibold rounded-md border shadow-2xs ${
-                      details.is_active
-                        ? "bg-[#0b5336] text-white border-[#08412a]"
-                        : "bg-[#780000] text-white border-[#5e0000]"
-                    }`}
-                  >
-                    {details.is_active ? "Active" : "Inactive"}
-                  </span>
-                </div>
-              </div>
+// Staff details and editing are now handled by dedicated modular components:
+// StaffDetailsModal and EditStaffModal
+/*
 
               {canEdit ? (
                 <form className="space-y-3" onSubmit={onSubmit}>
@@ -3400,6 +3102,7 @@ function AdminDetailsModal({
     </div>
   );
 }
+*/
 
 export const AdminDashboard = SuperAdminDashboard;
 export default AdminDashboard;
