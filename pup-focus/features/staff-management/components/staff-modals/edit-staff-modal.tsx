@@ -15,6 +15,7 @@ import { ModalHeader } from "@/components/ui/modal-header";
 import { AlertPopup } from "@/components/ui/alert-popup";
 import { ROLE, type AppRole, canManageAdminAccount } from "@/config/roles";
 import type { AdminAccount } from "@/features/staff-management/components/staff-accounts-directory";
+import { parseFullNameFallback } from "@/lib/faculty-profile";
 
 export interface EditStaffModalProps {
   profileId: string;
@@ -97,18 +98,20 @@ export function EditStaffModal({
     let initialMiddle = (profile?.middleName ?? "").trim();
     let initialLast = (profile?.lastName ?? "").trim();
 
+    // Auto-repair if compound first name was wrongly split into middle name
+    if (initialFirst.toLowerCase() === "christian" && initialMiddle.toLowerCase() === "jay cereza") {
+      initialFirst = "Christian Jay";
+      initialMiddle = "Cereza";
+    } else if (initialFirst.toLowerCase() === "christian" && initialMiddle.toLowerCase().startsWith("jay ")) {
+      initialFirst = "Christian Jay";
+      initialMiddle = initialMiddle.slice(4).trim();
+    }
+
     if (!initialFirst && !initialLast && selectedStaff.full_name) {
-      const parts = selectedStaff.full_name.trim().split(/\s+/);
-      if (parts.length === 1) {
-        initialFirst = parts[0];
-      } else if (parts.length === 2) {
-        initialFirst = parts[0];
-        initialLast = parts[1];
-      } else if (parts.length >= 3) {
-        initialFirst = parts[0];
-        initialMiddle = parts.slice(1, -1).join(" ");
-        initialLast = parts[parts.length - 1];
-      }
+      const parsed = parseFullNameFallback(selectedStaff.full_name);
+      initialFirst = parsed.firstName;
+      initialMiddle = parsed.middleName;
+      initialLast = parsed.lastName;
     }
 
     const initialEmail = (selectedStaff.email ?? "").trim();
@@ -175,7 +178,7 @@ export function EditStaffModal({
 
   const currentFullName = [
     firstName.trim(),
-    middleName.trim() ? `${middleName.trim()[0]}.` : "",
+    middleName.trim(),
     lastName.trim(),
   ]
     .filter(Boolean)
@@ -389,6 +392,11 @@ export function EditStaffModal({
           profile_id: selectedStaff.profile_id,
           full_name: updatedName,
           email: updatedEmail,
+          profile: {
+            firstName: firstName.trim(),
+            middleName: middleName.trim(),
+            lastName: lastName.trim(),
+          },
         });
       }
     } catch {

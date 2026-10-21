@@ -242,6 +242,9 @@ export async function POST(request: NextRequest) {
               user_id: createdAuthUser.id,
               full_name: fullName,
               email: normalizedEmail,
+              first_name: trimmedFirstName,
+              middle_name: trimmedMiddleName || null,
+              last_name: trimmedLastName,
             },
             { onConflict: "user_id" },
           )

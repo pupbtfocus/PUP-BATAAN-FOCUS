@@ -5,6 +5,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { getServiceRoleClient } from "@/lib/supabase/service-role";
 import { ROLE } from "@/config/roles";
+import { parseFullNameFallback, buildFacultyFullName } from "@/lib/faculty-profile";
 
 async function resolveAvatarUrl(
   supabaseAdmin: any,
@@ -138,7 +139,7 @@ export async function GET(request: NextRequest) {
     try {
       const { data: profiles } = await supabaseAdmin
         .from("profiles")
-        .select("id, user_id, email, full_name, status");
+        .select("id, user_id, email, full_name, status, first_name, middle_name, last_name");
       if (profiles) {
         for (const p of profiles) {
           if (p.id) profileById.set(p.id, p);
@@ -224,6 +225,37 @@ export async function GET(request: NextRequest) {
             ? (profile.status === "active" || profile.status === "true")
             : (u.user_metadata?.is_active !== false);
 
+          let fName = (profile?.first_name || u.user_metadata?.first_name || "").trim();
+          let mName = (profile?.middle_name || u.user_metadata?.middle_name || "").trim();
+          let lName = (profile?.last_name || u.user_metadata?.last_name || "").trim();
+
+          // Auto-repair if compound first name was wrongly split into middle name (e.g. "Christian" and "Jay Cereza")
+          if (fName.toLowerCase() === "christian" && mName.toLowerCase() === "jay cereza") {
+            fName = "Christian Jay";
+            mName = "Cereza";
+          } else if (fName.toLowerCase() === "christian" && mName.toLowerCase().startsWith("jay ")) {
+            fName = "Christian Jay";
+            mName = mName.slice(4).trim();
+          }
+
+          if ((!fName || !lName) && fullName) {
+            const parsed = parseFullNameFallback(fullName);
+            fName = fName || parsed.firstName;
+            mName = mName || parsed.middleName;
+            lName = lName || parsed.lastName;
+          }
+
+          if (profile?.id && (profile.first_name !== fName || profile.middle_name !== mName || profile.last_name !== lName)) {
+            void supabaseAdmin
+              .from("profiles")
+              .update({
+                first_name: fName,
+                middle_name: mName || null,
+                last_name: lName,
+              })
+              .eq("id", profile.id);
+          }
+
           return {
             id: u.id,
             profile_id: u.id,
@@ -238,6 +270,11 @@ export async function GET(request: NextRequest) {
             profileImageUrl: resolvedAvatarUrl,
             last_sign_in_at: u.last_sign_in_at ?? null,
             lastLoginAt: u.last_sign_in_at ?? null,
+            profile: {
+              firstName: fName,
+              middleName: mName,
+              lastName: lName,
+            },
           };
         })
     );

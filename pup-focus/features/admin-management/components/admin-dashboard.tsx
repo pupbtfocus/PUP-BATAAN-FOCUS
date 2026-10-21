@@ -2587,7 +2587,13 @@ export function SuperAdminDashboard({
               setAdminAccounts((prev) =>
                 prev.map((a) =>
                   a.profile_id === updatedAdmin.profile_id || a.id === updatedAdmin.profile_id
-                    ? { ...a, ...updatedAdmin }
+                    ? {
+                        ...a,
+                        ...updatedAdmin,
+                        profile: updatedAdmin.profile
+                          ? { ...(a.profile || {}), ...updatedAdmin.profile }
+                          : a.profile,
+                      }
                     : a,
                 ),
               );

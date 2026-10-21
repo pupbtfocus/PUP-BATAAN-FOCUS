@@ -789,42 +789,6 @@ export function UserRegistrationLogsModal({
                                 <span>{isResending ? "Sending..." : "Resend"}</span>
                               </button>
                             </div>
-                          ) : !log.lastLoginAt ? (
-                            <div className="flex items-center gap-1.5 flex-wrap">
-                              <button
-                                type="button"
-                                onClick={() => openEditModal(log)}
-                                title="Edit Details"
-                                className="bg-slate-800 hover:bg-slate-700 text-white font-semibold border border-slate-700 text-xs rounded-lg px-2.5 py-1.5 transition-colors cursor-pointer inline-flex items-center justify-center gap-1.5 shadow-2xs"
-                              >
-                                <AppIcon icon={EditPencil} size="sm" color="white" />
-                                <span>Edit</span>
-                              </button>
-
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  setCancelError(null);
-                                  setPendingCancelLog(log);
-                                }}
-                                title="Cancel or Remove Account"
-                                className="bg-[#780000] hover:bg-[#5e0000] text-white font-semibold border border-[#5e0000] text-xs rounded-lg px-2.5 py-1.5 transition-colors cursor-pointer inline-flex items-center justify-center gap-1.5 shadow-2xs"
-                              >
-                                <AppIcon icon={Trash} size="sm" color="white" />
-                                <span>Cancel</span>
-                              </button>
-
-                              <button
-                                type="button"
-                                onClick={() => openResendModal(log)}
-                                disabled={isResending}
-                                title="Resend login credentials email"
-                                className="bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold border border-amber-600 text-xs rounded-lg px-2.5 py-1.5 transition-colors cursor-pointer inline-flex items-center justify-center gap-1.5 shadow-2xs disabled:opacity-50"
-                              >
-                                <AppIcon icon={SendMail} size="sm" color="inherit" className="text-slate-950" />
-                                <span>{isResending ? "Sending..." : "Resend"}</span>
-                              </button>
-                            </div>
                           ) : null}
                         </div>
                       </div>
@@ -983,52 +947,6 @@ export function UserRegistrationLogsModal({
                                       />
                                       <span>
                                         {isResending ? "Resending..." : "Resend"}
-                                      </span>
-                                    </button>
-                                  </>
-                                ) : !log.lastLoginAt ? (
-                                  <>
-                                    {/* Edit Details Button - Solid Slate */}
-                                    <button
-                                      type="button"
-                                      onClick={() => openEditModal(log)}
-                                      title="Edit Details"
-                                      className="bg-slate-800 hover:bg-slate-700 text-white font-semibold border border-slate-700 text-xs rounded-md px-2.5 py-1 transition-colors cursor-pointer inline-flex items-center gap-1.5 shadow-2xs"
-                                    >
-                                      <AppIcon icon={EditPencil} size="sm" color="white" />
-                                      <span>Edit</span>
-                                    </button>
-
-                                    {/* Cancel / Delete bugged or unlogged account */}
-                                    <button
-                                      type="button"
-                                      onClick={() => {
-                                        setCancelError(null);
-                                        setPendingCancelLog(log);
-                                      }}
-                                      title="Cancel or Remove Account"
-                                      className="bg-[#780000] hover:bg-[#5e0000] text-white font-semibold border border-[#5e0000] text-xs rounded-md px-2.5 py-1 transition-colors cursor-pointer inline-flex items-center gap-1.5 shadow-2xs"
-                                    >
-                                      <AppIcon icon={Trash} size="sm" color="white" />
-                                      <span>Cancel</span>
-                                    </button>
-
-                                    {/* Resend Credentials Button - Solid Gold */}
-                                    <button
-                                      type="button"
-                                      onClick={() => openResendModal(log)}
-                                      disabled={isResending}
-                                      title="Resend login credentials email"
-                                      className="bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold border border-amber-600 text-xs rounded-md px-2.5 py-1 transition-colors cursor-pointer inline-flex items-center gap-1.5 shadow-2xs disabled:opacity-50"
-                                    >
-                                      <AppIcon
-                                        icon={SendMail}
-                                        size="sm"
-                                        color="inherit"
-                                        className="text-slate-950"
-                                      />
-                                      <span>
-                                        {isResending ? "Resending..." : "Resend Credentials"}
                                       </span>
                                     </button>
                                   </>
@@ -1277,7 +1195,7 @@ export function UserRegistrationLogsModal({
                       <span>Edit Details</span>
                     </button>
                   ) : null}
-                  {selectedLogForDetails.status === "Pending" || !selectedLogForDetails.lastLoginAt ? (
+                  {selectedLogForDetails.status === "Pending" ? (
                     <button
                       type="button"
                       onClick={() => openResendModal(selectedLogForDetails)}
@@ -1288,9 +1206,7 @@ export function UserRegistrationLogsModal({
                       <span>
                         {resendingEmail === selectedLogForDetails.email
                           ? "Resending..."
-                          : selectedLogForDetails.status === "Pending"
-                          ? "Resend Invite"
-                          : "Resend Credentials"}
+                          : "Resend Invite"}
                       </span>
                     </button>
                   ) : null}

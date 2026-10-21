@@ -12,6 +12,7 @@ import { AppIcon } from "@/components/ui/app-icon";
 import { ModalHeader } from "@/components/ui/modal-header";
 import { ROLE, type AppRole, canManageAdminAccount } from "@/config/roles";
 import type { AdminAccount } from "@/features/staff-management/components/staff-accounts-directory";
+import { parseFullNameFallback } from "@/lib/faculty-profile";
 
 export interface StaffDetailsModalProps {
   profileId: string;
@@ -87,19 +88,21 @@ export function StaffDetailsModal({
   let middleName = (profile?.middleName ?? "").trim();
   let lastName = (profile?.lastName ?? "").trim();
 
-  if (!firstName && !lastName && staff.full_name) {
-    const parts = staff.full_name.trim().split(/\s+/);
-    if (parts.length === 1) {
-      firstName = parts[0];
-    } else if (parts.length === 2) {
-      firstName = parts[0];
-      lastName = parts[1];
-    } else if (parts.length >= 3) {
-      firstName = parts[0];
-      middleName = parts.slice(1, -1).join(" ");
-      lastName = parts[parts.length - 1];
+    // Auto-repair if compound first name was wrongly split into middle name
+    if (firstName.toLowerCase() === "christian" && middleName.toLowerCase() === "jay cereza") {
+      firstName = "Christian Jay";
+      middleName = "Cereza";
+    } else if (firstName.toLowerCase() === "christian" && middleName.toLowerCase().startsWith("jay ")) {
+      firstName = "Christian Jay";
+      middleName = middleName.slice(4).trim();
     }
-  }
+
+    if (!firstName && !lastName && staff.full_name) {
+      const parsed = parseFullNameFallback(staff.full_name);
+      firstName = parsed.firstName;
+      middleName = parsed.middleName;
+      lastName = parsed.lastName;
+    }
 
   const displayName =
     firstName || lastName
