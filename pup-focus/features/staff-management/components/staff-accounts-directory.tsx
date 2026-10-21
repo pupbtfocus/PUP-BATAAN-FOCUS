@@ -271,7 +271,7 @@ export function AdminAccountsTable({
   accountsError,
   accountActionError,
   accountActionSuccess,
-  onClearMessages,
+  onClearMessages = () => {},
   currentAdminEmail,
 }: AdminAccountsTableProps) {
   const [searchTerm, setSearchTerm] = useState("");

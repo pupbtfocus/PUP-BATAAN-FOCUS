@@ -11,7 +11,7 @@ export type AlertType = "success" | "error" | "info" | "warning";
 export interface AlertPopupProps {
   type?: AlertType;
   message: React.ReactNode;
-  onClose: () => void;
+  onClose?: () => void;
   position?: "top-right" | "top-center" | "inline";
   autoCloseMs?: number; // default 5000ms, 0 to disable
   className?: string;
@@ -20,7 +20,7 @@ export interface AlertPopupProps {
 export function AlertPopup({
   type = "info",
   message,
-  onClose,
+  onClose = () => {},
   position = "top-right",
   autoCloseMs = 5000,
   className,
