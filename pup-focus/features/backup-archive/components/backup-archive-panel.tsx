@@ -1165,7 +1165,8 @@ export function BackupArchivePanel() {
       {/* Backup Inspection Modal */}
       {inspectedBackup && (() => {
         const snap = inspectedBackup.metadata?.snapshot as any;
-        const fileTypes = inspectedBackup.metadata?.file_types_summary || snap?.summary?.file_types_summary || {};
+        const meta = inspectedBackup.metadata as any;
+        const fileTypes = meta?.file_types_summary || snap?.summary?.file_types_summary || {};
         const facultyRoster = snap?.faculty_roster || snap?.faculty_list || null;
 
         return (
