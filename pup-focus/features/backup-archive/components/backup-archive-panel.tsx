@@ -400,6 +400,7 @@ export function BackupArchivePanel() {
   const handleDownloadZip = async (
     targetAY?: string,
     targetSem?: string,
+    targetFac?: string
   ) => {
     const ay = targetAY !== undefined ? targetAY : (selectedAcademicYear !== "all" ? selectedAcademicYear : currentActiveTerm?.academic_year || "all");
     const sem = targetSem !== undefined ? targetSem : (selectedSemester !== "all" ? selectedSemester : currentActiveTerm?.semester || "all");
@@ -1131,8 +1132,7 @@ export function BackupArchivePanel() {
                               onClick={() =>
                                 void handleDownloadZip(
                                   term.academic_year,
-                                  term.semester,
-                                  "all"
+                                  term.semester
                                 )
                               }
                               className="px-2.5 py-1 text-xs font-semibold rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 border border-amber-600 transition cursor-pointer inline-flex items-center gap-1 shadow-xs disabled:opacity-50 shrink-0"
