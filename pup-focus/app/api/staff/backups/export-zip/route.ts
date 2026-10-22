@@ -288,10 +288,10 @@ export async function GET(request: NextRequest) {
       console.warn("profiles table query note:", profileErr);
     }
 
-    // 4. Fetch Submissions
+    // 4. Fetch Submissions with file columns
     const { data: submissions, error: subError } = await supabaseAdmin
       .from("submissions")
-      .select("id, faculty_profile_id, requirement_code, status, submitted_at, created_at, remarks, admin_remarks, faculty_assignment_id");
+      .select("id, faculty_profile_id, requirement_code, status, submitted_at, created_at, remarks, admin_remarks, faculty_assignment_id, storage_path, file_name, mime_type, size_bytes");
 
     if (subError) {
       return NextResponse.json(
@@ -302,13 +302,13 @@ export async function GET(request: NextRequest) {
 
     const submissionIds = (submissions || []).map((s) => s.id);
 
-    // 5. Fetch Document Versions
-    const docVersionsMap = new Map<string, Array<{ storage_path: string; id: string }>>();
+    // 5. Fetch Document Versions (supporting both modern and legacy rows)
+    const docVersionsMap = new Map<string, Array<{ storage_path: string; id: string; file_name?: string; mime_type?: string; size_bytes?: number }>>();
     if (submissionIds.length > 0) {
       try {
         const { data: docVersions } = await supabaseAdmin
           .from("document_versions")
-          .select("id, submission_id, storage_path")
+          .select("id, submission_id, storage_path, file_name, mime_type, size_bytes")
           .in("submission_id", submissionIds);
 
         if (docVersions) {
@@ -380,6 +380,14 @@ export async function GET(request: NextRequest) {
       return true;
     });
 
+    // 2. Zero-Item Guardrail: check if any matching submissions exist
+    if (!filteredSubmissions || filteredSubmissions.length === 0) {
+      return NextResponse.json(
+        { error: "No compliance documents found for the selected academic term." },
+        { status: 400 }
+      );
+    }
+
     const zip = new JSZip();
     let fileCount = 0;
 
@@ -446,60 +454,96 @@ export async function GET(request: NextRequest) {
       );
 
       const versions = docVersionsMap.get(sub.id) || [];
-      let fileDownloaded = false;
+      const storageCandidates: Array<{ path: string; name?: string }> = [];
 
-      if (versions.length > 0) {
-        for (const ver of versions) {
-          if (!ver.storage_path) continue;
-
-          // Download from "faculty-submissions" or "submissions" buckets using Admin client
-          let fileBlob = null;
-
-          const { data: b1 } = await supabaseAdmin.storage
-            .from("faculty-submissions")
-            .download(ver.storage_path);
-
-          if (b1) {
-            fileBlob = b1;
-          } else {
-            const { data: b2 } = await supabaseAdmin.storage
-              .from("submissions")
-              .download(ver.storage_path);
-            if (b2) fileBlob = b2;
-          }
-
-          if (fileBlob) {
-            const fileBuffer = await fileBlob.arrayBuffer();
-            const extMatch = ver.storage_path.match(/\.[a-zA-Z0-9]+$/);
-            const ext = extMatch ? extMatch[0] : ".pdf";
-            const fileName = `${reqTitle}_Document${ext}`;
-            const zipPath = `${termFolderName}/${safeFacultyFolder}/${fileName}`;
-            zip.file(zipPath, Buffer.from(fileBuffer));
-            fileCount++;
-            fileDownloaded = true;
-          }
+      if (sub.storage_path) {
+        storageCandidates.push({ path: sub.storage_path, name: sub.file_name });
+      }
+      for (const v of versions) {
+        if (v.storage_path && !storageCandidates.some(c => c.path === v.storage_path)) {
+          storageCandidates.push({ path: v.storage_path, name: v.file_name });
         }
       }
 
-      // If no storage file was downloaded, write a verified compliance metadata entry file
-      if (!fileDownloaded) {
-        const recordContent = [
-          `PUP FOCUS COMPLIANCE ARCHIVE RECORD`,
-          `=====================================`,
-          `Requirement: ${reqTitle} (${reqCode})`,
-          `Faculty Member: ${rawFacultyName}`,
-          `Academic Term: ${termInfo.academicYear} (${termInfo.semester})`,
-          `Submission ID: ${sub.id}`,
-          `Status: ${sub.status || "Submitted"}`,
-          `Submitted Date: ${sub.submitted_at || sub.created_at || "N/A"}`,
-          `Faculty Remarks: ${sub.remarks || "None"}`,
-          `Admin Verification Remarks: ${sub.admin_remarks || "Verified & Archived in Vault"}`,
-          `Archived At: ${new Date().toISOString()}`,
-        ].join("\n");
+      let fileDownloaded = false;
 
-        const zipPath = `${termFolderName}/${safeFacultyFolder}/${reqTitle}_Compliance_Manifest.txt`;
-        zip.file(zipPath, recordContent);
-        fileCount++;
+      // 1. Direct path downloads from candidate paths
+      for (const candidate of storageCandidates) {
+        for (const bucket of ["faculty-submissions", "submissions"]) {
+          const directPaths = [
+            candidate.path,
+            candidate.path.replace(/^faculty-submissions\//, ""),
+            candidate.path.replace(/^submissions\//, ""),
+          ];
+
+          for (const p of directPaths) {
+            const { data: fileBlob } = await supabaseAdmin.storage
+              .from(bucket)
+              .download(p);
+
+            if (fileBlob) {
+              const fileBuffer = await fileBlob.arrayBuffer();
+              const originalName = candidate.name || sub.file_name || "";
+              const extMatch = originalName.match(/\.[a-zA-Z0-9]+$/) || p.match(/\.[a-zA-Z0-9]+$/);
+              const ext = extMatch ? extMatch[0] : ".pdf";
+              const cleanOriginal = sanitizeSegment(originalName.replace(/\.[a-zA-Z0-9]+$/, ""));
+              const fileName = cleanOriginal
+                ? `${reqTitle} - ${cleanOriginal}${ext}`
+                : `${reqTitle}_Document${ext}`;
+
+              const zipPath = `${termFolderName}/${safeFacultyFolder}/${fileName}`;
+              zip.file(zipPath, Buffer.from(fileBuffer));
+              fileCount++;
+              fileDownloaded = true;
+              break;
+            }
+          }
+          if (fileDownloaded) break;
+        }
+        if (fileDownloaded) break;
+      }
+
+      // 2. Storage folder listing discovery if not found directly
+      if (!fileDownloaded && (targetId || sub.faculty_profile_id || sub.id)) {
+        const candidateProfileId = sub.faculty_profile_id || targetId;
+        const candidateFolders = [
+          candidateProfileId && sub.id ? `${candidateProfileId}/${sub.id}` : null,
+          candidateProfileId && reqCode ? `${candidateProfileId}/${reqCode}` : null,
+          sub.id ? `${sub.id}` : null,
+        ].filter(Boolean) as string[];
+
+        for (const bucket of ["faculty-submissions", "submissions"]) {
+          for (const folder of candidateFolders) {
+            try {
+              const { data: files } = await supabaseAdmin.storage
+                .from(bucket)
+                .list(folder, { limit: 5 });
+
+              const validFile = (files || []).find((f) => f.name && !f.name.startsWith("."));
+              if (validFile) {
+                const { data: fileBlob } = await supabaseAdmin.storage
+                  .from(bucket)
+                  .download(`${folder}/${validFile.name}`);
+
+                if (fileBlob) {
+                  const fileBuffer = await fileBlob.arrayBuffer();
+                  const extMatch = validFile.name.match(/\.[a-zA-Z0-9]+$/);
+                  const ext = extMatch ? extMatch[0] : ".pdf";
+                  const cleanName = sanitizeSegment(validFile.name.replace(/\.[a-zA-Z0-9]+$/, ""));
+                  const fileName = `${reqTitle} - ${cleanName}${ext}`;
+                  const zipPath = `${termFolderName}/${safeFacultyFolder}/${fileName}`;
+                  zip.file(zipPath, Buffer.from(fileBuffer));
+                  fileCount++;
+                  fileDownloaded = true;
+                  break;
+                }
+              }
+            } catch {
+              // ignore
+            }
+          }
+          if (fileDownloaded) break;
+        }
       }
     }
 
@@ -510,33 +554,55 @@ export async function GET(request: NextRequest) {
       targetFacultyName = formatFacultyName(targetProf, targetFacultyId);
     }
 
-    // Add root vault index readme
-    const readmeContent = [
-      `PUP FOCUS INSTITUTIONAL DOCUMENT VAULT`,
-      `=====================================`,
-      `Export Timestamp: ${new Date().toISOString()}`,
-      `Filter Academic Year: ${targetAcademicYear && targetAcademicYear !== "all" ? targetAcademicYear : "All Academic Years"}`,
-      `Filter Semester: ${targetSemester && targetSemester !== "all" ? targetSemester : "All Semesters"}`,
-      `Filter Faculty: ${targetFacultyName || "All Faculty Members"}`,
-      `Total Document Records: ${fileCount}`,
-      `Generated by: ${user.email || "Super Admin"}`,
-      `\nDirectory Hierarchy Structure:`,
-      `[Academic Year - Semester] / [Faculty Full Name] / [Requirement Title]_[Filename]`,
-    ].join("\n");
+    // Add clean CSV manifest of all faculty requirements
+    const csvRows = [
+      ["Faculty Name", "Department", "Requirement Code", "Requirement Title", "Status", "Date Submitted", "File Name", "File Downloaded"],
+    ];
 
-    zip.file("VAULT_MANIFEST.txt", readmeContent);
+    for (const sub of filteredSubmissions) {
+      const rawSub = sub as Record<string, unknown>;
+      const targetId =
+        (typeof rawSub.faculty_id === "string" ? rawSub.faculty_id : null) ||
+        (typeof rawSub.faculty_profile_id === "string" ? rawSub.faculty_profile_id : null) ||
+        (typeof rawSub.user_id === "string" ? rawSub.user_id : null);
+      const matchedProfile = targetId ? profileMap.get(targetId) : null;
+      const facultyName = formatFacultyName(matchedProfile, targetId);
+      const dept = matchedProfile?.department || "General";
+      const reqTitle = requirementTitles.get(sub.requirement_code) || sub.requirement_code;
+      const dateSub = sub.submitted_at || sub.created_at || "N/A";
+      const fName = sub.file_name || "N/A";
+
+      csvRows.push([
+        `"${facultyName.replace(/"/g, '""')}"`,
+        `"${dept.replace(/"/g, '""')}"`,
+        `"${sub.requirement_code}"`,
+        `"${reqTitle.replace(/"/g, '""')}"`,
+        `"${sub.status || "Submitted"}"`,
+        `"${dateSub}"`,
+        `"${fName.replace(/"/g, '""')}"`,
+        `"${sub.storage_path ? "Yes" : "Metadata Recorded"}"`,
+      ]);
+    }
+
+    const csvContent = csvRows.map(r => r.join(",")).join("\n");
+    zip.file("Faculty_Semester_Compliance_Summary.csv", csvContent);
 
     const archive = await zip.generateAsync({
       type: "uint8array",
       compression: "DEFLATE",
     });
 
-    const safeAY = targetAcademicYear && targetAcademicYear !== "all" ? sanitizeSegment(targetAcademicYear) : "All_AY";
-    const safeSem = targetSemester && targetSemester !== "all" ? sanitizeSegment(targetSemester) : "All_Sem";
-    const safeFac = targetFacultyName ? sanitizeSegment(targetFacultyName).replace(/\s+/g, "_") : "";
-    const zipName = safeFac
-      ? `PUP_FOCUS_Document_Vault_${safeFac}_${safeAY}_${safeSem}.zip`
-      : `PUP_FOCUS_Document_Vault_${safeAY}_${safeSem}.zip`;
+    const safeAY = targetAcademicYear && targetAcademicYear !== "all"
+      ? sanitizeSegment(targetAcademicYear).replace(/[^a-zA-Z0-9]/g, "_")
+      : "All_AY";
+    const safeSem = targetSemester && targetSemester !== "all"
+      ? sanitizeSegment(targetSemester).replace(/[^a-zA-Z0-9]/g, "_")
+      : "All_Sem";
+    const dateStr = new Date().toISOString().replace(/[:.]/g, "-").slice(0, 19);
+
+    // Standardized Naming Convention: Backup_[AY]_[Semester]_[Timestamp].zip
+    const zipName = `Backup_${safeAY}_${safeSem}_${dateStr}.zip`;
+    const backupName = `Backup_${safeAY}_${safeSem}_${dateStr}`;
 
     const archiveBuffer = archive.buffer.slice(
       archive.byteOffset,
@@ -545,10 +611,6 @@ export async function GET(request: NextRequest) {
 
     // --- Persist ZIP download to system_backups so it appears in the backup list ---
     const archiveSizeKb = Math.max(1, Math.round(archiveBuffer.byteLength / 1024));
-    const dateStr = new Date().toISOString().replace(/[:.]/g, "-").slice(0, 19);
-    const backupName = safeFac
-      ? `Vault_ZIP_${safeFac}_${safeAY}_${safeSem}_${dateStr}`
-      : `Vault_ZIP_${safeAY}_${safeSem}_${dateStr}`;
 
     // Resolve creator profile ID for created_by FK
     let creatorProfileId: string | null = null;
@@ -579,6 +641,8 @@ export async function GET(request: NextRequest) {
       created_by: creatorProfileId,
       metadata: {
         type: "document_vault_zip",
+        academic_year: scopeMeta.academic_year,
+        semester: scopeMeta.semester,
         scope: scopeMeta,
         file_count: fileCount,
         zip_name: zipName,

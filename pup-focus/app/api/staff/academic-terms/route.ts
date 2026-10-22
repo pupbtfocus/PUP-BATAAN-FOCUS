@@ -527,174 +527,73 @@ export async function PATCH(request: NextRequest) {
   const currentTerm = allTerms.find((t) => t.status === "Current");
 
     if (currentTerm && (currentTerm.academic_year !== academicYear || normalizeSemester(currentTerm.semester) !== semester)) {
-      // Guard: Check if current term has unvalidated or incomplete submissions
-      const { data: assignments } = await supabase
-        .from("faculty_program_assignments")
-        .select("id")
-        .eq("academic_year", currentTerm.academic_year)
-        .ilike("term", `%${currentTerm.semester}%`);
-
-      const assignmentIds = (assignments ?? []).map((a: any) => a.id);
-
-      const { data: currentTermSubs } = await supabase
-        .from("submissions")
-        .select("id, status, requirement_code")
-        .in(
-          "faculty_assignment_id",
-          assignmentIds.length > 0
-            ? assignmentIds
-            : ["00000000-0000-0000-0000-000000000000"],
-        );
-
-      const { data: dbTemplates } = await supabase
-        .from("requirement_templates")
-        .select("code, is_mandatory")
-        .eq("is_active", true);
-
-      const activeMandatoryTemplates = (dbTemplates ?? []).filter(
-        (t: any) => t.is_mandatory !== false,
-      );
-      const mandatoryReqCount =
-        activeMandatoryTemplates.length > 0 ? activeMandatoryTemplates.length : 6;
-      const mandatoryCodes = new Set(
-        activeMandatoryTemplates.map((t: any) =>
-          String(t.code).toLowerCase().trim(),
-        ),
-      );
-
-      const unvalidatedSubs = (currentTermSubs ?? []).filter((s: any) => {
-        if (s.status === "validated" || s.status === "approved") return false;
-        const code = String(s.requirement_code || "").toLowerCase().trim();
-        if (code && !mandatoryCodes.has(code)) return false;
-        return true;
-      });
-
-      const expectedSubmissionsCount = (assignments ?? []).length * mandatoryReqCount;
-      const validatedSubmissionsCount = (currentTermSubs ?? []).filter((s: any) => {
-        if (s.status !== "validated" && s.status !== "approved") return false;
-        const code = String(s.requirement_code || "").toLowerCase().trim();
-        if (code && !mandatoryCodes.has(code)) return false;
-        return true;
-      }).length;
-
-      const hasIncompleteRequirements =
-        unvalidatedSubs.length > 0 ||
-        validatedSubmissionsCount < expectedSubmissionsCount;
-
-      // Guard 1B: Check if current semester has been backed up or archived
-      const { data: currentTermRecord } = await supabase
-        .from("academic_terms")
-        .select("is_archived")
-        .eq("academic_year", currentTerm.academic_year)
-        .eq("semester", currentTerm.semester)
-        .maybeSingle();
-
-      const isArchived = Boolean(currentTermRecord?.is_archived);
+      // Guard: Strictly prevent changing the active term if no backup exists specifically for this semester
+      const targetAy = currentTerm.academic_year.trim().toLowerCase();
+      const targetSem = normalizeSemester(currentTerm.semester).toLowerCase();
 
       const { data: backupRows } = await supabase
         .from("system_backups")
         .select("id, backup_name, academic_year, metadata, status")
         .eq("status", "completed");
 
-      const hasSemesterBackup =
-        isArchived ||
-        (backupRows ?? []).some((b: any) => {
-          if (!b) return false;
-          if (b.status && b.status !== "completed") return false;
+      const hasSemesterBackup = (backupRows ?? []).some((b: any) => {
+        if (!b) return false;
+        if (b.status && b.status !== "completed") return false;
 
-          const name = (b.backup_name || "").toLowerCase();
-          // Full database snapshots or All AY / All Sem backups cover all terms
-          if (
-            name.includes("all_ay") ||
-            name.includes("all_sem") ||
-            name.includes("full_database") ||
-            name.includes("full_system") ||
-            name.includes("all_academic") ||
-            name.includes("full_snapshot")
-          ) {
-            return true;
-          }
+        const meta = b.metadata ?? {};
+        const metaScope =
+          typeof meta.scope === "object" && meta.scope !== null ? meta.scope : {};
 
-          const meta = b.metadata ?? {};
-          const metaScope = meta.scope;
-
-          if (
-            metaScope === "full_database_snapshot" ||
-            metaScope === "all" ||
-            metaScope === "full"
-          ) {
-            return true;
-          }
-
-          // Extract academic year and semester from top-level or meta or meta.scope
-          let backupAy = b.academic_year || meta.academic_year;
-          let backupSem = meta.semester;
-
-          if (typeof metaScope === "object" && metaScope !== null) {
-            if (!backupAy) backupAy = metaScope.academic_year;
-            if (!backupSem) backupSem = metaScope.semester;
-          }
-
-          // If no specific AY is specified or AY is 'all', it covers all academic years
-          const coversAy =
-            !backupAy ||
-            backupAy === "all" ||
-            backupAy.trim().toLowerCase() === currentTerm.academic_year.trim().toLowerCase();
-
-          // If no specific semester is specified or semester is 'all', it covers all semesters
-          const normCurrentSem = normalizeSemester(currentTerm.semester).toLowerCase();
-          const normBackupSem = backupSem
-            ? normalizeSemester(backupSem).toLowerCase()
-            : null;
-
-          const coversSem =
-            !backupSem ||
-            backupSem === "all" ||
-            normBackupSem === normCurrentSem;
-
-          if (coversAy && coversSem) {
-            return true;
-          }
-
-          // Also check if backup_name contains the current term AY & Sem
-          const safeAY = currentTerm.academic_year.replace(/[^a-zA-Z0-9]/g, "_").toLowerCase();
-          const safeSem = currentTerm.semester.replace(/[^a-zA-Z0-9]/g, "_").toLowerCase();
-          if (name.includes(safeAY) && (name.includes(safeSem) || name.includes("all_sem"))) {
-            return true;
-          }
-
+        // 1. Resolve Academic Year for this backup
+        const rawAy = b.academic_year || meta.academic_year || metaScope.academic_year;
+        if (!rawAy || typeof rawAy !== "string" || rawAy.trim().toLowerCase() === "all") {
           return false;
-        });
-
-      if (hasIncompleteRequirements || !hasSemesterBackup) {
-        let errorTitle = "Requirements & Backup";
-        let errorDetails = "";
-
-        if (hasIncompleteRequirements && !hasSemesterBackup) {
-          errorTitle = "Requirements & Backup";
-          errorDetails =
-            "The current academic term cannot be changed yet. All faculty compliance requirements must be submitted and validated, and a backup of this semester must be created in Backup & Archive.";
-        } else if (hasIncompleteRequirements) {
-          errorTitle = "Requirements & Backup";
-          errorDetails =
-            "The current academic term cannot be changed yet. All faculty compliance requirements must be submitted and validated before changing the term.";
-        } else {
-          errorTitle = "Requirements & Backup";
-          errorDetails =
-            `A backup of ${currentTerm.academic_year} (${currentTerm.semester}) must be created in Backup & Archive before changing to a new academic term.`;
+        }
+        if (rawAy.trim().toLowerCase() !== targetAy) {
+          return false;
         }
 
+        // 2. Resolve Semester for this backup - must strictly match this semester (not 'all' or empty)
+        const rawSem = meta.semester || metaScope.semester;
+        if (rawSem && typeof rawSem === "string" && rawSem.trim().toLowerCase() !== "all") {
+          const normBSem = normalizeSemester(rawSem).toLowerCase();
+          if (normBSem === targetSem) {
+            return true;
+          }
+        }
+
+        // 3. Check backup_name if explicitly tagged with this specific AY and Semester
+        const name = (b.backup_name || "").toLowerCase();
+        const safeAY = targetAy.replace(/[^a-zA-Z0-9]/g, "_");
+        const safeSem = targetSem.replace(/[^a-zA-Z0-9]/g, "_");
+
+        if (name.includes(safeAY) && name.includes(safeSem)) {
+          return true;
+        }
+
+        if (name.includes(safeAY)) {
+          if (targetSem.includes("1st") && (name.includes("1st_sem") || name.includes("first_sem"))) {
+            return true;
+          }
+          if (targetSem.includes("2nd") && (name.includes("2nd_sem") || name.includes("second_sem"))) {
+            return true;
+          }
+          if (targetSem.includes("summer") && name.includes("summer")) {
+            return true;
+          }
+        }
+
+        return false;
+      });
+
+      if (!hasSemesterBackup) {
         return NextResponse.json(
           {
-            error: errorTitle,
-            details: errorDetails,
-            hasIncompleteRequirements,
-            missingBackup: !hasSemesterBackup,
-            unvalidatedCount: unvalidatedSubs.length,
-            missingCount: Math.max(
-              0,
-              expectedSubmissionsCount - validatedSubmissionsCount,
-            ),
+            error: "Semester Backup Required",
+            details: `A backup of S.Y. ${currentTerm.academic_year} (${currentTerm.semester}) must be created in Backup & Archive before you can change to a new academic term. Backups are required per semester.`,
+            missingBackup: true,
+            academicYear: currentTerm.academic_year,
+            semester: currentTerm.semester,
           },
           { status: 400 },
         );

@@ -12,7 +12,6 @@ import {
   Eye,
   Lock,
   SystemRestart,
-  TaskList,
   WarningTriangle,
   Xmark,
 } from "iconoir-react";
@@ -55,7 +54,6 @@ export function AdminAcademicTerms({
     isOpen: boolean;
     title: string;
     description: string;
-    hasIncompleteRequirements?: boolean;
     missingBackup?: boolean;
   }>({ isOpen: false, title: "", description: "" });
   const [nextAcademicYear, setNextAcademicYear] = useState("2026-2027");
@@ -75,6 +73,9 @@ export function AdminAcademicTerms({
     semester?: string;
   }>({ isOpen: false });
   const [countdown, setCountdown] = useState<number>(10);
+  const [isModalBackingUp, setIsModalBackingUp] = useState(false);
+  const [modalBackupError, setModalBackupError] = useState<string | null>(null);
+  const [pendingTargetTerm, setPendingTargetTerm] = useState<AcademicTermItem | null>(null);
 
   useEffect(() => {
     void loadTerms();
@@ -104,6 +105,7 @@ export function AdminAcademicTerms({
     () => terms.find((t) => t.status === "Current"),
     [terms],
   );
+  const currentTerm = currentTermItem;
 
   const currentScore = useMemo(
     () =>
@@ -305,20 +307,19 @@ export function AdminAcademicTerms({
 
       if (!response.ok) {
         if (
-          data?.error?.includes("Incomplete") ||
-          data?.error?.includes("Requirements") ||
           data?.error?.includes("Backup") ||
-          data?.details?.includes("unvalidated") ||
-          data?.details?.includes("backup")
+          data?.details?.includes("backup") ||
+          data?.missingBackup
         ) {
+          setPendingTargetTerm(termToSetCurrent);
+          setModalBackupError(null);
           setWarningModalData({
             isOpen: true,
-            title: data?.error || "Incomplete Term Transition Requirements",
+            title: data?.error || "Semester Backup Required",
             description:
               data?.details ||
-              "All requirements must be submitted and validated, and a backup must be created before changing the academic term.",
-            hasIncompleteRequirements: data?.hasIncompleteRequirements ?? true,
-            missingBackup: Boolean(data?.missingBackup),
+              "A backup for this specific semester must be created in Backup & Archive before changing to a new academic term. Backups are required per semester.",
+            missingBackup: Boolean(data?.missingBackup ?? true),
           });
           setTermToSetCurrent(null);
           return;
@@ -333,6 +334,7 @@ export function AdminAcademicTerms({
         `Set ${termToSetCurrent.academicYear} ${termToSetCurrent.semester} as the current academic term.`,
       );
       setTermToSetCurrent(null);
+      setPendingTargetTerm(null);
       await loadTerms({ silent: true });
       emitRealtimeSync({ source: "academic-term-set-current", timestamp: Date.now() });
     } catch (saveError) {
@@ -343,6 +345,75 @@ export function AdminAcademicTerms({
       );
     } finally {
       setIsSaving(false);
+    }
+  }
+
+  async function handleDirectSemesterBackup() {
+    if (!currentTerm) return;
+    setIsModalBackingUp(true);
+    setModalBackupError(null);
+
+    try {
+      const params = new URLSearchParams({
+        academic_year: currentTerm.academicYear,
+        semester: currentTerm.semester,
+        faculty_id: "all",
+      });
+
+      const res = await fetch(`/api/staff/backups/export-zip?${params.toString()}`);
+      if (!res.ok) {
+        const errJson = await res.json().catch(() => ({}));
+        throw new Error(errJson.error || "Failed to download semester documents backup");
+      }
+
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `PUP_FOCUS_Document_Vault_${currentTerm.academicYear.replace(/[^a-zA-Z0-9]/g, "_")}_${currentTerm.semester.replace(/[^a-zA-Z0-9]/g, "_")}.zip`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+
+      emitRealtimeSync({ source: "system-backup-created", timestamp: Date.now() });
+
+      if (pendingTargetTerm) {
+        const target = pendingTargetTerm;
+        const patchRes = await fetch(
+          `/api/staff/academic-terms?academicYear=${encodeURIComponent(
+            target.academicYear,
+          )}&semester=${encodeURIComponent(target.semester)}`,
+          {
+            method: "PATCH",
+            credentials: "include",
+          },
+        );
+        const patchData = await patchRes.json();
+        if (!patchRes.ok) {
+          throw new Error(patchData?.error || "Failed to activate target academic term");
+        }
+
+        setSuccess(
+          `Successfully backed up documents for ${currentTerm.academicYear} (${currentTerm.semester}) and set ${target.academicYear} ${target.semester} as the Current term!`,
+        );
+        setWarningModalData({ isOpen: false, title: "", description: "" });
+        setPendingTargetTerm(null);
+        await loadTerms({ silent: true });
+        emitRealtimeSync({ source: "academic-term-set-current", timestamp: Date.now() });
+      } else {
+        setSuccess(
+          `Document backup for S.Y. ${currentTerm.academicYear} (${currentTerm.semester}) completed successfully!`,
+        );
+        setWarningModalData({ isOpen: false, title: "", description: "" });
+        await loadTerms({ silent: true });
+      }
+    } catch (err) {
+      setModalBackupError(
+        err instanceof Error ? err.message : "Failed to backup semester documents",
+      );
+    } finally {
+      setIsModalBackingUp(false);
     }
   }
 
@@ -981,71 +1052,28 @@ export function AdminAcademicTerms({
         </div>
       ) : null}
 
-      {/* Modal: Requirements & Backup Required (System Transition Guard) */}
+      {/* Modal: Backup Required (System Transition Guard) */}
       {warningModalData.isOpen ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4 py-6 backdrop-blur-sm animate-in fade-in">
           <div className="w-full max-w-lg rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 shadow-2xl text-slate-900 dark:text-slate-100 overflow-hidden flex flex-col">
             <ModalHeader
-              title="Requirements & Backup"
-              subtitle="Semester requirements and backup status"
+              title={warningModalData.title || "Semester Backup Required"}
+              subtitle="Each semester requires its own backup before changing terms"
               icon={WarningTriangle}
-              onClose={() =>
-                setWarningModalData({ ...warningModalData, isOpen: false })
-              }
+              onClose={() => {
+                setWarningModalData({ ...warningModalData, isOpen: false });
+                setPendingTargetTerm(null);
+                setModalBackupError(null);
+              }}
             />
 
             <div className="p-6 space-y-4">
-              {/* Requirements & Backup Checklist */}
               <div className="space-y-2.5">
                 <p className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-                  Requirements &amp; Backup
+                  Pre-Transition Backup
                 </p>
 
-                {/* Item 1: Faculty Compliance */}
-                <div className="flex items-center justify-between gap-3 p-3.5 rounded-xl border border-slate-200/90 dark:border-slate-800 bg-white dark:bg-slate-900/60 shadow-2xs">
-                  <div className="flex items-center gap-3 min-w-0">
-                    <div
-                      className={`h-9 w-9 rounded-xl flex items-center justify-center shrink-0 shadow-2xs ${
-                        warningModalData.hasIncompleteRequirements !== false
-                          ? "bg-amber-500 text-slate-950 border border-amber-600"
-                          : "bg-[#0b5336] text-white border border-[#08412a]"
-                      }`}
-                    >
-                      {warningModalData.hasIncompleteRequirements !== false ? (
-                        <AppIcon
-                          icon={TaskList}
-                          size="sm"
-                          color="inherit"
-                        />
-                      ) : (
-                        <AppIcon icon={Check} size="sm" color="inherit" strokeWidth={2.5} />
-                      )}
-                    </div>
-                    <div className="space-y-0.5 min-w-0">
-                      <p className="text-xs font-bold text-slate-900 dark:text-slate-100">
-                        1. Faculty Compliance Requirements
-                      </p>
-                      <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed">
-                        {warningModalData.hasIncompleteRequirements !== false
-                          ? "All faculty members must submit required semester documents and have them validated."
-                          : "All faculty compliance submissions for this semester have been validated."}
-                      </p>
-                    </div>
-                  </div>
-                  <span
-                    className={`shrink-0 text-xs font-bold px-2.5 py-1 rounded-lg shadow-2xs ${
-                      warningModalData.hasIncompleteRequirements !== false
-                        ? "bg-amber-500 text-slate-950 border border-amber-600"
-                        : "bg-[#0b5336] text-white border border-[#08412a]"
-                    }`}
-                  >
-                    {warningModalData.hasIncompleteRequirements !== false
-                      ? "Action Required"
-                      : "Validated"}
-                  </span>
-                </div>
-
-                {/* Item 2: Semester Backup */}
+                {/* Semester Backup */}
                 <div className="flex items-center justify-between gap-3 p-3.5 rounded-xl border border-slate-200/90 dark:border-slate-800 bg-white dark:bg-slate-900/60 shadow-2xs">
                   <div className="flex items-center gap-3 min-w-0">
                     <div
@@ -1067,12 +1095,11 @@ export function AdminAcademicTerms({
                     </div>
                     <div className="space-y-0.5 min-w-0">
                       <p className="text-xs font-bold text-slate-900 dark:text-slate-100">
-                        2. Semester Backup
+                        {currentTerm ? `${currentTerm.academicYear} · ${currentTerm.semester}` : "Current Semester"} Backup
                       </p>
                       <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed">
-                        {warningModalData.missingBackup
-                          ? "A recovery backup of this semester must exist in Backup & Archive."
-                          : "System backup for this semester has been confirmed."}
+                        {warningModalData.description ||
+                          "A recovery backup of this specific semester must exist in Backup & Archive before changing to a new academic term. Backups are required per semester."}
                       </p>
                     </div>
                   </div>
@@ -1088,72 +1115,87 @@ export function AdminAcademicTerms({
                       : "Backed Up"}
                   </span>
                 </div>
+
+                {pendingTargetTerm && (
+                  <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-900/40 border border-slate-200 dark:border-slate-800 text-xs text-slate-600 dark:text-slate-400 flex items-center justify-between gap-2">
+                    <span>Target term to activate:</span>
+                    <span className="font-bold text-slate-900 dark:text-slate-200">
+                      {pendingTargetTerm.academicYear} {pendingTargetTerm.semester}
+                    </span>
+                  </div>
+                )}
+
+                {modalBackupError && (
+                  <div className="p-3 rounded-xl bg-[#780000] text-white border border-[#5e0000] text-xs font-semibold flex items-center gap-2.5 shadow-2xs">
+                    <AppIcon icon={WarningTriangle} size="xs" color="inherit" className="shrink-0 text-white" />
+                    <span>{modalBackupError}</span>
+                  </div>
+                )}
               </div>
 
               {/* Action Buttons Footer */}
               <div className="pt-4 border-t border-slate-100 dark:border-slate-800/80 flex flex-col-reverse sm:flex-row items-center justify-between gap-2.5">
                 <button
                   type="button"
-                  onClick={() =>
-                    setWarningModalData({ ...warningModalData, isOpen: false })
-                  }
-                  className="w-full sm:w-auto px-4 py-2 rounded-xl bg-[#780000] hover:bg-[#5e0000] text-white border border-[#5e0000] text-xs font-semibold transition-all cursor-pointer shadow-xs"
+                  onClick={() => {
+                    setWarningModalData({ ...warningModalData, isOpen: false });
+                    setPendingTargetTerm(null);
+                    setModalBackupError(null);
+                  }}
+                  disabled={isModalBackingUp}
+                  className="w-full sm:w-auto px-4 py-2 rounded-xl bg-[#780000] hover:bg-[#5e0000] text-white border border-[#5e0000] text-xs font-semibold transition-all cursor-pointer shadow-xs disabled:opacity-50"
                 >
-                  Close
+                  Cancel
                 </button>
 
                 <div className="w-full sm:w-auto flex flex-col sm:flex-row items-center gap-2">
-                  {warningModalData.hasIncompleteRequirements !== false ? (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setWarningModalData({
-                          ...warningModalData,
-                          isOpen: false,
-                        });
-                        if (onNavigateToRequirements) {
-                          onNavigateToRequirements();
-                          return;
-                        }
-                        const isSuper =
-                          isSuperAdmin ||
-                          (typeof window !== "undefined" &&
-                            (window.location.pathname.startsWith("/admin") ||
-                              window.location.pathname.startsWith("/super-admin")));
-                        if (isSuper) {
-                          window.location.href =
-                            "/admin/dashboard?tab=verification";
-                        } else {
-                          window.location.href =
-                            "/staff/dashboard?tab=requirements";
-                        }
-                      }}
-                      className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 border border-amber-600 font-semibold text-xs transition-all cursor-pointer shadow-xs active:scale-[0.98]"
-                    >
-                      <AppIcon icon={TaskList} size="xs" color="inherit" />
-                      <span>Review Requirements</span>
-                    </button>
-                  ) : null}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setWarningModalData({
+                        ...warningModalData,
+                        isOpen: false,
+                      });
+                      if (onNavigateToBackups) {
+                        onNavigateToBackups();
+                        return;
+                      }
+                      const isSuper =
+                        isSuperAdmin ||
+                        (typeof window !== "undefined" &&
+                          (window.location.pathname.startsWith("/admin") ||
+                            window.location.pathname.startsWith("/super-admin")));
+                      const query = currentTerm
+                        ? `&academic_year=${encodeURIComponent(currentTerm.academicYear)}&semester=${encodeURIComponent(currentTerm.semester)}`
+                        : "";
+                      window.location.href = isSuper
+                        ? `/admin/dashboard?tab=backups${query}`
+                        : `/staff/dashboard?tab=backups${query}`;
+                    }}
+                    disabled={isModalBackingUp}
+                    className="w-full sm:w-auto text-xs text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 underline px-2 py-1.5 transition cursor-pointer"
+                  >
+                    Open Backups &amp; Archive →
+                  </button>
 
                   {warningModalData.missingBackup ? (
                     <button
                       type="button"
-                      onClick={() => {
-                        setWarningModalData({
-                          ...warningModalData,
-                          isOpen: false,
-                        });
-                        if (onNavigateToBackups) {
-                          onNavigateToBackups();
-                          return;
-                        }
-                        window.location.href =
-                          "/staff/dashboard?tab=backups";
-                      }}
-                      className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-white dark:bg-slate-100 dark:text-slate-950 dark:hover:bg-white border border-slate-900 dark:border-slate-100 font-semibold text-xs transition-all cursor-pointer shadow-xs active:scale-[0.98]"
+                      onClick={() => void handleDirectSemesterBackup()}
+                      disabled={isModalBackingUp}
+                      className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 border border-amber-600 font-semibold text-xs transition-all cursor-pointer shadow-xs active:scale-[0.98] disabled:opacity-50"
                     >
-                      <AppIcon icon={Database} size="xs" color="inherit" />
-                      <span>Backup Semester</span>
+                      {isModalBackingUp ? (
+                        <>
+                          <AppIcon icon={SystemRestart} size="xs" color="inherit" className="animate-spin" />
+                          <span>Backing Up &amp; Activating...</span>
+                        </>
+                      ) : (
+                        <>
+                          <AppIcon icon={Archive} size="xs" color="inherit" />
+                          <span>Backup Documents &amp; Activate Now</span>
+                        </>
+                      )}
                     </button>
                   ) : null}
                 </div>

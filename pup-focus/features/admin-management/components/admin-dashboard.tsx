@@ -387,6 +387,48 @@ export function SuperAdminDashboard({
     }
   }, [searchParams, activeSection]);
 
+  // Listener for instant admin view navigation requests from notification drawer
+  useEffect(() => {
+    function handleAdminNavigate(e: Event) {
+      const customEvent = e as CustomEvent<{
+        tab?: string;
+        facultyId?: string | null;
+        reqCode?: string | null;
+      }>;
+      if (customEvent.detail?.tab) {
+        const norm = normalizeSuperAdminSection(customEvent.detail.tab);
+        if (norm) {
+          setActiveSection(norm);
+        }
+      }
+      if (customEvent.detail?.facultyId) {
+        lastParamRef.current = customEvent.detail.facultyId;
+        setSelectedFacultyId(customEvent.detail.facultyId);
+      }
+    }
+    window.addEventListener("pup-focus-admin-navigate", handleAdminNavigate);
+    return () => window.removeEventListener("pup-focus-admin-navigate", handleAdminNavigate);
+  }, []);
+
+  // Browser back/forward popstate listener for accurate history back navigation
+  useEffect(() => {
+    function handlePopState() {
+      try {
+        const params = new URLSearchParams(window.location.search);
+        const tabParam = params.get("tab") || params.get("section");
+        const norm = normalizeSuperAdminSection(tabParam);
+        if (norm) {
+          setActiveSection(norm);
+        }
+        const fId = params.get("facultyId");
+        lastParamRef.current = fId || null;
+        setSelectedFacultyId(fId || null);
+      } catch {}
+    }
+    window.addEventListener("popstate", handlePopState);
+    return () => window.removeEventListener("popstate", handlePopState);
+  }, []);
+
   const handleSetActiveSection = (section: SuperAdminSection) => {
     setActiveSection(section);
     if (typeof window !== "undefined") {
@@ -397,7 +439,7 @@ export function SuperAdminDashboard({
         localStorage.removeItem("activeSuperAdminSection");
         const url = new URL(window.location.href);
         url.searchParams.set("tab", section);
-        window.history.replaceState(null, "", url.toString());
+        window.history.pushState(null, "", url.toString());
       } catch {}
     }
   };
