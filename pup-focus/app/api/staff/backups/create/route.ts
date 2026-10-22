@@ -215,155 +215,199 @@ export async function POST(request: NextRequest) {
       );
     });
 
-    // Filter faculty profiles if scoped to a specific faculty member
-    const filteredFacultyProfiles = facultyId
-      ? facultyOnlyProfiles.filter((u) => u.id === facultyId || u.user_id === facultyId)
-      : facultyOnlyProfiles;
-
+    // All backups strictly capture all genuine faculty members
+    const filteredFacultyProfiles = facultyOnlyProfiles;
     const filteredFacultyProfilesData = filteredFacultyProfiles;
 
-    // 2. Collect Academic Terms
+    // Resolve target Academic Year & Semester (fallback to active Current term if not explicitly provided)
+    let targetAy = academicYear;
+    let targetSem = semester;
+
     const { data: termsData } = await supabase
       .from("academic_terms")
       .select("*");
 
-    // 3. Collect Submissions (Faculty Compliance Submissions)
-    const { data: submissionsData } = await supabase
-      .from("submissions")
-      .select("id, faculty_profile_id, requirement_code, status, submitted_at, remarks, admin_remarks, is_archived, created_at, faculty_assignment_id");
-
-    // 4. Collect Requirement Templates
-    const { data: templatesData } = await supabase
-      .from("requirement_templates")
-      .select("*");
-
-    // 5. Collect Transaction / Audit Logs (Excluding admin account management events)
-    let auditLogsData: unknown[] = [];
-    try {
-      let logs: any[] | null = null;
-      const { data: txLogs, error: txError } = await supabase
-        .from("transaction_logs")
-        .select("*")
-        .order("created_at", { ascending: false })
-        .limit(500);
-
-      if (txError && (txError.code === "42P01" || txError.message?.includes("transaction_logs") || txError.message?.includes("does not exist"))) {
-        const { data: legacyLogs } = await supabase
-          .from("audit_logs")
-          .select("*")
-          .order("timestamp", { ascending: false })
-          .limit(500);
-        logs = legacyLogs;
-      } else {
-        logs = txLogs;
+    if (!targetAy || !targetSem) {
+      const currentTermRow = (termsData || []).find((t) => t.status === "Current");
+      if (currentTermRow) {
+        if (!targetAy) targetAy = currentTermRow.academic_year;
+        if (!targetSem) targetSem = currentTermRow.semester;
       }
-
-      if (logs) {
-        auditLogsData = logs.filter((log: { action?: string; details?: Record<string, unknown>; actor_id?: string }) => {
-          const action = String(log.action || "").toUpperCase();
-          if (action.includes("ADMIN")) return false; // Exclude admin account logs
-          if (facultyId) {
-            const actorMatches = log.actor_id === facultyId;
-            const targetMatches =
-              log.details?.faculty_id === facultyId ||
-              log.details?.faculty_profile_id === facultyId ||
-              log.details?.user_id === facultyId;
-            return actorMatches || targetMatches;
-          }
-          return true;
-        });
-      }
-    } catch {
-      // ignore
     }
 
-    // Filter submissions according to selected scope
+    // 2. Collect Submissions including storage paths, file names, and mime types
+    const { data: submissionsData } = await supabase
+      .from("submissions")
+      .select("id, faculty_profile_id, requirement_code, status, submitted_at, remarks, admin_remarks, is_archived, created_at, faculty_assignment_id, storage_path, file_name, mime_type, size_bytes");
+
+    // 3. Fallback Document Versions if file columns are in legacy table
+    const subIds = (submissionsData || []).map((s) => s.id);
+    const docVersionsMap = new Map<string, { storage_path?: string; file_name?: string; mime_type?: string; size_bytes?: number }>();
+    if (subIds.length > 0) {
+      try {
+        const { data: docVersions } = await supabase
+          .from("document_versions")
+          .select("submission_id, storage_path, file_name, mime_type, size_bytes")
+          .in("submission_id", subIds);
+        if (docVersions) {
+          for (const dv of docVersions) {
+            if (dv.submission_id && !docVersionsMap.has(dv.submission_id)) {
+              docVersionsMap.set(dv.submission_id, dv);
+            }
+          }
+        }
+      } catch {
+        // ignore
+      }
+    }
+
+    // 4. Requirement Templates for human-readable requirement titles
+    const { data: templatesData } = await supabase
+      .from("requirement_templates")
+      .select("code, title, name");
+    const templateTitleMap = new Map<string, string>();
+    for (const t of templatesData || []) {
+      if (t.code) templateTitleMap.set(t.code, t.title || t.name || t.code);
+    }
+
+    // Helper: Determine exact file type / extension
+    function extractFileType(
+      fileName?: string | null,
+      mimeType?: string | null,
+      storagePath?: string | null,
+    ): string {
+      const pathOrName = (fileName || storagePath || "").trim();
+      const extMatch = pathOrName.match(/\.([a-zA-Z0-9]+)$/);
+      if (extMatch && extMatch[1]) {
+        return extMatch[1].toUpperCase();
+      }
+      if (mimeType) {
+        const m = mimeType.toLowerCase();
+        if (m.includes("pdf")) return "PDF";
+        if (m.includes("word") || m.includes("document") || m.includes("docx") || m.includes("msword")) return "DOCX";
+        if (m.includes("sheet") || m.includes("excel") || m.includes("xlsx") || m.includes("csv")) return "XLSX";
+        if (m.includes("image/png") || m.includes("png")) return "PNG";
+        if (m.includes("image/jpeg") || m.includes("jpeg") || m.includes("jpg")) return "JPG";
+        if (m.includes("zip") || m.includes("compressed")) return "ZIP";
+      }
+      return "PDF";
+    }
+
+    // Filter submissions strictly to current target Academic Year and Semester
     const rawSubmissions = submissionsData || [];
-    const filteredSubmissions = rawSubmissions.filter((sub) => {
-      if (facultyId) {
-        const matchesFaculty =
-          sub.faculty_profile_id === facultyId ||
-          (sub as Record<string, unknown>).user_id === facultyId;
-        if (!matchesFaculty) return false;
-      }
-
-      if (academicYear || semester) {
-        const termInfo = getTermInfo(sub);
-        if (academicYear) {
-          const ayMatch =
-            termInfo.academicYear.toLowerCase() === academicYear.toLowerCase() ||
-            termInfo.academicYear.replace(/[^0-9]/g, "") === academicYear.replace(/[^0-9]/g, "");
-          if (!ayMatch) return false;
-        }
-        if (semester) {
-          const semMatch =
-            termInfo.semester.toLowerCase().includes(semester.toLowerCase()) ||
-            semester.toLowerCase().includes(termInfo.semester.toLowerCase());
-          if (!semMatch) return false;
-        }
-      }
-
-      return true;
-    });
-
-    // Filter academic terms according to selected scope
-    const rawTerms = termsData || [];
-    const filteredTerms = rawTerms.filter((term) => {
-      if (academicYear) {
+    const termSubmissions = rawSubmissions.filter((sub) => {
+      const termInfo = getTermInfo(sub);
+      if (targetAy) {
         const ayMatch =
-          term.academic_year?.toLowerCase() === academicYear.toLowerCase() ||
-          term.academic_year?.replace(/[^0-9]/g, "") === academicYear.replace(/[^0-9]/g, "");
+          termInfo.academicYear.toLowerCase() === targetAy.toLowerCase() ||
+          termInfo.academicYear.replace(/[^0-9]/g, "") === targetAy.replace(/[^0-9]/g, "");
         if (!ayMatch) return false;
       }
-      if (semester) {
+      if (targetSem) {
         const semMatch =
-          term.semester?.toLowerCase().includes(semester.toLowerCase()) ||
-          semester.toLowerCase().includes(term.semester?.toLowerCase() || "");
+          termInfo.semester.toLowerCase().includes(targetSem.toLowerCase()) ||
+          targetSem.toLowerCase().includes(termInfo.semester.toLowerCase());
         if (!semMatch) return false;
       }
       return true;
     });
 
-    const users = filteredFacultyProfiles;
-    const terms = filteredTerms.length > 0 ? filteredTerms : rawTerms;
-    const submissions = filteredSubmissions;
-    const templates = templatesData || [];
-    const auditLogs = auditLogsData;
+    // Group submissions by faculty profile ID
+    const submissionsByFaculty = new Map<string, any[]>();
+    for (const sub of termSubmissions) {
+      const fId = sub.faculty_profile_id;
+      if (!fId) continue;
+      const list = submissionsByFaculty.get(fId) || [];
+      list.push(sub);
+      submissionsByFaculty.set(fId, list);
+    }
 
-    const totalRecords =
-      users.length +
-      terms.length +
-      submissions.length +
-      templates.length +
-      auditLogs.length;
+    // Build the clean list of all faculty and their submitted requirements with file types
+    const fileTypesSummary: Record<string, number> = {};
+    let totalSubmissionsCount = 0;
+
+    const facultyComplianceRoster = filteredFacultyProfiles.map((faculty) => {
+      const subs =
+        submissionsByFaculty.get(faculty.id) ||
+        (faculty.user_id ? submissionsByFaculty.get(faculty.user_id) : []) ||
+        [];
+
+      const submittedRequirements = subs.map((s) => {
+        const dv = docVersionsMap.get(s.id);
+        const storagePath = s.storage_path || dv?.storage_path || null;
+        const fileName = s.file_name || dv?.file_name || (storagePath ? storagePath.split("/").pop() : null);
+        const mimeType = s.mime_type || dv?.mime_type || (fileName?.endsWith(".pdf") ? "application/pdf" : null);
+        const sizeBytes = s.size_bytes || dv?.size_bytes || null;
+        const fileType = extractFileType(fileName, mimeType, storagePath);
+
+        fileTypesSummary[fileType] = (fileTypesSummary[fileType] || 0) + 1;
+        totalSubmissionsCount++;
+
+        return {
+          submission_id: s.id,
+          requirement_code: s.requirement_code,
+          requirement_title: templateTitleMap.get(s.requirement_code) || s.requirement_code,
+          status: s.status || "Submitted",
+          submitted_at: s.submitted_at || s.created_at,
+          file: {
+            file_name: fileName || `${s.requirement_code}_Document.${fileType.toLowerCase()}`,
+            file_type: fileType,
+            mime_type: mimeType || "application/octet-stream",
+            size_bytes: sizeBytes,
+            storage_path: storagePath,
+          },
+          remarks: s.remarks || null,
+          admin_remarks: s.admin_remarks || null,
+        };
+      });
+
+      return {
+        faculty_id: faculty.id,
+        user_id: faculty.user_id || null,
+        name: faculty.name || faculty.full_name || "Faculty Member",
+        email: faculty.email || null,
+        department: faculty.department || null,
+        total_submitted_requirements: submittedRequirements.length,
+        requirements: submittedRequirements,
+      };
+    });
+
+    const totalRecords = totalSubmissionsCount;
 
     const scopeMetadata = {
-      academic_year: academicYear,
-      semester: semester,
-      faculty_id: facultyId,
-      faculty_name: facultyName,
+      academic_year: targetAy,
+      semester: targetSem,
+      faculty_id: "all",
+      faculty_name: "All Faculty Members",
     };
 
-    const snapshotPayload: BackupSnapshotData = {
-      version: "1.0",
+    // Clean, structured snapshot capturing ONLY all faculty and their submitted requirements with file types
+    const snapshotPayload = {
+      version: "2.0",
+      backup_type: "faculty_semester_compliance_backup",
+      academic_year: targetAy,
+      semester: targetSem,
       exported_at: new Date().toISOString(),
       generated_by: user.email || user.id,
       scope: scopeMetadata,
       summary: {
         total_records: totalRecords,
-        users_count: users.length,
-        academic_terms_count: terms.length,
-        submissions_count: submissions.length,
-        requirement_templates_count: templates.length,
-        audit_logs_count: auditLogs.length,
+        total_faculty: facultyComplianceRoster.length,
+        total_submissions: totalSubmissionsCount,
+        file_types_summary: fileTypesSummary,
+        users_count: facultyComplianceRoster.length,
+        submissions_count: totalSubmissionsCount,
       },
+      faculty_roster: facultyComplianceRoster,
       data: {
-        users,
-        faculty_profiles: filteredFacultyProfilesData,
-        academic_terms: terms,
-        submissions,
-        requirement_templates: templates,
-        audit_logs: auditLogs,
+        faculty_list: facultyComplianceRoster,
+        users: facultyComplianceRoster.map((f) => ({
+          id: f.faculty_id,
+          name: f.name,
+          email: f.email,
+          department: f.department,
+        })),
+        submissions: termSubmissions,
       },
     };
 
@@ -372,17 +416,12 @@ export async function POST(request: NextRequest) {
 
     const dateStr = new Date().toISOString().replace(/[:.]/g, "-").slice(0, 19);
     const scopeSegments: string[] = [];
-    if (academicYear) scopeSegments.push(academicYear.replace(/[^a-zA-Z0-9]/g, "_"));
-    if (semester) scopeSegments.push(semester.replace(/[^a-zA-Z0-9]/g, "_"));
-    if (facultyName) {
-      scopeSegments.push(facultyName.replace(/[^a-zA-Z0-9]/g, "_").slice(0, 20));
-    } else if (facultyId) {
-      scopeSegments.push(`Faculty_${facultyId.slice(0, 8)}`);
-    }
+    if (targetAy) scopeSegments.push(targetAy.replace(/[^a-zA-Z0-9]/g, "_"));
+    if (targetSem) scopeSegments.push(targetSem.replace(/[^a-zA-Z0-9]/g, "_"));
 
     const defaultName = scopeSegments.length > 0
-      ? `Backup_${scopeSegments.join("_")}_${dateStr}`
-      : `Full_System_Backup_${dateStr}`;
+      ? `Backup_${scopeSegments.join("_")}_All_Faculty_${dateStr}`
+      : `Faculty_Backup_${dateStr}`;
 
     const backupName = customName || defaultName;
 
@@ -408,22 +447,21 @@ export async function POST(request: NextRequest) {
 
     const backupPayload = {
       backup_name: backupName,
-      academic_year: academicYear || null,
+      academic_year: targetAy || null,
       total_records: totalRecords,
       file_size_kb: fileSizeKb,
       status: "completed" as const,
       created_by: creatorProfileId,
       metadata: {
-        academic_year: academicYear,
-        semester: semester,
-        faculty_id: facultyId,
-        faculty_name: facultyName,
+        academic_year: targetAy,
+        semester: targetSem,
+        faculty_id: "all",
+        faculty_name: "All Faculty Members",
         scope: scopeMetadata,
-        users_count: users.length,
-        terms_count: terms.length,
-        submissions_count: submissions.length,
-        templates_count: templates.length,
-        audit_logs_count: auditLogs.length,
+        users_count: facultyComplianceRoster.length,
+        terms_count: 1,
+        submissions_count: totalSubmissionsCount,
+        file_types_summary: fileTypesSummary,
         snapshot: snapshotPayload,
       },
     };

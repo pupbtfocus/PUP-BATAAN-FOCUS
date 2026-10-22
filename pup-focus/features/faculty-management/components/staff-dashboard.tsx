@@ -139,6 +139,24 @@ export function AdminFacultyDashboard({
     }
   }, [searchParams, activeSection]);
 
+  // Browser back/forward popstate listener for accurate history back navigation
+  useEffect(() => {
+    function handlePopState() {
+      try {
+        const params = new URLSearchParams(window.location.search);
+        const tabParam = params.get("tab") || params.get("section");
+        const norm = normalizeAdminSection(tabParam);
+        if (norm && norm !== activeSection) {
+          setActiveSection(norm);
+        }
+        const fId = params.get("facultyId");
+        setSelectedFacultyId(fId || null);
+      } catch {}
+    }
+    window.addEventListener("popstate", handlePopState);
+    return () => window.removeEventListener("popstate", handlePopState);
+  }, [activeSection]);
+
   const handleSetActiveSection = (section: AdminSection) => {
     setActiveSection(section);
     if (typeof window !== "undefined") {
@@ -149,7 +167,7 @@ export function AdminFacultyDashboard({
         localStorage.removeItem("activeAdminSection");
         const url = new URL(window.location.href);
         url.searchParams.set("tab", section);
-        window.history.replaceState(null, "", url.toString());
+        window.history.pushState(null, "", url.toString());
       } catch {}
     }
   };

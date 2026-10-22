@@ -10,6 +10,7 @@ import {
   REQUIREMENT_LABEL,
   type RequirementCode,
 } from "@/config/compliance";
+import { FACULTY_PROFILE_IMAGE_BUCKET } from "@/lib/faculty-profile";
 
 const SUBMISSION_ALERT_TYPES = [
   "NEW_SUBMISSION",
@@ -115,109 +116,305 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    // 2. Fetch all faculty profiles to enrich metadata
-    const { data: facultyRole } = await supabase
-      .from("roles")
-      .select("id")
-      .eq("code", "faculty")
-      .maybeSingle();
-
+    // 2. Fetch all faculty profiles and faculty records to enrich metadata
     let facultyProfiles: Array<{
       id: string;
+      user_id?: string | null;
       full_name: string | null;
       email: string | null;
+      avatar_url?: string | null;
+      department?: string | null;
     }> = [];
 
-    if (facultyRole?.id) {
-      const { data: userRoles } = await supabase
-        .from("user_roles")
-        .select("profile_id")
-        .eq("role_id", facultyRole.id);
+    try {
+      const { data: profiles } = await supabase
+        .from("profiles")
+        .select("id, user_id, full_name, email, avatar_url");
 
-      const profileIds = Array.from(
-        new Set(
-          (userRoles ?? [])
-            .map((r) => r.profile_id)
-            .filter((val): val is string => Boolean(val)),
-        ),
-      );
-
-      if (profileIds.length > 0) {
-        const { data: profiles } = await supabase
-          .from("profiles")
-          .select("id, full_name, email")
-          .in("id", profileIds);
-        facultyProfiles = profiles || [];
+      if (profiles && profiles.length > 0) {
+        facultyProfiles = profiles.map((p) => ({
+          id: p.id,
+          user_id: p.user_id,
+          full_name: p.full_name,
+          email: p.email,
+          avatar_url: p.avatar_url,
+          department: null,
+        }));
       }
+    } catch (e) {
+      console.warn("[ADMIN_NOTIFS] Profiles fetch warning:", e);
     }
 
-    // Enrich notifications with parsed details
-    const notifications = deduplicatedRows.map((row) => {
-      const fullText = `${row.title || ""} ${row.message || ""}`;
-      const reqCode =
-        row.metadata?.requirement_code ||
-        row.metadata?.requirementCode ||
-        extractRequirementCodeFromText(fullText);
-      const reqLabel = reqCode ? REQUIREMENT_LABEL[reqCode as RequirementCode] : null;
+    try {
+      const { data: facultyRows } = await supabase
+        .from("faculty")
+        .select("id, profile_id, user_id, full_name, email, metadata");
 
-      const extractedFacultyName =
-        row.metadata?.facultyName ||
-        row.metadata?.faculty_name ||
-        extractFacultyNameFromTitle(row.title || "");
+      if (facultyRows) {
+        for (const f of facultyRows) {
+          const meta = (f.metadata || {}) as Record<string, any>;
+          const existing = facultyProfiles.find(
+            (p) =>
+              p.id === f.profile_id ||
+              p.id === f.id ||
+              (f.email && p.email?.toLowerCase() === f.email.toLowerCase()),
+          );
+          if (existing) {
+            existing.avatar_url =
+              existing.avatar_url || meta.avatar_url || meta.profile_image_url || null;
+            existing.department =
+              existing.department || meta.department || meta.program || null;
+          } else {
+            facultyProfiles.push({
+              id: f.profile_id || f.id,
+              user_id: f.user_id,
+              full_name: f.full_name,
+              email: f.email,
+              avatar_url: meta.avatar_url || meta.profile_image_url || null,
+              department: meta.department || meta.program || null,
+            });
+          }
+        }
+      }
+    } catch {}
 
-      let facultyId =
-        row.metadata?.faculty_profile_id ||
-        row.metadata?.facultyId ||
-        null;
+    // Query auth.users to resolve avatars from user_metadata and storage buckets
+    const authUserById = new Map<string, any>();
+    const authUserByEmail = new Map<string, any>();
+    try {
+      const { data: authUsersResult } = await supabase.auth.admin.listUsers({ perPage: 1000 });
+      if (authUsersResult?.users) {
+        for (const u of authUsersResult.users) {
+          if (u.id) authUserById.set(u.id, u);
+          if (u.email) authUserByEmail.set(u.email.toLowerCase(), u);
+        }
+      }
+    } catch (e) {
+      console.warn("[ADMIN_NOTIFS] listUsers warning:", e);
+    }
 
-      // If facultyId is missing, attempt match by name against faculty profiles
-      if (!facultyId && extractedFacultyName) {
-        const matchedFaculty = facultyProfiles.find(
-          (f) =>
-            f.full_name &&
-            (f.full_name.toLowerCase().includes(extractedFacultyName.toLowerCase()) ||
-              extractedFacultyName.toLowerCase().includes(f.full_name.toLowerCase())),
-        );
-        if (matchedFaculty) {
-          facultyId = matchedFaculty.id;
+    // Cache resolved avatar signed URLs to minimize storage calls
+    const avatarCache = new Map<string, string>();
+    async function resolveFacultyAvatar(
+      userIdOrEmail?: string | null,
+      fallbackAvatar?: string | null,
+    ): Promise<string | null> {
+      const cacheKey = (userIdOrEmail || fallbackAvatar || "").toLowerCase().trim();
+      if (!cacheKey) return null;
+      if (avatarCache.has(cacheKey)) return avatarCache.get(cacheKey) || null;
+
+      const authUser = userIdOrEmail
+        ? authUserById.get(userIdOrEmail) || authUserByEmail.get(userIdOrEmail.toLowerCase())
+        : null;
+
+      const meta = (authUser?.user_metadata || {}) as Record<string, any>;
+      const rawPath = (meta.profile_image_path ||
+        fallbackAvatar ||
+        meta.avatar_url ||
+        meta.picture ||
+        meta.profile_image_url) as string | null;
+      const bucket = (meta.profile_image_bucket || FACULTY_PROFILE_IMAGE_BUCKET) as string;
+
+      if (rawPath && typeof rawPath === "string" && rawPath.trim()) {
+        const trimmed = rawPath.trim();
+        if (trimmed.startsWith("http://") || trimmed.startsWith("https://")) {
+          avatarCache.set(cacheKey, trimmed);
+          return trimmed;
+        }
+
+        const cleanPath = trimmed
+          .replace(/^profile-pictures\//, "")
+          .replace(/^avatars\//, "")
+          .replace(/^\/+/, "");
+
+        try {
+          const { data: signed } = await supabase.storage
+            .from(bucket)
+            .createSignedUrl(cleanPath, 60 * 60 * 24);
+          if (signed?.signedUrl) {
+            avatarCache.set(cacheKey, signed.signedUrl);
+            return signed.signedUrl;
+          }
+        } catch {}
+
+        try {
+          const { data: signedAvatar } = await supabase.storage
+            .from("avatars")
+            .createSignedUrl(cleanPath, 60 * 60 * 24);
+          if (signedAvatar?.signedUrl) {
+            avatarCache.set(cacheKey, signedAvatar.signedUrl);
+            return signedAvatar.signedUrl;
+          }
+        } catch {}
+
+        // Public url fallback
+        const { data: pub } = supabase.storage.from(bucket).getPublicUrl(cleanPath);
+        if (pub?.publicUrl) {
+          avatarCache.set(cacheKey, pub.publicUrl);
+          return pub.publicUrl;
         }
       }
 
-      const isSubmission =
-        SUBMISSION_ALERT_TYPES.includes(row.type || "") ||
-        (row.title || "").toLowerCase().includes("submission") ||
-        (row.message || "").toLowerCase().includes("uploaded") ||
-        (row.message || "").toLowerCase().includes("resubmitted");
+      // Check storage list under user id folder if authUser exists
+      if (authUser?.id) {
+        for (const testBucket of [FACULTY_PROFILE_IMAGE_BUCKET, "avatars"]) {
+          try {
+            const { data: files } = await supabase.storage.from(testBucket).list(authUser.id);
+            if (files && files.length > 0) {
+              const file = files.find((f) => !f.name.startsWith("."));
+              if (file) {
+                const { data: signed } = await supabase.storage
+                  .from(testBucket)
+                  .createSignedUrl(`${authUser.id}/${file.name}`, 60 * 60 * 24);
+                if (signed?.signedUrl) {
+                  avatarCache.set(cacheKey, signed.signedUrl);
+                  return signed.signedUrl;
+                }
+              }
+            }
+          } catch {}
+        }
+      }
 
-      const isRevision =
-        (row.title || "").toLowerCase().includes("resubmission") ||
-        (row.message || "").toLowerCase().includes("resubmitted") ||
-        (row.title || "").includes("v2") ||
-        (row.title || "").includes("v3");
+      return null;
+    }
 
-      const isExtension =
-        row.type === "EXTENSION_REQUEST" ||
-        row.type === "extension_request" ||
-        (row.title || "").toLowerCase().includes("extension");
+    // Enrich notifications with parsed details
+    const notifications = await Promise.all(
+      deduplicatedRows.map(async (row) => {
+        let parsedPayload: Record<string, any> | null = null;
+        let displayMessage = row.message || "";
 
-      return {
-        id: row.id,
-        userId: row.user_id,
-        title: row.title,
-        message: row.message,
-        type: row.type || "INFO",
-        isRead: Boolean(row.is_read),
-        createdAt: row.created_at,
-        isSubmission,
-        isRevision,
-        isExtensionRequest: isExtension,
-        facultyName: extractedFacultyName,
-        facultyId,
-        requirementCode: reqCode,
-        requirementLabel: reqLabel,
-        metadata: row.metadata || null,
-      };
-    });
+        if (typeof row.message === "string" && row.message.trim().startsWith("{")) {
+          try {
+            const parsed = JSON.parse(row.message);
+            if (parsed && typeof parsed === "object") {
+              parsedPayload = parsed;
+              const preset = parsed.requested_preset || "+3 Days";
+              const reason = parsed.reason ? `: "${parsed.reason}"` : "";
+              displayMessage = `Requested ${preset} extension${reason}`;
+            }
+          } catch {
+            // Keep raw string on parsing error
+          }
+        }
+
+        const mergedMetadata = {
+          ...(parsedPayload || {}),
+          ...(row.metadata || {}),
+        };
+
+        const fullText = `${row.title || ""} ${displayMessage}`;
+        const reqCode =
+          mergedMetadata.requirement_code ||
+          mergedMetadata.requirementCode ||
+          (Array.isArray(parsedPayload?.requirement_codes) && parsedPayload.requirement_codes.length > 0
+            ? parsedPayload.requirement_codes[0]
+            : null) ||
+          extractRequirementCodeFromText(fullText);
+        const reqLabel = reqCode ? REQUIREMENT_LABEL[reqCode as RequirementCode] : null;
+
+        const extractedFacultyName =
+          mergedMetadata.facultyName ||
+          mergedMetadata.faculty_name ||
+          parsedPayload?.faculty_name ||
+          extractFacultyNameFromTitle(row.title || "");
+
+        let facultyId =
+          mergedMetadata.faculty_profile_id ||
+          mergedMetadata.facultyId ||
+          parsedPayload?.faculty_user_id ||
+          null;
+
+        const extractedFacultyEmail =
+          mergedMetadata.faculty_email ||
+          mergedMetadata.facultyEmail ||
+          parsedPayload?.faculty_email ||
+          null;
+
+        // Match against faculty profiles
+        const matchedFaculty = facultyProfiles.find(
+          (f) =>
+            (facultyId && (f.id === facultyId || f.user_id === facultyId)) ||
+            (f.email &&
+              extractedFacultyEmail &&
+              f.email.toLowerCase() === extractedFacultyEmail.toLowerCase()) ||
+            (f.full_name &&
+              extractedFacultyName &&
+              (f.full_name.toLowerCase().includes(extractedFacultyName.toLowerCase()) ||
+                extractedFacultyName.toLowerCase().includes(f.full_name.toLowerCase()))),
+        );
+
+        if (matchedFaculty) {
+          facultyId = matchedFaculty.id || facultyId;
+        }
+
+        const facultyEmail =
+          matchedFaculty?.email || extractedFacultyEmail || null;
+
+        // Resolve real avatar using auth user metadata and storage buckets
+        const lookupKey = facultyId || matchedFaculty?.user_id || facultyEmail;
+        const initialAvatar =
+          matchedFaculty?.avatar_url ||
+          mergedMetadata.avatar_url ||
+          mergedMetadata.profile_image_url ||
+          null;
+
+        const facultyAvatarUrl =
+          (await resolveFacultyAvatar(lookupKey, initialAvatar)) ||
+          initialAvatar;
+
+        const facultyDepartment =
+          matchedFaculty?.department ||
+          mergedMetadata.department ||
+          mergedMetadata.program ||
+          "Faculty of Instruction";
+
+        const isSubmission =
+          SUBMISSION_ALERT_TYPES.includes(row.type || "") ||
+          (row.title || "").toLowerCase().includes("submission") ||
+          (row.message || "").toLowerCase().includes("uploaded") ||
+          (row.message || "").toLowerCase().includes("resubmitted");
+
+        const isRevision =
+          (row.title || "").toLowerCase().includes("resubmission") ||
+          (row.message || "").toLowerCase().includes("resubmitted") ||
+          (row.title || "").includes("v2") ||
+          (row.title || "").includes("v3");
+
+        const isExtension =
+          row.type === "EXTENSION_REQUEST" ||
+          row.type === "extension_request" ||
+          Boolean(parsedPayload?.requested_preset) ||
+          (row.title || "").toLowerCase().includes("extension");
+
+        return {
+          id: row.id,
+          userId: row.user_id,
+          title: row.title,
+          message: displayMessage,
+          type: row.type || (isExtension ? "EXTENSION_REQUEST" : "INFO"),
+          isRead: Boolean(row.is_read),
+          createdAt: row.created_at,
+          isSubmission,
+          isRevision,
+          isExtensionRequest: isExtension,
+          facultyName: extractedFacultyName,
+          facultyId,
+          facultyEmail,
+          facultyAvatarUrl,
+          facultyDepartment,
+          requirementCode: reqCode,
+          requirementLabel: reqLabel,
+          metadata: {
+            ...mergedMetadata,
+            faculty_email: facultyEmail,
+            avatar_url: facultyAvatarUrl,
+            department: facultyDepartment,
+          },
+        };
+      }),
+    );
 
     const unreadCount = notifications.filter((n) => !n.isRead).length;
 

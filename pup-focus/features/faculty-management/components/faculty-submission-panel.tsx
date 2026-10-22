@@ -1225,6 +1225,23 @@ function FacultySubmissionPanelContent({
     window.addEventListener("pup-focus-select-view", handleCustomSelectView);
     return () => window.removeEventListener("pup-focus-select-view", handleCustomSelectView);
   }, []);
+
+  // Browser back/forward popstate listener for accurate history navigation in faculty dashboard
+  useEffect(() => {
+    function handlePopState() {
+      try {
+        const params = new URLSearchParams(window.location.search);
+        const v = params.get("view");
+        if (v && (PANEL_VIEWS as readonly string[]).includes(v)) {
+          setActiveView(v as PanelView);
+        } else if (!v) {
+          setActiveView("dashboard");
+        }
+      } catch {}
+    }
+    window.addEventListener("popstate", handlePopState);
+    return () => window.removeEventListener("popstate", handlePopState);
+  }, []);
   useEffect(() => {
     fetch("/api/staff/requirement-templates?active=true", { cache: "no-store" })
       .then((res) => res.json())
