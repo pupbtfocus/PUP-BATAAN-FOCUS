@@ -521,8 +521,8 @@ export async function POST(request: NextRequest) {
         backup_name: backupName,
         scope: scopeMetadata,
         total_records: totalRecords,
-        users_count: users.length,
-        submissions_count: submissions.length,
+        users_count: facultyComplianceRoster.length,
+        submissions_count: totalSubmissionsCount,
         file_size_kb: fileSizeKb,
       },
     });
