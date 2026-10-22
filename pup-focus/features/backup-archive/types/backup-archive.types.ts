@@ -35,8 +35,10 @@ export interface SystemBackup {
     submissions_count?: number;
     templates_count?: number;
     audit_logs_count?: number;
+    file_types_summary?: Record<string, number> | null;
     description?: string;
     snapshot?: BackupSnapshotData;
+    [key: string]: any;
   } | null;
 }
 
