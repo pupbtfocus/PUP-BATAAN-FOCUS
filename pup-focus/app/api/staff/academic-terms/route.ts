@@ -530,7 +530,107 @@ export async function PATCH(request: NextRequest) {
   const currentTerm = allTerms.find((t) => t.status === "Current");
 
     if (currentTerm && (currentTerm.academic_year !== academicYear || normalizeSemester(currentTerm.semester) !== semester)) {
-      // Guard: Strictly prevent changing the active term if no backup exists specifically for this semester
+      // Guard 0: Strictly prevent changing the active term if there are submitted requirements pending review
+      const { data: currentAssignments } = await supabase
+        .from("faculty_program_assignments")
+        .select("id, faculty_profile_id")
+        .eq("academic_year", currentTerm.academic_year)
+        .ilike("term", `%${currentTerm.semester}%`);
+
+      const currentAssignmentIds = (currentAssignments || []).map((a: any) => a.id).filter(Boolean);
+      const currentProfileIds = Array.from(
+        new Set((currentAssignments || []).map((a: any) => a.faculty_profile_id).filter(Boolean)),
+      );
+
+      let currentClassIds: string[] = [];
+      try {
+        const { data: currentClasses } = await supabase
+          .from("faculty_classes")
+          .select("id")
+          .eq("academic_year", currentTerm.academic_year)
+          .ilike("semester", `%${currentTerm.semester}%`);
+        if (currentClasses) {
+          currentClassIds = currentClasses.map((c: any) => c.id).filter(Boolean);
+        }
+      } catch {}
+
+      const orConditions: string[] = [];
+      if (currentAssignmentIds.length > 0) {
+        orConditions.push(`faculty_assignment_id.in.(${currentAssignmentIds.join(",")})`);
+      }
+      if (currentClassIds.length > 0) {
+        orConditions.push(`class_id.in.(${currentClassIds.join(",")})`);
+      }
+      if (currentProfileIds.length > 0) {
+        orConditions.push(`faculty_profile_id.in.(${currentProfileIds.join(",")})`);
+      }
+
+      let pendingSubmissionsCount = 0;
+      if (orConditions.length > 0) {
+        const { data: termSubmissions, error: subQueryErr } = await supabase
+          .from("submissions")
+          .select("id, status, submitted_at, faculty_assignment_id, class_id, faculty_profile_id")
+          .or(orConditions.join(","))
+          .limit(3000);
+
+        if (!subQueryErr && termSubmissions) {
+          const reviewedStatuses = new Set([
+            "validated",
+            "approved",
+            "rejected",
+            "needs_revision",
+            "returned",
+            "revision_required",
+            "revision",
+            "exempted",
+            "exempt",
+            "draft",
+            "not_submitted",
+          ]);
+
+          for (const sub of termSubmissions) {
+            const isDirectAssignment = sub.faculty_assignment_id && currentAssignmentIds.includes(sub.faculty_assignment_id);
+            const isDirectClass = sub.class_id && currentClassIds.includes(sub.class_id);
+            const isAssignedProfile = sub.faculty_profile_id && currentProfileIds.includes(sub.faculty_profile_id);
+
+            if (!isDirectAssignment && !isDirectClass && !isAssignedProfile) {
+              continue;
+            }
+
+            const rawStatus = (sub.status || "").toLowerCase().trim();
+            if (reviewedStatuses.has(rawStatus)) {
+              continue;
+            }
+
+            if (
+              rawStatus === "uploaded" ||
+              rawStatus === "submitted" ||
+              rawStatus === "pending" ||
+              rawStatus === "under_review" ||
+              rawStatus === "pending_review" ||
+              Boolean(sub.submitted_at)
+            ) {
+              pendingSubmissionsCount++;
+            }
+          }
+        }
+      }
+
+      if (pendingSubmissionsCount > 0) {
+        return NextResponse.json(
+          {
+            error: "Pending Requirement Reviews Required",
+            details: `Cannot change academic term: There ${pendingSubmissionsCount === 1 ? "is" : "are"} ${pendingSubmissionsCount} submitted requirement${pendingSubmissionsCount !== 1 ? "s" : ""} pending review in S.Y. ${currentTerm.academic_year} (${currentTerm.semester}). Please review all submitted requirements (validate or reject) before you can change to a new Academic Year and Semester.`,
+            pendingReviews: true,
+            pendingCount: pendingSubmissionsCount,
+            academicYear: currentTerm.academic_year,
+            semester: currentTerm.semester,
+          },
+          { status: 400 },
+        );
+      }
+
+      // Guard 1: Strictly prevent changing the active term if no backup exists specifically for this semester
       const targetAy = currentTerm.academic_year.trim().toLowerCase();
       const targetSem = normalizeSemester(currentTerm.semester).toLowerCase();
 

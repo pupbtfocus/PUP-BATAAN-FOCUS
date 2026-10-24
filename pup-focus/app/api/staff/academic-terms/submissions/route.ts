@@ -167,13 +167,14 @@ export async function GET(request: NextRequest) {
     // 3. Fetch submissions strictly selecting valid columns on submissions table
     const rawSubmissions: any[] = [];
 
+    const subCols =
+      "id, faculty_profile_id, faculty_assignment_id, requirement_code, status, submitted_at, created_at, remarks, admin_remarks, storage_path, file_name, mime_type, size_bytes";
+
     // A. Direct submissions matching assignment IDs
     if (assignmentIds.length > 0) {
       const { data: subData, error: subError } = await supabase
         .from("submissions")
-        .select(
-          "id, faculty_profile_id, faculty_assignment_id, requirement_code, status, submitted_at, created_at, remarks, admin_remarks",
-        )
+        .select(subCols)
         .in("faculty_assignment_id", assignmentIds)
         .order("submitted_at", { ascending: false });
 
@@ -189,9 +190,7 @@ export async function GET(request: NextRequest) {
     if (assignedProfileIds.size > 0) {
       const { data: profileSubs, error: profileSubsError } = await supabase
         .from("submissions")
-        .select(
-          "id, faculty_profile_id, faculty_assignment_id, requirement_code, status, submitted_at, created_at, remarks, admin_remarks",
-        )
+        .select(subCols)
         .in("faculty_profile_id", Array.from(assignedProfileIds))
         .is("faculty_assignment_id", null)
         .order("submitted_at", { ascending: false });
@@ -207,9 +206,7 @@ export async function GET(request: NextRequest) {
     // C. Fallback for unassigned submissions whose dates match the target term
     const { data: unassignedSubData, error: unassignedError } = await supabase
       .from("submissions")
-      .select(
-        "id, faculty_profile_id, faculty_assignment_id, requirement_code, status, submitted_at, created_at, remarks, admin_remarks",
-      )
+      .select(subCols)
       .is("faculty_assignment_id", null)
       .order("submitted_at", { ascending: false });
 
@@ -245,22 +242,22 @@ export async function GET(request: NextRequest) {
     const reviewDecisionsMap = new Map<string, any[]>();
 
     if (submissionIds.length > 0) {
-      const { data: docVersions, error: docError } = await supabase
-        .from("document_versions")
-        .select("id, submission_id, version_number, storage_path, mime_type, created_at")
-        .in("submission_id", submissionIds)
-        .order("version_number", { ascending: false });
+      try {
+        const { data: docVersions } = await supabase
+          .from("document_versions")
+          .select("id, submission_id, version_number, storage_path, mime_type, created_at")
+          .in("submission_id", submissionIds)
+          .order("version_number", { ascending: false });
 
-      if (docError) {
-        console.error("Failed to query document_versions in academic-terms/submissions:", docError);
-      }
-
-      if (docVersions) {
-        for (const doc of docVersions) {
-          if (!docVersionsMap.has(doc.submission_id)) {
-            docVersionsMap.set(doc.submission_id, doc);
+        if (docVersions) {
+          for (const doc of docVersions) {
+            if (!docVersionsMap.has(doc.submission_id)) {
+              docVersionsMap.set(doc.submission_id, doc);
+            }
           }
         }
+      } catch {
+        // Optional document_versions table not available; submissions table file columns are used
       }
 
       const { data: reviews } = await supabase
@@ -388,12 +385,14 @@ export async function GET(request: NextRequest) {
       // Document path / version
       const doc = docVersionsMap.get(sub.id);
       const storagePath =
+        sub.storage_path ||
         doc?.storage_path ||
         (sub.status !== "missing" && sub.faculty_profile_id
           ? `faculty-submissions/${sub.faculty_profile_id}/${sub.id}`
           : null);
 
       const fileName =
+        sub.file_name ||
         (doc?.storage_path ? doc.storage_path.split("/").pop() : null) ||
         (storagePath ? storagePath.split("/").pop() : null) ||
         (sub.status !== "missing" ? `${sub.requirement_code || "document"}.pdf` : null);

@@ -10,6 +10,7 @@ import {
   Check,
   Database,
   Eye,
+  Hourglass,
   Lock,
   SystemRestart,
   WarningTriangle,
@@ -55,6 +56,8 @@ export function AdminAcademicTerms({
     title: string;
     description: string;
     missingBackup?: boolean;
+    hasPendingReviews?: boolean;
+    pendingCount?: number;
   }>({ isOpen: false, title: "", description: "" });
   const [nextAcademicYear, setNextAcademicYear] = useState("2026-2027");
   const [isLoading, setIsLoading] = useState(true);
@@ -306,6 +309,22 @@ export function AdminAcademicTerms({
       const data = await response.json();
 
       if (!response.ok) {
+        if (data?.pendingReviews) {
+          setPendingTargetTerm(termToSetCurrent);
+          setModalBackupError(null);
+          setWarningModalData({
+            isOpen: true,
+            title: data?.error || "Pending Requirement Reviews Required",
+            description:
+              data?.details ||
+              "All submitted requirements must be reviewed before changing to a new Academic Year and Semester.",
+            hasPendingReviews: true,
+            pendingCount: data?.pendingCount || 0,
+          });
+          setTermToSetCurrent(null);
+          return;
+        }
+
         if (
           data?.error?.includes("Backup") ||
           data?.details?.includes("backup") ||
@@ -1073,47 +1092,49 @@ export function AdminAcademicTerms({
             <div className="p-6 space-y-4">
               <div className="space-y-2.5">
                 <p className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-                  Pre-Transition Backup
+                  {warningModalData.hasPendingReviews
+                    ? "Pending Reviews Required"
+                    : "Pre-Transition Backup"}
                 </p>
 
-                {/* Semester Backup */}
+                {/* Status Card */}
                 <div className="flex items-center justify-between gap-3 p-3.5 rounded-xl border border-slate-200/90 dark:border-slate-800 bg-white dark:bg-slate-900/60 shadow-2xs">
                   <div className="flex items-center gap-3 min-w-0">
                     <div
                       className={`h-9 w-9 rounded-xl flex items-center justify-center shrink-0 shadow-2xs ${
-                        warningModalData.missingBackup
+                        warningModalData.hasPendingReviews || warningModalData.missingBackup
                           ? "bg-amber-500 text-slate-950 border border-amber-600"
                           : "bg-[#0b5336] text-white border border-[#08412a]"
                       }`}
                     >
-                      {warningModalData.missingBackup ? (
-                        <AppIcon
-                          icon={Database}
-                          size="sm"
-                          color="inherit"
-                        />
+                      {warningModalData.hasPendingReviews ? (
+                        <AppIcon icon={Hourglass} size="sm" color="inherit" />
+                      ) : warningModalData.missingBackup ? (
+                        <AppIcon icon={Database} size="sm" color="inherit" />
                       ) : (
                         <AppIcon icon={Check} size="sm" color="inherit" strokeWidth={2.5} />
                       )}
                     </div>
                     <div className="space-y-0.5 min-w-0">
                       <p className="text-xs font-bold text-slate-900 dark:text-slate-100">
-                        {currentTerm ? `${currentTerm.academicYear} · ${currentTerm.semester}` : "Current Semester"} Backup
+                        {currentTerm ? `${currentTerm.academicYear} · ${currentTerm.semester}` : "Current Semester"}{" "}
+                        {warningModalData.hasPendingReviews ? "Requirement Reviews" : "Backup"}
                       </p>
                       <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed">
-                        {warningModalData.description ||
-                          "A recovery backup of this specific semester must exist in Backup & Archive before changing to a new academic term. Backups are required per semester."}
+                        {warningModalData.description}
                       </p>
                     </div>
                   </div>
                   <span
                     className={`shrink-0 text-xs font-bold px-2.5 py-1 rounded-lg shadow-2xs ${
-                      warningModalData.missingBackup
+                      warningModalData.hasPendingReviews || warningModalData.missingBackup
                         ? "bg-amber-500 text-slate-950 border border-amber-600"
                         : "bg-[#0b5336] text-white border border-[#08412a]"
                     }`}
                   >
-                    {warningModalData.missingBackup
+                    {warningModalData.hasPendingReviews
+                      ? `${warningModalData.pendingCount} Pending`
+                      : warningModalData.missingBackup
                       ? "Backup Needed"
                       : "Backed Up"}
                   </span>
@@ -1152,55 +1173,85 @@ export function AdminAcademicTerms({
                 </button>
 
                 <div className="w-full sm:w-auto flex flex-col sm:flex-row items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setWarningModalData({
-                        ...warningModalData,
-                        isOpen: false,
-                      });
-                      if (onNavigateToBackups) {
-                        onNavigateToBackups();
-                        return;
-                      }
-                      const isSuper =
-                        isSuperAdmin ||
-                        (typeof window !== "undefined" &&
-                          (window.location.pathname.startsWith("/admin") ||
-                            window.location.pathname.startsWith("/super-admin")));
-                      const query = currentTerm
-                        ? `&academic_year=${encodeURIComponent(currentTerm.academicYear)}&semester=${encodeURIComponent(currentTerm.semester)}`
-                        : "";
-                      window.location.href = isSuper
-                        ? `/admin/dashboard?tab=backups${query}`
-                        : `/staff/dashboard?tab=backups${query}`;
-                    }}
-                    disabled={isModalBackingUp}
-                    className="w-full sm:w-auto text-xs text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 underline px-2 py-1.5 transition cursor-pointer"
-                  >
-                    Open Backups &amp; Archive →
-                  </button>
-
-                  {warningModalData.missingBackup ? (
+                  {warningModalData.hasPendingReviews ? (
                     <button
                       type="button"
-                      onClick={() => void handleDirectSemesterBackup()}
-                      disabled={isModalBackingUp}
-                      className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 border border-amber-600 font-semibold text-xs transition-all cursor-pointer shadow-xs active:scale-[0.98] disabled:opacity-50"
+                      onClick={() => {
+                        setWarningModalData({
+                          ...warningModalData,
+                          isOpen: false,
+                        });
+                        if (onNavigateToRequirements) {
+                          onNavigateToRequirements();
+                          return;
+                        }
+                        const isSuper =
+                          isSuperAdmin ||
+                          (typeof window !== "undefined" &&
+                            (window.location.pathname.startsWith("/admin") ||
+                              window.location.pathname.startsWith("/super-admin")));
+                        window.location.href = isSuper
+                          ? `/admin/dashboard?tab=verification`
+                          : `/staff/dashboard?tab=verification`;
+                      }}
+                      className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 border border-amber-600 font-semibold text-xs transition-all cursor-pointer shadow-xs active:scale-[0.98]"
                     >
-                      {isModalBackingUp ? (
-                        <>
-                          <AppIcon icon={SystemRestart} size="xs" color="inherit" className="animate-spin" />
-                          <span>Backing Up &amp; Activating...</span>
-                        </>
-                      ) : (
-                        <>
-                          <AppIcon icon={Archive} size="xs" color="inherit" />
-                          <span>Backup Documents &amp; Activate Now</span>
-                        </>
-                      )}
+                      <AppIcon icon={Check} size="xs" color="inherit" />
+                      <span>Review Submitted Requirements</span>
                     </button>
-                  ) : null}
+                  ) : (
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setWarningModalData({
+                            ...warningModalData,
+                            isOpen: false,
+                          });
+                          if (onNavigateToBackups) {
+                            onNavigateToBackups();
+                            return;
+                          }
+                          const isSuper =
+                            isSuperAdmin ||
+                            (typeof window !== "undefined" &&
+                              (window.location.pathname.startsWith("/admin") ||
+                                window.location.pathname.startsWith("/super-admin")));
+                          const query = currentTerm
+                            ? `&academic_year=${encodeURIComponent(currentTerm.academicYear)}&semester=${encodeURIComponent(currentTerm.semester)}`
+                            : "";
+                          window.location.href = isSuper
+                            ? `/admin/dashboard?tab=backups${query}`
+                            : `/staff/dashboard?tab=backups${query}`;
+                        }}
+                        disabled={isModalBackingUp}
+                        className="w-full sm:w-auto text-xs text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 underline px-2 py-1.5 transition cursor-pointer"
+                      >
+                        Open Backups &amp; Archive →
+                      </button>
+
+                      {warningModalData.missingBackup ? (
+                        <button
+                          type="button"
+                          onClick={() => void handleDirectSemesterBackup()}
+                          disabled={isModalBackingUp}
+                          className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 border border-amber-600 font-semibold text-xs transition-all cursor-pointer shadow-xs active:scale-[0.98] disabled:opacity-50"
+                        >
+                          {isModalBackingUp ? (
+                            <>
+                              <AppIcon icon={SystemRestart} size="xs" color="inherit" className="animate-spin" />
+                              <span>Backing Up &amp; Activating...</span>
+                            </>
+                          ) : (
+                            <>
+                              <AppIcon icon={Archive} size="xs" color="inherit" />
+                              <span>Backup Documents &amp; Activate Now</span>
+                            </>
+                          )}
+                        </button>
+                      ) : null}
+                    </>
+                  )}
                 </div>
               </div>
             </div>
