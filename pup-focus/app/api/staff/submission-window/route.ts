@@ -589,6 +589,14 @@ export async function DELETE() {
           },
           { onConflict: "academic_year,semester" },
         );
+
+        await supabase
+          .from("submissions")
+          .update({ due_at: null, updated_at: new Date().toISOString() })
+          .eq("academic_year", winAy)
+          .eq("semester", winSem)
+          .in("status", ["pending", "unsubmitted"])
+          .is("submitted_at", null);
       } catch {
         // Best-effort update
       }
