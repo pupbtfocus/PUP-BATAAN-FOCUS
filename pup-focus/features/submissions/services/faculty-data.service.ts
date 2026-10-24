@@ -915,7 +915,7 @@ export async function getFacultyInitialData(
       isPersonalDeadline: true,
       effectiveDeadline: personalDeadline.effectiveDeadline,
       formattedDueAt: personalDeadline.formattedDueAt,
-      badgeLabel: "Personal Deadline Active",
+      badgeLabel: "Schedule Extension Active",
     };
   } else if (globalWindowLocked) {
     effectiveSubmissionWindow = {

@@ -177,7 +177,7 @@ export function SubmissionWindowCountdown({
         <div className="flex items-center justify-center gap-2">
           <span className="inline-block h-2.5 w-2.5 rounded-full bg-emerald-400 pulse-dot" aria-hidden="true" />
           <span className="text-xs font-bold uppercase tracking-[0.15em] text-emerald-300">
-            PERSONAL DEADLINE ACTIVE
+            SCHEDULE EXTENSION ACTIVE
           </span>
         </div>
         {windowState?.formattedDueAt ? (
