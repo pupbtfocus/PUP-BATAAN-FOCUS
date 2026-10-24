@@ -461,6 +461,18 @@ export async function POST(request: Request) {
       .neq("status", "approved")
       .neq("status", "exempted");
 
+    await supabase
+      .from("submissions")
+      .update({
+        due_at: null,
+        remarks: "[origin:CLOSED] Individual submission window closed by admin",
+        updated_at: nowIso,
+      })
+      .in("faculty_id", uniqueTargetIds)
+      .neq("status", "validated")
+      .neq("status", "approved")
+      .neq("status", "exempted");
+
     if (subUpdateErr) {
       console.error("Failed to close submissions due_at:", subUpdateErr);
     }
@@ -481,12 +493,13 @@ export async function POST(request: Request) {
     }
 
     // 4. Close any active extension deadlines for this faculty member
-    // Preserves status as "approved" so historical request record is accurate, but clears approved_date to end the personal deadline
     try {
       if (uniqueTargetIds.length > 0) {
         await supabase
           .from("extension_requests")
           .update({
+            status: "closed",
+            admin_remarks: "Individual submission window closed by admin",
             approved_date: null,
             approved_time: null,
             updated_at: nowIso,
@@ -497,6 +510,8 @@ export async function POST(request: Request) {
         await supabase
           .from("extension_requests")
           .update({
+            status: "closed",
+            admin_remarks: "Individual submission window closed by admin",
             approved_date: null,
             approved_time: null,
             updated_at: nowIso,
@@ -509,6 +524,8 @@ export async function POST(request: Request) {
         await supabase
           .from("extension_requests")
           .update({
+            status: "closed",
+            admin_remarks: "Individual submission window closed by admin",
             approved_date: null,
             approved_time: null,
             updated_at: nowIso,

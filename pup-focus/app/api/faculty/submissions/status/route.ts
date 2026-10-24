@@ -797,6 +797,7 @@ export async function GET(request: NextRequest) {
 
       // Check approved extension request
       const matchingExt = approvedExtensions.find((ext) => {
+        if (ext.status !== "approved") return false;
         const matchAY = !ext.academic_year || normalizeAcademicYear(ext.academic_year) === normActiveYear;
         const matchSem = !ext.semester || normalizeSemester(ext.semester) === normActiveSem;
         if (!matchAY || !matchSem) return false;
@@ -804,11 +805,12 @@ export async function GET(request: NextRequest) {
         return reqCodes.length === 0 || reqCodes.includes(code);
       });
 
-      const extDeadlineIso = matchingExt?.requested_date
-        ? `${matchingExt.requested_date}T${matchingExt.requested_time ? normalizeTime24Hour(matchingExt.requested_time) || "23:59:59" : "23:59:59"}+08:00`
+      const extApprovedDate = matchingExt?.approved_date || matchingExt?.approved_extension_date;
+      const extDeadlineIso = extApprovedDate
+        ? `${extApprovedDate}T${matchingExt.approved_time ? normalizeTime24Hour(matchingExt.approved_time) || "23:59:59" : "23:59:59"}+08:00`
         : null;
       const extDeadlineMs = extDeadlineIso ? new Date(extDeadlineIso).getTime() : null;
-      const isExtensionActive = Boolean(extDeadlineMs && nowMs <= extDeadlineMs);
+      const isExtensionActive = Boolean(matchingExt?.status === "approved" && extDeadlineMs && nowMs <= extDeadlineMs);
 
       // Effective deadline determination:
       // Individual custom due date if one exists; otherwise, approved extension date, personal deadline, or schedule's global deadline
@@ -850,6 +852,12 @@ export async function GET(request: NextRequest) {
         latestDecision === "rejected" ||
         reviews.some((r) => (r.decision || "").toLowerCase() === "rejected");
 
+      const remarksText = typeof submission?.remarks === "string" ? submission.remarks : "";
+      const isIndividualScheduleClosed = Boolean(
+        remarksText.includes("[origin:CLOSED]") ||
+        remarksText.includes("closed by admin")
+      );
+
       // Status Evaluation Rules:
       // 1. EXEMPTED: Display an "Exempted" badge. Disable both file uploads and extension requests.
       // 2. PENDING: Current date is on or before the effective deadline, and no file is submitted.
@@ -874,6 +882,8 @@ export async function GET(request: NextRequest) {
       } else if (!hasDoc || !submission) {
         if (isExtensionActive) {
           status = "Extended";
+        } else if (isIndividualScheduleClosed) {
+          status = "Not Submitted";
         } else if (isPastEffectiveDeadline || (windowState?.isConfigured && !windowState?.isOpen && windowState?.status === "Closed")) {
           status = "Overdue";
         } else {

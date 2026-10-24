@@ -565,8 +565,8 @@ export async function getFacultyInitialData(
 
   if (!personalDeadline && approvedExtensions.length > 0) {
     for (const ext of approvedExtensions) {
-      if (ext.status === "cancelled" || ext.status === "rejected") continue;
-      const extDate = ext.approved_extension_date || ext.requested_extension_date || ext.due_at;
+      if (ext.status !== "approved") continue;
+      const extDate = ext.approved_extension_date || ext.approved_date;
       if (!extDate) continue;
       let dueMs = new Date(extDate).getTime();
       if (Number.isNaN(dueMs)) {
@@ -638,6 +638,7 @@ export async function getFacultyInitialData(
 
     // Check approved extension request
     const matchingExt = approvedExtensions.find((ext) => {
+      if (ext.status !== "approved") return false;
       const matchAY = !ext.academic_year || normalizeAcademicYear(ext.academic_year) === normActiveYear;
       const matchSem = !ext.semester || normalizeSemester(ext.semester) === normActiveSem;
       if (!matchAY || !matchSem) return false;
@@ -645,11 +646,12 @@ export async function getFacultyInitialData(
       return reqCodes.length === 0 || reqCodes.includes(code);
     });
 
-    const extDeadlineIso = matchingExt?.requested_date
-      ? `${matchingExt.requested_date}T${matchingExt.requested_time ? normalizeTime24Hour(matchingExt.requested_time) || "23:59:59" : "23:59:59"}+08:00`
+    const extApprovedDate = matchingExt?.approved_date || matchingExt?.approved_extension_date;
+    const extDeadlineIso = extApprovedDate
+      ? `${extApprovedDate}T${matchingExt.approved_time ? normalizeTime24Hour(matchingExt.approved_time) || "23:59:59" : "23:59:59"}+08:00`
       : null;
     const extDeadlineMs = extDeadlineIso ? new Date(extDeadlineIso).getTime() : null;
-    const isExtensionActive = Boolean(extDeadlineMs && nowMs <= extDeadlineMs);
+    const isExtensionActive = Boolean(matchingExt?.status === "approved" && extDeadlineMs && nowMs <= extDeadlineMs);
 
     // Effective deadline determination:
     // Individual custom due date if one exists; otherwise, approved extension date, personal deadline, or schedule's global deadline
@@ -705,6 +707,13 @@ export async function getFacultyInitialData(
       latestDecision === "rejected" ||
       reviews.some((r) => (r.decision || "").toLowerCase() === "rejected");
 
+    // Check if individual schedule or extension was closed by admin
+    const remarksText = typeof sub?.remarks === "string" ? sub.remarks : "";
+    const isIndividualScheduleClosed = Boolean(
+      remarksText.includes("[origin:CLOSED]") ||
+      remarksText.includes("closed by admin")
+    );
+
     // Status evaluation rules:
     // 1. EXEMPTED: Display an "Exempted" badge. Disable both file uploads and extension requests.
     // 2. PENDING: Current date is on or before effective deadline, and no file is submitted.
@@ -723,6 +732,8 @@ export async function getFacultyInitialData(
     } else if (!isSubmitted) {
       if (isExtensionActive) {
         status = "Extended";
+      } else if (isIndividualScheduleClosed) {
+        status = "Not Submitted";
       } else if (isPastEffectiveDeadline) {
         status = "Overdue";
       } else {
