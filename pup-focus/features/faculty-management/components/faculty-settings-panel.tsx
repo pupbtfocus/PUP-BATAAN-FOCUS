@@ -92,7 +92,7 @@ export function FacultySettingsPanel({
   ) {
     setForm((prev) => ({
       ...prev,
-      [fieldKey]: account[fieldKey],
+      [fieldKey]: account[fieldKey] || "",
     }));
     setActiveField(null);
   }
@@ -100,9 +100,9 @@ export function FacultySettingsPanel({
   function handleResetForm() {
     isUserDirty.current = false;
     setForm({
-      firstName: account.firstName,
-      middleName: account.middleName,
-      lastName: account.lastName,
+      firstName: account.firstName || "",
+      middleName: account.middleName || "",
+      lastName: account.lastName || "",
     });
     setProfileImageFile(null);
     if (profileImageInputRef.current) {
@@ -153,7 +153,12 @@ export function FacultySettingsPanel({
       initialDepartment.trim() &&
       initialDepartment !== "Unassigned"
     ) {
-      const parts = initialDepartment.split("—").map((s) => s.trim());
+      const separator = initialDepartment.includes("—")
+        ? "—"
+        : initialDepartment.includes(" - ")
+          ? " - "
+          : "-";
+      const parts = initialDepartment.split(separator).map((s) => s.trim());
       programObj = {
         id: "",
         code: parts[0] || "",
@@ -283,6 +288,18 @@ export function FacultySettingsPanel({
           user.email ||
           "Faculty";
 
+        const metaProgramObj =
+          meta.program_code || meta.department
+            ? {
+                id: (meta.program_id as string) || "",
+                code: (meta.program_code as string) || "",
+                name:
+                  (meta.program_name as string) ||
+                  (meta.department as string) ||
+                  "",
+              }
+            : null;
+
         setAccount((prev) => ({
           ...prev,
           profileId: prev.profileId || user.id,
@@ -295,15 +312,16 @@ export function FacultySettingsPanel({
             prev.profileImageUrl ||
             (meta.profile_image_url as string) ||
             null,
-          program: prev.program || null,
+          program: prev.program || metaProgramObj || null,
         }));
 
         setForm((prev) => {
-          if (isUserDirty.current) return prev;
+          if (activeField !== null) return prev;
+          isUserDirty.current = false;
           return {
-            firstName: metaFirst,
-            middleName: metaMiddle,
-            lastName: metaLast,
+            firstName: metaFirst || "",
+            middleName: metaMiddle || "",
+            lastName: metaLast || "",
           };
         });
       } catch {
@@ -328,12 +346,13 @@ export function FacultySettingsPanel({
 
         setAccount(data);
         setForm((prev) => {
-          if (isUserDirty.current) return prev;
+          if (activeField !== null) return prev;
+          isUserDirty.current = false;
 
           return {
-            firstName: data.firstName,
-            middleName: data.middleName,
-            lastName: data.lastName,
+            firstName: data.firstName || "",
+            middleName: data.middleName || "",
+            lastName: data.lastName || "",
           };
         });
       } catch {
@@ -490,18 +509,13 @@ export function FacultySettingsPanel({
       const data = (await response.json()) as FacultyAccountResponse;
       setAccount(data);
       setForm((prev) => {
-        const hasUserEdited =
-          isUserDirty.current ||
-          activeField !== null ||
-          (prev.firstName !== "" && prev.firstName !== data.firstName) ||
-          (prev.middleName !== "" && prev.middleName !== data.middleName) ||
-          (prev.lastName !== "" && prev.lastName !== data.lastName);
-        if (hasUserEdited) return prev;
+        if (activeField !== null) return prev;
+        isUserDirty.current = false;
 
         return {
-          firstName: data.firstName,
-          middleName: data.middleName,
-          lastName: data.lastName,
+          firstName: data.firstName || "",
+          middleName: data.middleName || "",
+          lastName: data.lastName || "",
         };
       });
       onProfileUpdated?.({
@@ -601,9 +615,13 @@ export function FacultySettingsPanel({
 
   const isProfileChanged =
     Boolean(profileImageFile) ||
-    form.firstName !== account.firstName ||
-    form.middleName !== account.middleName ||
-    form.lastName !== account.lastName;
+    (form.firstName || "").trim() !== (account.firstName || "").trim() ||
+    (form.middleName || "").trim() !== (account.middleName || "").trim() ||
+    (form.lastName || "").trim() !== (account.lastName || "").trim();
+
+  const isNameValid =
+    (form.firstName || "").trim().length > 0 &&
+    (form.lastName || "").trim().length > 0;
 
   const passwordValidation = validatePasswordRequirements(newPassword);
   const isCurrentPasswordFilled = oldPassword.trim() !== "";
@@ -989,7 +1007,7 @@ export function FacultySettingsPanel({
               </button>
               <button
                 type="submit"
-                disabled={isSaving || !isProfileChanged}
+                disabled={isSaving || !isProfileChanged || !isNameValid}
                 className="bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold px-5 py-2.5 rounded-xl text-xs sm:text-sm shadow-sm active:scale-[0.98] transition-all disabled:opacity-50 cursor-pointer"
               >
                 {isSaving ? "Saving..." : "Save Profile Changes"}

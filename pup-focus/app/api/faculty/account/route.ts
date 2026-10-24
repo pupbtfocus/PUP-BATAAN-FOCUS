@@ -60,28 +60,46 @@ async function loadFacultyAccount(
     // Continue with fallback profile
   }
 
+  const authUserMetadata = (authUser?.user_metadata ?? {}) as Record<
+    string,
+    unknown
+  >;
+
   let program: FacultyProgramInfo | null = null;
   const profileId = profile?.id || authUserId;
 
   if (profile?.id) {
     try {
-      const { data: assignmentRow } = await supabase
+      const { data: assignmentRows } = await supabase
         .from("faculty_program_assignments")
-        .select("program_id, programs(id, code, name)")
+        .select("program_id, programs(id, code, name), created_at")
         .eq("faculty_profile_id", profile.id)
-        .limit(1)
-        .maybeSingle();
+        .order("created_at", { ascending: false });
 
-      if (assignmentRow?.programs) {
-        const prog = Array.isArray(assignmentRow.programs)
-          ? (assignmentRow.programs as any)[0]
-          : (assignmentRow.programs as any);
-        if (prog?.id && prog?.code && prog?.name) {
-          program = {
-            id: prog.id,
-            code: prog.code,
-            name: prog.name,
-          };
+      if (assignmentRows && assignmentRows.length > 0) {
+        for (const row of assignmentRows) {
+          const prog = Array.isArray(row.programs)
+            ? (row.programs as any)[0]
+            : (row.programs as any);
+          if (prog?.id && prog?.code && prog?.name) {
+            program = {
+              id: prog.id,
+              code: prog.code,
+              name: prog.name,
+            };
+            break;
+          }
+          if (row.program_id) {
+            const { data: progById } = await supabase
+              .from("programs")
+              .select("id, code, name")
+              .eq("id", row.program_id)
+              .maybeSingle();
+            if (progById) {
+              program = progById;
+              break;
+            }
+          }
         }
       }
     } catch {
@@ -89,10 +107,22 @@ async function loadFacultyAccount(
     }
   }
 
-  const authUserMetadata = (authUser?.user_metadata ?? {}) as Record<
-    string,
-    unknown
-  >;
+  if (!program) {
+    const fallbackProgramId =
+      (authUserMetadata?.program_id as string | undefined);
+    if (fallbackProgramId) {
+      try {
+        const { data: progRecord } = await supabase
+          .from("programs")
+          .select("id, code, name")
+          .or(`id.eq.${fallbackProgramId},code.ilike.${fallbackProgramId}`)
+          .maybeSingle();
+        if (progRecord) {
+          program = progRecord;
+        }
+      } catch {}
+    }
+  }
   const rawFullName =
     trimOrEmpty(profile?.full_name) ||
     trimOrEmpty(authUserMetadata.full_name) ||

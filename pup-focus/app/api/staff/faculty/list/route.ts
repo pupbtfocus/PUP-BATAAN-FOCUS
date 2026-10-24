@@ -569,6 +569,28 @@ export async function GET(request: NextRequest) {
       profileIds.includes(a.faculty_profile_id),
     );
 
+    // Prioritize active term assignments first, then newest assignment by created_at
+    const sortedAssignments = [...programAssignments].sort((a: any, b: any) => {
+      const aIsActive =
+        activeAY &&
+        activeSem &&
+        normalizeAcademicYear(a.academic_year) === activeAY &&
+        normalizeSemester(a.term) === activeSem;
+      const bIsActive =
+        activeAY &&
+        activeSem &&
+        normalizeAcademicYear(b.academic_year) === activeAY &&
+        normalizeSemester(b.term) === activeSem;
+
+      if (aIsActive && !bIsActive) return -1;
+      if (!aIsActive && bIsActive) return 1;
+
+      return (
+        new Date(b.created_at || 0).getTime() -
+        new Date(a.created_at || 0).getTime()
+      );
+    });
+
     const programByProfileId = new Map<
       string,
       { id: string; code: string; name: string }
@@ -580,16 +602,24 @@ export async function GET(request: NextRequest) {
       if (prog?.code) programsLookup.set(prog.code.toUpperCase(), prog);
     }
 
-    for (const row of (programAssignments ?? []) as any[]) {
-      if (row.faculty_profile_id && row.programs) {
-        const prog = Array.isArray(row.programs) ? row.programs[0] : row.programs;
-        if (prog?.id && prog?.code && prog?.name) {
-          programByProfileId.set(row.faculty_profile_id, {
-            id: prog.id,
-            code: prog.code,
-            name: prog.name,
-          });
-        }
+    for (const row of sortedAssignments as any[]) {
+      if (!row.faculty_profile_id) continue;
+      // First matching assignment (active or newest) wins - do not overwrite!
+      if (programByProfileId.has(row.faculty_profile_id)) continue;
+
+      let prog = Array.isArray(row.programs) ? row.programs[0] : row.programs;
+      if (!prog && row.program_id) {
+        prog =
+          programsLookup.get(String(row.program_id).toLowerCase()) ??
+          programsLookup.get(String(row.program_id).toUpperCase()) ??
+          null;
+      }
+      if (prog?.id && prog?.code && prog?.name) {
+        programByProfileId.set(row.faculty_profile_id, {
+          id: prog.id,
+          code: prog.code,
+          name: prog.name,
+        });
       }
     }
 
@@ -617,7 +647,7 @@ export async function GET(request: NextRequest) {
           lastName,
         });
 
-        // Resolve assigned program: 1) from faculty_program_assignments, 2) fallback to auth metadata
+        // Resolve assigned program: 1) from faculty_program_assignments, 2) auth metadata
         let resolvedProgram = programByProfileId.get(profile.id) ?? null;
         if (!resolvedProgram && metadata.program_id) {
           resolvedProgram =
