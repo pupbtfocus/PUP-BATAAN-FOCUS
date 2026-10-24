@@ -564,6 +564,26 @@ function FacultySubmissionPanelContent({
     },
     [],
   );
+  const refreshFacultyProfile = useCallback(async () => {
+    try {
+      const res = await fetch(`/api/faculty/account?_t=${Date.now()}`, {
+        cache: "no-store",
+        headers: { "Cache-Control": "no-cache" },
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.fullName) {
+          setCurrentFacultyName(data.fullName);
+        }
+        if (data.profileImageUrl !== undefined) {
+          setCurrentAvatarUrl(data.profileImageUrl);
+          setHasAvatarError(false);
+        }
+      }
+    } catch {
+      // safe fallback
+    }
+  }, []);
   const facultyFirstName = useMemo(
     () => extractFirstName(currentFacultyName, "Faculty"),
     [currentFacultyName],
@@ -767,6 +787,8 @@ function FacultySubmissionPanelContent({
   const [selectedClassId, setSelectedClassId] = useState<string | null>(null);
   const selectedClassIdRef = useRef<string | null>(null);
   selectedClassIdRef.current = selectedClassId;
+  const facultyClassesRef = useRef<FacultyClass[]>([]);
+  facultyClassesRef.current = facultyClasses;
   const classStatusesCacheRef = useRef<Record<string, RequirementStatus[]>>({});
   const [isAddClassModalOpen, setIsAddClassModalOpen] = useState(false);
   const [isSubmittingClass, setIsSubmittingClass] = useState(false);
@@ -1534,10 +1556,18 @@ function FacultySubmissionPanelContent({
     }
   }, [isMounted, facultyClasses, activeAY, activeSem]);
 
-  // Realtime synchronization for classes, submissions, reviews, windows, and templates
+  // Realtime synchronization for classes, submissions, reviews, windows, templates, and faculty profile
   useRealtimeSync(() => {
+    void refreshFacultyProfile();
     void fetchFacultyClasses({ silent: true });
-    void fetchStatuses(undefined, undefined, undefined, { silent: true });
+    void fetchStatuses(activeAY, activeSem, selectedClassIdRef.current, { silent: true });
+    if (facultyClassesRef.current.length > 0) {
+      for (const cls of facultyClassesRef.current) {
+        if (cls.id !== selectedClassIdRef.current) {
+          void fetchStatuses(activeAY, activeSem, cls.id, { silent: true });
+        }
+      }
+    }
     void fetchHistory({ silent: true });
     void refetchSubmissionWindow({ silent: true });
   });
@@ -1547,8 +1577,12 @@ function FacultySubmissionPanelContent({
     setIsRefreshing(true);
     try {
       await Promise.all([
+        refreshFacultyProfile(),
         fetchFacultyClasses({ silent: true }),
         fetchStatuses(activeAY, activeSem, selectedClassId, { silent: true }),
+        ...facultyClasses
+          .filter((c) => c.id !== selectedClassId)
+          .map((c) => fetchStatuses(activeAY, activeSem, c.id, { silent: true })),
         fetchHistory({ silent: true }),
         refetchSubmissionWindow({ silent: true }),
       ]);
@@ -2132,7 +2166,13 @@ function FacultySubmissionPanelContent({
           const rClass = (r as any).classId || (r as any).class_id;
           return rClass === cls.id;
         });
-        return hasValidatedInLive;
+        if (hasValidatedInLive) return true;
+
+        const cached = classStatusesCacheRef.current[cls.id] || [];
+        return cached.some((r) => {
+          if (r.code !== code) return false;
+          return r.status === "Validated" || r.status === "Exempted";
+        });
       });
     });
   }, [
@@ -2237,7 +2277,7 @@ function FacultySubmissionPanelContent({
         currentTimeLabel: format24HourTo12Hour(getCurrentTimeInManila()),
         isGracePeriod: true,
         isPersonalDeadline: true,
-        badgeLabel: "Personal Deadline Active",
+        badgeLabel: "Schedule Extension Active",
         effectiveDeadline: iso,
         formattedDueAt: personalDeadlineFormatted,
       };
@@ -2248,7 +2288,7 @@ function FacultySubmissionPanelContent({
         isConfigured: true,
         isOpen: true,
         status: "Open" as const,
-        badgeLabel: "Personal Deadline Active",
+        badgeLabel: "Schedule Extension Active",
       };
     }
     if (!submissionWindow || !submissionWindow.isConfigured) {
@@ -4136,11 +4176,17 @@ function FacultySubmissionPanelContent({
                                   return sClass === cls.id;
                                 });
                                 if (inPast) return true;
-                                return requirementStatuses.some((r) => {
+                                const inLive = requirementStatuses.some((r) => {
                                   if (r.code !== code) return false;
                                   if (r.status !== "Validated" && r.status !== "Exempted") return false;
                                   const rClass = (r as any).classId || (r as any).class_id;
                                   return rClass === cls.id;
+                                });
+                                if (inLive) return true;
+                                const cached = classStatusesCacheRef.current[cls.id] || [];
+                                return cached.some((r) => {
+                                  if (r.code !== code) return false;
+                                  return r.status === "Validated" || r.status === "Exempted";
                                 });
                               }).length;
 

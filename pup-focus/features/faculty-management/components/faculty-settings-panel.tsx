@@ -8,6 +8,7 @@ import {
   parseFullNameFallback,
 } from "@/lib/faculty-profile";
 import { createClient } from "@/lib/supabase/client";
+import { emitRealtimeSync, useRealtimeSync } from "@/lib/realtime";
 import { Camera, Check, CheckCircle, Circle, EditPencil, Eye, EyeClosed, Lock, Refresh, ShieldAlert, ShieldCheck, SystemRestart, User, WarningCircle, Xmark } from "iconoir-react";
 import { AppIcon } from "@/components/ui/app-icon";
 import { ModalHeader } from "@/components/ui/modal-header";
@@ -451,6 +452,10 @@ export function FacultySettingsPanel({
       setNewPassword("");
       setConfirmPassword("");
       setIsPasswordEditing(false);
+      emitRealtimeSync({
+        source: "faculty-password",
+        timestamp: Date.now(),
+      });
       setFeedbackModal({
         isOpen: true,
         title: "Password Updated Successfully",
@@ -474,7 +479,10 @@ export function FacultySettingsPanel({
   async function refreshAccount() {
     try {
       setIsRefreshing(true);
-      const response = await fetch("/api/faculty/account");
+      const response = await fetch(`/api/faculty/account?_t=${Date.now()}`, {
+        cache: "no-store",
+        headers: { "Cache-Control": "no-cache" },
+      });
       if (!response.ok) {
         return;
       }
@@ -483,7 +491,11 @@ export function FacultySettingsPanel({
       setAccount(data);
       setForm((prev) => {
         const hasUserEdited =
-          prev.firstName !== "" && prev.firstName !== data.firstName;
+          isUserDirty.current ||
+          activeField !== null ||
+          (prev.firstName !== "" && prev.firstName !== data.firstName) ||
+          (prev.middleName !== "" && prev.middleName !== data.middleName) ||
+          (prev.lastName !== "" && prev.lastName !== data.lastName);
         if (hasUserEdited) return prev;
 
         return {
@@ -492,12 +504,24 @@ export function FacultySettingsPanel({
           lastName: data.lastName,
         };
       });
+      onProfileUpdated?.({
+        fullName: buildFacultyFullName({
+          firstName: data.firstName,
+          middleName: data.middleName,
+          lastName: data.lastName,
+        }),
+        avatarUrl: data.profileImageUrl ?? null,
+      });
     } catch {
       // Retain existing state silently
     } finally {
       setIsRefreshing(false);
     }
   }
+
+  useRealtimeSync(() => {
+    void refreshAccount();
+  });
 
   async function handleSaveName(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -553,6 +577,11 @@ export function FacultySettingsPanel({
           lastName: updatedAccount.lastName,
         }),
         avatarUrl: updatedAccount.profileImageUrl ?? null,
+      });
+      emitRealtimeSync({
+        source: "faculty-settings",
+        table: "faculty_profiles",
+        timestamp: Date.now(),
       });
       router.refresh();
     } catch (saveError) {

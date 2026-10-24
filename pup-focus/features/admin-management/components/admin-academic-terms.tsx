@@ -331,7 +331,10 @@ export function AdminAcademicTerms({
       }
 
       setSuccess(
-        `Set ${termToSetCurrent.academicYear} ${termToSetCurrent.semester} as the current academic term.`,
+        `Set ${termToSetCurrent.academicYear} ${termToSetCurrent.semester} as the current academic term.` +
+          (data?.closedSchedule
+            ? " The previously active submission schedule has been automatically closed."
+            : ""),
       );
       setTermToSetCurrent(null);
       setPendingTargetTerm(null);

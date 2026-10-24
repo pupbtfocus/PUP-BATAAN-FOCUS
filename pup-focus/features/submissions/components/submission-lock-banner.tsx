@@ -33,7 +33,7 @@ export function SubmissionLockBanner({
           </div>
           <div>
             <div className="text-sm font-bold text-white tracking-wide">
-              Personal Deadline Active
+              Schedule Extension Active
             </div>
             <p className="mt-0.5 text-xs text-emerald-100/95 leading-relaxed">
               You have been granted extra time to submit requirements. Your deadline is{" "}

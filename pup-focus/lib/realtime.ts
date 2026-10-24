@@ -127,7 +127,45 @@ function ensureRealtimeInitialized() {
                 timestamp: Date.now(),
               },
             );
-          })
+          });
+
+        const targetTables = [
+          "submissions",
+          "profiles",
+          "faculty",
+          "faculty_profiles",
+          "faculty_classes",
+          "classes",
+          "submission_windows",
+          "academic_terms",
+          "extension_requests",
+          "requirement_templates",
+          "notifications",
+        ];
+
+        for (const tbl of targetTables) {
+          channel.on(
+            "postgres_changes",
+            { event: "*", schema: "public", table: tbl },
+            (change: { table?: string; eventType?: string; new?: any; old?: any }) => {
+              const record = change?.new || change?.old || {};
+              notifyListeners({
+                source: "postgres_changes",
+                table: change?.table || tbl,
+                eventType: change?.eventType,
+                facultyId:
+                  record.faculty_profile_id ||
+                  record.profile_id ||
+                  record.id ||
+                  record.faculty_id,
+                classId: record.class_id || null,
+                timestamp: Date.now(),
+              });
+            },
+          );
+        }
+
+        channel
           .on(
             "postgres_changes",
             { event: "*", schema: "public" },
@@ -137,7 +175,11 @@ function ensureRealtimeInitialized() {
                 source: "postgres_changes",
                 table: change?.table,
                 eventType: change?.eventType,
-                facultyId: record.faculty_profile_id || record.profile_id || record.id,
+                facultyId:
+                  record.faculty_profile_id ||
+                  record.profile_id ||
+                  record.id ||
+                  record.faculty_id,
                 classId: record.class_id || null,
                 timestamp: Date.now(),
               });
@@ -217,6 +259,7 @@ export function emitRealtimeSync(partial?: Partial<RealtimeSyncPayload>) {
 export function useRealtimeSync(
   onSync: (payload: RealtimeSyncPayload) => void,
   debounceMs = 250,
+  pollIntervalMs = 6000,
 ) {
   const callbackRef = useRef(onSync);
   callbackRef.current = onSync;
@@ -247,16 +290,40 @@ export function useRealtimeSync(
       handlePayload({ source: "online", timestamp: Date.now() });
     };
 
+    const handleFocus = () => {
+      handlePayload({ source: "focus", timestamp: Date.now() });
+    };
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        handlePayload({ source: "visibility", timestamp: Date.now() });
+      }
+    };
+
     listeners.add(handlePayload);
     window.addEventListener(LOCAL_EVENT_NAME, handleCustomWindowEvent);
     window.addEventListener("online", handleOnline);
+    window.addEventListener("focus", handleFocus);
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
+    let pollInterval: ReturnType<typeof setInterval> | null = null;
+    if (pollIntervalMs > 0) {
+      pollInterval = setInterval(() => {
+        if (typeof document !== "undefined" && document.visibilityState === "visible") {
+          handlePayload({ source: "heartbeat-sync", timestamp: Date.now() });
+        }
+      }, pollIntervalMs);
+    }
 
     return () => {
       listeners.delete(handlePayload);
       window.removeEventListener(LOCAL_EVENT_NAME, handleCustomWindowEvent);
       window.removeEventListener("online", handleOnline);
+      window.removeEventListener("focus", handleFocus);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+      if (pollInterval) clearInterval(pollInterval);
       if (timer) clearTimeout(timer);
     };
-  }, [debounceMs]);
+  }, [debounceMs, pollIntervalMs]);
 }
 

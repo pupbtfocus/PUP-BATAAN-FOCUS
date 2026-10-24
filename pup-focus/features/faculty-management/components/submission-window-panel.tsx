@@ -933,7 +933,7 @@ export function SubmissionWindowPanel({
               />
               <span>
                 {activeFacultySchedules.length > 0
-                  ? `Personal Deadlines Active (${activeFacultySchedules.length})`
+                  ? `Schedule Extensions Active (${activeFacultySchedules.length})`
                   : "Not Configured"}
               </span>
             </div>
@@ -968,17 +968,17 @@ export function SubmissionWindowPanel({
             <span className="font-semibold text-slate-900 dark:text-slate-200">{currentTermLabel}</span>
           </div>
 
-          {/* On Schedule Faculty Badge - Shortcut visible on Global view, clicking directs to Personal Deadline view */}
+          {/* On Schedule Faculty Badge - Shortcut visible on Global view, clicking directs to Extension of Schedule view */}
           {scheduleViewMode === "global" && activeFacultySchedules.length > 0 && (
             <button
               type="button"
               onClick={() => setScheduleViewMode("personal")}
               className="inline-flex items-center justify-center sm:justify-start gap-2 bg-emerald-600 hover:bg-emerald-700 dark:bg-emerald-600 dark:hover:bg-emerald-500 text-white border border-emerald-700 dark:border-emerald-500 px-3 py-1.5 text-xs font-bold rounded-lg shadow-xs transition cursor-pointer active:scale-95"
-              title="Click to switch to Personal Deadline view"
+              title="Click to switch to Extension of Schedule view"
             >
               <span className="w-2 h-2 rounded-full bg-white animate-pulse shrink-0" />
               <span>
-                On Schedule: <strong className="font-extrabold text-white">{activeFacultySchedules.length} Faculty</strong>
+                Extensions Active: <strong className="font-extrabold text-white">{activeFacultySchedules.length} Faculty</strong>
               </span>
               <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-800 text-white font-black uppercase tracking-wider border border-emerald-500/40">
                 View
@@ -1023,7 +1023,7 @@ export function SubmissionWindowPanel({
         onClose={() => setSuccess(null)}
       />
 
-      {/* 2-Option Schedule Switcher: Global Schedule & Personal Deadline */}
+      {/* 2-Option Schedule Switcher: Global Schedule & Extension of Schedule */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-200 dark:border-slate-800 pb-3">
         <div className="inline-flex items-center p-1 rounded-xl bg-slate-100 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 w-full sm:w-auto shadow-2xs">
           <button
@@ -1049,7 +1049,7 @@ export function SubmissionWindowPanel({
             }`}
           >
             <AppIcon icon={User} size="sm" color="inherit" />
-            <span>Personal Deadline</span>
+            <span>Extension of Schedule</span>
             {activeFacultySchedules.length > 0 ? (
               <span className={`px-2 py-0.5 text-[10px] font-bold rounded-full transition-colors ${
                 scheduleViewMode === "personal"
@@ -1067,7 +1067,7 @@ export function SubmissionWindowPanel({
             <span>Campus-wide submission window for all faculty members</span>
           ) : (
             <span>
-              <strong>{activeFacultySchedules.length} Faculty</strong> with active personal deadlines
+              <strong>{activeFacultySchedules.length} Faculty</strong> with active schedule extensions
             </span>
           )}
         </div>
@@ -1420,20 +1420,20 @@ export function SubmissionWindowPanel({
       </form>
     </>
       ) : (
-        /* SECTION: Personal Deadline Schedule Management */
+        /* SECTION: Extension of Schedule Management */
         <div className="space-y-5 animate-in fade-in duration-200">
           {/* Subtle Informational Banner matching Global Schedule (No duplicate action button) */}
           <div className="flex items-center gap-2.5 px-4 py-2.5 rounded-xl bg-slate-100 border border-slate-200/90 dark:bg-slate-800/50 dark:border-slate-700 text-slate-700 dark:text-slate-300 text-xs">
             <AppIcon icon={User} size="md" color="default" />
             <div>
-              <span className="font-bold text-slate-900 dark:text-slate-100">Faculty Personal Deadlines:</span>{" "}
+              <span className="font-bold text-slate-900 dark:text-slate-100">Faculty Schedule Extensions:</span>{" "}
               <span>
                 {personalCounts.all} faculty member{personalCounts.all !== 1 ? "s" : ""} with approved deadline extensions.
               </span>
             </div>
           </div>
 
-          {/* Pending Extension Requests Alert Banner in Personal Deadline View */}
+          {/* Pending Extension Requests Alert Banner in Extension of Schedule View */}
           {pendingRequestsCount > 0 && (
             <div className="flex items-center justify-between gap-3 px-4 py-2.5 rounded-xl bg-amber-50/70 border border-amber-200/80 dark:bg-amber-950/20 dark:border-amber-800/40 text-xs">
               <div className="flex items-center gap-2.5 text-amber-900 dark:text-amber-200">
@@ -1496,11 +1496,11 @@ export function SubmissionWindowPanel({
               </div>
               <div className="space-y-1">
                 <p className="text-sm font-bold text-slate-800 dark:text-slate-200">
-                  {personalSearchQuery ? "No matching faculty found" : "No active personal deadlines"}
+                  {personalSearchQuery ? "No matching faculty found" : "No active schedule extensions"}
                 </p>
                 <p className="text-xs text-slate-500 dark:text-slate-400 max-w-md mx-auto">
                   {personalSearchQuery
-                    ? `No faculty on personal deadline matches "${personalSearchQuery}". Try adjusting your search term.`
+                    ? `No faculty with extended schedule matches "${personalSearchQuery}". Try adjusting your search term.`
                     : "All faculty are currently following the global schedule. Faculty granted deadline extension requests will appear here."}
                 </p>
               </div>
@@ -1640,7 +1640,7 @@ export function SubmissionWindowPanel({
             </div>
           )}
 
-          {/* Personal Deadline Footer Action Toolbar (Sole location for Extension Requests & Logs) */}
+          {/* Extension of Schedule Footer Action Toolbar (Sole location for Extension Requests & Logs) */}
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-t border-slate-200 dark:border-slate-800 pt-5">
             <div className="flex items-center gap-2.5">
               <button

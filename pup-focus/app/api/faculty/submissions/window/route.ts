@@ -68,7 +68,7 @@ export async function GET() {
         isPersonalDeadline: true,
         effectiveDeadline: personalDeadline.effectiveDeadline,
         formattedDueAt: personalDeadline.formattedDueAt,
-        badgeLabel: "Personal Deadline Active",
+        badgeLabel: "Schedule Extension Active",
       });
     }
 
