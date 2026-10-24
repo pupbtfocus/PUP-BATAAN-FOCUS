@@ -1887,6 +1887,11 @@ function FacultySubmissionPanelContent({
       ? `${submissionWindow.endDate}T${submissionWindow.endTime ? normalizeTime24Hour(submissionWindow.endTime) || "23:59:59" : "23:59:59"}+08:00`
       : null;
     const globalDeadlineMs = globalDeadlineIso ? new Date(globalDeadlineIso).getTime() : null;
+    const isGlobalScheduleClosed = Boolean(
+      submissionWindow?.isConfigured &&
+      !submissionWindow?.isOpen &&
+      (submissionWindow?.status === "Closed" || (globalDeadlineMs && nowMs > globalDeadlineMs))
+    );
 
     // Filter approved extension requests for active term
     const approvedExtList = (allExtensionRequests || []).filter((ext: any) => {
@@ -2018,7 +2023,7 @@ function FacultySubmissionPanelContent({
         );
         if (isExtensionActive || isCustomDueExtended) {
           evaluatedStatus = "Extended";
-        } else if (isPastEffectiveDeadline || isWindowClosed) {
+        } else if (isPastEffectiveDeadline || isGlobalScheduleClosed) {
           evaluatedStatus = "Overdue";
         } else {
           evaluatedStatus = "Not Submitted";
