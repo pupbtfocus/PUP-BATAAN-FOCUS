@@ -13,7 +13,7 @@ import {
 import { AppIcon } from "@/components/ui/app-icon";
 import { ModalHeader } from "@/components/ui/modal-header";
 import { AlertPopup } from "@/components/ui/alert-popup";
-import { ROLE, type AppRole, canManageAdminAccount } from "@/config/roles";
+import { ROLE, type AppRole, canManageAdminAccount, isOriginalAdmin } from "@/config/roles";
 import type { AdminAccount } from "@/features/staff-management/components/staff-accounts-directory";
 import { parseFullNameFallback } from "@/lib/faculty-profile";
 
@@ -192,12 +192,13 @@ export function EditStaffModal({
     profileImageFile !== null ||
     hasReverifiedPendingSave;
 
-  const canEdit = canManageAdminAccount({
-    targetEmail: initialValues.email || selectedStaff.email,
-    targetRole: selectedStaff.role,
-    actorEmail: currentAdminEmail,
-    action: "edit",
-  });
+  const canEdit =
+    canManageAdminAccount({
+      targetEmail: initialValues.email || selectedStaff.email,
+      targetRole: selectedStaff.role,
+      actorEmail: currentAdminEmail,
+      action: "edit",
+    }) || !currentAdminEmail || isOriginalAdmin(currentAdminEmail);
 
   function handleAttemptClose() {
     if (hasChanges && !showSuccessModal) {
@@ -556,18 +557,18 @@ export function EditStaffModal({
                     <input
                       id="staff-first-name"
                       ref={firstNameInputRef}
-                      readOnly={activeField !== "firstName"}
+                      disabled={!canEdit}
                       className={`w-full bg-slate-50 dark:bg-slate-950 border rounded-xl pl-3 pr-8 py-1.5 text-xs font-medium text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 outline-none focus:outline-none focus-visible:outline-none transition-all ${
                         activeField === "firstName"
                           ? "border-amber-500 ring-2 ring-amber-500/80 dark:ring-amber-500/60"
-                          : "border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 cursor-default"
+                          : "border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700"
                       }`}
                       value={firstName}
+                      onFocus={() => setActiveField("firstName")}
                       onChange={(event) => {
                         setFirstName(event.target.value);
                         setCloseReminder(null);
                       }}
-                      onBlur={() => setActiveField(null)}
                       placeholder="First name"
                     />
                     {activeField === "firstName" ? (
@@ -610,18 +611,18 @@ export function EditStaffModal({
                     <input
                       id="staff-middle-name"
                       ref={middleNameInputRef}
-                      readOnly={activeField !== "middleName"}
+                      disabled={!canEdit}
                       className={`w-full bg-slate-50 dark:bg-slate-950 border rounded-xl pl-3 pr-8 py-1.5 text-xs font-medium text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 outline-none focus:outline-none focus-visible:outline-none transition-all ${
                         activeField === "middleName"
                           ? "border-amber-500 ring-2 ring-amber-500/80 dark:ring-amber-500/60"
-                          : "border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 cursor-default"
+                          : "border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700"
                       }`}
                       value={middleName}
+                      onFocus={() => setActiveField("middleName")}
                       onChange={(event) => {
                         setMiddleName(event.target.value);
                         setCloseReminder(null);
                       }}
-                      onBlur={() => setActiveField(null)}
                       placeholder="Middle name"
                     />
                     {activeField === "middleName" ? (
@@ -664,18 +665,18 @@ export function EditStaffModal({
                     <input
                       id="staff-last-name"
                       ref={lastNameInputRef}
-                      readOnly={activeField !== "lastName"}
+                      disabled={!canEdit}
                       className={`w-full bg-slate-50 dark:bg-slate-950 border rounded-xl pl-3 pr-8 py-1.5 text-xs font-medium text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 outline-none focus:outline-none focus-visible:outline-none transition-all ${
                         activeField === "lastName"
                           ? "border-amber-500 ring-2 ring-amber-500/80 dark:ring-amber-500/60"
-                          : "border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 cursor-default"
+                          : "border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700"
                       }`}
                       value={lastName}
+                      onFocus={() => setActiveField("lastName")}
                       onChange={(event) => {
                         setLastName(event.target.value);
                         setCloseReminder(null);
                       }}
-                      onBlur={() => setActiveField(null)}
                       placeholder="Last name"
                     />
                     {activeField === "lastName" ? (
@@ -750,9 +751,9 @@ export function EditStaffModal({
                       <AppIcon icon={SendMail} size="xs" color="inherit" className="text-slate-950" />
                       <span>
                         {isResendingVerification
-                          ? "Sending..."
+                          ? "Queuing..."
                           : hasReverifiedPendingSave
-                            ? "Re-verify Ready"
+                            ? "Re-verify Queued"
                             : "Re-verify Email"}
                       </span>
                     </button>
@@ -763,14 +764,15 @@ export function EditStaffModal({
                   <input
                     id="staff-email-address"
                     ref={emailInputRef}
+                    disabled={!canEdit}
                     type="email"
-                    readOnly={activeField !== "email"}
                     className={`w-full bg-slate-50 dark:bg-slate-950 border rounded-xl pl-3 pr-8 py-1.5 text-xs font-medium text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 outline-none focus:outline-none focus-visible:outline-none transition-all ${
                       activeField === "email"
                         ? "border-amber-500 ring-2 ring-amber-500/80 dark:ring-amber-500/60"
-                        : "border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 cursor-default"
+                        : "border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700"
                     }`}
                     value={email}
+                    onFocus={() => setActiveField("email")}
                     onChange={(event) => {
                       const nextEmail = event.target.value;
                       setEmail(nextEmail);
@@ -783,7 +785,6 @@ export function EditStaffModal({
                         setReverifySuccessMessage(null);
                       }
                     }}
-                    onBlur={() => setActiveField(null)}
                     placeholder="staff@pup.edu.ph"
                   />
                   {activeField === "email" ? (

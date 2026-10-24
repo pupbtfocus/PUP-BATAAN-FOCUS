@@ -2119,6 +2119,7 @@ export function SuperAdminDashboard({
                 <AdminAccountsTable
                   adminAccounts={adminAccounts}
                   isLoading={isLoadingAccounts}
+                  currentAdminEmail={adminEmail}
                   onEditAdmin={(profileId) => {
                     setEditStaffId(profileId);
                     setEditStaffModalOpen(true);
@@ -2140,7 +2141,6 @@ export function SuperAdminDashboard({
                     setAccountActionError(null);
                     setAccountActionSuccess(null);
                   }}
-                  currentAdminEmail={currentAdminEmail}
                 />
               </article>
             ) : null}
@@ -2614,7 +2614,7 @@ export function SuperAdminDashboard({
             setEditStaffId(profileId);
             setEditStaffModalOpen(true);
           }}
-          currentAdminEmail={currentAdminEmail}
+          currentAdminEmail={adminEmail}
         />
       ) : null}
 
@@ -2623,6 +2623,7 @@ export function SuperAdminDashboard({
           profileId={editStaffId}
           adminAccounts={adminAccounts}
           isOpen={editStaffModalOpen}
+          currentAdminEmail={adminEmail}
           onClose={() => setEditStaffModalOpen(false)}
           onSave={async (updatedAdmin) => {
             if (updatedAdmin) {
@@ -2642,7 +2643,6 @@ export function SuperAdminDashboard({
             }
             await loadAdminAccounts(true);
           }}
-          currentAdminEmail={currentAdminEmail}
         />
       ) : null}
 

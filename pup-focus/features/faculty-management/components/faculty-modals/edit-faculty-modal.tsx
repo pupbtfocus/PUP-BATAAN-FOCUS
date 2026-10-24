@@ -7,6 +7,7 @@ import { ModalHeader } from "@/components/ui/modal-header";
 import { AlertPopup } from "@/components/ui/alert-popup";
 import { Button } from "@/components/ui/button";
 import { buildFacultyInitials, parseFullNameFallback } from "@/lib/faculty-profile";
+import { emitRealtimeSync } from "@/lib/realtime";
 import type { FacultyAccount } from "@/features/faculty-management/types/faculty-dashboard.types";
 import type { ProgramOption } from "@/features/faculty-management/components/faculty-modals/add-faculty-modal";
 
@@ -111,72 +112,83 @@ export function EditFacultyModal({
     };
   }, []);
 
+  const initializedFacultyIdRef = useRef<string | null>(null);
+
   useEffect(() => {
     if (!selectedFaculty) return;
 
-    const parsedFallback = parseFullNameFallback(selectedFaculty.fullName || "");
-    const directFirstName =
-      selectedFaculty.first_name ??
-      selectedFaculty.firstName ??
-      parsedFallback.firstName ??
-      "";
-    const directMiddleName =
-      selectedFaculty.middle_name ??
-      selectedFaculty.middleName ??
-      parsedFallback.middleName ??
-      "";
-    const directLastName =
-      selectedFaculty.last_name ??
-      selectedFaculty.lastName ??
-      parsedFallback.lastName ??
-      "";
-    const directEmail = (selectedFaculty.email ?? "").trim();
+    if (initializedFacultyIdRef.current !== selectedFaculty.id) {
+      initializedFacultyIdRef.current = selectedFaculty.id;
 
-    setFirstName(directFirstName);
-    setMiddleName(directMiddleName);
-    setLastName(directLastName);
-    setEmail(directEmail);
+      const parsedFallback = parseFullNameFallback(selectedFaculty.fullName || "");
+      const directFirstName =
+        selectedFaculty.first_name ??
+        selectedFaculty.firstName ??
+        parsedFallback.firstName ??
+        "";
+      const directMiddleName =
+        selectedFaculty.middle_name ??
+        selectedFaculty.middleName ??
+        parsedFallback.middleName ??
+        "";
+      const directLastName =
+        selectedFaculty.last_name ??
+        selectedFaculty.lastName ??
+        parsedFallback.lastName ??
+        "";
+      const directEmail = (selectedFaculty.email ?? "").trim();
 
-    const targetProgramId = selectedFaculty.program?.id;
-    const targetProgramCode = selectedFaculty.program?.code?.toUpperCase();
+      setFirstName(directFirstName);
+      setMiddleName(directMiddleName);
+      setLastName(directLastName);
+      setEmail(directEmail);
 
-    const allOptions = [...degreePrograms, ...diplomaCourses];
-    const matchedOption = allOptions.find(
-      (opt) =>
-        (targetProgramId &&
-          (opt.id === targetProgramId ||
-            opt.id.toLowerCase() === targetProgramId.toLowerCase())) ||
-        (targetProgramCode && opt.code.toUpperCase() === targetProgramCode),
-    );
+      const targetProgramId = selectedFaculty.program?.id;
+      const targetProgramCode = selectedFaculty.program?.code?.toUpperCase();
 
-    let resolvedProgramId = "";
-    if (matchedOption) {
-      resolvedProgramId = matchedOption.id;
-    } else if (targetProgramId) {
-      resolvedProgramId = targetProgramId;
-    } else if (targetProgramCode) {
-      resolvedProgramId = targetProgramCode;
-    } else {
-      resolvedProgramId = "";
+      const allOptions = [...degreePrograms, ...diplomaCourses];
+      const matchedOption = allOptions.find(
+        (opt) =>
+          (targetProgramId &&
+            (opt.id === targetProgramId ||
+              opt.id.toLowerCase() === targetProgramId.toLowerCase())) ||
+          (targetProgramCode && opt.code.toUpperCase() === targetProgramCode),
+      );
+
+      const resolvedProgramId = matchedOption?.id || targetProgramId || targetProgramCode || "";
+      setProgramId(resolvedProgramId);
+
+      setInitialValues({
+        firstName: directFirstName,
+        middleName: directMiddleName,
+        lastName: directLastName,
+        email: directEmail,
+        programId: resolvedProgramId,
+      });
+      setActiveField(null);
+      setProfileImageFile(null);
+      setProfileImagePreviewUrl(selectedFaculty.profileImageUrl);
+      setSaveError(null);
+      setHasReverifiedPendingSave(false);
+      setReverifySuccessMessage(null);
+      setCloseReminder(null);
+    } else if (!programId && (degreePrograms.length > 0 || diplomaCourses.length > 0)) {
+      const targetProgramId = selectedFaculty.program?.id;
+      const targetProgramCode = selectedFaculty.program?.code?.toUpperCase();
+      const allOptions = [...degreePrograms, ...diplomaCourses];
+      const matchedOption = allOptions.find(
+        (opt) =>
+          (targetProgramId &&
+            (opt.id === targetProgramId ||
+              opt.id.toLowerCase() === targetProgramId.toLowerCase())) ||
+          (targetProgramCode && opt.code.toUpperCase() === targetProgramCode),
+      );
+      if (matchedOption) {
+        setProgramId(matchedOption.id);
+        setInitialValues((prev) => ({ ...prev, programId: matchedOption.id }));
+      }
     }
-    setProgramId(resolvedProgramId);
-
-    setInitialValues({
-      firstName: directFirstName,
-      middleName: directMiddleName,
-      lastName: directLastName,
-      email: directEmail,
-      programId: resolvedProgramId,
-    });
-    setActiveField(null);
-
-    setProfileImageFile(null);
-    setProfileImagePreviewUrl(selectedFaculty.profileImageUrl);
-    setSaveError(null);
-    setHasReverifiedPendingSave(false);
-    setReverifySuccessMessage(null);
-    setCloseReminder(null);
-  }, [selectedFaculty, degreePrograms, diplomaCourses]);
+  }, [selectedFaculty, degreePrograms, diplomaCourses, programId]);
 
   useEffect(() => {
     if (!selectedFaculty) return;
@@ -258,7 +270,10 @@ export function EditFacultyModal({
     .join(" ");
 
   const selectedProgramObj = [...degreePrograms, ...diplomaCourses].find(
-    (p) => p.id === programId,
+    (p) =>
+      p.id === programId ||
+      p.id.toLowerCase() === programId.toLowerCase() ||
+      p.code.toUpperCase() === programId.toUpperCase(),
   );
 
   function handleAttemptClose() {
@@ -375,13 +390,15 @@ export function EditFacultyModal({
         );
       }
 
-      const updatedProgram = selectedProgramObj
-        ? {
-            id: selectedProgramObj.id,
-            code: selectedProgramObj.code,
-            name: selectedProgramObj.name,
-          }
-        : selectedFaculty.program;
+      const updatedProgram =
+        payload.program ||
+        (selectedProgramObj
+          ? {
+              id: selectedProgramObj.id,
+              code: selectedProgramObj.code,
+              name: selectedProgramObj.name,
+            }
+          : selectedFaculty.program);
 
       const updatedFacultyData: Partial<FacultyAccount> = {
         id: selectedFaculty.id,
@@ -422,6 +439,12 @@ export function EditFacultyModal({
       setActiveField(null);
       setShowConfirmModal(false);
       setShowSuccessModal(true);
+
+      emitRealtimeSync({
+        source: "admin-faculty-update",
+        table: "faculty_profiles",
+        timestamp: Date.now(),
+      });
 
       if (onSave) {
         await onSave(updatedFacultyData);
@@ -585,18 +608,17 @@ export function EditFacultyModal({
                     <input
                       id="faculty-first-name"
                       ref={firstNameInputRef}
-                      readOnly={activeField !== "firstName"}
                       className={`w-full bg-slate-50 dark:bg-slate-950 border rounded-xl pl-3 pr-8 py-1.5 text-xs font-medium text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 outline-none focus:outline-none focus-visible:outline-none transition-all ${
                         activeField === "firstName"
                           ? "border-amber-500 ring-2 ring-amber-500/80 dark:ring-amber-500/60"
-                          : "border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 cursor-default"
+                          : "border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700"
                       }`}
                       value={firstName}
+                      onFocus={() => setActiveField("firstName")}
                       onChange={(event) => {
                         setFirstName(event.target.value);
                         setCloseReminder(null);
                       }}
-                      onBlur={() => setActiveField(null)}
                       placeholder="First name"
                     />
                     {activeField === "firstName" ? (
@@ -638,18 +660,17 @@ export function EditFacultyModal({
                     <input
                       id="faculty-middle-name"
                       ref={middleNameInputRef}
-                      readOnly={activeField !== "middleName"}
                       className={`w-full bg-slate-50 dark:bg-slate-950 border rounded-xl pl-3 pr-8 py-1.5 text-xs font-medium text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 outline-none focus:outline-none focus-visible:outline-none transition-all ${
                         activeField === "middleName"
                           ? "border-amber-500 ring-2 ring-amber-500/80 dark:ring-amber-500/60"
-                          : "border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 cursor-default"
+                          : "border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700"
                       }`}
                       value={middleName}
+                      onFocus={() => setActiveField("middleName")}
                       onChange={(event) => {
                         setMiddleName(event.target.value);
                         setCloseReminder(null);
                       }}
-                      onBlur={() => setActiveField(null)}
                       placeholder="Middle name"
                     />
                     {activeField === "middleName" ? (
@@ -691,18 +712,17 @@ export function EditFacultyModal({
                     <input
                       id="faculty-last-name"
                       ref={lastNameInputRef}
-                      readOnly={activeField !== "lastName"}
                       className={`w-full bg-slate-50 dark:bg-slate-950 border rounded-xl pl-3 pr-8 py-1.5 text-xs font-medium text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 outline-none focus:outline-none focus-visible:outline-none transition-all ${
                         activeField === "lastName"
                           ? "border-amber-500 ring-2 ring-amber-500/80 dark:ring-amber-500/60"
-                          : "border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 cursor-default"
+                          : "border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700"
                       }`}
                       value={lastName}
+                      onFocus={() => setActiveField("lastName")}
                       onChange={(event) => {
                         setLastName(event.target.value);
                         setCloseReminder(null);
                       }}
-                      onBlur={() => setActiveField(null)}
                       placeholder="Last name"
                     />
                     {activeField === "lastName" ? (
@@ -829,13 +849,13 @@ export function EditFacultyModal({
                     id="faculty-email-address"
                     ref={emailInputRef}
                     type="email"
-                    readOnly={activeField !== "email"}
                     className={`w-full bg-slate-50 dark:bg-slate-950 border rounded-xl pl-3 pr-8 py-1.5 text-xs font-medium text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 outline-none focus:outline-none focus-visible:outline-none transition-all ${
                       activeField === "email"
                         ? "border-amber-500 ring-2 ring-amber-500/80 dark:ring-amber-500/60"
-                        : "border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 cursor-default"
+                        : "border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700"
                     }`}
                     value={email}
+                    onFocus={() => setActiveField("email")}
                     onChange={(event) => {
                       const nextEmail = event.target.value;
                       setEmail(nextEmail);
@@ -848,7 +868,6 @@ export function EditFacultyModal({
                         setReverifySuccessMessage(null);
                       }
                     }}
-                    onBlur={() => setActiveField(null)}
                     placeholder="faculty@pup.edu.ph"
                   />
                   {activeField === "email" ? (
