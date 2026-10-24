@@ -2018,7 +2018,7 @@ function FacultySubmissionPanelContent({
         );
         if (isExtensionActive || isCustomDueExtended) {
           evaluatedStatus = "Extended";
-        } else if (isPastEffectiveDeadline) {
+        } else if (isPastEffectiveDeadline || isWindowClosed) {
           evaluatedStatus = "Overdue";
         } else {
           evaluatedStatus = "Not Submitted";
@@ -5793,15 +5793,37 @@ function FacultySubmissionPanelContent({
                                     {(req.status === "Pending" && (!req.latestSubmissionId || !req.submittedAt)) ||
                                     (req.status === "Not Submitted") ? (
                                       ((isWindowClosed || isWindowNotConfigured) && !req.customDueDate && !hasActiveGracePeriod && !isEffectivelyOpen) ? (
-                                        <button
-                                          type="button"
-                                          disabled
-                                          className="inline-flex items-center justify-center gap-1.5 bg-slate-200/70 dark:bg-slate-800/70 text-slate-500 dark:text-slate-400 font-medium w-36 h-8 rounded-xl text-xs cursor-not-allowed opacity-80"
-                                          title={isWindowClosed ? "Submissions are currently closed." : "Submissions will open once the administration announces the submission schedule."}
-                                        >
-                                          <AppIcon icon={Calendar} size="sm" color="inherit" />
-                                          <span>{isWindowClosed ? "Submission Closed" : "Awaiting Schedule"}</span>
-                                        </button>
+                                        isWindowClosed ? (
+                                          hasPendingExtensionRequest ? (
+                                            <button
+                                              type="button"
+                                              onClick={() => setShowExtensionDetailsModal(true)}
+                                              className="inline-flex items-center justify-center gap-1.5 bg-amber-500/15 hover:bg-amber-500/25 text-amber-800 dark:text-amber-300 border border-amber-500/30 font-bold w-36 h-8 rounded-xl text-xs shadow-xs transition-all cursor-pointer"
+                                            >
+                                              <AppIcon icon={Hourglass} size="sm" color="active" />
+                                              <span>Extension Pending</span>
+                                            </button>
+                                          ) : (
+                                            <button
+                                              type="button"
+                                              onClick={() => openExtensionRequestModal(req.code)}
+                                              className="inline-flex items-center justify-center gap-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 border border-amber-600/40 font-bold w-36 h-8 rounded-xl text-xs shadow-xs active:scale-[0.98] transition-all cursor-pointer"
+                                            >
+                                              <AppIcon icon={Hourglass} size="sm" color="inherit" />
+                                              <span>Request Extension</span>
+                                            </button>
+                                          )
+                                        ) : (
+                                          <button
+                                            type="button"
+                                            disabled
+                                            className="inline-flex items-center justify-center gap-1.5 bg-slate-200/70 dark:bg-slate-800/70 text-slate-500 dark:text-slate-400 font-medium w-36 h-8 rounded-xl text-xs cursor-not-allowed opacity-80"
+                                            title="Submissions will open once the administration announces the submission schedule."
+                                          >
+                                            <AppIcon icon={Calendar} size="sm" color="inherit" />
+                                            <span>Awaiting Schedule</span>
+                                          </button>
+                                        )
                                       ) : (
                                         <button
                                           type="button"
@@ -5832,7 +5854,9 @@ function FacultySubmissionPanelContent({
                                           ? "Revision Under Review"
                                           : req.status === "Pending" && req.submittedAt && req.latestSubmissionId
                                             ? "Pending Review"
-                                            : req.status
+                                            : isWindowClosed && (req.status === "Not Submitted" || req.status === "Pending")
+                                              ? "Overdue"
+                                              : req.status
                                       }
                                       size="md"
                                       iconOnly

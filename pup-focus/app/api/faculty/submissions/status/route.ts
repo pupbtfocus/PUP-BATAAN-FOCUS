@@ -874,7 +874,7 @@ export async function GET(request: NextRequest) {
       } else if (!hasDoc || !submission) {
         if (isExtensionActive) {
           status = "Extended";
-        } else if (isPastEffectiveDeadline) {
+        } else if (isPastEffectiveDeadline || (windowState?.isConfigured && !windowState?.isOpen && windowState?.status === "Closed")) {
           status = "Overdue";
         } else {
           status = "Not Submitted";
