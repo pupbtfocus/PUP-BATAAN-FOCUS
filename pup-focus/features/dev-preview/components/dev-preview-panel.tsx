@@ -743,8 +743,37 @@ export function DevPreviewPanel() {
               <div
                 className={`max-w-[620px] mx-auto transition-all ${emailTemplate === "invite" ? "cursor-pointer" : ""}`}
                 onClick={(e) => {
-                  const target = (e.target as HTMLElement).closest("a");
-                  if (target && emailTemplate === "invite") {
+                  const target = e.target as HTMLElement;
+                  const copyBtn = target.closest("button");
+                  if (copyBtn) {
+                    const btnId = copyBtn.id;
+                    if (btnId === "copy-email-btn" || copyBtn.innerText.includes("Email")) {
+                      e.preventDefault();
+                      void navigator.clipboard?.writeText(recipientEmail);
+                      copyBtn.innerHTML = "Copied!";
+                      setTimeout(() => { copyBtn.innerHTML = "Copy Email"; }, 2000);
+                      return;
+                    }
+                    if (btnId === "copy-pass-btn" || copyBtn.innerText.includes("Password")) {
+                      e.preventDefault();
+                      void navigator.clipboard?.writeText("PupFocus_TempPass_9823#");
+                      copyBtn.innerHTML = "Copied!";
+                      setTimeout(() => { copyBtn.innerHTML = "Copy Password"; }, 2000);
+                      return;
+                    }
+                    if (btnId === "copy-both-btn" || copyBtn.innerText.includes("Both")) {
+                      e.preventDefault();
+                      void navigator.clipboard?.writeText(
+                        `Institutional Email: ${recipientEmail}\nTemporary Password: PupFocus_TempPass_9823#`
+                      );
+                      copyBtn.innerHTML = "Copied Both!";
+                      setTimeout(() => { copyBtn.innerHTML = "Copy Both"; }, 2000);
+                      return;
+                    }
+                  }
+
+                  const linkTarget = target.closest("a");
+                  if (linkTarget && emailTemplate === "invite") {
                     e.preventDefault();
                     setShowCancelledInviteModalPreview(true);
                   }

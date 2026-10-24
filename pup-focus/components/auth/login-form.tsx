@@ -1,16 +1,85 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { useRef, useState, type FormEvent } from "react";
 import { Turnstile, type TurnstileInstance } from "@/components/auth/turnstile";
 import { LazyLottie } from "@/components/ui/lazy-lottie";
 import { Button } from "@/components/ui/button";
 import loadingAnimation from "@/assets/icons animations/lottieflow-loading-08-000000-easey.json";
-import { Check, CheckCircle, Eye, EyeClosed, Hourglass, Lock, Mail, WarningCircle, WarningTriangle } from "iconoir-react";
+import { Check, CheckCircle, Copy, Eye, EyeClosed, Hourglass, Lock, Mail, WarningCircle, WarningTriangle } from "iconoir-react";
 import { AppIcon } from "@/components/ui/app-icon";
 
 export interface NoticeBanner {
   type: "timeout" | "error" | "success" | "info";
   message: string;
+}
+
+export function parseCombinedCredentials(text: string): { email?: string; password?: string } | null {
+  if (!text || typeof text !== "string") return null;
+  const trimmed = text.trim();
+  if (!trimmed) return null;
+
+  let parsedEmail: string | undefined;
+  let parsedPassword: string | undefined;
+
+  const lines = trimmed.split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
+
+  for (const line of lines) {
+    const labeledEmailMatch = line.match(
+      /(?:Institutional\s+Email|Verified\s+(?:New\s+)?Email|Email|Account|Username)\s*[:=-]\s*([^\s@]+@[^\s@]+\.[^\s@]+)/i
+    );
+    if (labeledEmailMatch && !parsedEmail) {
+      parsedEmail = labeledEmailMatch[1].trim();
+      continue;
+    }
+
+    const passMatch = line.match(
+      /(?:Temporary\s+Password|Temp\s+Password|New\s+Temp\s+Password|Password|Pass)\s*[:=-]\s*(.+)$/i
+    );
+    if (passMatch && !parsedPassword) {
+      parsedPassword = passMatch[1].trim();
+      continue;
+    }
+  }
+
+  if (!parsedEmail) {
+    for (const line of lines) {
+      const emailMatch = line.match(/([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/);
+      if (emailMatch) {
+        parsedEmail = emailMatch[1].trim();
+        break;
+      }
+    }
+  }
+
+  if (parsedEmail && !parsedPassword) {
+    for (const line of lines) {
+      if (!line.includes(parsedEmail) && !line.toLowerCase().startsWith("note:")) {
+        parsedPassword = line.replace(/^(?:Temporary\s+Password|Temp\s+Password|Password|Pass)\s*[:=-]?\s*/i, "").trim();
+        if (parsedPassword) break;
+      }
+    }
+  }
+
+  if (!parsedEmail && lines.length === 1) {
+    const singleLineMatch = trimmed.match(/^([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})\s*[:|,/]\s*(.+)$/);
+    if (singleLineMatch) {
+      parsedEmail = singleLineMatch[1].trim();
+      parsedPassword = singleLineMatch[2].trim();
+    }
+  }
+
+  if (parsedEmail) {
+    parsedEmail = parsedEmail.replace(/^["'`]|["'`]$/g, "").trim();
+  }
+  if (parsedPassword) {
+    parsedPassword = parsedPassword.replace(/^["'`]|["'`]$/g, "").trim();
+  }
+
+  if (parsedEmail || parsedPassword) {
+    return { email: parsedEmail, password: parsedPassword };
+  }
+
+  return null;
 }
 
 interface LoginFormProps {
@@ -54,9 +123,58 @@ export function LoginForm({
   onTurnstileExpire,
   onTurnstileError,
 }: LoginFormProps) {
+  const emailInputRef = useRef<HTMLInputElement>(null);
   const [showPassword, setShowPassword] = useState(false);
   const [isCapsLockOn, setIsCapsLockOn] = useState(false);
   const [internalRememberMe, setInternalRememberMe] = useState(false);
+  const [pastedState, setPastedState] = useState<"idle" | "success" | "no-credentials" | "press-ctrl-v">("idle");
+
+  const applyCredentials = (text: string): boolean => {
+    const parsed = parseCombinedCredentials(text);
+    if (parsed && (parsed.email || parsed.password)) {
+      if (parsed.email) setEmail(parsed.email);
+      if (parsed.password) setPassword(parsed.password);
+      setPastedState("success");
+      setTimeout(() => setPastedState("idle"), 2500);
+      return true;
+    }
+    return false;
+  };
+
+  const handlePasteCredentials = async () => {
+    try {
+      if (typeof navigator !== "undefined" && navigator.clipboard?.readText) {
+        const clipText = await navigator.clipboard.readText();
+        if (clipText) {
+          if (applyCredentials(clipText)) {
+            return;
+          }
+          setPastedState("no-credentials");
+          emailInputRef.current?.focus();
+          setTimeout(() => setPastedState("idle"), 2500);
+          return;
+        }
+      }
+    } catch {
+      // Browser blocked clipboard reading
+    }
+
+    emailInputRef.current?.focus();
+    setPastedState("press-ctrl-v");
+    setTimeout(() => setPastedState("idle"), 3000);
+  };
+
+  const handleInputPaste = (event: React.ClipboardEvent<HTMLInputElement | HTMLFormElement>) => {
+    const text = event.clipboardData.getData("text");
+    const parsed = parseCombinedCredentials(text);
+    if (parsed && parsed.email && parsed.password) {
+      event.preventDefault();
+      setEmail(parsed.email);
+      setPassword(parsed.password);
+      setPastedState("success");
+      setTimeout(() => setPastedState("idle"), 2500);
+    }
+  };
 
   const activeRememberMe = setRememberMe ? rememberMe : internalRememberMe;
   const handleToggleRememberMe = (checked: boolean) => {
@@ -147,7 +265,7 @@ export function LoginForm({
         </div>
       ) : null}
 
-      <form className="mt-1.5 sm:mt-3 space-y-2 sm:space-y-2.5" onSubmit={onSubmit}>
+      <form className="mt-1.5 sm:mt-3 space-y-2 sm:space-y-2.5" onSubmit={onSubmit} onPaste={handleInputPaste}>
         {/* Universal Alert Banner */}
         {notice ? (
           <div
@@ -180,12 +298,42 @@ export function LoginForm({
         ) : null}
 
         <div className="space-y-1">
-          <label
-            className="ml-1 block text-[10px] font-bold uppercase tracking-widest text-[#f3d9b3]/85"
-            htmlFor="email"
-          >
-            Email Address
-          </label>
+          <div className="flex items-center justify-between ml-1 mr-0.5">
+            <label
+              className="block text-[10px] font-bold uppercase tracking-widest text-[#f3d9b3]/85"
+              htmlFor="email"
+            >
+              Email Address
+            </label>
+            <button
+              type="button"
+              onClick={handlePasteCredentials}
+              className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[11px] font-semibold text-amber-300 hover:text-amber-200 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-400/30 transition-all cursor-pointer"
+              title="Paste copied credentials to autofill email and password"
+            >
+              {pastedState === "success" ? (
+                <>
+                  <AppIcon icon={Check} size="xs" color="inherit" className="text-emerald-400 stroke-[3]" />
+                  <span className="text-emerald-300 font-bold">Credentials Pasted!</span>
+                </>
+              ) : pastedState === "press-ctrl-v" ? (
+                <>
+                  <AppIcon icon={Copy} size="xs" color="inherit" className="text-amber-300" />
+                  <span className="text-amber-200 font-semibold">Press Ctrl+V</span>
+                </>
+              ) : pastedState === "no-credentials" ? (
+                <>
+                  <AppIcon icon={WarningCircle} size="xs" color="inherit" className="text-rose-400" />
+                  <span className="text-rose-300 font-semibold">No credentials found</span>
+                </>
+              ) : (
+                <>
+                  <AppIcon icon={Copy} size="xs" color="inherit" />
+                  <span>Paste Credentials</span>
+                </>
+              )}
+            </button>
+          </div>
           <div className="relative flex items-center">
             <AppIcon
               icon={Mail}
@@ -194,12 +342,14 @@ export function LoginForm({
               className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 !text-amber-400/80 drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]"
             />
             <input
+              ref={emailInputRef}
               id="email"
               type="email"
               name="email"
               autoComplete="username"
               value={email}
               onChange={(event) => setEmail(event.target.value)}
+              onPaste={handleInputPaste}
               required
               placeholder="faculty@pup.edu.ph"
               className="pup-login-input w-full rounded-xl border !border-amber-400/50 !bg-[#660000] pl-10 pr-4 py-2 sm:py-2.5 text-sm !text-amber-50 shadow-[inset_0_2px_4px_rgba(0,0,0,0.3),0_1px_0_rgba(255,215,0,0.15)] outline-none transition-all duration-200 placeholder:!text-amber-200/50 hover:!border-amber-400 focus:!border-amber-400 focus:!ring-1 focus:!ring-amber-400/50"
@@ -228,6 +378,7 @@ export function LoginForm({
               autoComplete="current-password"
               value={password}
               onChange={(event) => setPassword(event.target.value)}
+              onPaste={handleInputPaste}
               onKeyDown={(event) =>
                 setIsCapsLockOn(event.getModifierState("CapsLock"))
               }

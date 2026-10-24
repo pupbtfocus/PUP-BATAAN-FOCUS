@@ -167,40 +167,80 @@ export function buildTempPasswordEmailHtml({
   const safeEmail = escapeHtml(email || "preview@pupfocus.dev");
 
   const credentialsHtml = `
-    <table role="presentation" width="100%" style="margin:20px 0;background:#fffdf7;border:2px solid #f59e0b;border-radius:12px;border-collapse:separate;overflow:hidden;box-shadow:0 2px 8px rgba(245,158,11,0.12);">
+    <table role="presentation" width="100%" style="margin:20px 0;background:#ffffff;border:1px solid #e2e8f0;border-radius:10px;border-collapse:separate;overflow:hidden;">
       <tr>
-        <td style="padding:12px 18px;background:linear-gradient(135deg,#780000 0%,#4d0000 100%);color:#fff8e7;border-bottom:2px solid #f59e0b;">
-          <span style="font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:#ffd700;">
-            🔑 Temporary Credentials
+        <td style="padding:12px 18px;background:#f8fafc;border-bottom:1px solid #e2e8f0;">
+          <span style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.8px;color:#334155;">
+            Temporary Credentials
           </span>
         </td>
       </tr>
       <tr>
-        <td style="padding:18px 20px;">
-          <table role="presentation" width="100%" style="border-collapse:collapse;">
+        <td style="padding:18px 18px 16px 18px;background:#ffffff;">
+          
+          <!-- Institutional Email Row -->
+          <table role="presentation" width="100%" style="margin-bottom:10px;border:1px solid #e2e8f0;border-radius:8px;background:#f8fafc;border-collapse:separate;">
             <tr>
-              <td style="padding:8px 0;width:150px;font-size:13px;font-weight:700;color:#6b4b4b;vertical-align:middle;">
-                Institutional Email:
-              </td>
-              <td style="padding:8px 0;font-size:14px;font-family:monospace;font-weight:700;color:#1e293b;user-select:all;vertical-align:middle;">
-                <span style="background:#f8fafc;padding:5px 10px;border-radius:6px;border:1px solid #e2e8f0;display:inline-block;">
-                  ${safeEmail}
-                </span>
-              </td>
-            </tr>
-            <tr>
-              <td style="padding:8px 0;font-size:13px;font-weight:700;color:#6b4b4b;vertical-align:middle;">
-                Temporary Password:
-              </td>
-              <td style="padding:8px 0;font-size:15px;font-family:monospace;font-weight:800;color:#780000;user-select:all;vertical-align:middle;">
-                <span style="background:#fef3c7;padding:5px 12px;border-radius:6px;border:1.5px dashed #f59e0b;display:inline-block;">
-                  ${safeTempPassword}
-                </span>
+              <td style="padding:10px 14px;">
+                <table role="presentation" width="100%" style="border-collapse:collapse;">
+                  <tr>
+                    <td style="vertical-align:middle;">
+                      <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;color:#64748b;margin-bottom:3px;">
+                        Institutional Email
+                      </div>
+                      <div style="font-family:'Courier New',Courier,monospace;font-size:14px;font-weight:600;color:#0f172a;word-break:break-all;user-select:all;">
+                        ${safeEmail}
+                      </div>
+                    </td>
+                    <td style="width:105px;text-align:right;vertical-align:middle;padding-left:10px;">
+                      <button type="button" id="copy-email-btn" onclick="navigator.clipboard?navigator.clipboard.writeText('${safeEmail}').then(function(){var b=document.getElementById('copy-email-btn');if(b){b.innerHTML='Copied!';setTimeout(function(){b.innerHTML='Copy Email'},2000)}}):prompt('Copy Email:','${safeEmail}')" style="display:inline-block;padding:6px 12px;background:#ffffff;border:1px solid #cbd5e1;border-radius:6px;font-size:12px;font-weight:600;color:#334155;cursor:pointer;white-space:nowrap;">
+                        Copy Email
+                      </button>
+                    </td>
+                  </tr>
+                </table>
               </td>
             </tr>
           </table>
-          <p style="margin:14px 0 0 0;font-size:12px;color:#854d0e;line-height:1.5;">
-            💡 <strong>Note:</strong> You can highlight and copy your credentials above. For your security, you will be required to change your temporary password immediately upon your first sign-in.
+
+          <!-- Temporary Password Row -->
+          <table role="presentation" width="100%" style="margin-bottom:12px;border:1px solid #e2e8f0;border-radius:8px;background:#f8fafc;border-collapse:separate;">
+            <tr>
+              <td style="padding:10px 14px;">
+                <table role="presentation" width="100%" style="border-collapse:collapse;">
+                  <tr>
+                    <td style="vertical-align:middle;">
+                      <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;color:#64748b;margin-bottom:3px;">
+                        Temporary Password
+                      </div>
+                      <div style="font-family:'Courier New',Courier,monospace;font-size:14px;font-weight:600;color:#0f172a;word-break:break-all;user-select:all;">
+                        ${safeTempPassword}
+                      </div>
+                    </td>
+                    <td style="width:125px;text-align:right;vertical-align:middle;padding-left:10px;">
+                      <button type="button" id="copy-pass-btn" onclick="navigator.clipboard?navigator.clipboard.writeText('${safeTempPassword}').then(function(){var b=document.getElementById('copy-pass-btn');if(b){b.innerHTML='Copied!';setTimeout(function(){b.innerHTML='Copy Password'},2000)}}):prompt('Copy Password:','${safeTempPassword}')" style="display:inline-block;padding:6px 12px;background:#ffffff;border:1px solid #cbd5e1;border-radius:6px;font-size:12px;font-weight:600;color:#334155;cursor:pointer;white-space:nowrap;">
+                        Copy Password
+                      </button>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+          </table>
+
+          <!-- Copy Both Button -->
+          <table role="presentation" width="100%" style="margin-bottom:10px;border-collapse:collapse;">
+            <tr>
+              <td style="text-align:center;">
+                <button type="button" id="copy-both-btn" onclick="navigator.clipboard?navigator.clipboard.writeText('Institutional Email: ${safeEmail}\\nTemporary Password: ${safeTempPassword}').then(function(){var b=document.getElementById('copy-both-btn');if(b){b.innerHTML='Copied Both!';setTimeout(function(){b.innerHTML='Copy Both'},2000)}}):prompt('Copy Credentials:','Institutional Email: ${safeEmail}\\nTemporary Password: ${safeTempPassword}')" style="width:100%;padding:8px 14px;background:#ffffff;border:1px solid #cbd5e1;border-radius:6px;font-size:12px;font-weight:600;color:#334155;cursor:pointer;text-align:center;">
+                  Copy Both
+                </button>
+              </td>
+            </tr>
+          </table>
+
+          <p style="margin:8px 0 0 0;font-size:11.5px;color:#64748b;line-height:1.5;text-align:center;">
+            Note: You can click the copy buttons above or highlight the text. Please change your password immediately upon your first sign-in.
           </p>
         </td>
       </tr>
@@ -425,40 +465,80 @@ export function buildEmailChangeTempPasswordHtml({
   const safeEmail = escapeHtml(email);
 
   const credentialsHtml = `
-    <table role="presentation" width="100%" style="margin:20px 0;background:#fffdf7;border:2px solid #f59e0b;border-radius:12px;border-collapse:separate;overflow:hidden;box-shadow:0 2px 8px rgba(245,158,11,0.12);">
+    <table role="presentation" width="100%" style="margin:20px 0;background:#ffffff;border:1px solid #e2e8f0;border-radius:10px;border-collapse:separate;overflow:hidden;">
       <tr>
-        <td style="padding:12px 18px;background:linear-gradient(135deg,#780000 0%,#4d0000 100%);color:#fff8e7;border-bottom:2px solid #f59e0b;">
-          <span style="font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:#ffd700;">
-            🔑 Updated Account Credentials
+        <td style="padding:12px 18px;background:#f8fafc;border-bottom:1px solid #e2e8f0;">
+          <span style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.8px;color:#334155;">
+            Updated Account Credentials
           </span>
         </td>
       </tr>
       <tr>
-        <td style="padding:18px 20px;">
-          <table role="presentation" width="100%" style="border-collapse:collapse;">
+        <td style="padding:18px 18px 16px 18px;background:#ffffff;">
+          
+          <!-- Verified Email Row -->
+          <table role="presentation" width="100%" style="margin-bottom:10px;border:1px solid #e2e8f0;border-radius:8px;background:#f8fafc;border-collapse:separate;">
             <tr>
-              <td style="padding:8px 0;width:150px;font-size:13px;font-weight:700;color:#6b4b4b;vertical-align:middle;">
-                Verified New Email:
-              </td>
-              <td style="padding:8px 0;font-size:14px;font-family:monospace;font-weight:700;color:#1e293b;user-select:all;vertical-align:middle;">
-                <span style="background:#f8fafc;padding:5px 10px;border-radius:6px;border:1px solid #e2e8f0;display:inline-block;">
-                  ${safeEmail}
-                </span>
-              </td>
-            </tr>
-            <tr>
-              <td style="padding:8px 0;font-size:13px;font-weight:700;color:#6b4b4b;vertical-align:middle;">
-                New Temp Password:
-              </td>
-              <td style="padding:8px 0;font-size:15px;font-family:monospace;font-weight:800;color:#780000;user-select:all;vertical-align:middle;">
-                <span style="background:#fef3c7;padding:5px 12px;border-radius:6px;border:1.5px dashed #f59e0b;display:inline-block;">
-                  ${safeTempPassword}
-                </span>
+              <td style="padding:10px 14px;">
+                <table role="presentation" width="100%" style="border-collapse:collapse;">
+                  <tr>
+                    <td style="vertical-align:middle;">
+                      <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;color:#64748b;margin-bottom:3px;">
+                        Verified Email
+                      </div>
+                      <div style="font-family:'Courier New',Courier,monospace;font-size:14px;font-weight:600;color:#0f172a;word-break:break-all;user-select:all;">
+                        ${safeEmail}
+                      </div>
+                    </td>
+                    <td style="width:105px;text-align:right;vertical-align:middle;padding-left:10px;">
+                      <button type="button" id="copy-update-email-btn" onclick="navigator.clipboard?navigator.clipboard.writeText('${safeEmail}').then(function(){var b=document.getElementById('copy-update-email-btn');if(b){b.innerHTML='Copied!';setTimeout(function(){b.innerHTML='Copy Email'},2000)}}):prompt('Copy Email:','${safeEmail}')" style="display:inline-block;padding:6px 12px;background:#ffffff;border:1px solid #cbd5e1;border-radius:6px;font-size:12px;font-weight:600;color:#334155;cursor:pointer;white-space:nowrap;">
+                        Copy Email
+                      </button>
+                    </td>
+                  </tr>
+                </table>
               </td>
             </tr>
           </table>
-          <p style="margin:14px 0 0 0;font-size:12px;color:#854d0e;line-height:1.5;">
-            💡 <strong>Note:</strong> Your previous login credentials have been invalidated. Sign in with your verified new email and temporary password above, then set a new password upon sign-in. All of your existing account records and submissions are preserved.
+
+          <!-- Temporary Password Row -->
+          <table role="presentation" width="100%" style="margin-bottom:12px;border:1px solid #e2e8f0;border-radius:8px;background:#f8fafc;border-collapse:separate;">
+            <tr>
+              <td style="padding:10px 14px;">
+                <table role="presentation" width="100%" style="border-collapse:collapse;">
+                  <tr>
+                    <td style="vertical-align:middle;">
+                      <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;color:#64748b;margin-bottom:3px;">
+                        Temporary Password
+                      </div>
+                      <div style="font-family:'Courier New',Courier,monospace;font-size:14px;font-weight:600;color:#0f172a;word-break:break-all;user-select:all;">
+                        ${safeTempPassword}
+                      </div>
+                    </td>
+                    <td style="width:125px;text-align:right;vertical-align:middle;padding-left:10px;">
+                      <button type="button" id="copy-update-pass-btn" onclick="navigator.clipboard?navigator.clipboard.writeText('${safeTempPassword}').then(function(){var b=document.getElementById('copy-update-pass-btn');if(b){b.innerHTML='Copied!';setTimeout(function(){b.innerHTML='Copy Password'},2000)}}):prompt('Copy Password:','${safeTempPassword}')" style="display:inline-block;padding:6px 12px;background:#ffffff;border:1px solid #cbd5e1;border-radius:6px;font-size:12px;font-weight:600;color:#334155;cursor:pointer;white-space:nowrap;">
+                        Copy Password
+                      </button>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+          </table>
+
+          <!-- Copy Both Button -->
+          <table role="presentation" width="100%" style="margin-bottom:10px;border-collapse:collapse;">
+            <tr>
+              <td style="text-align:center;">
+                <button type="button" id="copy-update-both-btn" onclick="navigator.clipboard?navigator.clipboard.writeText('Email: ${safeEmail}\\nTemporary Password: ${safeTempPassword}').then(function(){var b=document.getElementById('copy-update-both-btn');if(b){b.innerHTML='Copied Both!';setTimeout(function(){b.innerHTML='Copy Both'},2000)}}):prompt('Copy Credentials:','Email: ${safeEmail}\\nTemporary Password: ${safeTempPassword}')" style="width:100%;padding:8px 14px;background:#ffffff;border:1px solid #cbd5e1;border-radius:6px;font-size:12px;font-weight:600;color:#334155;cursor:pointer;text-align:center;">
+                  Copy Both
+                </button>
+              </td>
+            </tr>
+          </table>
+
+          <p style="margin:8px 0 0 0;font-size:11.5px;color:#64748b;line-height:1.5;text-align:center;">
+            Note: Your previous login credentials have been invalidated. Sign in with your verified new email and temporary password above, then set a new password upon sign-in.
           </p>
         </td>
       </tr>
@@ -473,6 +553,96 @@ export function buildEmailChangeTempPasswordHtml({
     actionLabel: "Sign in to PUP FOCUS",
     actionHref: signInHref || buildAppUrl("/auth/sign-in"),
     footerNote: `Temporary Password: ${safeTempPassword} • Verified Email: ${safeEmail}`,
+    pupLogoSrc: buildAppUrl("/icons/pup-seal.png"),
+  });
+}
+
+export function buildDeadlineReminderEmailHtml({
+  fullName,
+  firstName,
+  endDate,
+  endTimeLabel,
+  academicYear,
+  semester,
+  actionHref,
+  daysRemaining = 3,
+}: {
+  fullName: string;
+  firstName?: string;
+  endDate: string;
+  endTimeLabel: string;
+  academicYear?: string;
+  semester?: string;
+  actionHref: string;
+  daysRemaining?: number;
+}) {
+  const resolvedFirstName =
+    firstName?.trim() ||
+    fullName?.trim().split(/\s+/)[0] ||
+    "Faculty Member";
+  const safeFirstName = escapeHtml(resolvedFirstName);
+
+  const termText = academicYear && semester ? `for ${escapeHtml(academicYear)} (${escapeHtml(semester)})` : "";
+  const remainingLabel = daysRemaining === 1 ? "1 day" : `${daysRemaining} days`;
+
+  const deadlineCardHtml = `
+    <table role="presentation" width="100%" style="border-collapse:collapse;margin:20px 0 16px 0;background:#fffbeb;border:1.5px solid #f59e0b;border-radius:10px;overflow:hidden;">
+      <tr>
+        <td style="padding:12px 18px;background:linear-gradient(135deg,#780000 0%,#4d0000 100%);color:#fff8e7;border-bottom:2px solid #f59e0b;">
+          <span style="font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:#ffd700;">
+            ⏰ Upcoming Deadline: ${remainingLabel.toUpperCase()} REMAINING
+          </span>
+        </td>
+      </tr>
+      <tr>
+        <td style="padding:18px 20px;">
+          <table role="presentation" width="100%" style="border-collapse:collapse;">
+            <tr>
+              <td style="padding:6px 0;width:140px;font-size:13px;font-weight:700;color:#6b4b4b;vertical-align:middle;">
+                Closing Date:
+              </td>
+              <td style="padding:6px 0;font-size:14px;font-weight:700;color:#1e293b;vertical-align:middle;">
+                ${escapeHtml(endDate)}
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:6px 0;font-size:13px;font-weight:700;color:#6b4b4b;vertical-align:middle;">
+                Closing Time:
+              </td>
+              <td style="padding:6px 0;font-size:14px;font-weight:700;color:#780000;vertical-align:middle;">
+                ${escapeHtml(endTimeLabel)}
+              </td>
+            </tr>
+            ${
+              academicYear && semester
+                ? `<tr>
+              <td style="padding:6px 0;font-size:13px;font-weight:700;color:#6b4b4b;vertical-align:middle;">
+                Academic Term:
+              </td>
+              <td style="padding:6px 0;font-size:14px;font-weight:600;color:#334155;vertical-align:middle;">
+                A.Y. ${escapeHtml(academicYear)} • ${escapeHtml(semester)}
+              </td>
+            </tr>`
+                : ""
+            }
+          </table>
+          <p style="margin:14px 0 0 0;font-size:12px;color:#854d0e;line-height:1.5;">
+            ⚠️ <strong>Important:</strong> Uploads will lock automatically when the timer reaches zero. Documents requiring revisions or late submissions will require an administrator-approved extension request.
+          </p>
+        </td>
+      </tr>
+    </table>
+  `;
+
+  return buildEmailLayout({
+    title: `Submission Deadline Reminder (${remainingLabel} Remaining)`,
+    intro: `Hello ${safeFirstName}, this is an important reminder regarding your required document submissions.`,
+    body: `The faculty submission window ${termText} is scheduled to close in ${remainingLabel}. Please review your assigned subject loads and upload all pending compliance documents before the portal closes.`,
+    contentHtml: deadlineCardHtml,
+    actionLabel: "Open Faculty Portal & Submit",
+    actionHref,
+    footerNote:
+      "If you have already submitted and completed all required compliance documents for this term, thank you. You may disregard this reminder.",
     pupLogoSrc: buildAppUrl("/icons/pup-seal.png"),
   });
 }

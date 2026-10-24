@@ -9,6 +9,7 @@ import {
 } from "@/features/submissions/services/submission-window.service";
 import { logAuditEvent } from "@/features/audit-logs/services/audit-log.service";
 import { logger } from "@/lib/observability/logger";
+import { checkAndSend3DayDeadlineReminders } from "@/features/submissions/services/deadline-reminder.service";
 
 function isAdminRole(role: string | undefined): boolean {
   return role === ROLE.STAFF || role === ROLE.ADMIN || role === ROLE.SUPER_ADMIN || role === "staff";
@@ -189,10 +190,21 @@ export async function POST(request: NextRequest) {
       });
     }
 
+    // Also dispatch reminder emails directly to faculty inboxes
+    let emailResult = { sentCount: 0 };
+    try {
+      emailResult = await checkAndSend3DayDeadlineReminders(supabase, { force: true });
+    } catch (emailErr) {
+      logger.warn("broadcast_reminder_email_dispatch_failed", {
+        error: emailErr instanceof Error ? emailErr.message : String(emailErr),
+      });
+    }
+
     return NextResponse.json({
       success: true,
       count: targetList.length,
-      message: `Successfully sent deadline reminders to ${targetList.length} faculty member${targetList.length === 1 ? "" : "s"}.`,
+      emailsSent: emailResult.sentCount,
+      message: `Successfully sent in-app notifications and ${emailResult.sentCount} reminder email(s) to faculty.`,
     });
   } catch (error) {
     logger.error("broadcast_reminder_exception", {

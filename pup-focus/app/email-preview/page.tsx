@@ -213,7 +213,39 @@ export default function EmailPreviewPage() {
           <h1 style={{ margin: "0 0 18px", color: "#4d0000" }}>
             Temporary Credentials Email Preview
           </h1>
-          <div dangerouslySetInnerHTML={{ __html: tempPasswordHtml }} />
+          <div
+            onClick={(e) => {
+              const target = e.target as HTMLElement;
+              const copyBtn = target.closest("button");
+              if (copyBtn) {
+                const btnId = copyBtn.id;
+                if (btnId === "copy-email-btn" || copyBtn.innerText.includes("Email")) {
+                  e.preventDefault();
+                  void navigator.clipboard?.writeText("faculty@pup.edu.ph");
+                  copyBtn.innerHTML = "Copied!";
+                  setTimeout(() => { copyBtn.innerHTML = "Copy Email"; }, 2000);
+                  return;
+                }
+                if (btnId === "copy-pass-btn" || copyBtn.innerText.includes("Password")) {
+                  e.preventDefault();
+                  void navigator.clipboard?.writeText("TempPass123!");
+                  copyBtn.innerHTML = "Copied!";
+                  setTimeout(() => { copyBtn.innerHTML = "Copy Password"; }, 2000);
+                  return;
+                }
+                if (btnId === "copy-both-btn" || copyBtn.innerText.includes("Both")) {
+                  e.preventDefault();
+                  void navigator.clipboard?.writeText(
+                    "Institutional Email: faculty@pup.edu.ph\nTemporary Password: TempPass123!"
+                  );
+                  copyBtn.innerHTML = "Copied Both!";
+                  setTimeout(() => { copyBtn.innerHTML = "Copy Both"; }, 2000);
+                  return;
+                }
+              }
+            }}
+            dangerouslySetInnerHTML={{ __html: tempPasswordHtml }}
+          />
         </section>
 
         <section

@@ -65,6 +65,9 @@ describe("Email Templates", () => {
     expect(html).toMatch(/icons\/pup-seal\.png/i);
     expect((html.match(/pup-seal\.png/g) || []).length).toBe(1);
     expect(html).toMatch(/Sign in to PUP FOCUS/i);
+    expect(html).toMatch(/Copy Email/i);
+    expect(html).toMatch(/Copy Password/i);
+    expect(html).toMatch(/Copy Both/i);
   });
 
   it("buildForgotPasswordEmailHtml renders password reset content with single PUP logo and first name greeting", () => {
@@ -99,6 +102,41 @@ describe("Email Templates", () => {
     expect(html).toMatch(/icons\/pup-seal\.png/i);
     expect((html.match(/pup-seal\.png/g) || []).length).toBe(1);
     expect(html).toMatch(/Open Faculty Dashboard/i);
+  });
+
+  it("parseCombinedCredentials parses combined temporary credentials clipboard output", async () => {
+    const { parseCombinedCredentials } = await import("../../components/auth/login-form");
+
+    // Standard Copy Both format from buildTempPasswordEmailHtml
+    const tempPassFormat = "Institutional Email: faculty@pup.edu.ph\nTemporary Password: TempPass123!";
+    expect(parseCombinedCredentials(tempPassFormat)).toEqual({
+      email: "faculty@pup.edu.ph",
+      password: "TempPass123!",
+    });
+
+    // Copy Both format from buildEmailUpdateTempPasswordEmailHtml
+    const updatePassFormat = "Email: updated@pup.edu.ph\nTemporary Password: NewTempPass456#";
+    expect(parseCombinedCredentials(updatePassFormat)).toEqual({
+      email: "updated@pup.edu.ph",
+      password: "NewTempPass456#",
+    });
+
+    // Raw 2-line paste
+    const rawTwoLines = "preview@pupfocus.dev\nPupFocus_TempPass_9823#";
+    expect(parseCombinedCredentials(rawTwoLines)).toEqual({
+      email: "preview@pupfocus.dev",
+      password: "PupFocus_TempPass_9823#",
+    });
+
+    // Delimited single line
+    const delimited = "faculty@pup.edu.ph:MyPassword99#";
+    expect(parseCombinedCredentials(delimited)).toEqual({
+      email: "faculty@pup.edu.ph",
+      password: "MyPassword99#",
+    });
+
+    // Empty string or invalid
+    expect(parseCombinedCredentials("")).toBeNull();
   });
 });
 

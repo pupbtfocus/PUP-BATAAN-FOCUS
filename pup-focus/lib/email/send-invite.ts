@@ -11,6 +11,7 @@ import {
   buildSubmissionWindowNotificationEmailHtml,
   buildEmailChangeVerificationHtml,
   buildEmailChangeTempPasswordHtml,
+  buildDeadlineReminderEmailHtml,
 } from "./email-templates";
 
 export * from "./email-templates";
@@ -485,6 +486,79 @@ export async function sendEmailChangeTempPasswordEmail({
     email: to,
     tempPassword,
     signInHref: buildAppUrl("/auth/sign-in"),
+  });
+
+  return transporter.sendMail({
+    from: formatDisplayFromAddress(fromAddress),
+    to: normalizeEmailAddress(to),
+    subject,
+    text,
+    html,
+  });
+}
+
+type SendDeadlineReminderEmailOpts = {
+  to: string;
+  fullName: string;
+  firstName?: string;
+  endDate: string;
+  endTimeLabel: string;
+  academicYear?: string;
+  semester?: string;
+  actionHref: string;
+  daysRemaining?: number;
+  from?: string;
+};
+
+export async function sendDeadlineReminderEmail({
+  to,
+  fullName,
+  firstName,
+  endDate,
+  endTimeLabel,
+  academicYear,
+  semester,
+  actionHref,
+  daysRemaining = 3,
+  from,
+}: SendDeadlineReminderEmailOpts) {
+  const host = normalizeSmtpValue(process.env.EMAIL_SMTP_HOST);
+  const port = normalizeSmtpValue(process.env.EMAIL_SMTP_PORT);
+  const user = normalizeSmtpValue(process.env.EMAIL_SMTP_USER);
+  const pass = normalizeSmtpPassword(process.env.EMAIL_SMTP_PASS);
+
+  if (!host || !port || !user || !pass) {
+    throw new Error(
+      "SMTP configuration missing (EMAIL_SMTP_HOST/PORT/USER/PASS)",
+    );
+  }
+
+  const transporter = nodemailer.createTransport({
+    host,
+    port: Number(port),
+    secure: Number(port) === 465,
+    auth: {
+      user,
+      pass,
+    },
+  });
+
+  const fromAddress = normalizeEmailAddress(
+    from || process.env.EMAIL_FROM || user,
+  );
+
+  const remainingLabel = daysRemaining === 1 ? "1 Day" : `${daysRemaining} Days`;
+  const subject = `PUP FOCUS - Reminder: ${remainingLabel} Remaining to Submit Requirements`;
+  const text = `Hello ${fullName},\n\nThis is a reminder that the submission window will close in ${remainingLabel} on ${endDate} at ${endTimeLabel}. Please submit your pending requirements through your dashboard before the deadline.\n\n${actionHref}`;
+  const html = buildDeadlineReminderEmailHtml({
+    fullName,
+    firstName,
+    endDate,
+    endTimeLabel,
+    academicYear,
+    semester,
+    actionHref,
+    daysRemaining,
   });
 
   return transporter.sendMail({
