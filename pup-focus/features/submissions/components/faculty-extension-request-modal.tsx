@@ -102,10 +102,11 @@ export function FacultyExtensionRequestModal({
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [successState, setSuccessState] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const prevIsOpenRef = useRef(false);
 
-  // Initialize selected codes when modal opens or lackings change
+  // Initialize selected codes only when modal transitions from closed to open
   useEffect(() => {
-    if (isOpen) {
+    if (isOpen && !prevIsOpenRef.current) {
       if (preSelectedCode && lackings.some((l) => l.code === preSelectedCode)) {
         setSelectedCodes([preSelectedCode]);
       } else if (lackings.length > 0) {
@@ -124,7 +125,8 @@ export function FacultyExtensionRequestModal({
       defaultDate.setDate(defaultDate.getDate() + 3);
       setCustomDate(defaultDate.toISOString().split("T")[0]);
     }
-  }, [isOpen, lackings, preSelectedCode]);
+    prevIsOpenRef.current = isOpen;
+  }, [isOpen, preSelectedCode]);
 
   if (!isOpen) return null;
 

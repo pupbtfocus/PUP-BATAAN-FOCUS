@@ -78,15 +78,6 @@ export async function GET() {
       activeTerm || undefined,
     );
 
-    if (config && status.status === "Closed") {
-      try {
-        await supabase.from("submission_windows").delete().eq("id", 1);
-      } catch (deleteErr) {
-        console.error("Failed to auto-reset expired submission window:", deleteErr);
-      }
-      config = null;
-      status = evaluateSubmissionWindow(null, undefined, undefined, activeTerm || undefined);
-    }
 
     status.academicYear = activeTerm?.academicYear || null;
     status.semester = activeTerm?.semester || null;
