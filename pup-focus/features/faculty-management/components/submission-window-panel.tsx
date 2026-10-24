@@ -1806,16 +1806,18 @@ export function SubmissionWindowPanel({
                         </p>
                       </div>
 
-                      <div className="flex flex-col sm:flex-row sm:items-center gap-1.5 text-xs text-slate-500 shrink-0">
-                        <span className="font-semibold text-amber-800 dark:text-amber-300 bg-amber-500/15 px-2 py-0.5 rounded-md border border-amber-500/30">
-                          {req.requested_preset || "+3 Days"}
-                        </span>
-                        {req.requested_date && (
-                          <span className="text-[11px] text-slate-600 dark:text-slate-400">
-                            (Target: {req.requested_date} {req.requested_time || "23:59"})
+                      {req.requested_preset && (
+                        <div className="flex flex-col sm:flex-row sm:items-center gap-1.5 text-xs text-slate-500 shrink-0">
+                          <span className="font-semibold text-amber-800 dark:text-amber-300 bg-amber-500/15 px-2 py-0.5 rounded-md border border-amber-500/30">
+                            {req.requested_preset}
                           </span>
-                        )}
-                      </div>
+                          {req.requested_date && (
+                            <span className="text-[11px] text-slate-600 dark:text-slate-400">
+                              (Target: {req.requested_date} {req.requested_time || "23:59"})
+                            </span>
+                          )}
+                        </div>
+                      )}
                     </div>
 
                     {/* Requirements tags */}
