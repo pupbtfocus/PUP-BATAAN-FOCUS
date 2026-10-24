@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import {
-  Calendar,
   CheckCircle,
   Hourglass,
   InfoCircle,
@@ -39,49 +38,7 @@ export interface FacultyExtensionRequestModalProps {
   preSelectedCode?: RequirementCode | string | null;
 }
 
-type ExtensionPreset = "+24 Hours" | "+48 Hours" | "+3 Days" | "+1 Week" | "Custom";
 
-function calculateProposedDeadline(preset: ExtensionPreset, customDate: string, customTime: string): { dateStr: string; displayStr: string } {
-  if (preset === "Custom" && customDate) {
-    try {
-      const d = new Date(`${customDate}T${customTime || "17:00"}:00+08:00`);
-      if (!Number.isNaN(d.getTime())) {
-        return {
-          dateStr: customDate,
-          displayStr: d.toLocaleString("en-US", {
-            month: "short",
-            day: "numeric",
-            year: "numeric",
-            hour: "numeric",
-            minute: "2-digit",
-            hour12: true,
-            timeZone: "Asia/Manila",
-          }),
-        };
-      }
-    } catch {}
-    return { dateStr: customDate, displayStr: `${customDate} at ${customTime || "17:00"}` };
-  }
-
-  const d = new Date();
-  if (preset === "+24 Hours") d.setDate(d.getDate() + 1);
-  else if (preset === "+48 Hours") d.setDate(d.getDate() + 2);
-  else if (preset === "+1 Week") d.setDate(d.getDate() + 7);
-  else d.setDate(d.getDate() + 3); // +3 Days default
-
-  const dateStr = d.toISOString().split("T")[0];
-  const displayStr = d.toLocaleString("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-    hour: "numeric",
-    minute: "2-digit",
-    hour12: true,
-    timeZone: "Asia/Manila",
-  });
-
-  return { dateStr, displayStr };
-}
 
 export function FacultyExtensionRequestModal({
   isOpen,
@@ -93,9 +50,6 @@ export function FacultyExtensionRequestModal({
   preSelectedCode,
 }: FacultyExtensionRequestModalProps) {
   const [selectedCodes, setSelectedCodes] = useState<(RequirementCode | string)[]>([]);
-  const [preset, setPreset] = useState<ExtensionPreset>("+3 Days");
-  const [customDate, setCustomDate] = useState("");
-  const [customTime, setCustomTime] = useState("17:00");
   const [reason, setReason] = useState("");
   const [supportingDocument, setSupportingDocument] = useState<File | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -115,15 +69,9 @@ export function FacultyExtensionRequestModal({
         setSelectedCodes([]);
       }
       setReason("");
-      setPreset("+3 Days");
       setSupportingDocument(null);
       setErrorMessage(null);
       setSuccessState(false);
-
-      // Default custom date to 3 days from now
-      const defaultDate = new Date();
-      defaultDate.setDate(defaultDate.getDate() + 3);
-      setCustomDate(defaultDate.toISOString().split("T")[0]);
     }
     prevIsOpenRef.current = isOpen;
   }, [isOpen, preSelectedCode]);
@@ -139,8 +87,6 @@ export function FacultyExtensionRequestModal({
   function selectAllCodes() {
     setSelectedCodes(lackings.map((l) => l.code));
   }
-
-  const { displayStr: proposedDeadlineDisplay } = calculateProposedDeadline(preset, customDate, customTime);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -158,11 +104,6 @@ export function FacultyExtensionRequestModal({
       return;
     }
 
-    if (preset === "Custom" && !customDate) {
-      setErrorMessage("Please select a target deadline date for the custom extension.");
-      return;
-    }
-
     setIsSubmitting(true);
 
     try {
@@ -171,11 +112,6 @@ export function FacultyExtensionRequestModal({
       formData.append("semester", semester);
       formData.append("requirementCodes", JSON.stringify(selectedCodes));
       formData.append("reason", reason.trim());
-      formData.append("requestedPreset", preset);
-      if (preset === "Custom") {
-        formData.append("customDate", customDate);
-        formData.append("customTime", customTime);
-      }
       if (supportingDocument) {
         formData.append("supportingDocument", supportingDocument);
       }
@@ -315,68 +251,7 @@ export function FacultyExtensionRequestModal({
                 )}
               </div>
 
-              {/* Proposed Target Deadline Duration & Presets */}
-              <div>
-                <label className="block text-xs font-bold text-slate-800 dark:text-slate-200 mb-1.5">
-                  Proposed Target Deadline <span className="text-red-500">*</span>
-                </label>
-                <div className="grid grid-cols-3 sm:grid-cols-5 gap-1.5">
-                  {(["+24 Hours", "+48 Hours", "+3 Days", "+1 Week", "Custom"] as const).map(
-                    (p) => (
-                      <button
-                        key={p}
-                        type="button"
-                        onClick={() => setPreset(p)}
-                        className={`py-2 px-2 rounded-xl text-xs font-semibold border transition-all cursor-pointer text-center ${
-                          preset === p
-                            ? "bg-amber-500 text-slate-950 border-amber-500 font-bold shadow-xs active:scale-[0.98]"
-                            : "bg-white dark:bg-slate-800/70 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700/80 hover:bg-slate-50 dark:hover:bg-slate-700/50 font-medium"
-                        }`}
-                      >
-                        {p}
-                      </button>
-                    ),
-                  )}
-                </div>
 
-                {/* Calculated Proposed Target Deadline Display */}
-                <div className="mt-2 p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 flex items-center justify-between text-xs">
-                  <span className="text-slate-500 dark:text-slate-400 font-medium">Target Deadline:</span>
-                  <span className="font-bold text-amber-800 dark:text-amber-300">
-                    {proposedDeadlineDisplay}
-                  </span>
-                </div>
-
-                {preset === "Custom" && (
-                  <div className="mt-2 grid grid-cols-1 sm:grid-cols-2 gap-2 bg-slate-50 dark:bg-slate-800/40 p-3 rounded-xl border border-slate-200 dark:border-slate-700/80">
-                    <div>
-                      <label className="block text-[11px] font-semibold text-slate-600 dark:text-slate-400 mb-1">
-                        New Target Date:
-                      </label>
-                      <input
-                        type="date"
-                        value={customDate}
-                        min={new Date().toISOString().split("T")[0]}
-                        onChange={(e) => setCustomDate(e.target.value)}
-                        required
-                        className="w-full text-xs rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-2.5 py-1.5 text-slate-900 dark:text-slate-100 outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500/30"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-[11px] font-semibold text-slate-600 dark:text-slate-400 mb-1">
-                        Target Time:
-                      </label>
-                      <input
-                        type="time"
-                        value={customTime}
-                        onChange={(e) => setCustomTime(e.target.value)}
-                        required
-                        className="w-full text-xs rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-2.5 py-1.5 text-slate-900 dark:text-slate-100 outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500/30"
-                      />
-                    </div>
-                  </div>
-                )}
-              </div>
 
               {/* Reason / Justification */}
               <div>

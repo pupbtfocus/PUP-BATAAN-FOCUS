@@ -340,6 +340,40 @@ export async function PUT(request: NextRequest) {
       semester,
     });
 
+    // When global schedule is open, auto-resolve pending extension requests and restore closed submissions
+    if (status.isOpen) {
+      try {
+        const windowDueAtIso = toManilaIso(endDate, endTime24 || "23:59:59");
+        await supabase
+          .from("extension_requests")
+          .update({
+            status: "approved",
+            admin_remarks: `Global submission window opened until ${endDate}${endTime ? ` (${endTime})` : ""}`,
+            approved_date: endDate,
+            approved_time: endTime24 || "23:59:59",
+            updated_at: new Date().toISOString(),
+          })
+          .eq("academic_year", academicYear)
+          .eq("semester", semester)
+          .eq("status", "pending");
+
+        await supabase
+          .from("submissions")
+          .update({
+            due_at: windowDueAtIso,
+            remarks: null,
+            updated_at: new Date().toISOString(),
+          })
+          .eq("academic_year", academicYear)
+          .eq("semester", semester)
+          .like("remarks", "%[origin:CLOSED]%");
+      } catch (autoResolveErr) {
+        logger.warn("auto_resolve_extension_requests_failed", {
+          error: autoResolveErr instanceof Error ? autoResolveErr.message : String(autoResolveErr),
+        });
+      }
+    }
+
     const { data: facultyRoles } = await supabase
       .from("user_roles")
       .select("profiles(id, user_id, email, full_name), roles(code)")
