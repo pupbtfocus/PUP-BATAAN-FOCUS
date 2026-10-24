@@ -62,6 +62,7 @@ export function BackupArchivePanel() {
   const [selectedSemester, setSelectedSemester] = useState<string>("all");
   const [selectedFacultyId, setSelectedFacultyId] = useState<string>("all");
   const [backupSearchQuery, setBackupSearchQuery] = useState("");
+  const [archiveVaultFilter, setArchiveVaultFilter] = useState<"all" | "backed_up" | "past">("all");
 
   // Searchable faculty dropdown state
   const [isFacultyDropdownOpen, setIsFacultyDropdownOpen] = useState(false);
@@ -288,6 +289,39 @@ export function BackupArchivePanel() {
       return nameMatch || ayMatch || semMatch || facMatch;
     });
   }, [backups, backupSearchQuery]);
+
+  // Section 3: Academic Terms & Semester Archive Vault terms
+  // Excludes upcoming terms without backups, strictly showing backed-up semesters, past academic semesters, and the active term.
+  const allVaultCandidateTerms = useMemo(() => {
+    const rawList = availableTerms.length > 0 ? availableTerms : archivedTerms;
+    return rawList.filter((term) => {
+      const isBackedUp = isTermBackedUp(term.academic_year, term.semester);
+      const isPast = term.status === "Archived" || Boolean(term.is_archived);
+      const isCurrent = term.status === "Current";
+      return isBackedUp || isPast || isCurrent;
+    });
+  }, [availableTerms, archivedTerms, backups]);
+
+  const vaultBackedUpCount = useMemo(() => {
+    const rawList = availableTerms.length > 0 ? availableTerms : archivedTerms;
+    return rawList.filter((term) => isTermBackedUp(term.academic_year, term.semester)).length;
+  }, [availableTerms, archivedTerms, backups]);
+
+  const vaultPastCount = useMemo(() => {
+    const rawList = availableTerms.length > 0 ? availableTerms : archivedTerms;
+    return rawList.filter((term) => term.status === "Archived" || Boolean(term.is_archived)).length;
+  }, [availableTerms, archivedTerms]);
+
+  const displayedVaultTerms = useMemo(() => {
+    const rawList = availableTerms.length > 0 ? availableTerms : archivedTerms;
+    if (archiveVaultFilter === "backed_up") {
+      return rawList.filter((term) => isTermBackedUp(term.academic_year, term.semester));
+    }
+    if (archiveVaultFilter === "past") {
+      return rawList.filter((term) => term.status === "Archived" || Boolean(term.is_archived));
+    }
+    return allVaultCandidateTerms;
+  }, [archiveVaultFilter, availableTerms, archivedTerms, allVaultCandidateTerms, backups]);
 
   const resetFilters = () => {
     if (currentActiveTerm) {
@@ -1012,14 +1046,76 @@ export function BackupArchivePanel() {
 
       {/* SECTION 3: Institutional Compliance Archive Vault */}
       <section className="space-y-3 pt-4 border-t border-slate-200 dark:border-slate-800">
-        <div>
-          <h2 className="text-base font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
-            <AppIcon icon={Archive} size="md" color="default" />
-            <span>Academic Terms &amp; Semester Archive Vault</span>
-          </h2>
-          <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-            Monitor per-semester backup readiness across all academic periods. Active terms require a verified backup before changing term.
-          </p>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div>
+            <h2 className="text-base font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+              <AppIcon icon={Archive} size="md" color="default" />
+              <span>Academic Terms &amp; Semester Archive Vault</span>
+            </h2>
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+              Monitor per-semester backup readiness across all academic periods. Active terms require a verified backup before changing term.
+            </p>
+          </div>
+
+          {/* Filter Pills: All Vault Terms, Backed-Up Sem Only, Past Acad Sem */}
+          <div className="flex items-center gap-1.5 p-1 bg-slate-100 dark:bg-slate-800/80 rounded-xl border border-slate-200 dark:border-slate-700/60 text-xs shrink-0 self-start sm:self-auto">
+            <button
+              type="button"
+              onClick={() => setArchiveVaultFilter("all")}
+              className={`px-3 py-1 rounded-lg font-medium transition cursor-pointer flex items-center gap-1.5 ${
+                archiveVaultFilter === "all"
+                  ? "bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 shadow-2xs font-bold"
+                  : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200"
+              }`}
+            >
+              <span>All Terms</span>
+              <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-slate-200 dark:bg-slate-700 font-mono">
+                {allVaultCandidateTerms.length}
+              </span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setArchiveVaultFilter("backed_up")}
+              className={`px-3 py-1 rounded-lg font-medium transition cursor-pointer flex items-center gap-1.5 ${
+                archiveVaultFilter === "backed_up"
+                  ? "bg-amber-500 text-slate-950 font-bold shadow-2xs"
+                  : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200"
+              }`}
+            >
+              <span>Backed-Up Sem Only</span>
+              <span
+                className={`text-[10px] px-1.5 py-0.2 rounded-full font-mono ${
+                  archiveVaultFilter === "backed_up"
+                    ? "bg-slate-950 text-white"
+                    : "bg-slate-200 dark:bg-slate-700"
+                }`}
+              >
+                {vaultBackedUpCount}
+              </span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setArchiveVaultFilter("past")}
+              className={`px-3 py-1 rounded-lg font-medium transition cursor-pointer flex items-center gap-1.5 ${
+                archiveVaultFilter === "past"
+                  ? "bg-amber-500 text-slate-950 font-bold shadow-2xs"
+                  : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200"
+              }`}
+            >
+              <span>Past Acad Sem</span>
+              <span
+                className={`text-[10px] px-1.5 py-0.2 rounded-full font-mono ${
+                  archiveVaultFilter === "past"
+                    ? "bg-slate-950 text-white"
+                    : "bg-slate-200 dark:bg-slate-700"
+                }`}
+              >
+                {vaultPastCount}
+              </span>
+            </button>
+          </div>
         </div>
 
         {/* Academic Terms Table */}
@@ -1036,20 +1132,28 @@ export function BackupArchivePanel() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-200 dark:divide-slate-800/60">
-                {(availableTerms.length > 0 ? availableTerms : archivedTerms).length === 0 ? (
+                {displayedVaultTerms.length === 0 ? (
                   <tr>
                     <td colSpan={5} className="py-10 text-center text-slate-500">
                       <AppIcon icon={Archive} size="md" color="muted" className="mx-auto mb-2" />
                       <p className="font-semibold text-slate-700 dark:text-slate-300">
-                        No academic terms found
+                        {archiveVaultFilter === "backed_up"
+                          ? "No backed-up semesters found"
+                          : archiveVaultFilter === "past"
+                          ? "No past academic semesters found"
+                          : "No academic terms found"}
                       </p>
                       <p className="text-xs text-slate-500 mt-1">
-                        Academic terms configured in settings will display here.
+                        {archiveVaultFilter === "backed_up"
+                          ? "Semesters with verified snapshot backups stored will appear here."
+                          : archiveVaultFilter === "past"
+                          ? "Past academic semesters archived upon term changes will appear here."
+                          : "Only backed-up semesters or past academic terms are stored in this vault."}
                       </p>
                     </td>
                   </tr>
                 ) : (
-                  (availableTerms.length > 0 ? availableTerms : archivedTerms).map((term, idx) => {
+                  displayedVaultTerms.map((term, idx) => {
                     const isBackedUp = isTermBackedUp(term.academic_year, term.semester);
                     const isCurrent = term.status === "Current";
                     const isArchived = term.status === "Archived" || term.is_archived;
