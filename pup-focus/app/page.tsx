@@ -105,9 +105,26 @@ export default function Home() {
     latestCredentialsRef.current = { email, password, rememberMe };
   });
 
-  // Load remembered credentials from localStorage
+  // Load remembered credentials or credentials from link URL parameters
   useEffect(() => {
     try {
+      if (typeof window !== "undefined") {
+        const params = new URLSearchParams(window.location.search);
+        const queryEmail = params.get("email");
+        const queryTemp = params.get("temp") || params.get("password");
+        if (queryEmail) {
+          setEmail(queryEmail.trim());
+        }
+        if (queryTemp) {
+          setPassword(queryTemp.trim());
+          setNotice({
+            type: "info",
+            message: "Temporary credentials autofilled from your secure link. Click 'Sign In' to continue.",
+          });
+          return;
+        }
+      }
+
       const savedRemember = localStorage.getItem("pup_focus_remember_me");
       const savedEmail = localStorage.getItem("pup_focus_remembered_email");
       if (savedRemember === "true" && savedEmail) {

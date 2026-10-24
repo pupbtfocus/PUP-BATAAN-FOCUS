@@ -149,8 +149,31 @@ export async function POST(req: Request) {
         authUser.user_metadata?.pending_email_change_verification,
     );
 
-    // 3. Call supabase.auth.admin.updateUserById to update the password and set email_confirm: true
+    // Prevent duplicate password generation and email sends if a temp password was already issued within the last 2 minutes
+    const lastTempPasswordIssuedAt = authUser.user_metadata?.temp_password_issued_at;
+    const existingTempPassword = authUser.user_metadata?.temp_password;
     const isTempPasswordGenerated = !requestedPassword;
+    const isRecentDuplicate =
+      isTempPasswordGenerated &&
+      existingTempPassword &&
+      lastTempPasswordIssuedAt &&
+      Date.now() - Number(lastTempPasswordIssuedAt) < 120_000;
+
+    if (isRecentDuplicate) {
+      return NextResponse.json({
+        success: true,
+        email: authUser.email,
+        fullName: authUser.user_metadata?.full_name || requestedFullName || "Admin User",
+        needsPasswordSetup: true,
+        tempPasswordIssued: true,
+        tempPasswordEmailSent: true,
+        tempPassword: existingTempPassword,
+        isEmailChange,
+        alreadyIssued: true,
+      });
+    }
+
+    // 3. Call supabase.auth.admin.updateUserById to update the password and set email_confirm: true
     const passwordToSet = requestedPassword || generateTempPassword(16);
     const fullNameToSet =
       requestedFullName ||
@@ -171,6 +194,8 @@ export async function POST(req: Request) {
         must_change_password: true,
         force_password_change: true,
         pending_email_change_verification: false,
+        temp_password: isTempPasswordGenerated ? passwordToSet : null,
+        temp_password_issued_at: isTempPasswordGenerated ? Date.now() : null,
       },
     };
 
