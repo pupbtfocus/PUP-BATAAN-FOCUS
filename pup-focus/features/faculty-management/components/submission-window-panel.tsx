@@ -488,6 +488,11 @@ export function SubmissionWindowPanel({
         setSuccess(`Submission schedule closed for ${fac.facultyName}.`);
         setFacultyToClose(null);
         await fetchActiveFacultySchedules();
+        emitRealtimeSync({
+          source: "faculty-schedule-closed",
+          table: "submission_windows",
+          timestamp: Date.now(),
+        });
         onWindowChange?.();
       }
     } catch {

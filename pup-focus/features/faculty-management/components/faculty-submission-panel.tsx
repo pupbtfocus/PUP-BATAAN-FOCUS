@@ -252,6 +252,7 @@ type RequirementStatus = {
   effectiveDeadline?: string | null;
   isExtended?: boolean;
   extendedUntil?: string | null;
+  isIndividualClosed?: boolean;
 };
 type SubmissionPreview = DocumentPreviewSubmission;
 type PastSubmission = {
@@ -1895,12 +1896,16 @@ function FacultySubmissionPanelContent({
 
     // Filter approved extension requests for active term
     const approvedExtList = (allExtensionRequests || []).filter((ext: any) => {
-      if (ext.status !== "approved") return false;
+      if (ext.status !== "approved" || (!ext.approved_date && !ext.approved_extension_date)) return false;
       const matchAY = !ext.academic_year || normalizeAcademicYear(ext.academic_year) === normActiveAY;
       const matchSem = !ext.semester || normalizeSemester(ext.semester) === normActiveSem;
       return matchAY && matchSem;
     });
-    if (approvedExtList.length === 0 && latestApprovedExtension?.status === "approved") {
+    if (
+      approvedExtList.length === 0 &&
+      latestApprovedExtension?.status === "approved" &&
+      (latestApprovedExtension?.approved_date || latestApprovedExtension?.approved_extension_date)
+    ) {
       approvedExtList.push(latestApprovedExtension);
     }
 
@@ -1927,17 +1932,18 @@ function FacultySubmissionPanelContent({
 
       // Find matching approved extension for this requirement code
       const matchingExt = approvedExtList.find((ext: any) => {
+        if (ext.status !== "approved") return false;
         const reqCodes = Array.isArray(ext.requirement_codes) ? ext.requirement_codes : [];
         return reqCodes.length === 0 || reqCodes.includes(code);
       });
 
-      const targetExtDate = matchingExt?.approved_date;
+      const targetExtDate = matchingExt?.approved_date || matchingExt?.approved_extension_date;
       const targetExtTime = matchingExt?.approved_time;
       const extDeadlineIso = targetExtDate
         ? `${targetExtDate}T${targetExtTime ? normalizeTime24Hour(targetExtTime) || "23:59:59" : "23:59:59"}+08:00`
         : null;
       const extDeadlineMs = extDeadlineIso ? new Date(extDeadlineIso).getTime() : null;
-      const isExtensionActive = Boolean(extDeadlineMs && nowMs <= extDeadlineMs);
+      const isExtensionActive = Boolean(matchingExt?.status === "approved" && extDeadlineMs && nowMs <= extDeadlineMs);
 
       // Effective deadline determination:
       // Individual custom due date if one exists; otherwise, approved extension date, personal deadline, or schedule's global deadline
@@ -2003,6 +2009,15 @@ function FacultySubmissionPanelContent({
       // 2. PENDING: Current date is on or before effective deadline, and no file is submitted.
       // 3. OVERDUE: Current date is past effective deadline, and no file is submitted.
       // 4. EXTENDED: Extension request approved, temporarily unlocked until approved date.
+      const remarksStr =
+        typeof subSource?.remarks === "string"
+          ? subSource.remarks
+          : (match as any)?.remarks || "";
+      const isIndividualClosed = Boolean(
+        remarksStr.includes("[origin:CLOSED]") ||
+        remarksStr.includes("closed by admin")
+      );
+
       let evaluatedStatus: RequirementStatus["status"] = "Pending";
 
       if (isExempted) {
@@ -2016,6 +2031,7 @@ function FacultySubmissionPanelContent({
       } else {
         // No file is submitted
         const isCustomDueExtended = Boolean(
+          !isIndividualClosed &&
           customDueDate &&
           effectiveDeadlineMs &&
           nowMs <= effectiveDeadlineMs &&
@@ -2023,6 +2039,8 @@ function FacultySubmissionPanelContent({
         );
         if (isExtensionActive || isCustomDueExtended) {
           evaluatedStatus = "Extended";
+        } else if (isIndividualClosed) {
+          evaluatedStatus = "Not Submitted";
         } else if (!submissionWindow?.isConfigured) {
           evaluatedStatus = "Not Submitted";
         } else if (isPastEffectiveDeadline || isGlobalScheduleClosed) {
@@ -2085,9 +2103,10 @@ function FacultySubmissionPanelContent({
         hasPriorRevision: Boolean((subSource as RequirementStatus)?.hasPriorRevision),
         due_at: existingCustomDue || null,
         customDueDate,
-        effectiveDeadline: effectiveDeadlineIso,
-        isExtended: isExtensionActive,
-        extendedUntil: extDeadlineIso,
+        effectiveDeadline: isIndividualClosed ? null : effectiveDeadlineIso,
+        isExtended: isIndividualClosed ? false : isExtensionActive,
+        extendedUntil: isIndividualClosed ? null : extDeadlineIso,
+        isIndividualClosed,
       };
     });
   }, [
@@ -5692,7 +5711,7 @@ function FacultySubmissionPanelContent({
 
                                     {/* 2. REJECTED: Upload Revision or Request Extension if closed/overdue */}
                                     {req.status === "Rejected" && (
-                                      (isWindowNotConfigured && !req.isExtended && !hasActiveGracePeriod && !isEffectivelyOpen) ? (
+                                      ((isWindowNotConfigured || req.isIndividualClosed) && !req.isExtended && !hasActiveGracePeriod && !isEffectivelyOpen) ? (
                                         <button
                                           type="button"
                                           disabled
@@ -5775,7 +5794,7 @@ function FacultySubmissionPanelContent({
 
                                     {/* 5. OVERDUE: Lock file upload and display Request Extension option */}
                                     {req.status === "Overdue" && (
-                                      (isWindowNotConfigured && !hasActiveGracePeriod && !isEffectivelyOpen) ? (
+                                      ((isWindowNotConfigured || req.isIndividualClosed) && !hasActiveGracePeriod && !isEffectivelyOpen) ? (
                                         <button
                                           type="button"
                                           disabled
@@ -5809,8 +5828,8 @@ function FacultySubmissionPanelContent({
                                     {/* 6. PENDING: Current date is on or before effective deadline, enable file upload */}
                                     {(req.status === "Pending" && (!req.latestSubmissionId || !req.submittedAt)) ||
                                     (req.status === "Not Submitted") ? (
-                                      ((isWindowClosed || isWindowNotConfigured) && !req.customDueDate && !hasActiveGracePeriod && !isEffectivelyOpen) ? (
-                                        isWindowClosed ? (
+                                      ((isWindowClosed || isWindowNotConfigured || req.isIndividualClosed) && !req.customDueDate && !hasActiveGracePeriod && !isEffectivelyOpen) ? (
+                                        (isWindowClosed && !req.isIndividualClosed) ? (
                                           hasPendingExtensionRequest ? (
                                             <button
                                               type="button"
@@ -5873,7 +5892,7 @@ function FacultySubmissionPanelContent({
                                             ? "Pending Review"
                                             : (isWindowNotConfigured && (req.status === "Not Submitted" || req.status === "Pending" || req.status === "Overdue"))
                                               ? "Not Submitted"
-                                              : isWindowClosed && (req.status === "Not Submitted" || req.status === "Pending")
+                                              : req.isIndividualClosed ? "Not Submitted" : isWindowClosed && (req.status === "Not Submitted" || req.status === "Pending")
                                                 ? "Overdue"
                                                 : req.status
                                       }
