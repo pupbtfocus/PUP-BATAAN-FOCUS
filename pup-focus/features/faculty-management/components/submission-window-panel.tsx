@@ -259,6 +259,9 @@ export function SubmissionWindowPanel({
   const savedOpenDateTimeRef = useRef("");
   const savedCloseDateTimeRef = useRef("");
   const openingInputRef = useRef<HTMLInputElement>(null);
+  const isEditingScheduleRef = useRef(isEditingSchedule);
+  isEditingScheduleRef.current = isEditingSchedule;
+  const hasInitializedEditScheduleRef = useRef(false);
 
   // Live clock state updating every second
   const [now, setNow] = useState<Date>(new Date());
@@ -549,34 +552,37 @@ export function SubmissionWindowPanel({
 
       setWindowStatus(data);
 
-      if (data.status === "Closed") {
-        setOpenDateTime("");
-        setCloseDateTime("");
-        setIsAlwaysOpen(false);
-      } else {
-        const isAlwaysOpenWindow = Boolean(
-          data.endDate && (data.endDate.startsWith("2099") || new Date(data.endDate).getFullYear() >= 2099)
-        );
-        setIsAlwaysOpen(isAlwaysOpenWindow);
-
-        if (data.startDate && data.startTimeLabel) {
-          const time24 = toTimeInputValue(data.startTimeLabel);
-          setOpenDateTime(time24 ? `${data.startDate}T${time24}` : `${data.startDate}T09:00`);
-        } else if (data.startDate) {
-          setOpenDateTime(`${data.startDate}T09:00`);
-        } else {
+      // Do not overwrite user-entered dates while actively editing or typing
+      if (!isEditingScheduleRef.current) {
+        if (data.status === "Closed") {
           setOpenDateTime("");
-        }
-
-        if (isAlwaysOpenWindow) {
-          setCloseDateTime("2099-12-31T23:59");
-        } else if (data.endDate && data.endTimeLabel) {
-          const time24 = toTimeInputValue(data.endTimeLabel);
-          setCloseDateTime(time24 ? `${data.endDate}T${time24}` : `${data.endDate}T17:00`);
-        } else if (data.endDate) {
-          setCloseDateTime(`${data.endDate}T17:00`);
-        } else {
           setCloseDateTime("");
+          setIsAlwaysOpen(false);
+        } else {
+          const isAlwaysOpenWindow = Boolean(
+            data.endDate && (data.endDate.startsWith("2099") || new Date(data.endDate).getFullYear() >= 2099)
+          );
+          setIsAlwaysOpen(isAlwaysOpenWindow);
+
+          if (data.startDate && data.startTimeLabel) {
+            const time24 = toTimeInputValue(data.startTimeLabel);
+            setOpenDateTime(time24 ? `${data.startDate}T${time24}` : `${data.startDate}T09:00`);
+          } else if (data.startDate) {
+            setOpenDateTime(`${data.startDate}T09:00`);
+          } else {
+            setOpenDateTime("");
+          }
+
+          if (isAlwaysOpenWindow) {
+            setCloseDateTime("2099-12-31T23:59");
+          } else if (data.endDate && data.endTimeLabel) {
+            const time24 = toTimeInputValue(data.endTimeLabel);
+            setCloseDateTime(time24 ? `${data.endDate}T${time24}` : `${data.endDate}T17:00`);
+          } else if (data.endDate) {
+            setCloseDateTime(`${data.endDate}T17:00`);
+          } else {
+            setCloseDateTime("");
+          }
         }
       }
     } catch (loadError) {
@@ -611,9 +617,10 @@ export function SubmissionWindowPanel({
     }
   });
 
-  // Sync isEditingSchedule: lock inputs once a valid schedule loads
+  // Sync isEditingSchedule: lock inputs once a valid schedule loads on initial fetch
   useEffect(() => {
-    if (!isLoading && windowStatus) {
+    if (!isLoading && windowStatus && !hasInitializedEditScheduleRef.current) {
+      hasInitializedEditScheduleRef.current = true;
       const hasSchedule = !!(windowStatus.startDate && windowStatus.endDate && windowStatus.status !== "Closed");
       setIsEditingSchedule(!hasSchedule);
     }
@@ -731,6 +738,9 @@ export function SubmissionWindowPanel({
 
       setWindowStatus(body as SubmissionWindowResponse);
       setIsEditingSchedule(false);
+      isEditingScheduleRef.current = false;
+      savedOpenDateTimeRef.current = openDateTime;
+      savedCloseDateTimeRef.current = closeDateTime;
       setSuccess("Submission window updated successfully.");
       onWindowChange?.();
       void fetchLogs();
@@ -788,6 +798,11 @@ export function SubmissionWindowPanel({
       setWindowStatus(body as SubmissionWindowResponse);
       setOpenDateTime("");
       setCloseDateTime("");
+      setIsAlwaysOpen(false);
+      setIsEditingSchedule(true);
+      isEditingScheduleRef.current = true;
+      savedOpenDateTimeRef.current = "";
+      savedCloseDateTimeRef.current = "";
       setSuccess("Submissions closed and schedule cleared.");
       onWindowChange?.();
       void fetchLogs();
@@ -1218,7 +1233,6 @@ export function SubmissionWindowPanel({
                     <input
                       id="closing-schedule"
                       type="datetime-local"
-                      min={openDateTime || undefined}
                       value={closeDateTime}
                       onChange={(e) => {
                         setCloseDateTime(e.target.value);

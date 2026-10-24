@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useEffect, useState } from "react";
+import { Suspense, useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { CampusBackground } from "@/components/shared/campus-background";
@@ -49,8 +49,11 @@ function AuthConfirmContent() {
   const [userFullName, setUserFullName] = useState("");
   const [tempPassword, setTempPassword] = useState("");
   const [isEmailChange, setIsEmailChange] = useState(false);
+  const hasExecutedRef = useRef(false);
 
   useEffect(() => {
+    if (hasExecutedRef.current) return;
+    hasExecutedRef.current = true;
     let cancelled = false;
 
     async function confirmInvite() {
