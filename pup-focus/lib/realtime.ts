@@ -258,8 +258,8 @@ export function emitRealtimeSync(partial?: Partial<RealtimeSyncPayload>) {
 
 export function useRealtimeSync(
   onSync: (payload: RealtimeSyncPayload) => void,
-  debounceMs = 250,
-  pollIntervalMs = 6000,
+  debounceMs = 300,
+  pollIntervalMs = 0,
 ) {
   const callbackRef = useRef(onSync);
   callbackRef.current = onSync;

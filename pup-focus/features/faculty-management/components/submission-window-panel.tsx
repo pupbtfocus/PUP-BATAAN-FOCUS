@@ -591,7 +591,6 @@ export function SubmissionWindowPanel({
       if (!options?.silent) {
         setIsLoading(false);
       }
-      void fetchActiveFacultySchedules();
     }
   }
 
@@ -742,6 +741,7 @@ export function SubmissionWindowPanel({
       savedOpenDateTimeRef.current = openDateTime;
       savedCloseDateTimeRef.current = closeDateTime;
       setSuccess("Submission window updated successfully.");
+      emitRealtimeSync();
       onWindowChange?.();
       void fetchLogs();
     } catch (saveError) {
@@ -804,6 +804,7 @@ export function SubmissionWindowPanel({
       savedOpenDateTimeRef.current = "";
       savedCloseDateTimeRef.current = "";
       setSuccess("Submissions closed and schedule cleared.");
+      emitRealtimeSync();
       onWindowChange?.();
       void fetchLogs();
     } catch (closeError) {

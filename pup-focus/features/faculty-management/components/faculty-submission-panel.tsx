@@ -2023,6 +2023,8 @@ function FacultySubmissionPanelContent({
         );
         if (isExtensionActive || isCustomDueExtended) {
           evaluatedStatus = "Extended";
+        } else if (!submissionWindow?.isConfigured) {
+          evaluatedStatus = "Not Submitted";
         } else if (isPastEffectiveDeadline || isGlobalScheduleClosed) {
           evaluatedStatus = "Overdue";
         } else {
@@ -5773,7 +5775,17 @@ function FacultySubmissionPanelContent({
 
                                     {/* 5. OVERDUE: Lock file upload and display Request Extension option */}
                                     {req.status === "Overdue" && (
-                                      hasPendingExtensionRequest ? (
+                                      (isWindowNotConfigured && !hasActiveGracePeriod && !isEffectivelyOpen) ? (
+                                        <button
+                                          type="button"
+                                          disabled
+                                          className="inline-flex items-center justify-center gap-1.5 bg-slate-200/70 dark:bg-slate-800/70 text-slate-500 dark:text-slate-400 font-medium w-36 h-8 rounded-xl text-xs cursor-not-allowed opacity-80"
+                                          title="Submissions will open once the administration announces the submission schedule."
+                                        >
+                                          <AppIcon icon={Calendar} size="sm" color="inherit" />
+                                          <span>Awaiting Schedule</span>
+                                        </button>
+                                      ) : hasPendingExtensionRequest ? (
                                         <button
                                           type="button"
                                           onClick={() => setShowExtensionDetailsModal(true)}
@@ -5859,9 +5871,11 @@ function FacultySubmissionPanelContent({
                                           ? "Revision Under Review"
                                           : req.status === "Pending" && req.submittedAt && req.latestSubmissionId
                                             ? "Pending Review"
-                                            : isWindowClosed && (req.status === "Not Submitted" || req.status === "Pending")
-                                              ? "Overdue"
-                                              : req.status
+                                            : (isWindowNotConfigured && (req.status === "Not Submitted" || req.status === "Pending" || req.status === "Overdue"))
+                                              ? "Not Submitted"
+                                              : isWindowClosed && (req.status === "Not Submitted" || req.status === "Pending")
+                                                ? "Overdue"
+                                                : req.status
                                       }
                                       size="md"
                                       iconOnly

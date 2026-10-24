@@ -130,7 +130,7 @@ export async function GET() {
       .order("created_at", { ascending: false })
       .limit(60);
 
-    if (windowLogsError) {
+    if (windowLogsError && !windowLogsError.message?.includes("Could not find the table") && windowLogsError.code !== "PGRST204") {
       logger.warn("fetch_submission_window_logs_table_error", {
         error: windowLogsError.message,
       });
