@@ -8,6 +8,7 @@ import {
 } from "@/features/submissions/services/submission-window.service";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { getServiceRoleClient } from "@/lib/supabase/service-role";
+import { checkAndSend3DayDeadlineReminders } from "@/features/submissions/services/deadline-reminder.service";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -45,6 +46,10 @@ export async function GET() {
       academicYear: activeAY,
       semester: activeSem,
     });
+
+    if (status.isOpen && status.endDate) {
+      void checkAndSend3DayDeadlineReminders(supabase).catch(() => {});
+    }
 
     // 3. Check for active personal deadline first
     const personalDeadline = await getFacultyPersonalDeadline(supabase, user.id);
