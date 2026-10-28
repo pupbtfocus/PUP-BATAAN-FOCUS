@@ -44,6 +44,14 @@ export function isQaAdmin(email?: string | null): boolean {
 
 export const isQaSuperAdmin = isQaAdmin;
 
+export function isQaStaff(email?: string | null): boolean {
+  if (!email) return false;
+  const normalized = email.toLowerCase().trim();
+  return (
+    normalized.startsWith("qa.staff") && normalized.endsWith("@pupfocus.dev")
+  );
+}
+
 export function isQaFaculty(email?: string | null): boolean {
   if (!email) return false;
   const normalized = email.toLowerCase().trim();
