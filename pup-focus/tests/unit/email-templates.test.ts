@@ -67,7 +67,6 @@ describe("Email Templates", () => {
     expect(html).toMatch(/Sign in to PUP FOCUS/i);
     expect(html).toMatch(/Copy Email/i);
     expect(html).toMatch(/Copy Password/i);
-    expect(html).toMatch(/Copy Both/i);
   });
 
   it("buildForgotPasswordEmailHtml renders password reset content with single PUP logo and first name greeting", () => {

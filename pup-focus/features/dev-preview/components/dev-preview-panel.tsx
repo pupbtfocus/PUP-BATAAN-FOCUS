@@ -762,12 +762,19 @@ export function DevPreviewPanel() {
                       return;
                     }
                     if (btnId === "copy-both-btn" || copyBtn.innerText.includes("Both")) {
-                      e.preventDefault();
+                      try {
+                        localStorage.setItem(
+                          "pup_focus_last_credentials",
+                          JSON.stringify({
+                            email: recipientEmail,
+                            password: "PupFocus_TempPass_9823#",
+                          })
+                        );
+                      } catch {}
                       void navigator.clipboard?.writeText(
                         `Institutional Email: ${recipientEmail}\nTemporary Password: PupFocus_TempPass_9823#`
                       );
-                      copyBtn.innerHTML = "Copied Both!";
-                      setTimeout(() => { copyBtn.innerHTML = "Copy Both"; }, 2000);
+                      window.location.assign(`/?email=${encodeURIComponent(recipientEmail)}&temp=PupFocus_TempPass_9823%23&copy=both`);
                       return;
                     }
                   }

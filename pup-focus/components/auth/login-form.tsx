@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
 import { Turnstile, type TurnstileInstance } from "@/components/auth/turnstile";
 import { LazyLottie } from "@/components/ui/lazy-lottie";
 import { Button } from "@/components/ui/button";
@@ -153,7 +153,7 @@ export function LoginForm({
   const [showPassword, setShowPassword] = useState(false);
   const [isCapsLockOn, setIsCapsLockOn] = useState(false);
   const [internalRememberMe, setInternalRememberMe] = useState(false);
-  const [pastedState, setPastedState] = useState<"idle" | "success" | "no-credentials" | "press-ctrl-v">("idle");
+  const [pastedState, setPastedState] = useState<"idle" | "success" | "no-credentials">("idle");
 
   const applyCredentials = (text: string): boolean => {
     const parsed = parseCombinedCredentials(text);
@@ -167,17 +167,30 @@ export function LoginForm({
     return false;
   };
 
+  useEffect(() => {
+    const handleGlobalPaste = (event: ClipboardEvent) => {
+      const text = event.clipboardData?.getData("text");
+      if (!text) return;
+      const parsed = parseCombinedCredentials(text);
+      if (parsed && (parsed.email || parsed.password)) {
+        event.preventDefault();
+        if (parsed.email) setEmail(parsed.email);
+        if (parsed.password) setPassword(parsed.password);
+        setPastedState("success");
+        setTimeout(() => setPastedState("idle"), 2500);
+      }
+    };
+
+    window.addEventListener("paste", handleGlobalPaste);
+    return () => window.removeEventListener("paste", handleGlobalPaste);
+  }, [setEmail, setPassword]);
+
   const handlePasteCredentials = async () => {
+    // 1. Try reading directly from clipboard
     try {
       if (typeof navigator !== "undefined" && navigator.clipboard?.readText) {
         const clipText = await navigator.clipboard.readText();
         if (clipText && applyCredentials(clipText)) {
-          return;
-        }
-        if (clipText) {
-          setPastedState("no-credentials");
-          emailInputRef.current?.focus();
-          setTimeout(() => setPastedState("idle"), 2500);
           return;
         }
       }
@@ -185,16 +198,43 @@ export function LoginForm({
       // Browser blocked clipboard reading
     }
 
+    // 2. Try cached credentials from recent copy actions in localStorage / sessionStorage
+    try {
+      if (typeof window !== "undefined") {
+        const cached =
+          localStorage.getItem("pup_focus_last_credentials") ||
+          sessionStorage.getItem("pup_focus_last_credentials");
+        if (cached) {
+          const parsed = JSON.parse(cached);
+          if (parsed && (parsed.email || parsed.password)) {
+            if (parsed.email) setEmail(parsed.email);
+            if (parsed.password) setPassword(parsed.password);
+            setPastedState("success");
+            setTimeout(() => setPastedState("idle"), 2500);
+            return;
+          }
+        }
+      }
+    } catch {}
+
+    // 3. Try URL search parameters (e.g. from sign-in link)
     if (typeof window !== "undefined") {
-      const promptText = window.prompt("Clipboard auto-read blocked by browser. Paste your copied credentials (Email & Password) here:");
-      if (promptText && applyCredentials(promptText)) {
+      const params = new URLSearchParams(window.location.search);
+      const qEmail = params.get("email");
+      const qTemp = params.get("temp") || params.get("password");
+      if (qEmail || qTemp) {
+        if (qEmail) setEmail(qEmail.trim());
+        if (qTemp) setPassword(qTemp.trim());
+        setPastedState("success");
+        setTimeout(() => setPastedState("idle"), 2500);
         return;
       }
     }
 
+    // 4. Focus email input directly
     emailInputRef.current?.focus();
-    setPastedState("press-ctrl-v");
-    setTimeout(() => setPastedState("idle"), 3000);
+    setPastedState("no-credentials");
+    setTimeout(() => setPastedState("idle"), 2500);
   };
 
   const handleInputPaste = (event: React.ClipboardEvent<HTMLInputElement | HTMLFormElement>) => {
@@ -340,8 +380,6 @@ export function LoginForm({
                 ? "bg-emerald-950/80 border-emerald-500 text-emerald-200"
                 : pastedState === "no-credentials"
                 ? "bg-rose-950/80 border-rose-500 text-rose-200"
-                : pastedState === "press-ctrl-v"
-                ? "bg-amber-950/90 border-amber-400 text-amber-200"
                 : "bg-[#5a0000] hover:bg-[#6e0000] border-amber-400/40 hover:border-amber-400/70 text-amber-200 hover:text-amber-100"
             }`}
             title="Paste copied credentials to autofill both email and password"
@@ -355,11 +393,6 @@ export function LoginForm({
               <>
                 <AppIcon icon={WarningCircle} size="xs" color="inherit" className="text-rose-400" />
                 <span>No credentials found</span>
-              </>
-            ) : pastedState === "press-ctrl-v" ? (
-              <>
-                <AppIcon icon={PasteClipboard} size="xs" color="inherit" className="text-amber-300" />
-                <span>Press Ctrl+V to paste credentials</span>
               </>
             ) : (
               <>

@@ -118,6 +118,15 @@ export default function Home() {
         }
         if (queryTemp) {
           setPassword(queryTemp.trim());
+          try {
+            localStorage.setItem(
+              "pup_focus_last_credentials",
+              JSON.stringify({
+                email: queryEmail?.trim() || "",
+                password: queryTemp.trim(),
+              })
+            );
+          } catch {}
           if (queryCopy === "password") {
             try {
               navigator.clipboard?.writeText(queryTemp.trim());
