@@ -234,12 +234,19 @@ export default function EmailPreviewPage() {
                   return;
                 }
                 if (btnId === "copy-both-btn" || copyBtn.innerText.includes("Both")) {
-                  e.preventDefault();
+                  try {
+                    localStorage.setItem(
+                      "pup_focus_last_credentials",
+                      JSON.stringify({
+                        email: "faculty@pup.edu.ph",
+                        password: "TempPass123!",
+                      })
+                    );
+                  } catch {}
                   void navigator.clipboard?.writeText(
                     "Institutional Email: faculty@pup.edu.ph\nTemporary Password: TempPass123!"
                   );
-                  copyBtn.innerHTML = "Copied Both!";
-                  setTimeout(() => { copyBtn.innerHTML = "Copy Both"; }, 2000);
+                  window.location.assign("/?email=faculty%40pup.edu.ph&temp=TempPass123!&copy=both");
                   return;
                 }
               }

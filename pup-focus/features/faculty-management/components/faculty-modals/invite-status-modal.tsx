@@ -38,6 +38,16 @@ export function InviteStatusModal({
       .filter(Boolean)
       .join("\n");
 
+    try {
+      localStorage.setItem(
+        "pup_focus_last_credentials",
+        JSON.stringify({
+          email: email || "",
+          password: tempPassword || "",
+        })
+      );
+    } catch {}
+
     if (navigator.clipboard) {
       navigator.clipboard.writeText(textToCopy);
       setCopied(true);

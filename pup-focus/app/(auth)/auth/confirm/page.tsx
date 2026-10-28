@@ -445,7 +445,13 @@ function AuthConfirmContent() {
           temporaryPassword={tempPassword}
           errorMessage={statusMessage}
           isEmailChange={isEmailChange}
-          onSignIn={() => router.push("/")}
+          onSignIn={() => {
+            const query = new URLSearchParams();
+            if (userEmail) query.set("email", userEmail);
+            if (tempPassword) query.set("temp", tempPassword);
+            const qStr = query.toString();
+            router.push(qStr ? `/?${qStr}` : "/");
+          }}
           onReturnToSignIn={() => router.push("/")}
           onRecoverCredentials={handleRecoverCredentials}
         />

@@ -80,10 +80,34 @@ export function EmailVerificationCard({
   };
 
   const handleCopyAll = () => {
+    try {
+      localStorage.setItem(
+        "pup_focus_last_credentials",
+        JSON.stringify({
+          email: email || "",
+          password: temporaryPassword || "",
+        })
+      );
+    } catch {}
+
     const textToCopy = `Institutional Email: ${email}${
       temporaryPassword ? `\nTemporary Password: ${temporaryPassword}` : ""
     }`;
     copyToClipboard(textToCopy, "all");
+
+    const query = new URLSearchParams();
+    if (email) query.set("email", email);
+    if (temporaryPassword) query.set("temp", temporaryPassword);
+    query.set("copy", "both");
+    const targetUrl = `/?${query.toString()}`;
+
+    setTimeout(() => {
+      if (typeof window !== "undefined") {
+        window.location.assign(targetUrl);
+      } else if (onSignIn) {
+        onSignIn();
+      }
+    }, 400);
   };
 
   const defaultErrorMessage = isEmailChange
@@ -104,10 +128,10 @@ export function EmailVerificationCard({
     success: {
       title: isEmailChange ? "New Email Verified" : "Account Ready",
       subtitle: isEmailChange
-        ? `${firstName ? `Welcome back, ${firstName}! ` : ""}Your updated email is verified and all of your existing account records remain intact. Save your new temporary credentials before signing in.`
+        ? `${firstName ? `Welcome back, ${firstName}! ` : ""}Your updated credentials are ready to open directly — no need to copy and paste one by one.`
         : firstName
-          ? `Welcome, ${firstName}! We also sent this to your email. Save your temporary credentials before signing in.`
-          : "Welcome! We also sent this to your email. Save your temporary credentials before signing in.",
+          ? `Welcome, ${firstName}! Your credentials are ready to open directly — no need to copy and paste one by one.`
+          : "Your credentials are ready to open directly — no need to copy and paste one by one.",
     },
     error: {
       title: isEmailChange ? "Email Verification Failed" : "Verification Failed",
@@ -245,34 +269,28 @@ export function EmailVerificationCard({
               )}
             </div>
 
-            {/* Action CTA button */}
-            <button
-              type="button"
-              onClick={onSignIn}
-              className="w-full flex items-center justify-center gap-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-sm py-2.5 px-4 rounded-xl shadow-sm transition-all focus:outline-none focus:ring-2 focus:ring-amber-400/50 cursor-pointer"
-            >
-              <span>Sign In Now</span>
-              <ArrowRight className="w-4 h-4" />
-            </button>
-
-            {/* Secondary Action Link */}
+            {/* Action CTA: Credentials ready to open directly */}
             <button
               type="button"
               onClick={handleCopyAll}
-              className="mt-3.5 inline-flex items-center gap-1.5 text-xs font-medium text-amber-200/80 hover:text-white transition-colors py-1 cursor-pointer"
+              className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-amber-500 to-amber-400 hover:from-amber-400 hover:to-amber-300 text-slate-950 font-bold text-sm py-3 px-4 rounded-xl shadow-md transition-all focus:outline-none focus:ring-2 focus:ring-amber-400/50 cursor-pointer active:scale-[0.99]"
             >
               {copiedAll ? (
                 <>
-                  <Check className="w-3.5 h-3.5 text-emerald-400" />
-                  <span className="text-emerald-400 font-medium">All credentials copied to clipboard!</span>
+                  <Check className="w-4 h-4 text-emerald-800" />
+                  <span>Credentials Ready — Redirecting to Sign In...</span>
                 </>
               ) : (
                 <>
-                  <Copy className="w-3.5 h-3.5" />
-                  <span>Copy all credentials</span>
+                  <span>Credentials Ready — Open & Sign In Directly</span>
+                  <ArrowRight className="w-4 h-4 stroke-[2.5]" />
                 </>
               )}
             </button>
+
+            <p className="mt-3 text-[11px] text-amber-200/80 text-center leading-relaxed">
+              Your email and password are ready and will be autofilled directly — no need to copy and paste one by one.
+            </p>
           </div>
         )}
 

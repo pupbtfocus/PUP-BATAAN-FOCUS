@@ -234,19 +234,8 @@ export function buildTempPasswordEmailHtml({
             </tr>
           </table>
 
-          <!-- Copy Both Button -->
-          <table role="presentation" width="100%" style="margin-bottom:10px;border-collapse:collapse;">
-            <tr>
-              <td style="text-align:center;">
-                <a href="${bothCopyHref}" target="_blank" id="copy-both-btn" onclick="if(navigator.clipboard){navigator.clipboard.writeText('Institutional Email: ${safeEmail}\\nTemporary Password: ${safeTempPassword}');var b=this;b.innerHTML='Copied Both!';setTimeout(function(){b.innerHTML='Copy Both'},2000);return false;}" style="display:block;width:100%;box-sizing:border-box;padding:8px 14px;background:#ffffff;border:1px solid #cbd5e1;border-radius:6px;font-size:12px;font-weight:600;color:#334155;cursor:pointer;text-align:center;text-decoration:none;">
-                  Copy Both
-                </a>
-              </td>
-            </tr>
-          </table>
-
-          <p style="margin:8px 0 0 0;font-size:11.5px;color:#64748b;line-height:1.5;text-align:center;">
-            Note: You can copy, highlight, or click 'Sign in to PUP FOCUS' below to autofill your credentials immediately.
+          <p style="margin:6px 0 0 0;font-size:11.5px;color:#64748b;line-height:1.5;text-align:center;">
+            Your credentials will be autofilled directly upon opening — no need to copy and paste one by one.
           </p>
         </td>
       </tr>
@@ -256,9 +245,9 @@ export function buildTempPasswordEmailHtml({
   return buildEmailLayout({
     title: "Temporary Credentials",
     intro: `Hello ${safeFirstName}, your account is ready.`,
-    body: `Use the temporary credentials below to sign in to PUP FOCUS. After you sign in, please change your password immediately for security.`,
+    body: `Your credentials are ready. Use the button below to open and sign in to PUP FOCUS with your email and password autofilled directly (no need to copy and paste one by one). After you sign in, please change your password immediately for security.`,
     contentHtml: credentialsHtml,
-    actionLabel: "Sign in to PUP FOCUS",
+    actionLabel: "Credentials Ready — Sign in to PUP FOCUS Directly",
     actionHref: directSignInHref,
     footerNote: `Temporary Password: ${safeTempPassword} • Account: ${safeEmail}`,
     pupLogoSrc: buildAppUrl("/icons/pup-seal.png"),
@@ -537,19 +526,8 @@ export function buildEmailChangeTempPasswordHtml({
             </tr>
           </table>
 
-          <!-- Copy Both Button -->
-          <table role="presentation" width="100%" style="margin-bottom:10px;border-collapse:collapse;">
-            <tr>
-              <td style="text-align:center;">
-                <a href="${bothCopyHref}" target="_blank" id="copy-update-both-btn" onclick="if(navigator.clipboard){navigator.clipboard.writeText('Email: ${safeEmail}\\nTemporary Password: ${safeTempPassword}');var b=this;b.innerHTML='Copied Both!';setTimeout(function(){b.innerHTML='Copy Both'},2000);return false;}" style="display:block;width:100%;box-sizing:border-box;padding:8px 14px;background:#ffffff;border:1px solid #cbd5e1;border-radius:6px;font-size:12px;font-weight:600;color:#334155;cursor:pointer;text-align:center;text-decoration:none;">
-                  Copy Both
-                </a>
-              </td>
-            </tr>
-          </table>
-
-          <p style="margin:8px 0 0 0;font-size:11.5px;color:#64748b;line-height:1.5;text-align:center;">
-            Note: You can copy, highlight, or click 'Sign in to PUP FOCUS' below to autofill your credentials immediately.
+          <p style="margin:6px 0 0 0;font-size:11.5px;color:#64748b;line-height:1.5;text-align:center;">
+            Your credentials will be autofilled directly upon opening — no need to copy and paste one by one.
           </p>
         </td>
       </tr>
@@ -559,9 +537,9 @@ export function buildEmailChangeTempPasswordHtml({
   return buildEmailLayout({
     title: "New Email Verified",
     intro: `Hello ${safeFirstName}, your updated email address is now verified.`,
-    body: `Your existing PUP FOCUS account is ready to use with your new email address. Use the temporary credentials below to sign back into your account.`,
+    body: `Your existing PUP FOCUS account is ready to use with your new email address. Click the button below to sign in directly with your email and password automatically filled in (no need to copy and paste one by one).`,
     contentHtml: credentialsHtml,
-    actionLabel: "Sign in to PUP FOCUS",
+    actionLabel: "Credentials Ready — Sign in to PUP FOCUS Directly",
     actionHref: directSignInHref,
     footerNote: `Temporary Password: ${safeTempPassword} • Verified Email: ${safeEmail}`,
     pupLogoSrc: buildAppUrl("/icons/pup-seal.png"),
