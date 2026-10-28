@@ -204,16 +204,113 @@ export async function PATCH(request: NextRequest) {
       adminRemarks = "",
     } = body;
 
-    if (!requestId || !action || !["approve", "reject"].includes(action)) {
+    if (!action || !["approve", "reject", "read", "mark_all_read"].includes(action)) {
       return NextResponse.json(
-        { error: "A valid requestId and action ('approve' | 'reject') are required." },
+        { error: "A valid action ('approve' | 'reject' | 'read' | 'mark_all_read') is required." },
+        { status: 400 },
+      );
+    }
+
+    if (action !== "mark_all_read" && !requestId) {
+      return NextResponse.json(
+        { error: "A valid requestId is required." },
         { status: 400 },
       );
     }
 
     const supabase = getServiceRoleClient();
-    const newStatus = action === "approve" ? "approved" : "rejected";
     const nowIso = new Date().toISOString();
+
+    // Handle mark_all_read
+    if (action === "mark_all_read") {
+      try {
+        await supabase
+          .from("extension_requests")
+          .update({
+            status: "approved",
+            reviewed_by: user.id,
+            reviewed_at: nowIso,
+            updated_at: nowIso,
+          })
+          .eq("status", "pending");
+      } catch {}
+
+      try {
+        const { data: notifs } = await supabase
+          .from("notifications")
+          .select("*")
+          .eq("type", "EXTENSION_REQUEST")
+          .order("created_at", { ascending: false })
+          .limit(100);
+
+        if (Array.isArray(notifs)) {
+          for (const n of notifs) {
+            let parsed: any = {};
+            try {
+              parsed = JSON.parse(n.message);
+            } catch {
+              parsed = { reason: n.message };
+            }
+            if (parsed.status === "pending" || !n.is_read) {
+              parsed.status = "approved";
+              parsed.reviewed_by = user.id;
+              parsed.reviewed_at = nowIso;
+              parsed.updated_at = nowIso;
+              await supabase
+                .from("notifications")
+                .update({ message: JSON.stringify(parsed), is_read: true })
+                .eq("id", n.id);
+            }
+          }
+        }
+      } catch {}
+
+      return NextResponse.json({ success: true, message: "All extension requests marked as read." });
+    }
+
+    // Handle single read
+    if (action === "read") {
+      try {
+        await supabase
+          .from("extension_requests")
+          .update({
+            status: "approved",
+            reviewed_by: user.id,
+            reviewed_at: nowIso,
+            updated_at: nowIso,
+          })
+          .eq("id", requestId);
+      } catch {}
+
+      try {
+        const { data: notif } = await supabase
+          .from("notifications")
+          .select("*")
+          .eq("id", requestId)
+          .maybeSingle();
+
+        if (notif) {
+          let parsed: any = {};
+          try {
+            parsed = JSON.parse(notif.message);
+          } catch {
+            parsed = { reason: notif.message };
+          }
+          parsed.status = "approved";
+          parsed.reviewed_by = user.id;
+          parsed.reviewed_at = nowIso;
+          parsed.updated_at = nowIso;
+          await supabase
+            .from("notifications")
+            .update({ message: JSON.stringify(parsed), is_read: true })
+            .eq("id", notif.id);
+        }
+      } catch {}
+
+      return NextResponse.json({ success: true, message: "Extension request marked as read." });
+    }
+
+    const newStatus = action === "approve" ? "approved" : "rejected";
 
     let facultyUserId: string | null = null;
     let facultyName = "Faculty Member";
@@ -241,33 +338,14 @@ export async function PATCH(request: NextRequest) {
     let approvedIso: string | null = null;
 
     if (action === "approve") {
-      targetApprovedDate = (bodyApprovedDate || "").trim();
-      targetApprovedTime = (bodyApprovedTime || "").trim();
+      targetApprovedDate = (bodyApprovedDate || "").trim() || null;
+      targetApprovedTime = (bodyApprovedTime || "").trim() || null;
 
-      if (!targetApprovedDate && existingRow?.requested_date) {
-        targetApprovedDate = existingRow.requested_date;
+      if (targetApprovedDate) {
+        const normalizedTime = normalizeTime24Hour(targetApprovedTime || "23:59:59");
+        targetApprovedTime = normalizedTime;
+        approvedIso = `${targetApprovedDate}T${normalizedTime}+08:00`;
       }
-      if (!targetApprovedTime && existingRow?.requested_time) {
-        targetApprovedTime = existingRow.requested_time;
-      }
-
-      if (!targetApprovedDate) {
-        const preset = existingRow?.requested_preset || "+3 Days";
-        const d = new Date();
-        if (preset === "+24 Hours") d.setHours(d.getHours() + 24);
-        else if (preset === "+48 Hours") d.setHours(d.getHours() + 48);
-        else if (preset === "+3 Days") d.setDate(d.getDate() + 3);
-        else if (preset === "+1 Week") d.setDate(d.getDate() + 7);
-        else d.setDate(d.getDate() + 3);
-        const yyyy = d.getFullYear();
-        const mm = String(d.getMonth() + 1).padStart(2, "0");
-        const dd = String(d.getDate()).padStart(2, "0");
-        targetApprovedDate = `${yyyy}-${mm}-${dd}`;
-      }
-
-      const normalizedTime = normalizeTime24Hour(targetApprovedTime || "23:59:59");
-      targetApprovedTime = normalizedTime;
-      approvedIso = `${targetApprovedDate}T${normalizedTime}+08:00`;
     }
 
     // 2. Update in extension_requests table
@@ -445,7 +523,9 @@ export async function PATCH(request: NextRequest) {
       const notifTitle = `Extension Request ${action === "approve" ? "Approved" : "Rejected"}`;
       const notifMsg =
         action === "approve"
-          ? `Your deadline extension request has been approved until ${targetApprovedDate} at ${targetApprovedTime || "11:59 PM"}.${adminRemarks.trim() ? ` Remarks: "${adminRemarks.trim()}"` : ""}`
+          ? targetApprovedDate
+            ? `Your deadline extension request has been approved until ${targetApprovedDate} at ${targetApprovedTime || "11:59 PM"}.${adminRemarks.trim() ? ` Remarks: "${adminRemarks.trim()}"` : ""}`
+            : `Your deadline extension request has been approved. The submission schedule is being updated globally by the administrator.${adminRemarks.trim() ? ` Remarks: "${adminRemarks.trim()}"` : ""}`
           : `Your deadline extension request was declined.${adminRemarks.trim() ? ` Feedback remarks: "${adminRemarks.trim()}"` : ""}`;
 
       await supabase.from("notifications").insert({
