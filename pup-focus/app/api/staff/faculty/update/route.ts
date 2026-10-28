@@ -133,6 +133,18 @@ export async function PATCH(request: NextRequest) {
       );
     }
 
+    const nameRegex = /^[a-zA-Z\sñÑ]+$/;
+    if (
+      !nameRegex.test(firstName) ||
+      !nameRegex.test(lastName) ||
+      (middleName && !nameRegex.test(middleName))
+    ) {
+      return NextResponse.json(
+        { error: "Name can only contain letters (no numbers or special characters)" },
+        { status: 400 },
+      );
+    }
+
     const supabase = getServiceRoleClient();
 
     const { data: profile, error: profileError } = await supabase
