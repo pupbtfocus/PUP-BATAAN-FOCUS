@@ -13,55 +13,81 @@ export interface NoticeBanner {
   message: string;
 }
 
+function decodeHtmlEntities(str: string): string {
+  return str
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;|&apos;/g, "'")
+    .replace(/&#(\d+);/g, (_, dec) => String.fromCharCode(Number(dec)));
+}
+
 export function parseCombinedCredentials(text: string): { email?: string; password?: string } | null {
   if (!text || typeof text !== "string") return null;
-  const trimmed = text.trim();
-  if (!trimmed) return null;
+  const decoded = decodeHtmlEntities(text).trim();
+  if (!decoded) return null;
 
   let parsedEmail: string | undefined;
   let parsedPassword: string | undefined;
 
-  const lines = trimmed.split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
-
-  for (const line of lines) {
-    const labeledEmailMatch = line.match(
-      /(?:Institutional\s+Email|Verified\s+(?:New\s+)?Email|Email|Account|Username)\s*[:=-]\s*([^\s@]+@[^\s@]+\.[^\s@]+)/i
-    );
-    if (labeledEmailMatch && !parsedEmail) {
-      parsedEmail = labeledEmailMatch[1].trim();
-      continue;
-    }
-
-    const passMatch = line.match(
-      /(?:Temporary\s+Password|Temp\s+Password|New\s+Temp\s+Password|Password|Pass)\s*[:=-]\s*(.+)$/i
-    );
-    if (passMatch && !parsedPassword) {
-      parsedPassword = passMatch[1].trim();
-      continue;
-    }
+  // 1. Search for email address anywhere in the text
+  const emailRegex = /([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/;
+  const emailMatch = decoded.match(emailRegex);
+  if (emailMatch) {
+    parsedEmail = emailMatch[1].trim();
   }
 
-  if (!parsedEmail) {
-    for (const line of lines) {
-      const emailMatch = line.match(/([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/);
-      if (emailMatch) {
-        parsedEmail = emailMatch[1].trim();
-        break;
-      }
-    }
+  // 2. Search for labeled password (handles both single line and multiline, with bullet, comma, or pipe separator)
+  const passLabeledRegex = /(?:Temporary\s+Password|Temp\s+Password|New\s+Temp\s+Password|New\s+Temporary\s+Password|Password|Pass)\s*[:=-]\s*([^\r\n•|\t,]+)/i;
+  const passMatch = decoded.match(passLabeledRegex);
+  if (passMatch) {
+    parsedPassword = passMatch[1].trim();
   }
 
-  if (parsedEmail && !parsedPassword) {
-    for (const line of lines) {
-      if (!line.includes(parsedEmail) && !line.toLowerCase().startsWith("note:")) {
-        parsedPassword = line.replace(/^(?:Temporary\s+Password|Temp\s+Password|Password|Pass)\s*[:=-]?\s*/i, "").trim();
+  const lines = decoded.split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
+
+  // 3. If password wasn't found via labeled separator, check if "Temporary Password" is on its own line followed by the password
+  if (!parsedPassword) {
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i];
+      if (/^(?:Temporary\s+Password|Temp\s+Password|New\s+Temp\s+Password|Password|Pass)\s*[:=-]?$/i.test(line)) {
+        for (let j = i + 1; j < lines.length; j++) {
+          const next = lines[j];
+          if (
+            !/^(?:Copy\s+.*|Sign\s+in.*|Note:.*|Institutional\s+Email|Verified\s+Email|Email|Account)$/i.test(next) &&
+            (!parsedEmail || !next.includes(parsedEmail))
+          ) {
+            parsedPassword = next.trim();
+            break;
+          }
+        }
         if (parsedPassword) break;
       }
     }
   }
 
-  if (!parsedEmail && lines.length === 1) {
-    const singleLineMatch = trimmed.match(/^([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})\s*[:|,/]\s*(.+)$/);
+  // 4. If still not found and we have lines without labels, look for remaining non-email, non-UI text
+  if (!parsedPassword && parsedEmail) {
+    const isUiBoilerplate = (l: string) =>
+      /^(?:Temporary\s+Credentials|Updated\s+Account\s+Credentials|Institutional\s+Email|Verified\s+Email|Email|Account|Username|Temporary\s+Password|Temp\s+Password|Password|Pass|Copy\s+.*|Sign\s+in.*|Note:.*)$/i.test(
+        l
+      );
+
+    for (const line of lines) {
+      if (!line.includes(parsedEmail) && !isUiBoilerplate(line)) {
+        const cleaned = line.replace(/^(?:Temporary\s+Password|Temp\s+Password|Password|Pass)\s*[:=-]?\s*/i, "").trim();
+        if (cleaned && !isUiBoilerplate(cleaned)) {
+          parsedPassword = cleaned;
+          break;
+        }
+      }
+    }
+  }
+
+  // 5. Fallback for single line format: email:password or email|password
+  if (!parsedPassword && lines.length === 1) {
+    const singleLineMatch = decoded.match(/^([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})\s*[:|,/]\s*(.+)$/);
     if (singleLineMatch) {
       parsedEmail = singleLineMatch[1].trim();
       parsedPassword = singleLineMatch[2].trim();
@@ -145,10 +171,10 @@ export function LoginForm({
     try {
       if (typeof navigator !== "undefined" && navigator.clipboard?.readText) {
         const clipText = await navigator.clipboard.readText();
+        if (clipText && applyCredentials(clipText)) {
+          return;
+        }
         if (clipText) {
-          if (applyCredentials(clipText)) {
-            return;
-          }
           setPastedState("no-credentials");
           emailInputRef.current?.focus();
           setTimeout(() => setPastedState("idle"), 2500);
@@ -157,6 +183,13 @@ export function LoginForm({
       }
     } catch {
       // Browser blocked clipboard reading
+    }
+
+    if (typeof window !== "undefined") {
+      const promptText = window.prompt("Clipboard auto-read blocked by browser. Paste your copied credentials (Email & Password) here:");
+      if (promptText && applyCredentials(promptText)) {
+        return;
+      }
     }
 
     emailInputRef.current?.focus();
@@ -307,6 +340,8 @@ export function LoginForm({
                 ? "bg-emerald-950/80 border-emerald-500 text-emerald-200"
                 : pastedState === "no-credentials"
                 ? "bg-rose-950/80 border-rose-500 text-rose-200"
+                : pastedState === "press-ctrl-v"
+                ? "bg-amber-950/90 border-amber-400 text-amber-200"
                 : "bg-[#5a0000] hover:bg-[#6e0000] border-amber-400/40 hover:border-amber-400/70 text-amber-200 hover:text-amber-100"
             }`}
             title="Paste copied credentials to autofill both email and password"
@@ -320,6 +355,11 @@ export function LoginForm({
               <>
                 <AppIcon icon={WarningCircle} size="xs" color="inherit" className="text-rose-400" />
                 <span>No credentials found</span>
+              </>
+            ) : pastedState === "press-ctrl-v" ? (
+              <>
+                <AppIcon icon={PasteClipboard} size="xs" color="inherit" className="text-amber-300" />
+                <span>Press Ctrl+V to paste credentials</span>
               </>
             ) : (
               <>

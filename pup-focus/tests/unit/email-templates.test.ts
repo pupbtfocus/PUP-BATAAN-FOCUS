@@ -135,6 +135,27 @@ describe("Email Templates", () => {
       password: "MyPassword99#",
     });
 
+    // Single-line bullet format (from footer or single-line copy)
+    const bulletFormat = "Temporary Password: TempPass123! • Account: faculty@pup.edu.ph";
+    expect(parseCombinedCredentials(bulletFormat)).toEqual({
+      email: "faculty@pup.edu.ph",
+      password: "TempPass123!",
+    });
+
+    // Multiline email table copy format
+    const tableCopyFormat = "Temporary Credentials\nInstitutional Email\nfaculty@pup.edu.ph\nCopy Email\nTemporary Password\nTempPass123!\nCopy Password\nCopy Both";
+    expect(parseCombinedCredentials(tableCopyFormat)).toEqual({
+      email: "faculty@pup.edu.ph",
+      password: "TempPass123!",
+    });
+
+    // HTML entities decoding format
+    const entityFormat = "Institutional Email: faculty@pup.edu.ph\nTemporary Password: Pass&amp;123&#39;!";
+    expect(parseCombinedCredentials(entityFormat)).toEqual({
+      email: "faculty@pup.edu.ph",
+      password: "Pass&123'!",
+    });
+
     // Empty string or invalid
     expect(parseCombinedCredentials("")).toBeNull();
   });
