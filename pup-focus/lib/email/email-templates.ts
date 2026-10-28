@@ -168,6 +168,9 @@ export function buildTempPasswordEmailHtml({
   const safeTempPassword = escapeHtml(tempPassword);
   const baseSignInUrl = signInHref || buildAppUrl("/auth/sign-in");
   const directSignInHref = `${baseSignInUrl}${baseSignInUrl.includes("?") ? "&" : "?"}email=${encodeURIComponent(rawEmail)}&temp=${encodeURIComponent(tempPassword)}`;
+  const emailCopyHref = `${directSignInHref}&copy=email`;
+  const passCopyHref = `${directSignInHref}&copy=password`;
+  const bothCopyHref = `${directSignInHref}&copy=both`;
 
   const credentialsHtml = `
     <table role="presentation" width="100%" style="margin:20px 0;background:#ffffff;border:1px solid #e2e8f0;border-radius:10px;border-collapse:separate;overflow:hidden;">
@@ -191,12 +194,12 @@ export function buildTempPasswordEmailHtml({
                       <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;color:#64748b;margin-bottom:3px;">
                         Institutional Email
                       </div>
-                      <div style="font-family:'Courier New',Courier,monospace;font-size:14px;font-weight:600;color:#0f172a;word-break:break-all;-webkit-user-select:all;user-select:all;">
+                      <div style="font-family:'Courier New',Courier,monospace;font-size:14px;font-weight:600;color:#0f172a;word-break:break-all;-webkit-user-select:text;-moz-user-select:text;user-select:text;cursor:text;">
                         ${safeEmail}
                       </div>
                     </td>
                     <td style="width:105px;text-align:right;vertical-align:middle;padding-left:10px;">
-                      <a href="${directSignInHref}" target="_blank" id="copy-email-btn" onclick="if(navigator.clipboard){navigator.clipboard.writeText('${safeEmail}');var b=this;b.innerHTML='Copied!';setTimeout(function(){b.innerHTML='Copy Email'},2000);return false;}" style="display:inline-block;padding:6px 12px;background:#ffffff;border:1px solid #cbd5e1;border-radius:6px;font-size:12px;font-weight:600;color:#334155;cursor:pointer;white-space:nowrap;text-decoration:none;">
+                      <a href="${emailCopyHref}" target="_blank" id="copy-email-btn" onclick="if(navigator.clipboard){navigator.clipboard.writeText('${safeEmail}');var b=this;b.innerHTML='Copied!';setTimeout(function(){b.innerHTML='Copy Email'},2000);return false;}" style="display:inline-block;padding:6px 12px;background:#ffffff;border:1px solid #cbd5e1;border-radius:6px;font-size:12px;font-weight:600;color:#334155;cursor:pointer;white-space:nowrap;text-decoration:none;">
                         Copy Email
                       </a>
                     </td>
@@ -216,12 +219,12 @@ export function buildTempPasswordEmailHtml({
                       <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;color:#64748b;margin-bottom:3px;">
                         Temporary Password
                       </div>
-                      <div style="font-family:'Courier New',Courier,monospace;font-size:14px;font-weight:600;color:#0f172a;word-break:break-all;-webkit-user-select:all;user-select:all;">
+                      <div style="font-family:'Courier New',Courier,monospace;font-size:14px;font-weight:600;color:#0f172a;word-break:break-all;-webkit-user-select:text;-moz-user-select:text;user-select:text;cursor:text;">
                         ${safeTempPassword}
                       </div>
                     </td>
                     <td style="width:125px;text-align:right;vertical-align:middle;padding-left:10px;">
-                      <a href="${directSignInHref}" target="_blank" id="copy-pass-btn" onclick="if(navigator.clipboard){navigator.clipboard.writeText('${safeTempPassword}');var b=this;b.innerHTML='Copied!';setTimeout(function(){b.innerHTML='Copy Password'},2000);return false;}" style="display:inline-block;padding:6px 12px;background:#ffffff;border:1px solid #cbd5e1;border-radius:6px;font-size:12px;font-weight:600;color:#334155;cursor:pointer;white-space:nowrap;text-decoration:none;">
+                      <a href="${passCopyHref}" target="_blank" id="copy-pass-btn" onclick="if(navigator.clipboard){navigator.clipboard.writeText('${safeTempPassword}');var b=this;b.innerHTML='Copied!';setTimeout(function(){b.innerHTML='Copy Password'},2000);return false;}" style="display:inline-block;padding:6px 12px;background:#ffffff;border:1px solid #cbd5e1;border-radius:6px;font-size:12px;font-weight:600;color:#334155;cursor:pointer;white-space:nowrap;text-decoration:none;">
                         Copy Password
                       </a>
                     </td>
@@ -235,7 +238,7 @@ export function buildTempPasswordEmailHtml({
           <table role="presentation" width="100%" style="margin-bottom:10px;border-collapse:collapse;">
             <tr>
               <td style="text-align:center;">
-                <a href="${directSignInHref}" target="_blank" id="copy-both-btn" onclick="if(navigator.clipboard){navigator.clipboard.writeText('Institutional Email: ${safeEmail}\\nTemporary Password: ${safeTempPassword}');var b=this;b.innerHTML='Copied Both!';setTimeout(function(){b.innerHTML='Copy Both'},2000);return false;}" style="display:block;width:100%;box-sizing:border-box;padding:8px 14px;background:#ffffff;border:1px solid #cbd5e1;border-radius:6px;font-size:12px;font-weight:600;color:#334155;cursor:pointer;text-align:center;text-decoration:none;">
+                <a href="${bothCopyHref}" target="_blank" id="copy-both-btn" onclick="if(navigator.clipboard){navigator.clipboard.writeText('Institutional Email: ${safeEmail}\\nTemporary Password: ${safeTempPassword}');var b=this;b.innerHTML='Copied Both!';setTimeout(function(){b.innerHTML='Copy Both'},2000);return false;}" style="display:block;width:100%;box-sizing:border-box;padding:8px 14px;background:#ffffff;border:1px solid #cbd5e1;border-radius:6px;font-size:12px;font-weight:600;color:#334155;cursor:pointer;text-align:center;text-decoration:none;">
                   Copy Both
                 </a>
               </td>
@@ -468,6 +471,9 @@ export function buildEmailChangeTempPasswordHtml({
   const safeEmail = escapeHtml(email);
   const baseSignInUrl = signInHref || buildAppUrl("/auth/sign-in");
   const directSignInHref = `${baseSignInUrl}${baseSignInUrl.includes("?") ? "&" : "?"}email=${encodeURIComponent(email)}&temp=${encodeURIComponent(tempPassword)}`;
+  const emailCopyHref = `${directSignInHref}&copy=email`;
+  const passCopyHref = `${directSignInHref}&copy=password`;
+  const bothCopyHref = `${directSignInHref}&copy=both`;
 
   const credentialsHtml = `
     <table role="presentation" width="100%" style="margin:20px 0;background:#ffffff;border:1px solid #e2e8f0;border-radius:10px;border-collapse:separate;overflow:hidden;">
@@ -491,12 +497,12 @@ export function buildEmailChangeTempPasswordHtml({
                       <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;color:#64748b;margin-bottom:3px;">
                         Verified Email
                       </div>
-                      <div style="font-family:'Courier New',Courier,monospace;font-size:14px;font-weight:600;color:#0f172a;word-break:break-all;-webkit-user-select:all;user-select:all;">
+                      <div style="font-family:'Courier New',Courier,monospace;font-size:14px;font-weight:600;color:#0f172a;word-break:break-all;-webkit-user-select:text;-moz-user-select:text;user-select:text;cursor:text;">
                         ${safeEmail}
                       </div>
                     </td>
                     <td style="width:105px;text-align:right;vertical-align:middle;padding-left:10px;">
-                      <a href="${directSignInHref}" target="_blank" id="copy-update-email-btn" onclick="if(navigator.clipboard){navigator.clipboard.writeText('${safeEmail}');var b=this;b.innerHTML='Copied!';setTimeout(function(){b.innerHTML='Copy Email'},2000);return false;}" style="display:inline-block;padding:6px 12px;background:#ffffff;border:1px solid #cbd5e1;border-radius:6px;font-size:12px;font-weight:600;color:#334155;cursor:pointer;white-space:nowrap;text-decoration:none;">
+                      <a href="${emailCopyHref}" target="_blank" id="copy-update-email-btn" onclick="if(navigator.clipboard){navigator.clipboard.writeText('${safeEmail}');var b=this;b.innerHTML='Copied!';setTimeout(function(){b.innerHTML='Copy Email'},2000);return false;}" style="display:inline-block;padding:6px 12px;background:#ffffff;border:1px solid #cbd5e1;border-radius:6px;font-size:12px;font-weight:600;color:#334155;cursor:pointer;white-space:nowrap;text-decoration:none;">
                         Copy Email
                       </a>
                     </td>
@@ -516,12 +522,12 @@ export function buildEmailChangeTempPasswordHtml({
                       <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;color:#64748b;margin-bottom:3px;">
                         Temporary Password
                       </div>
-                      <div style="font-family:'Courier New',Courier,monospace;font-size:14px;font-weight:600;color:#0f172a;word-break:break-all;-webkit-user-select:all;user-select:all;">
+                      <div style="font-family:'Courier New',Courier,monospace;font-size:14px;font-weight:600;color:#0f172a;word-break:break-all;-webkit-user-select:text;-moz-user-select:text;user-select:text;cursor:text;">
                         ${safeTempPassword}
                       </div>
                     </td>
                     <td style="width:125px;text-align:right;vertical-align:middle;padding-left:10px;">
-                      <a href="${directSignInHref}" target="_blank" id="copy-update-pass-btn" onclick="if(navigator.clipboard){navigator.clipboard.writeText('${safeTempPassword}');var b=this;b.innerHTML='Copied!';setTimeout(function(){b.innerHTML='Copy Password'},2000);return false;}" style="display:inline-block;padding:6px 12px;background:#ffffff;border:1px solid #cbd5e1;border-radius:6px;font-size:12px;font-weight:600;color:#334155;cursor:pointer;white-space:nowrap;text-decoration:none;">
+                      <a href="${passCopyHref}" target="_blank" id="copy-update-pass-btn" onclick="if(navigator.clipboard){navigator.clipboard.writeText('${safeTempPassword}');var b=this;b.innerHTML='Copied!';setTimeout(function(){b.innerHTML='Copy Password'},2000);return false;}" style="display:inline-block;padding:6px 12px;background:#ffffff;border:1px solid #cbd5e1;border-radius:6px;font-size:12px;font-weight:600;color:#334155;cursor:pointer;white-space:nowrap;text-decoration:none;">
                         Copy Password
                       </a>
                     </td>
@@ -535,7 +541,7 @@ export function buildEmailChangeTempPasswordHtml({
           <table role="presentation" width="100%" style="margin-bottom:10px;border-collapse:collapse;">
             <tr>
               <td style="text-align:center;">
-                <a href="${directSignInHref}" target="_blank" id="copy-update-both-btn" onclick="if(navigator.clipboard){navigator.clipboard.writeText('Email: ${safeEmail}\\nTemporary Password: ${safeTempPassword}');var b=this;b.innerHTML='Copied Both!';setTimeout(function(){b.innerHTML='Copy Both'},2000);return false;}" style="display:block;width:100%;box-sizing:border-box;padding:8px 14px;background:#ffffff;border:1px solid #cbd5e1;border-radius:6px;font-size:12px;font-weight:600;color:#334155;cursor:pointer;text-align:center;text-decoration:none;">
+                <a href="${bothCopyHref}" target="_blank" id="copy-update-both-btn" onclick="if(navigator.clipboard){navigator.clipboard.writeText('Email: ${safeEmail}\\nTemporary Password: ${safeTempPassword}');var b=this;b.innerHTML='Copied Both!';setTimeout(function(){b.innerHTML='Copy Both'},2000);return false;}" style="display:block;width:100%;box-sizing:border-box;padding:8px 14px;background:#ffffff;border:1px solid #cbd5e1;border-radius:6px;font-size:12px;font-weight:600;color:#334155;cursor:pointer;text-align:center;text-decoration:none;">
                   Copy Both
                 </a>
               </td>
