@@ -43,6 +43,7 @@ export function EditFacultyModal({
   const [hasReverifiedPendingSave, setHasReverifiedPendingSave] = useState(false);
   const [reverifySuccessMessage, setReverifySuccessMessage] = useState<string | null>(null);
   const [passwordResetSuccessMessage, setPasswordResetSuccessMessage] = useState<string | null>(null);
+  const [nameAlert, setNameAlert] = useState<string | null>(null);
   const [closeReminder, setCloseReminder] = useState<string | null>(null);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
@@ -222,6 +223,22 @@ export function EditFacultyModal({
     }, 0);
   }
 
+  function handleNameChange(
+    fieldKey: "firstName" | "middleName" | "lastName",
+    value: string,
+  ) {
+    if (/[^a-zA-Z\sñÑ]/.test(value)) {
+      setNameAlert("Name can only contain letters (no numbers or special characters)");
+    } else {
+      setNameAlert(null);
+    }
+    const clean = value.replace(/[^a-zA-Z\sñÑ]/g, "");
+    if (fieldKey === "firstName") setFirstName(clean);
+    if (fieldKey === "middleName") setMiddleName(clean);
+    if (fieldKey === "lastName") setLastName(clean);
+    setCloseReminder(null);
+  }
+
   function handleCancelEdit(
     fieldKey: "firstName" | "middleName" | "lastName" | "email",
   ) {
@@ -349,6 +366,19 @@ export function EditFacultyModal({
 
     if (!selectedFaculty) {
       setSaveError("Faculty not selected.");
+      setIsSaving(false);
+      return;
+    }
+
+    const nameRegex = /^[a-zA-Z\sñÑ]+$/;
+    if (
+      !nameRegex.test(firstName.trim()) ||
+      !nameRegex.test(lastName.trim()) ||
+      (middleName.trim() && !nameRegex.test(middleName.trim()))
+    ) {
+      setSaveError(
+        "Name can only contain letters (no numbers or special characters).",
+      );
       setIsSaving(false);
       return;
     }
@@ -515,6 +545,15 @@ export function EditFacultyModal({
               />
             ) : null}
 
+            {nameAlert ? (
+              <AlertPopup
+                type="warning"
+                message={nameAlert}
+                position="inline"
+                onClose={() => setNameAlert(null)}
+              />
+            ) : null}
+
             <article className="rounded-xl border border-slate-200/80 bg-slate-50 dark:border-slate-800 dark:bg-slate-900/50 p-3.5 space-y-3">
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div className="flex items-center gap-3 min-w-0">
@@ -615,10 +654,9 @@ export function EditFacultyModal({
                       }`}
                       value={firstName}
                       onFocus={() => setActiveField("firstName")}
-                      onChange={(event) => {
-                        setFirstName(event.target.value);
-                        setCloseReminder(null);
-                      }}
+                      onChange={(event) =>
+                        handleNameChange("firstName", event.target.value)
+                      }
                       placeholder="First name"
                     />
                     {activeField === "firstName" ? (
@@ -667,10 +705,9 @@ export function EditFacultyModal({
                       }`}
                       value={middleName}
                       onFocus={() => setActiveField("middleName")}
-                      onChange={(event) => {
-                        setMiddleName(event.target.value);
-                        setCloseReminder(null);
-                      }}
+                      onChange={(event) =>
+                        handleNameChange("middleName", event.target.value)
+                      }
                       placeholder="Middle name"
                     />
                     {activeField === "middleName" ? (
@@ -719,10 +756,9 @@ export function EditFacultyModal({
                       }`}
                       value={lastName}
                       onFocus={() => setActiveField("lastName")}
-                      onChange={(event) => {
-                        setLastName(event.target.value);
-                        setCloseReminder(null);
-                      }}
+                      onChange={(event) =>
+                        handleNameChange("lastName", event.target.value)
+                      }
                       placeholder="Last name"
                     />
                     {activeField === "lastName" ? (
