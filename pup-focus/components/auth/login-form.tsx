@@ -5,7 +5,7 @@ import { Turnstile, type TurnstileInstance } from "@/components/auth/turnstile";
 import { LazyLottie } from "@/components/ui/lazy-lottie";
 import { Button } from "@/components/ui/button";
 import loadingAnimation from "@/assets/icons animations/lottieflow-loading-08-000000-easey.json";
-import { Check, CheckCircle, Copy, Eye, EyeClosed, Hourglass, Lock, Mail, WarningCircle, WarningTriangle } from "iconoir-react";
+import { Check, CheckCircle, Eye, EyeClosed, Hourglass, Lock, Mail, PasteClipboard, WarningCircle, WarningTriangle } from "iconoir-react";
 import { AppIcon } from "@/components/ui/app-icon";
 
 export interface NoticeBanner {
@@ -297,43 +297,46 @@ export function LoginForm({
           </div>
         ) : null}
 
+        {/* Top Action Row: Quick Credentials Autofill */}
+        <div className="flex items-center justify-center pt-0.5 pb-1">
+          <button
+            type="button"
+            onClick={handlePasteCredentials}
+            className={`group inline-flex items-center gap-1.5 px-3 py-1 rounded-md text-[11px] font-semibold tracking-wide transition-colors duration-150 cursor-pointer active:scale-95 border ${
+              pastedState === "success"
+                ? "bg-emerald-950/80 border-emerald-500 text-emerald-200"
+                : pastedState === "no-credentials"
+                ? "bg-rose-950/80 border-rose-500 text-rose-200"
+                : "bg-[#5a0000] hover:bg-[#6e0000] border-amber-400/40 hover:border-amber-400/70 text-amber-200 hover:text-amber-100"
+            }`}
+            title="Paste copied credentials to autofill both email and password"
+          >
+            {pastedState === "success" ? (
+              <>
+                <AppIcon icon={Check} size="xs" color="inherit" className="text-emerald-400 stroke-[3]" />
+                <span>Credentials Autofilled!</span>
+              </>
+            ) : pastedState === "no-credentials" ? (
+              <>
+                <AppIcon icon={WarningCircle} size="xs" color="inherit" className="text-rose-400" />
+                <span>No credentials found</span>
+              </>
+            ) : (
+              <>
+                <AppIcon icon={PasteClipboard} size="xs" color="inherit" className="text-amber-400" />
+                <span>Paste Credentials (Email & Password)</span>
+              </>
+            )}
+          </button>
+        </div>
+
         <div className="space-y-1">
-          <div className="flex items-center justify-between ml-1 mr-0.5">
-            <label
-              className="block text-[10px] font-bold uppercase tracking-widest text-[#f3d9b3]/85"
-              htmlFor="email"
-            >
-              Email Address
-            </label>
-            <button
-              type="button"
-              onClick={handlePasteCredentials}
-              className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[11px] font-semibold text-amber-300 hover:text-amber-200 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-400/30 transition-all cursor-pointer"
-              title="Paste copied credentials to autofill email and password"
-            >
-              {pastedState === "success" ? (
-                <>
-                  <AppIcon icon={Check} size="xs" color="inherit" className="text-emerald-400 stroke-[3]" />
-                  <span className="text-emerald-300 font-bold">Credentials Pasted!</span>
-                </>
-              ) : pastedState === "press-ctrl-v" ? (
-                <>
-                  <AppIcon icon={Copy} size="xs" color="inherit" className="text-amber-300" />
-                  <span className="text-amber-200 font-semibold">Press Ctrl+V</span>
-                </>
-              ) : pastedState === "no-credentials" ? (
-                <>
-                  <AppIcon icon={WarningCircle} size="xs" color="inherit" className="text-rose-400" />
-                  <span className="text-rose-300 font-semibold">No credentials found</span>
-                </>
-              ) : (
-                <>
-                  <AppIcon icon={Copy} size="xs" color="inherit" />
-                  <span>Paste Credentials</span>
-                </>
-              )}
-            </button>
-          </div>
+          <label
+            className="ml-1 block text-[10px] font-bold uppercase tracking-widest text-[#f3d9b3]/85"
+            htmlFor="email"
+          >
+            Email Address
+          </label>
           <div className="relative flex items-center">
             <AppIcon
               icon={Mail}
