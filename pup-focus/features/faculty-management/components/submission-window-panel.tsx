@@ -1,15 +1,13 @@
 "use client";
 
 import React, { useEffect, useState, useCallback, useRef, useMemo } from "react";
-import { Calendar, CheckCircle, ClockRotateRight, EditPencil, FloppyDisk, Hourglass, NavArrowRight, Page, Search, ShieldAlert, SystemRestart, User, WarningCircle, WarningTriangle, Xmark } from "iconoir-react";
+import { Calendar, CheckCircle, ClockRotateRight, EditPencil, FloppyDisk, Hourglass, Page, Search, ShieldAlert, SystemRestart, WarningTriangle, Xmark } from "iconoir-react";
 import { AppIcon } from "@/components/ui/app-icon";
 import { ModalHeader } from "@/components/ui/modal-header";
-import { Button } from "@/components/ui/button";
 import type {
   ApiBody,
   SubmissionWindowResponse,
 } from "@/features/faculty-management/types/faculty-dashboard.types";
-import { ExtendSubmissionWindowModal } from "./extend-submission-window-modal";
 import { SubmissionScheduleLogsModal } from "./submission-schedule-logs-modal";
 import { AlertPopup } from "@/components/ui/alert-popup";
 import { emitRealtimeSync, useRealtimeSync } from "@/lib/realtime";
@@ -125,26 +123,6 @@ export interface ExtensionLogEntry {
   notified_faculty?: boolean;
 }
 
-export interface ActiveFacultySchedule {
-  facultyProfileId: string;
-  facultyName: string;
-  email: string;
-  department: string;
-  academicYear: string;
-  semester: string;
-  type: "onboarding" | "extension" | "custom" | "standard";
-  typeLabel: string;
-  deadline: string;
-  deadlineFormatted: string;
-  daysRemaining: number;
-  timeRemainingLabel: string;
-  openDateFormatted?: string;
-  closeDateFormatted?: string;
-  unlockedRequirements: string[];
-  unlockedCount: number;
-  remarks: string;
-}
-
 export interface SubmissionWindowPanelProps {
   onWindowChange?: () => void;
   isSuperAdmin?: boolean;
@@ -173,8 +151,7 @@ export function SubmissionWindowPanel({
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
-  // Extension Modal & History states
-  const [showExtendModal, setShowExtendModal] = useState(false);
+  // Logs state
   const [showLogsModal, setShowLogsModal] = useState(false);
   const [extensionLogs, setExtensionLogs] = useState<ExtensionLogEntry[]>([]);
   const [isLoadingLogs, setIsLoadingLogs] = useState(false);
@@ -182,75 +159,12 @@ export function SubmissionWindowPanel({
   // Extension Requests state
   const [extensionRequests, setExtensionRequests] = useState<any[]>([]);
   const [pendingRequestsCount, setPendingRequestsCount] = useState<number>(0);
-  const [showRequestsModal, setShowRequestsModal] = useState(false);
-  const [requestsFilter, setRequestsFilter] = useState<"pending" | "all">("pending");
-  const [selectedRequestForReject, setSelectedRequestForReject] = useState<any | null>(null);
-  const [rejectRemarks, setRejectRemarks] = useState("");
-  const [isReviewingRequest, setIsReviewingRequest] = useState(false);
-  const [selectedRequestForApprove, setSelectedRequestForApprove] = useState<any | null>(null);
-  const [approveDate, setApproveDate] = useState("");
-  const [approveTime, setApproveTime] = useState("23:59");
-  const [approveRemarks, setApproveRemarks] = useState("");
-  const [isApprovingRequest, setIsApprovingRequest] = useState(false);
-  const [activeLinkedRequestId, setActiveLinkedRequestId] = useState<string | null>(null);
-  const [extendModalPrefills, setExtendModalPrefills] = useState<{
-    scope?: "global" | "program" | "faculty";
-    facultyName?: string;
-    preset?: any;
-    reason?: string;
-  } | null>(null);
-
-  // Active Faculty On-Schedule states (Option A Onboarding Grace Period / Extensions)
-  const [activeFacultySchedules, setActiveFacultySchedules] = useState<ActiveFacultySchedule[]>([]);
-  const [closingFacultyId, setClosingFacultyId] = useState<string | null>(null);
-  const [showActiveFacultyModal, setShowActiveFacultyModal] = useState(false);
-  const [facultyToClose, setFacultyToClose] = useState<ActiveFacultySchedule | null>(null);
-  const [facultyCloseCountdown, setFacultyCloseCountdown] = useState(3);
 
   // Edit vs. Save schedule toggle (defaults to editing if no schedule exists yet)
   const [isEditingSchedule, setIsEditingSchedule] = useState(false);
 
-  // 2-Option view switcher: "global" schedule vs "personal" deadline
-  const [scheduleViewMode, setScheduleViewMode] = useState<"global" | "personal">("global");
-  const [personalSearchQuery, setPersonalSearchQuery] = useState("");
-  const [personalTypeFilter, setPersonalTypeFilter] = useState<"all" | "onboarding" | "extension" | "standard">("all");
-
-  // Memoized unique personal deadline faculty list with search & type filtering
-  const { filteredPersonalFaculty, personalCounts } = useMemo(() => {
-    const query = personalSearchQuery.trim().toLowerCase();
-    const seen = new Set<string>();
-    const uniqueList: ActiveFacultySchedule[] = [];
-
-    for (const fac of activeFacultySchedules) {
-      const key = fac.facultyProfileId || fac.email;
-      if (!key || seen.has(key)) continue;
-      seen.add(key);
-      uniqueList.push(fac);
-    }
-
-    const counts = {
-      all: uniqueList.length,
-      onboarding: uniqueList.filter((f) => f.type === "onboarding").length,
-      extension: uniqueList.filter((f) => f.type === "extension").length,
-      standard: uniqueList.filter((f) => f.type === "standard").length,
-    };
-
-    const filtered = uniqueList.filter((fac) => {
-      if (personalTypeFilter !== "all" && fac.type !== personalTypeFilter) {
-        return false;
-      }
-      if (!query) return true;
-      return (
-        fac.facultyName.toLowerCase().includes(query) ||
-        fac.email.toLowerCase().includes(query) ||
-        fac.department.toLowerCase().includes(query) ||
-        (fac.typeLabel || "").toLowerCase().includes(query) ||
-        (fac.academicYear || "").toLowerCase().includes(query)
-      );
-    });
-
-    return { filteredPersonalFaculty: filtered, personalCounts: counts };
-  }, [activeFacultySchedules, personalSearchQuery, personalTypeFilter]);
+  // Tab view switcher: "global" schedule vs "requests" (Extension Requests)
+  const [activeTab, setActiveTab] = useState<"global" | "requests">("global");
 
   // 3-second safety countdown for Close Submissions
   const [closeCountdown, setCloseCountdown] = useState(3);
@@ -319,37 +233,6 @@ export function SubmissionWindowPanel({
   const isGlobalConfigured = Boolean(
     isAlwaysOpen || (startDateObj && endDateObj)
   );
-
-  const nearestPersonalDeadline = useMemo(() => {
-    if (!activeFacultySchedules || activeFacultySchedules.length === 0) return null;
-    const valid = activeFacultySchedules
-      .map((fac) => {
-        try {
-          const d = new Date(fac.deadline);
-          return isNaN(d.getTime()) ? null : { fac, date: d };
-        } catch {
-          return null;
-        }
-      })
-      .filter((item): item is { fac: ActiveFacultySchedule; date: Date } => item !== null)
-      .sort((a, b) => a.date.getTime() - b.date.getTime());
-
-    return valid.length > 0 ? valid[0] : null;
-  }, [activeFacultySchedules]);
-
-  const personalCountdownTime = useMemo(() => {
-    if (!activeFacultySchedules || activeFacultySchedules.length === 0) {
-      return "Not Configured";
-    }
-    if (!nearestPersonalDeadline) {
-      return `${activeFacultySchedules.length} Active`;
-    }
-    const diff = nearestPersonalDeadline.date.getTime() - now.getTime();
-    if (diff > 0) {
-      return formatTimeDifference(diff);
-    }
-    return `Expired ${formatTimeAgo(Math.abs(diff))}`;
-  }, [activeFacultySchedules, nearestPersonalDeadline, now]);
 
   const nowIso = getNowIsoLocal();
 
@@ -448,59 +331,45 @@ export function SubmissionWindowPanel({
     }
   }, []);
 
-  const fetchActiveFacultySchedules = useCallback(async () => {
-    try {
-      const res = await fetch("/api/staff/submission-window/active-faculty-schedules", {
-        credentials: "include",
-      });
-      if (res.ok) {
-        const body = await res.json();
-        setActiveFacultySchedules(body.schedules || []);
-      }
-    } catch {
-      // Ignore background error
-    }
-  }, []);
+  const handleMarkAsRead = useCallback(async (requestId: string) => {
+    setExtensionRequests((prev) =>
+      prev.map((r) => (r.id === requestId ? { ...r, status: "approved" } : r))
+    );
+    setPendingRequestsCount((prev) => Math.max(0, prev - 1));
 
-  const handleCloseFacultySchedule = (fac: ActiveFacultySchedule) => {
-    setFacultyToClose(fac);
-    setFacultyCloseCountdown(3);
-  };
-
-  const confirmCloseFacultySchedule = async () => {
-    if (!facultyToClose) return;
-    const fac = facultyToClose;
-    setClosingFacultyId(fac.facultyProfileId);
     try {
-      const res = await fetch("/api/staff/submission-window/active-faculty-schedules", {
-        method: "POST",
+      await fetch("/api/staff/submission-window/extension-requests", {
+        method: "PATCH",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body: JSON.stringify({
-          facultyProfileId: fac.facultyProfileId,
-          email: fac.email,
-        }),
+        body: JSON.stringify({ requestId, action: "read" }),
       });
-      const data = await res.json();
-      if (!res.ok) {
-        setError(data.error || "Failed to close faculty submission schedule");
-      } else {
-        setSuccess(`Submission schedule closed for ${fac.facultyName}.`);
-        setFacultyToClose(null);
-        await fetchActiveFacultySchedules();
-        emitRealtimeSync({
-          source: "faculty-schedule-closed",
-          table: "submission_windows",
-          timestamp: Date.now(),
-        });
-        onWindowChange?.();
-      }
+      emitRealtimeSync();
     } catch {
-      setError("Failed to close faculty submission schedule");
-    } finally {
-      setClosingFacultyId(null);
+      void fetchExtensionRequests();
     }
-  };
+  }, [fetchExtensionRequests]);
+
+  const handleMarkAllAsRead = useCallback(async () => {
+    setExtensionRequests((prev) =>
+      prev.map((r) => ({ ...r, status: "approved" }))
+    );
+    setPendingRequestsCount(0);
+
+    try {
+      await fetch("/api/staff/submission-window/extension-requests", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ action: "mark_all_read" }),
+      });
+      emitRealtimeSync();
+    } catch {
+      void fetchExtensionRequests();
+    }
+  }, [fetchExtensionRequests]);
+
+
 
   async function loadWindow(options?: { silent?: boolean }) {
     if (!options?.silent) {
@@ -603,19 +472,17 @@ export function SubmissionWindowPanel({
     const timeoutId = window.setTimeout(() => {
       void loadWindow();
       void fetchExtensionRequests();
-      void fetchActiveFacultySchedules();
       if (isSuperAdmin) {
         void fetchLogs();
       }
     }, 0);
 
     return () => window.clearTimeout(timeoutId);
-  }, [isSuperAdmin, fetchLogs, fetchExtensionRequests, fetchActiveFacultySchedules]);
+  }, [isSuperAdmin, fetchLogs, fetchExtensionRequests]);
 
   useRealtimeSync(() => {
     void loadWindow({ silent: true });
     void fetchExtensionRequests();
-    void fetchActiveFacultySchedules();
     if (isSuperAdmin) {
       void fetchLogs();
     }
@@ -640,17 +507,6 @@ export function SubmissionWindowPanel({
     }
     return () => clearInterval(interval);
   }, [showCloseConfirmation, closeCountdown]);
-
-  // Faculty Close countdown timer tick
-  useEffect(() => {
-    let interval: NodeJS.Timeout;
-    if (facultyToClose && facultyCloseCountdown > 0) {
-      interval = setInterval(() => {
-        setFacultyCloseCountdown((prev) => prev - 1);
-      }, 1000);
-    }
-    return () => clearInterval(interval);
-  }, [facultyToClose, facultyCloseCountdown]);
 
   async function handleSave(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -827,102 +683,16 @@ export function SubmissionWindowPanel({
     onWindowChange?.();
   };
 
-  function handleOpenExtendForRequest(req: any) {
-    setActiveLinkedRequestId(req.id);
-    setExtendModalPrefills({
-      scope: "faculty",
-      facultyName: req.faculty_name,
-      preset: req.requested_preset || "+3 Days",
-      reason: req.reason,
-    });
-    setShowRequestsModal(false);
-    setShowExtendModal(true);
+  function handleSwitchToGlobalSchedule() {
+    setActiveTab("global");
+    setIsEditingSchedule(true);
+    setTimeout(() => {
+      openingInputRef.current?.focus();
+      openingInputRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    }, 50);
   }
 
-  async function handleRejectRequest(requestId: string) {
-    setIsReviewingRequest(true);
-    setError(null);
-    try {
-      const res = await fetch("/api/staff/submission-window/extension-requests", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({
-          requestId,
-          action: "reject",
-          adminRemarks: rejectRemarks.trim() || "Deadline extension request was not approved.",
-        }),
-      });
-      if (res.ok) {
-        setSuccess("Extension request has been declined. Portal remains locked for overdue requirements.");
-        setSelectedRequestForReject(null);
-        setRejectRemarks("");
-        void fetchExtensionRequests();
-      } else {
-        const body = await res.json().catch(() => ({}));
-        setError(body.error || "Failed to decline extension request.");
-      }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Error declining extension request.");
-    } finally {
-      setIsReviewingRequest(false);
-    }
-  }
 
-  function handleOpenApproveModal(req: any) {
-    setSelectedRequestForApprove(req);
-    let defaultDate = req.requested_date || "";
-    let defaultTime = req.requested_time || "23:59";
-    if (!defaultDate) {
-      const preset = req.requested_preset || "+3 Days";
-      const d = new Date();
-      if (preset === "+24 Hours") d.setHours(d.getHours() + 24);
-      else if (preset === "+48 Hours") d.setHours(d.getHours() + 48);
-      else if (preset === "+3 Days") d.setDate(d.getDate() + 3);
-      else if (preset === "+1 Week") d.setDate(d.getDate() + 7);
-      else d.setDate(d.getDate() + 3);
-      const yyyy = d.getFullYear();
-      const mm = String(d.getMonth() + 1).padStart(2, "0");
-      const dd = String(d.getDate()).padStart(2, "0");
-      defaultDate = `${yyyy}-${mm}-${dd}`;
-    }
-    setApproveDate(defaultDate);
-    setApproveTime(defaultTime);
-    setApproveRemarks("");
-  }
-
-  async function handleConfirmApproveRequest() {
-    if (!selectedRequestForApprove) return;
-    setIsApprovingRequest(true);
-    setError(null);
-    try {
-      const res = await fetch("/api/staff/submission-window/extension-requests", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({
-          requestId: selectedRequestForApprove.id,
-          action: "approve",
-          approvedDate: approveDate,
-          approvedTime: approveTime,
-          adminRemarks: approveRemarks.trim() || undefined,
-        }),
-      });
-      if (res.ok) {
-        setSuccess(`Extension request approved until ${approveDate} at ${approveTime}. Submission portal unlocked for faculty.`);
-        setSelectedRequestForApprove(null);
-        void fetchExtensionRequests();
-        onWindowChange?.();
-      } else {
-        const body = await res.json().catch(() => ({}));
-        setError(body.error || "Failed to approve extension request.");
-      }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Error approving extension request.");
-    } finally {
-      setIsApprovingRequest(false);
-    }
-  }
 
   const currentTermLabel =
     windowStatus?.academicYear && windowStatus?.semester
@@ -942,70 +712,35 @@ export function SubmissionWindowPanel({
       {/* Real-time Status Banner */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 sm:p-4 rounded-xl bg-slate-50 border border-slate-200/80 dark:bg-slate-950/50 dark:border-slate-800 transition-colors">
         <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 w-full sm:w-auto">
-          {/* Context-aware Status Badge */}
-          {scheduleViewMode === "personal" ? (
-            <div className="inline-flex items-center justify-center sm:justify-start gap-2 bg-white text-slate-800 border border-slate-200 dark:bg-slate-900 dark:text-slate-200 dark:border-slate-800 px-3 py-1.5 text-xs font-semibold rounded-md shadow-2xs">
-              <span
-                className={`w-2 h-2 rounded-full shrink-0 ${
-                  activeFacultySchedules.length > 0
-                    ? "bg-emerald-500 animate-pulse"
-                    : "bg-slate-400 dark:bg-slate-500"
-                }`}
-              />
-              <span>
-                {activeFacultySchedules.length > 0
-                  ? `Schedule Extensions Active (${activeFacultySchedules.length})`
-                  : "Not Configured"}
-              </span>
-            </div>
-          ) : (
-            <div className="inline-flex items-center justify-center sm:justify-start gap-2 bg-white text-slate-800 border border-slate-200 dark:bg-slate-900 dark:text-slate-200 dark:border-slate-800 px-3 py-1.5 text-xs font-semibold rounded-md shadow-2xs">
-              <span
-                className={`w-2 h-2 rounded-full shrink-0 ${
-                  isAlwaysOpen || isWindowOpen
-                    ? "bg-emerald-500 animate-pulse"
-                    : isUpcoming
-                    ? "bg-amber-500 animate-ping"
-                    : "bg-slate-400 dark:bg-slate-500"
-                }`}
-              />
-              <span>
-                {isAlwaysOpen
-                  ? "Always Open Window"
-                  : isWindowOpen
-                  ? "Live Submission Window"
+          {/* Status Badge */}
+          <div className="inline-flex items-center justify-center sm:justify-start gap-2 bg-white text-slate-800 border border-slate-200 dark:bg-slate-900 dark:text-slate-200 dark:border-slate-800 px-3 py-1.5 text-xs font-semibold rounded-md shadow-2xs">
+            <span
+              className={`w-2 h-2 rounded-full shrink-0 ${
+                isAlwaysOpen || isWindowOpen
+                  ? "bg-emerald-500 animate-pulse"
                   : isUpcoming
-                  ? "Scheduled Window"
-                  : !isGlobalConfigured
-                  ? "Not Configured"
-                  : "Window Closed"}
-              </span>
-            </div>
-          )}
+                  ? "bg-amber-500 animate-ping"
+                  : "bg-slate-400 dark:bg-slate-500"
+              }`}
+            />
+            <span>
+              {isAlwaysOpen
+                ? "Always Open Window"
+                : isWindowOpen
+                ? "Live Submission Window"
+                : isUpcoming
+                ? "Scheduled Window"
+                : !isGlobalConfigured
+                ? "Not Configured"
+                : "Window Closed"}
+            </span>
+          </div>
 
           {/* Current Academic Term Badge */}
           <div className="inline-flex items-center justify-center sm:justify-start gap-1.5 text-xs text-slate-600 dark:text-slate-400 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 px-3 py-1.5 rounded-md shadow-2xs">
             <span>Current Term:</span>
             <span className="font-semibold text-slate-900 dark:text-slate-200">{currentTermLabel}</span>
           </div>
-
-          {/* On Schedule Faculty Badge - Shortcut visible on Global view, clicking directs to Extension of Schedule view */}
-          {scheduleViewMode === "global" && activeFacultySchedules.length > 0 && (
-            <button
-              type="button"
-              onClick={() => setScheduleViewMode("personal")}
-              className="inline-flex items-center justify-center sm:justify-start gap-2 bg-emerald-600 hover:bg-emerald-700 dark:bg-emerald-600 dark:hover:bg-emerald-500 text-white border border-emerald-700 dark:border-emerald-500 px-3 py-1.5 text-xs font-bold rounded-lg shadow-xs transition cursor-pointer active:scale-95"
-              title="Click to switch to Extension of Schedule view"
-            >
-              <span className="w-2 h-2 rounded-full bg-white animate-pulse shrink-0" />
-              <span>
-                Extensions Active: <strong className="font-extrabold text-white">{activeFacultySchedules.length} Faculty</strong>
-              </span>
-              <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-800 text-white font-black uppercase tracking-wider border border-emerald-500/40">
-                View
-              </span>
-            </button>
-          )}
         </div>
 
         {/* Real-Time Countdown Timer Display */}
@@ -1013,13 +748,7 @@ export function SubmissionWindowPanel({
           <div className="flex items-center gap-2">
             <AppIcon icon={Hourglass} size="md" color="default" />
             <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-              {scheduleViewMode === "personal"
-                ? activeFacultySchedules.length > 1
-                  ? "Next Deadline"
-                  : activeFacultySchedules.length === 1
-                  ? "Time Remaining"
-                  : "Status"
-                : isWindowOpen
+              {isWindowOpen
                 ? "Time Remaining"
                 : isUpcoming
                 ? "Opens In"
@@ -1027,7 +756,7 @@ export function SubmissionWindowPanel({
             </span>
           </div>
           <span className="font-mono text-sm sm:text-base font-bold text-slate-900 dark:text-slate-100">
-            {scheduleViewMode === "personal" ? personalCountdownTime : formattedCountdownTime}
+            {formattedCountdownTime}
           </span>
         </div>
       </div>
@@ -1044,14 +773,14 @@ export function SubmissionWindowPanel({
         onClose={() => setSuccess(null)}
       />
 
-      {/* 2-Option Schedule Switcher: Global Schedule & Extension of Schedule */}
+      {/* 2-Option Schedule Switcher: Global Schedule & Extension Requests */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-200 dark:border-slate-800 pb-3">
         <div className="inline-flex items-center p-1 rounded-xl bg-slate-100 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 w-full sm:w-auto shadow-2xs">
           <button
             type="button"
-            onClick={() => setScheduleViewMode("global")}
+            onClick={() => setActiveTab("global")}
             className={`flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-              scheduleViewMode === "global"
+              activeTab === "global"
                 ? "bg-amber-500 text-slate-950 shadow-xs border border-amber-600 font-extrabold"
                 : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-200/60 dark:hover:bg-slate-900"
             }`}
@@ -1062,42 +791,57 @@ export function SubmissionWindowPanel({
 
           <button
             type="button"
-            onClick={() => setScheduleViewMode("personal")}
+            onClick={() => setActiveTab("requests")}
             className={`flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-              scheduleViewMode === "personal"
+              activeTab === "requests"
                 ? "bg-amber-500 text-slate-950 shadow-xs border border-amber-600 font-extrabold"
                 : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-200/60 dark:hover:bg-slate-900"
             }`}
           >
-            <AppIcon icon={User} size="sm" color="inherit" />
-            <span>Extension of Schedule</span>
-            {activeFacultySchedules.length > 0 ? (
+            <AppIcon icon={Hourglass} size="sm" color="inherit" />
+            <span>Extension Requests</span>
+            {pendingRequestsCount > 0 ? (
               <span className={`px-2 py-0.5 text-[10px] font-bold rounded-full transition-colors ${
-                scheduleViewMode === "personal"
+                activeTab === "requests"
                   ? "bg-white text-amber-950 shadow-2xs border border-amber-600/30"
-                  : "bg-emerald-600 text-white"
+                  : "bg-amber-500 text-slate-950"
               }`}>
-                {activeFacultySchedules.length}
+                {pendingRequestsCount}
               </span>
             ) : null}
           </button>
         </div>
 
         <div className="text-xs text-slate-500 dark:text-slate-400 font-medium">
-          {scheduleViewMode === "global" ? (
+          {activeTab === "global" ? (
             <span>Campus-wide submission window for all faculty members</span>
-          ) : (
-            <span>
-              <strong>{activeFacultySchedules.length} Faculty</strong> with active schedule extensions
-            </span>
-          )}
+          ) : null}
         </div>
       </div>
 
-      {scheduleViewMode === "global" ? (
+      {activeTab === "global" ? (
         <>
           {/* 2. 2-Column Schedule Configuration Grid */}
           <form onSubmit={handleSave} className="space-y-6">
+        {/* Pending Extension Requests Alert Banner in Global Schedule View */}
+        {pendingRequestsCount > 0 ? (
+          <div className="flex items-center justify-between gap-3 px-4 py-2.5 rounded-xl bg-amber-50/70 border border-amber-200/80 dark:bg-amber-950/20 dark:border-amber-800/40 text-xs">
+            <div className="flex items-center gap-2.5 text-amber-900 dark:text-amber-200">
+              <AppIcon icon={Hourglass} size="md" color="inherit" />
+              <span>
+                <strong>{pendingRequestsCount} Pending Extension Request{pendingRequestsCount !== 1 ? "s" : ""}:</strong> Faculty have requested submission extensions due to closed or past due deadlines.
+              </span>
+            </div>
+            <button
+              type="button"
+              onClick={() => setActiveTab("requests")}
+              className="shrink-0 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 hover:bg-slate-50 border border-amber-300 dark:border-amber-700/60 font-semibold text-xs px-3 py-1.5 rounded-lg transition shadow-2xs cursor-pointer"
+            >
+              Review Requests ({pendingRequestsCount})
+            </button>
+          </div>
+        ) : null}
+
         {isEditingSchedule ? (
           <div className="flex items-center gap-2.5 px-4 py-2.5 rounded-xl bg-slate-100 border border-slate-200/90 dark:bg-slate-800/50 dark:border-slate-700 text-slate-700 dark:text-slate-300 text-xs transition-all">
             <AppIcon icon={EditPencil} size="md" color="default" />
@@ -1423,16 +1167,6 @@ export function SubmissionWindowPanel({
                   <span>Edit Schedule</span>
                 </button>
 
-                <button
-                  type="button"
-                  onClick={() => setShowExtendModal(true)}
-                  disabled={isLoading || isSaving || !isGlobalSubmissionOpen}
-                  className="flex items-center justify-center gap-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold px-4 py-2.5 sm:py-2 text-sm rounded-xl transition-colors shadow-xs disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer active:scale-[0.98]"
-                  title={!isGlobalSubmissionOpen ? "Cannot extend a closed submission window" : "Extend active submission window"}
-                >
-                  <AppIcon icon={Hourglass} size="sm" color="inherit" className="text-slate-950" />
-                  <span>Extend Window</span>
-                </button>
               </>
             )}
           </div>
@@ -1440,611 +1174,181 @@ export function SubmissionWindowPanel({
       </form>
     </>
       ) : (
-        /* SECTION: Extension of Schedule Management */
+        /* SECTION: Extension Requests Tab */
         <div className="space-y-5 animate-in fade-in duration-200">
-          {/* Subtle Informational Banner matching Global Schedule (No duplicate action button) */}
-          <div className="flex items-center gap-2.5 px-4 py-2.5 rounded-xl bg-slate-100 border border-slate-200/90 dark:bg-slate-800/50 dark:border-slate-700 text-slate-700 dark:text-slate-300 text-xs">
-            <AppIcon icon={User} size="md" color="default" />
-            <div>
-              <span className="font-bold text-slate-900 dark:text-slate-100">Faculty Schedule Extensions:</span>{" "}
-              <span>
-                {personalCounts.all} faculty member{personalCounts.all !== 1 ? "s" : ""} with approved deadline extensions.
-              </span>
-            </div>
-          </div>
-
-          {/* Pending Extension Requests Alert Banner in Extension of Schedule View */}
-          {pendingRequestsCount > 0 && (
-            <div className="flex items-center justify-between gap-3 px-4 py-2.5 rounded-xl bg-amber-50/70 border border-amber-200/80 dark:bg-amber-950/20 dark:border-amber-800/40 text-xs">
-              <div className="flex items-center gap-2.5 text-amber-900 dark:text-amber-200">
-                <AppIcon icon={Hourglass} size="md" color="inherit" />
-                <span>
-                  <strong>{pendingRequestsCount} Pending Request{pendingRequestsCount !== 1 ? "s" : ""}:</strong> Faculty have requested submission deadline extensions.
-                </span>
+          {/* Header Informational Banner with Quick Global Schedule Button */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-xl bg-slate-100 border border-slate-200/90 dark:bg-slate-800/50 dark:border-slate-700 text-xs">
+            <div className="flex items-start gap-3">
+              <div className="w-8 h-8 rounded-full bg-amber-500 text-slate-950 flex items-center justify-center shrink-0 shadow-xs">
+                <AppIcon icon={Hourglass} size="xs" color="inherit" />
               </div>
-              <button
-                type="button"
-                onClick={() => {
-                  setShowRequestsModal(true);
-                  void fetchExtensionRequests();
-                }}
-                className="shrink-0 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 hover:bg-slate-50 border border-amber-300 dark:border-amber-700/60 font-semibold text-xs px-3 py-1.5 rounded-lg transition shadow-2xs cursor-pointer"
-              >
-                Review Requests ({pendingRequestsCount})
-              </button>
+              <div>
+                <h3 className="font-bold text-sm text-slate-900 dark:text-slate-100">
+                  Faculty Extension Requests
+                </h3>
+                <p className="mt-0.5 text-slate-600 dark:text-slate-400 leading-relaxed">
+                  Faculty who missed the deadline have submitted extension requests. Adjust the Global Schedule to open document submissions for all faculty at once.
+                </p>
+              </div>
             </div>
-          )}
-
-          {/* Search Toolbar */}
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
-            {/* Search Input */}
-            <div className="relative flex-1 max-w-md">
-              <AppIcon
-                icon={Search}
-                size="sm"
-                color="default"
-                className="absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400 dark:text-slate-500"
-              />
-              <input
-                type="text"
-                placeholder="Search faculty name, email, department..."
-                value={personalSearchQuery}
-                onChange={(e) => setPersonalSearchQuery(e.target.value)}
-                className="w-full pl-9 pr-8 py-2 text-xs rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:border-amber-500 dark:focus:border-amber-400 transition-colors shadow-2xs"
-              />
-              {personalSearchQuery ? (
+            <div className="flex items-center gap-2 shrink-0">
+              {pendingRequestsCount > 0 && (
                 <button
                   type="button"
-                  onClick={() => setPersonalSearchQuery("")}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer"
+                  onClick={() => void handleMarkAllAsRead()}
+                  className="shrink-0 inline-flex items-center justify-center gap-1.5 px-3.5 py-2 text-xs font-bold rounded-xl bg-white hover:bg-slate-50 dark:bg-slate-900 dark:hover:bg-slate-800 text-slate-800 dark:text-slate-200 transition cursor-pointer shadow-xs border border-slate-300 dark:border-slate-700 active:scale-95"
                 >
-                  <AppIcon icon={Xmark} size="sm" color="inherit" />
+                  <AppIcon icon={CheckCircle} size="xs" color="inherit" />
+                  <span>Read All</span>
                 </button>
-              ) : null}
-            </div>
-
-            <div className="text-xs text-slate-500 dark:text-slate-400 font-medium">
-              Showing <strong>{filteredPersonalFaculty.length}</strong> active extension{filteredPersonalFaculty.length !== 1 ? "s" : ""}
+              )}
+              <button
+                type="button"
+                onClick={handleSwitchToGlobalSchedule}
+                className="shrink-0 inline-flex items-center justify-center gap-1.5 px-4 py-2 text-xs font-bold rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 transition cursor-pointer shadow-xs border border-amber-600 active:scale-95"
+              >
+                <AppIcon icon={Calendar} size="sm" color="inherit" />
+                <span>Set Global Schedule for All</span>
+              </button>
             </div>
           </div>
 
-          {/* Table / List View */}
-          {filteredPersonalFaculty.length === 0 ? (
+          {/* Requests Content: Notification List / Empty */}
+          {extensionRequests.length === 0 ? (
             <div className="py-12 px-4 text-center rounded-2xl border-2 border-dashed border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/30 space-y-3">
-              <div className="w-12 h-12 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center mx-auto text-slate-400">
-                <AppIcon icon={Calendar} size="lg" color="inherit" />
+              <div className="w-10 h-10 rounded-full bg-amber-500 text-slate-950 flex items-center justify-center mx-auto shadow-xs">
+                <AppIcon icon={Hourglass} size="sm" color="inherit" />
               </div>
               <div className="space-y-1">
                 <p className="text-sm font-bold text-slate-800 dark:text-slate-200">
-                  {personalSearchQuery ? "No matching faculty found" : "No active schedule extensions"}
+                  No extension requests found
                 </p>
                 <p className="text-xs text-slate-500 dark:text-slate-400 max-w-md mx-auto">
-                  {personalSearchQuery
-                    ? `No faculty with extended schedule matches "${personalSearchQuery}". Try adjusting your search term.`
-                    : "All faculty are currently following the global schedule. Faculty granted deadline extension requests will appear here."}
+                  When faculty members request deadline extensions for overdue requirements, their requests will appear here.
                 </p>
               </div>
-              <div className="flex items-center justify-center gap-2.5 pt-2">
+              <div className="pt-2">
                 <button
                   type="button"
-                  onClick={() => setScheduleViewMode("global")}
+                  onClick={handleSwitchToGlobalSchedule}
                   className="px-3.5 py-2 text-xs font-semibold rounded-xl border border-slate-300 dark:border-slate-700 bg-white hover:bg-slate-50 dark:bg-slate-900 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 transition cursor-pointer"
                 >
-                  Switch to Global Schedule
+                  Go to Global Schedule
                 </button>
-                {pendingRequestsCount > 0 ? (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setShowRequestsModal(true);
-                      void fetchExtensionRequests();
-                    }}
-                    className="px-3.5 py-2 text-xs font-bold rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 transition cursor-pointer"
-                  >
-                    Review Requests ({pendingRequestsCount})
-                  </button>
-                ) : null}
               </div>
             </div>
           ) : (
-            <div className="w-full overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-800 shadow-2xs">
-              <table className="w-full text-left text-xs border-collapse">
-                <thead className="bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 text-[11px] font-semibold uppercase tracking-wider">
-                  <tr>
-                    <th className="py-3 px-3 text-center w-12">#</th>
-                    <th className="py-3 px-5">Faculty Name</th>
-                    <th className="py-3 px-4 text-center">Type</th>
-                    <th className="py-3 px-4">Personal Schedule</th>
-                    <th className="py-3 px-4 text-center">Portal Status</th>
-                    <th className="py-3 px-5 text-center w-44">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-200 dark:divide-slate-800 bg-white dark:bg-slate-950">
-                  {filteredPersonalFaculty.map((fac, index) => {
-                    const formattedOpen = (() => {
-                      if (fac.openDateFormatted && fac.openDateFormatted !== "—" && !fac.openDateFormatted.includes("Invalid")) {
-                        return fac.openDateFormatted;
-                      }
-                      return "Active";
-                    })();
+            <div className="space-y-2">
+              <div className="flex items-center justify-between px-1">
+                <span className="text-xs font-semibold text-slate-600 dark:text-slate-400">
+                  Requests ({extensionRequests.length})
+                </span>
+                {pendingRequestsCount > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => void handleMarkAllAsRead()}
+                    className="inline-flex items-center gap-1 text-xs font-bold text-amber-800 dark:text-amber-400 hover:underline cursor-pointer"
+                  >
+                    <AppIcon icon={CheckCircle} size="xs" color="inherit" />
+                    <span>Read All</span>
+                  </button>
+                )}
+              </div>
 
-                    const formattedClose = (() => {
-                      if (fac.closeDateFormatted && fac.closeDateFormatted !== "—" && !fac.closeDateFormatted.includes("Invalid")) {
-                        return fac.closeDateFormatted;
-                      }
-                      if (fac.deadlineFormatted && !fac.deadlineFormatted.includes("Invalid")) {
-                        return fac.deadlineFormatted;
-                      }
-                      try {
-                        const d = new Date(fac.deadline);
-                        if (!isNaN(d.getTime())) {
-                          return d.toLocaleDateString("en-US", {
+              <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950/60 shadow-xs divide-y divide-slate-100 dark:divide-slate-850 overflow-hidden">
+                {extensionRequests.map((req, index) => (
+                <div
+                  key={req.id}
+                  className="p-3.5 sm:px-4 hover:bg-slate-50/70 dark:hover:bg-slate-900/40 transition-colors flex items-center justify-between gap-3"
+                >
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div
+                      className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full font-bold text-xs flex items-center justify-center shrink-0 shadow-xs transition-colors ${
+                        req.status === "pending"
+                          ? "bg-amber-500 text-slate-950"
+                          : "bg-slate-200 dark:bg-slate-800 text-slate-500 dark:text-slate-400"
+                      }`}
+                    >
+                      {index + 1}
+                    </div>
+
+                    <div className="min-w-0 text-xs sm:text-sm">
+                      <p className="text-slate-800 dark:text-slate-200 truncate">
+                        <span className="font-bold text-slate-950 dark:text-white">
+                          {req.faculty_name}
+                        </span>{" "}
+                        requested an extension
+                        {req.reason ? (
+                          <span className="text-slate-500 dark:text-slate-400 italic font-normal">
+                            {" "}— &ldquo;{req.reason}&rdquo;
+                          </span>
+                        ) : null}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2.5 shrink-0">
+                    {(req.supporting_document_url || req.supporting_document_name) && (
+                      <a
+                        href={`/api/faculty/submissions/extension-request/document?requestId=${req.id}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1 text-[11px] font-semibold text-slate-950 bg-amber-500 hover:bg-amber-400 px-2.5 py-0.5 rounded-md shadow-2xs transition-colors"
+                      >
+                        <AppIcon icon={Page} size="xs" color="inherit" />
+                        <span>Attachment</span>
+                      </a>
+                    )}
+                    <span className="text-[11px] text-slate-400 dark:text-slate-500 whitespace-nowrap">
+                      {req.created_at
+                        ? new Date(req.created_at).toLocaleDateString("en-US", {
                             month: "short",
                             day: "numeric",
                             year: "numeric",
                             hour: "numeric",
                             minute: "2-digit",
-                            hour12: true,
-                          });
-                        }
-                      } catch {
-                        // ignore
-                      }
-                      return "Active Window";
-                    })();
+                          })
+                        : ""}
+                    </span>
 
-                    return (
-                      <tr
-                        key={fac.facultyProfileId || fac.email}
-                        className="hover:bg-slate-50/70 dark:hover:bg-slate-900/40 transition-colors"
+                    {/* Read / Unread Status Button */}
+                    {req.status === "pending" ? (
+                      <button
+                        type="button"
+                        onClick={() => void handleMarkAsRead(req.id)}
+                        className="px-2.5 py-1 text-[11px] font-bold rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 transition cursor-pointer shadow-xs border border-amber-600 active:scale-95"
+                        title="Mark this request as read"
                       >
-                        <td className="py-3 px-3 text-center align-middle font-medium text-slate-400 dark:text-slate-500">
-                          {index + 1}
-                        </td>
-                        <td className="py-3 px-5 align-middle">
-                          <div className="space-y-0.5">
-                            <span className="font-semibold text-sm text-slate-900 dark:text-slate-100 block">
-                              {fac.facultyName}
-                            </span>
-                            <p className="text-[11px] text-slate-500 dark:text-slate-400">
-                              {fac.email} • {fac.department} • {fac.academicYear} {fac.semester}
-                            </p>
-                          </div>
-                        </td>
-                        <td className="py-3 px-4 align-middle text-center whitespace-nowrap">
-                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-bold bg-sky-600 hover:bg-sky-700 text-white border border-sky-700 shadow-2xs">
-                            <span className="w-1.5 h-1.5 rounded-full bg-white shrink-0" />
-                            Approved Extension
-                          </span>
-                        </td>
-                        <td className="py-3 px-4 align-middle whitespace-nowrap">
-                          <div className="flex flex-col gap-0.5 text-xs">
-                            <div className="flex items-center gap-1.5 text-slate-600 dark:text-slate-400">
-                              <span className="text-[11px] font-semibold text-slate-400">Opens:</span>
-                              <span className="font-medium text-slate-700 dark:text-slate-300">{formattedOpen}</span>
-                            </div>
-                            <div className="flex items-center gap-1.5 text-slate-800 dark:text-slate-200">
-                              <span className="text-[11px] font-semibold text-slate-400">Deadline:</span>
-                              <span className="font-bold text-slate-900 dark:text-slate-100">{formattedClose}</span>
-                            </div>
-                            {fac.timeRemainingLabel && !fac.timeRemainingLabel.includes("NaN") ? (
-                              <span className="text-[10px] text-slate-400 dark:text-slate-500 font-medium">
-                                {fac.timeRemainingLabel}
-                              </span>
-                            ) : null}
-                          </div>
-                        </td>
-                        <td className="py-3 px-4 align-middle text-center whitespace-nowrap">
-                          <span className="inline-flex items-center gap-1.5 text-xs font-bold text-white bg-[#0b5336] px-2.5 py-1 rounded-md border border-[#08412a] shadow-2xs">
-                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-300 animate-pulse shrink-0" />
-                            Portal Unlocked
-                          </span>
-                        </td>
-                        <td className="py-3 px-5 align-middle text-center whitespace-nowrap">
-                          <button
-                            type="button"
-                            disabled={closingFacultyId === fac.facultyProfileId}
-                            onClick={() => handleCloseFacultySchedule(fac)}
-                            className="inline-flex items-center justify-center gap-1.5 bg-[#780000] hover:bg-[#5e0000] text-white border border-[#5e0000] px-3 py-1.5 text-xs font-semibold rounded-lg transition-colors disabled:opacity-50 cursor-pointer shadow-2xs active:scale-95"
-                            title="Close submission window for this faculty member"
-                          >
-                            <AppIcon icon={ShieldAlert} size="sm" color="white" />
-                            <span>Close Deadline</span>
-                          </button>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
+                        Read
+                      </button>
+                    ) : (
+                      <span className="text-[10px] font-medium text-slate-400 dark:text-slate-500 px-1">
+                        Read
+                      </span>
+                    )}
+                  </div>
+                </div>
+              ))}
             </div>
-          )}
+          </div>
+        )}
 
-          {/* Extension of Schedule Footer Action Toolbar (Sole location for Extension Requests & Logs) */}
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-t border-slate-200 dark:border-slate-800 pt-5">
-            <div className="flex items-center gap-2.5">
-              <button
-                type="button"
-                onClick={() => {
-                  setShowRequestsModal(true);
-                  void fetchExtensionRequests();
-                }}
-                className="relative inline-flex items-center gap-1.5 bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 dark:bg-slate-900 dark:hover:bg-slate-800 dark:text-slate-300 dark:border-slate-800 px-3.5 py-2 text-xs font-medium rounded-xl transition cursor-pointer shadow-2xs"
-              >
-                <AppIcon icon={Hourglass} size="sm" color="active" />
-                <span>Extension Requests</span>
-                {pendingRequestsCount > 0 ? (
-                  <span className="ml-1 inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-500 text-slate-950 animate-pulse">
-                    {pendingRequestsCount} Pending
-                  </span>
-                ) : null}
-              </button>
-
-              <button
-                type="button"
-                onClick={() => {
-                  setShowLogsModal(true);
-                  refetchLogs();
-                }}
-                className="inline-flex items-center gap-1.5 bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 dark:bg-slate-900 dark:hover:bg-slate-800 dark:text-slate-300 dark:border-slate-800 px-3.5 py-2 text-xs font-medium rounded-xl transition cursor-pointer"
-              >
-                <AppIcon icon={ClockRotateRight} size="sm" color="default" />
-                <span>Logs {extensionLogs.length > 0 ? `(${extensionLogs.length})` : ""}</span>
-              </button>
-            </div>
+          {/* Footer Toolbar: Logs only */}
+          <div className="flex items-center justify-between gap-3 border-t border-slate-200 dark:border-slate-800 pt-5">
+            <button
+              type="button"
+              onClick={() => {
+                setShowLogsModal(true);
+                refetchLogs();
+              }}
+              className="inline-flex items-center gap-1.5 bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 dark:bg-slate-900 dark:hover:bg-slate-800 dark:text-slate-300 dark:border-slate-800 px-3.5 py-2 text-xs font-medium rounded-xl transition cursor-pointer"
+            >
+              <AppIcon icon={ClockRotateRight} size="sm" color="default" />
+              <span>Submission Schedule Logs {extensionLogs.length > 0 ? `(${extensionLogs.length})` : ""}</span>
+            </button>
           </div>
         </div>
       )}
-
-      {/* Workflow Modal: Extend Submission Window */}
-      <ExtendSubmissionWindowModal
-        isOpen={showExtendModal}
-        onClose={() => {
-          setShowExtendModal(false);
-          setActiveLinkedRequestId(null);
-          setExtendModalPrefills(null);
-        }}
-        onSuccess={(msg) => {
-          handleExtensionSuccess(msg);
-          setActiveLinkedRequestId(null);
-          setExtendModalPrefills(null);
-        }}
-        currentEndDate={windowStatus?.endDate}
-        currentEndTimeLabel={windowStatus?.endTimeLabel}
-        academicYear={windowStatus?.academicYear}
-        semester={windowStatus?.semester}
-        initialScope={extendModalPrefills?.scope || "global"}
-        initialFacultyName={extendModalPrefills?.facultyName || ""}
-        initialPreset={extendModalPrefills?.preset || "+3 Days"}
-        linkedRequestId={activeLinkedRequestId}
-      />
-
-      {/* Extension Requests Management Modal */}
-      {showRequestsModal ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="w-full max-w-2xl bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-2xl space-y-4 max-h-[85vh] flex flex-col text-slate-900 dark:text-slate-100">
-            <ModalHeader
-              icon={Hourglass}
-              title="Faculty Extension Requests"
-              subtitle="Review and approve faculty deadline extension requests"
-              onClose={() => setShowRequestsModal(false)}
-              className="-mx-6 -mt-6 mb-4 rounded-t-2xl"
-            />
-
-            {/* Filter Tabs */}
-            <div className="flex items-center gap-2 shrink-0">
-              <button
-                type="button"
-                onClick={() => setRequestsFilter("pending")}
-                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition cursor-pointer ${
-                  requestsFilter === "pending"
-                    ? "bg-amber-500 text-slate-950 font-bold"
-                    : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200"
-                }`}
-              >
-                Pending Requests ({pendingRequestsCount})
-              </button>
-              <button
-                type="button"
-                onClick={() => setRequestsFilter("all")}
-                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition cursor-pointer ${
-                  requestsFilter === "all"
-                    ? "bg-amber-500 text-slate-950 font-bold"
-                    : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200"
-                }`}
-              >
-                All Requests ({extensionRequests.length})
-              </button>
-            </div>
-
-            {/* Requests List */}
-            <div className="overflow-y-auto space-y-3 pr-1 flex-1">
-              {(() => {
-                const displayed = extensionRequests.filter((r) =>
-                  requestsFilter === "pending" ? r.status === "pending" : true
-                );
-
-                if (displayed.length === 0) {
-                  return (
-                    <div className="py-12 text-center text-xs text-slate-500 dark:text-slate-400 space-y-1">
-                      <p className="font-semibold text-slate-700 dark:text-slate-300">No extension requests found.</p>
-                      <p>When faculty members request deadline extensions for incomplete requirements, they will appear here.</p>
-                    </div>
-                  );
-                }
-
-                return displayed.map((req) => (
-                  <div
-                    key={req.id}
-                    className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-900/50 space-y-3"
-                  >
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <h4 className="font-bold text-sm text-slate-900 dark:text-slate-100">
-                            {req.faculty_name}
-                          </h4>
-                          <span
-                            className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ${
-                              req.status === "approved"
-                                ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border border-emerald-500/30"
-                                : req.status === "rejected"
-                                ? "bg-rose-500/15 text-rose-700 dark:text-rose-400 border border-rose-500/30"
-                                : "bg-amber-500/20 text-amber-900 dark:text-amber-200 border border-amber-500/40"
-                            }`}
-                          >
-                            {req.status}
-                          </span>
-                          {req.status === "approved" && !req.approved_date && (
-                            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700">
-                              Deadline Closed
-                            </span>
-                          )}
-                        </div>
-                        <p className="text-[11px] text-slate-500 dark:text-slate-400">
-                          {req.department || "Faculty"} • {req.academic_year} {req.semester}
-                        </p>
-                      </div>
-
-                      {req.requested_preset && (
-                        <div className="flex flex-col sm:flex-row sm:items-center gap-1.5 text-xs text-slate-500 shrink-0">
-                          <span className="font-semibold text-amber-800 dark:text-amber-300 bg-amber-500/15 px-2 py-0.5 rounded-md border border-amber-500/30">
-                            {req.requested_preset}
-                          </span>
-                          {req.requested_date && (
-                            <span className="text-[11px] text-slate-600 dark:text-slate-400">
-                              (Target: {req.requested_date} {req.requested_time || "23:59"})
-                            </span>
-                          )}
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Requirements tags */}
-                    {Array.isArray(req.requirement_codes) && req.requirement_codes.length > 0 ? (
-                      <div className="flex flex-wrap items-center gap-1.5">
-                        <span className="text-[11px] font-semibold text-slate-500">For:</span>
-                        {req.requirement_codes.map((code: string) => (
-                          <span
-                            key={code}
-                            className="px-2 py-0.5 rounded-md bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-[10px] font-medium"
-                          >
-                            {code}
-                          </span>
-                        ))}
-                      </div>
-                    ) : null}
-
-                    {/* Reason */}
-                    <div className="p-2.5 rounded-lg bg-white dark:bg-slate-950 border border-slate-200/80 dark:border-slate-800/80 text-xs text-slate-700 dark:text-slate-300 italic">
-                      &ldquo;{req.reason}&rdquo;
-                    </div>
-
-                    {/* Supporting Document Attachment */}
-                    {req.supporting_document_url || req.supporting_document_name ? (
-                      <div className="flex items-center gap-2 pt-0.5">
-                        <a
-                          href={`/api/faculty/submissions/extension-request/document?requestId=${req.id}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-amber-500/10 hover:bg-amber-500/20 text-amber-900 dark:text-amber-200 border border-amber-500/30 text-[11px] font-semibold transition"
-                        >
-                          <AppIcon icon={Page} size="xs" color="inherit" />
-                          <span>Supporting Document: {req.supporting_document_name || "View Document"}</span>
-                        </a>
-                      </div>
-                    ) : null}
-
-                    {/* Approved details if already approved */}
-                    {req.status === "approved" && req.approved_date && (
-                      <div className="p-2 rounded-lg bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800/50 text-[11px] text-emerald-800 dark:text-emerald-300">
-                        <span className="font-semibold">Approved Custom Deadline:</span> {req.approved_date} at {req.approved_time || "11:59 PM"}
-                      </div>
-                    )}
-
-                    {/* Admin remarks if reviewed */}
-                    {req.admin_remarks && (
-                      <p className="text-[11px] text-slate-500 dark:text-slate-400">
-                        <span className="font-semibold">Approver remarks:</span> {req.admin_remarks}
-                      </p>
-                    )}
-
-                    {/* Pending Action Buttons */}
-                    {req.status === "pending" && (
-                      <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-200/60 dark:border-slate-800/60">
-                        <button
-                          type="button"
-                          onClick={() => setSelectedRequestForReject(req)}
-                          className="px-3 py-1.5 rounded-lg border border-[#5e0000] bg-[#780000] hover:bg-[#5e0000] text-white text-xs font-semibold transition cursor-pointer shadow-2xs"
-                        >
-                          Decline
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => handleOpenApproveModal(req)}
-                          className="px-3.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold transition cursor-pointer shadow-xs"
-                        >
-                          Approve Extension
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                ));
-              })()}
-            </div>
-          </div>
-        </div>
-      ) : null}
-
-      {/* Decline Extension Request Confirmation Modal */}
-      {selectedRequestForReject ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="w-full max-w-md bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-2xl space-y-4 text-slate-900 dark:text-slate-100">
-            <ModalHeader
-              icon={WarningCircle}
-              title="Decline Extension Request"
-              subtitle={`Faculty: ${selectedRequestForReject.faculty_name} • ${selectedRequestForReject.requested_preset || "+3 Days"}`}
-              className="-mx-6 -mt-6 mb-4 rounded-t-2xl"
-            />
-
-            <div className="space-y-1.5">
-              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">
-                Reason / Feedback Remarks for Faculty (Optional)
-              </label>
-              <textarea
-                value={rejectRemarks}
-                onChange={(e) => setRejectRemarks(e.target.value)}
-                placeholder="e.g. Please submit during the next scheduled submission cycle."
-                rows={3}
-                className="w-full p-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs text-slate-900 dark:text-slate-100 focus:outline-hidden focus:ring-2 focus:ring-amber-500"
-              />
-            </div>
-
-            <p className="text-[11px] text-slate-500 dark:text-slate-400">
-              Declining this request keeps the requirement <span className="font-semibold text-rose-600 dark:text-rose-400">Overdue</span> and leaves the submission portal locked.
-            </p>
-
-            <div className="flex justify-end gap-2 pt-2">
-              <button
-                type="button"
-                onClick={() => {
-                  setSelectedRequestForReject(null);
-                  setRejectRemarks("");
-                }}
-                disabled={isReviewingRequest}
-                className="px-4 py-2 rounded-lg border border-[#5e0000] bg-[#780000] hover:bg-[#5e0000] text-white text-xs font-semibold transition cursor-pointer shadow-xs"
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                onClick={() => void handleRejectRequest(selectedRequestForReject.id)}
-                disabled={isReviewingRequest}
-                className="px-4 py-2 rounded-lg border border-[#5e0000] bg-[#780000] hover:bg-[#5e0000] text-white text-xs font-semibold transition cursor-pointer shadow-xs disabled:opacity-50"
-              >
-                {isReviewingRequest ? "Declining..." : "Confirm Decline"}
-              </button>
-            </div>
-          </div>
-        </div>
-      ) : null}
-
-      {/* Approve Extension Request Modal */}
-      {selectedRequestForApprove ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="w-full max-w-md bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-2xl space-y-4 text-slate-900 dark:text-slate-100">
-            <ModalHeader
-              icon={CheckCircle}
-              title="Approve Extension Request"
-              subtitle={`Faculty: ${selectedRequestForApprove.faculty_name} • ${selectedRequestForApprove.requested_preset || "+3 Days"}`}
-              className="-mx-6 -mt-6 mb-4 rounded-t-2xl"
-            />
-
-            <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs space-y-1.5">
-              <p className="text-slate-600 dark:text-slate-300">
-                <span className="font-semibold text-slate-800 dark:text-slate-200">Reason:</span> &ldquo;{selectedRequestForApprove.reason}&rdquo;
-              </p>
-              {selectedRequestForApprove.supporting_document_url && (
-                <div className="pt-1">
-                  <a
-                    href={`/api/faculty/submissions/extension-request/document?requestId=${selectedRequestForApprove.id}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1.5 text-amber-700 dark:text-amber-300 hover:underline font-semibold"
-                  >
-                    <AppIcon icon={Page} size="xs" color="inherit" />
-                    <span>View Supporting Document ({selectedRequestForApprove.supporting_document_name || "Attachment"})</span>
-                  </a>
-                </div>
-              )}
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div className="space-y-1">
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">
-                  Approved Custom Due Date
-                </label>
-                <input
-                  type="date"
-                  value={approveDate}
-                  onChange={(e) => setApproveDate(e.target.value)}
-                  className="w-full p-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs text-slate-900 dark:text-slate-100 focus:outline-hidden focus:ring-2 focus:ring-emerald-500"
-                />
-              </div>
-              <div className="space-y-1">
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">
-                  Approved Time
-                </label>
-                <input
-                  type="time"
-                  value={approveTime}
-                  onChange={(e) => setApproveTime(e.target.value)}
-                  className="w-full p-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs text-slate-900 dark:text-slate-100 focus:outline-hidden focus:ring-2 focus:ring-emerald-500"
-                />
-              </div>
-            </div>
-
-            <div className="space-y-1.5">
-              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">
-                Approver Remarks / Instructions (Optional)
-              </label>
-              <textarea
-                value={approveRemarks}
-                onChange={(e) => setApproveRemarks(e.target.value)}
-                placeholder="e.g. Extension approved. Please complete submissions before the deadline."
-                rows={2}
-                className="w-full p-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs text-slate-900 dark:text-slate-100 focus:outline-hidden focus:ring-2 focus:ring-emerald-500"
-              />
-            </div>
-
-            <p className="text-[11px] text-slate-500 dark:text-slate-400">
-              Assigns this date as the individual custom due date, sets status to <span className="font-semibold text-indigo-600 dark:text-indigo-400">Extended</span>, and unlocks the portal until that new date.
-            </p>
-
-            <div className="flex justify-end gap-2 pt-2">
-              <button
-                type="button"
-                onClick={() => {
-                  setSelectedRequestForApprove(null);
-                  setApproveRemarks("");
-                }}
-                disabled={isApprovingRequest}
-                className="px-4 py-2 rounded-lg border border-[#5e0000] bg-[#780000] hover:bg-[#5e0000] text-white text-xs font-semibold transition cursor-pointer shadow-xs"
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                onClick={() => void handleConfirmApproveRequest()}
-                disabled={isApprovingRequest || !approveDate}
-                className="px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold transition cursor-pointer shadow-xs disabled:opacity-50"
-              >
-                {isApprovingRequest ? "Approving..." : "Confirm Approval"}
-              </button>
-            </div>
-          </div>
-        </div>
-      ) : null}
 
       {/* Submission Schedule Logs History Modal */}
       <SubmissionScheduleLogsModal
@@ -2168,91 +1472,7 @@ export function SubmissionWindowPanel({
         </div>
       ) : null}
 
-      {/* Individual Faculty Close Confirmation Modal — 3-second Safety Countdown */}
-      {facultyToClose ? (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="w-full max-w-lg bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-2xl space-y-4 text-slate-900 dark:text-slate-100">
-            <ModalHeader
-              icon={WarningTriangle}
-              title={`Close Submission for ${facultyToClose.facultyName}?`}
-              subtitle="Immediate Closure & Portal Lock"
-              onClose={() => {
-                setFacultyToClose(null);
-                setFacultyCloseCountdown(3);
-              }}
-              className="-mx-6 -mt-6 mb-4 rounded-t-2xl"
-            />
-            <p className="text-xs leading-5 text-slate-600 dark:text-slate-300">
-              This will <span className="font-bold text-rose-700 dark:text-rose-400">immediately close</span> the active submission schedule for <strong className="text-slate-900 dark:text-slate-100">{facultyToClose.facultyName}</strong> ({facultyToClose.email}). Their individual upload portal will be locked immediately.
-            </p>
 
-            <div className="flex items-start gap-2.5 rounded-xl border border-amber-200 dark:border-amber-950/60 bg-amber-50/70 dark:bg-amber-950/20 p-3 text-xs text-amber-900 dark:text-amber-300">
-              <AppIcon icon={ShieldAlert} size="md" color="warning" className="mt-0.5 shrink-0" />
-              <p className="leading-relaxed">
-                <span className="font-semibold">Documents Protected:</span> Any compliance documents already uploaded by this faculty member will remain intact and validated/under review.
-              </p>
-            </div>
-
-            {/* Countdown indicator */}
-            {facultyCloseCountdown > 0 ? (
-              <div className="flex items-center gap-3 rounded-xl border border-rose-200 dark:border-rose-900/60 bg-rose-50/70 dark:bg-rose-950/30 px-4 py-3">
-                <div className="relative flex items-center justify-center h-10 w-10 shrink-0">
-                  <svg className="h-10 w-10 -rotate-90" viewBox="0 0 36 36">
-                    <circle cx="18" cy="18" r="15.5" fill="none" stroke="currentColor" strokeWidth="2" className="text-slate-300 dark:text-slate-800" />
-                    <circle
-                      cx="18" cy="18" r="15.5" fill="none" stroke="currentColor" strokeWidth="2.5"
-                      className="text-rose-600 dark:text-rose-500 transition-all duration-1000 ease-linear"
-                      strokeDasharray="97.39"
-                      strokeDashoffset={97.39 * (1 - facultyCloseCountdown / 3)}
-                      strokeLinecap="round"
-                    />
-                  </svg>
-                  <span className="absolute text-sm font-black text-rose-700 dark:text-rose-400">{facultyCloseCountdown}</span>
-                </div>
-                <p className="text-[11px] text-rose-800 dark:text-rose-300">
-                  Please wait <span className="font-bold">{facultyCloseCountdown} second{facultyCloseCountdown !== 1 ? "s" : ""}</span> before confirming. This safety timer protects against accidental closures.
-                </p>
-              </div>
-            ) : (
-              <div className="flex items-center gap-2 rounded-xl border border-emerald-200 dark:border-emerald-800/60 bg-emerald-50 dark:bg-emerald-950/30 px-4 py-3">
-                <AppIcon icon={CheckCircle} size="lg" color="success" />
-                <p className="text-[11px] text-emerald-800 dark:text-emerald-300 font-semibold">
-                  Safety timer completed. You may now confirm the closure.
-                </p>
-              </div>
-            )}
-
-            <div className="flex justify-end gap-3 pt-2">
-              <button
-                type="button"
-                onClick={() => {
-                  setFacultyToClose(null);
-                  setFacultyCloseCountdown(3);
-                }}
-                className="bg-[#780000] hover:bg-[#5e0000] text-white border border-[#5e0000] text-xs font-semibold px-4 py-2 rounded-lg transition-all cursor-pointer shadow-xs"
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                onClick={() => void confirmCloseFacultySchedule()}
-                disabled={facultyCloseCountdown > 0 || closingFacultyId === facultyToClose.facultyProfileId}
-                className={`text-xs font-semibold rounded-lg px-4 py-2 transition-all cursor-pointer shadow-xs ${
-                  facultyCloseCountdown > 0 || closingFacultyId === facultyToClose.facultyProfileId
-                    ? "bg-slate-200 dark:bg-slate-800 text-slate-400 border border-slate-300 dark:border-slate-700 cursor-not-allowed opacity-60"
-                    : "bg-[#780000] hover:bg-[#5e0000] text-white"
-                }`}
-              >
-                {facultyCloseCountdown > 0
-                  ? `Confirm Close (${facultyCloseCountdown}s)`
-                  : closingFacultyId === facultyToClose.facultyProfileId
-                  ? "Closing..."
-                  : "Confirm Close Submission"}
-              </button>
-            </div>
-          </div>
-        </div>
-      ) : null}
 
       {warningModalData.isOpen ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-md p-4 animate-in fade-in">
