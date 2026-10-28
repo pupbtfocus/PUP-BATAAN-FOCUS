@@ -112,14 +112,51 @@ export default function Home() {
         const params = new URLSearchParams(window.location.search);
         const queryEmail = params.get("email");
         const queryTemp = params.get("temp") || params.get("password");
+        const queryCopy = params.get("copy");
         if (queryEmail) {
           setEmail(queryEmail.trim());
         }
         if (queryTemp) {
           setPassword(queryTemp.trim());
+          if (queryCopy === "password") {
+            try {
+              navigator.clipboard?.writeText(queryTemp.trim());
+            } catch {
+              // Ignore clipboard write restrictions
+            }
+            setNotice({
+              type: "success",
+              message: "Temporary password copied to clipboard and autofilled. Click 'Sign In' to continue.",
+            });
+            return;
+          }
+          if (queryCopy === "both" && queryEmail) {
+            try {
+              navigator.clipboard?.writeText(`Institutional Email: ${queryEmail.trim()}\nTemporary Password: ${queryTemp.trim()}`);
+            } catch {
+              // Ignore clipboard write restrictions
+            }
+            setNotice({
+              type: "success",
+              message: "Credentials copied to clipboard and autofilled. Click 'Sign In' to continue.",
+            });
+            return;
+          }
           setNotice({
             type: "info",
             message: "Temporary credentials autofilled from your secure link. Click 'Sign In' to continue.",
+          });
+          return;
+        }
+        if (queryCopy === "email" && queryEmail) {
+          try {
+            navigator.clipboard?.writeText(queryEmail.trim());
+          } catch {
+            // Ignore clipboard write restrictions
+          }
+          setNotice({
+            type: "success",
+            message: "Institutional email copied to clipboard and autofilled.",
           });
           return;
         }
