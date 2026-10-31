@@ -5,7 +5,7 @@ import { Turnstile, type TurnstileInstance } from "@/components/auth/turnstile";
 import { LazyLottie } from "@/components/ui/lazy-lottie";
 import { Button } from "@/components/ui/button";
 import loadingAnimation from "@/assets/icons animations/lottieflow-loading-08-000000-easey.json";
-import { Check, CheckCircle, Eye, EyeClosed, Hourglass, Lock, Mail, PasteClipboard, WarningCircle, WarningTriangle } from "iconoir-react";
+import { Check, CheckCircle, Eye, EyeClosed, Hourglass, Lock, Mail, WarningCircle, WarningTriangle } from "iconoir-react";
 import { AppIcon } from "@/components/ui/app-icon";
 
 export interface NoticeBanner {
@@ -153,19 +153,6 @@ export function LoginForm({
   const [showPassword, setShowPassword] = useState(false);
   const [isCapsLockOn, setIsCapsLockOn] = useState(false);
   const [internalRememberMe, setInternalRememberMe] = useState(false);
-  const [pastedState, setPastedState] = useState<"idle" | "success" | "no-credentials">("idle");
-
-  const applyCredentials = (text: string): boolean => {
-    const parsed = parseCombinedCredentials(text);
-    if (parsed && (parsed.email || parsed.password)) {
-      if (parsed.email) setEmail(parsed.email);
-      if (parsed.password) setPassword(parsed.password);
-      setPastedState("success");
-      setTimeout(() => setPastedState("idle"), 2500);
-      return true;
-    }
-    return false;
-  };
 
   useEffect(() => {
     const handleGlobalPaste = (event: ClipboardEvent) => {
@@ -176,66 +163,12 @@ export function LoginForm({
         event.preventDefault();
         if (parsed.email) setEmail(parsed.email);
         if (parsed.password) setPassword(parsed.password);
-        setPastedState("success");
-        setTimeout(() => setPastedState("idle"), 2500);
       }
     };
 
     window.addEventListener("paste", handleGlobalPaste);
     return () => window.removeEventListener("paste", handleGlobalPaste);
   }, [setEmail, setPassword]);
-
-  const handlePasteCredentials = async () => {
-    // 1. Try reading directly from clipboard
-    try {
-      if (typeof navigator !== "undefined" && navigator.clipboard?.readText) {
-        const clipText = await navigator.clipboard.readText();
-        if (clipText && applyCredentials(clipText)) {
-          return;
-        }
-      }
-    } catch {
-      // Browser blocked clipboard reading
-    }
-
-    // 2. Try cached credentials from recent copy actions in localStorage / sessionStorage
-    try {
-      if (typeof window !== "undefined") {
-        const cached =
-          localStorage.getItem("pup_focus_last_credentials") ||
-          sessionStorage.getItem("pup_focus_last_credentials");
-        if (cached) {
-          const parsed = JSON.parse(cached);
-          if (parsed && (parsed.email || parsed.password)) {
-            if (parsed.email) setEmail(parsed.email);
-            if (parsed.password) setPassword(parsed.password);
-            setPastedState("success");
-            setTimeout(() => setPastedState("idle"), 2500);
-            return;
-          }
-        }
-      }
-    } catch {}
-
-    // 3. Try URL search parameters (e.g. from sign-in link)
-    if (typeof window !== "undefined") {
-      const params = new URLSearchParams(window.location.search);
-      const qEmail = params.get("email");
-      const qTemp = params.get("temp") || params.get("password");
-      if (qEmail || qTemp) {
-        if (qEmail) setEmail(qEmail.trim());
-        if (qTemp) setPassword(qTemp.trim());
-        setPastedState("success");
-        setTimeout(() => setPastedState("idle"), 2500);
-        return;
-      }
-    }
-
-    // 4. Focus email input directly
-    emailInputRef.current?.focus();
-    setPastedState("no-credentials");
-    setTimeout(() => setPastedState("idle"), 2500);
-  };
 
   const handleInputPaste = (event: React.ClipboardEvent<HTMLInputElement | HTMLFormElement>) => {
     const text = event.clipboardData.getData("text");
@@ -244,8 +177,6 @@ export function LoginForm({
       event.preventDefault();
       setEmail(parsed.email);
       setPassword(parsed.password);
-      setPastedState("success");
-      setTimeout(() => setPastedState("idle"), 2500);
     }
   };
 
@@ -338,7 +269,7 @@ export function LoginForm({
         </div>
       ) : null}
 
-      <form className="mt-1.5 sm:mt-3 space-y-2 sm:space-y-2.5" onSubmit={onSubmit} onPaste={handleInputPaste}>
+      <form className="mt-1 sm:mt-2 space-y-2 sm:space-y-2.5" onSubmit={onSubmit} onPaste={handleInputPaste}>
         {/* Universal Alert Banner */}
         {notice ? (
           <div
@@ -370,38 +301,6 @@ export function LoginForm({
           </div>
         ) : null}
 
-        {/* Top Action Row: Quick Credentials Autofill */}
-        <div className="flex items-center justify-center pt-0.5 pb-1">
-          <button
-            type="button"
-            onClick={handlePasteCredentials}
-            className={`group inline-flex items-center gap-1.5 px-3 py-1 rounded-md text-[11px] font-semibold tracking-wide transition-colors duration-150 cursor-pointer active:scale-95 border ${
-              pastedState === "success"
-                ? "bg-emerald-950/80 border-emerald-500 text-emerald-200"
-                : pastedState === "no-credentials"
-                ? "bg-rose-950/80 border-rose-500 text-rose-200"
-                : "bg-[#5a0000] hover:bg-[#6e0000] border-amber-400/40 hover:border-amber-400/70 text-amber-200 hover:text-amber-100"
-            }`}
-            title="Paste copied credentials to autofill both email and password"
-          >
-            {pastedState === "success" ? (
-              <>
-                <AppIcon icon={Check} size="xs" color="inherit" className="text-emerald-400 stroke-[3]" />
-                <span>Credentials Autofilled!</span>
-              </>
-            ) : pastedState === "no-credentials" ? (
-              <>
-                <AppIcon icon={WarningCircle} size="xs" color="inherit" className="text-rose-400" />
-                <span>No credentials found</span>
-              </>
-            ) : (
-              <>
-                <AppIcon icon={PasteClipboard} size="xs" color="inherit" className="text-amber-400" />
-                <span>Paste Credentials (Email & Password)</span>
-              </>
-            )}
-          </button>
-        </div>
 
         <div className="space-y-1">
           <label
@@ -534,7 +433,7 @@ export function LoginForm({
         </div>
 
         {process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY && (
-          <div className="flex justify-center my-1 sm:my-2 min-h-[56px] sm:min-h-[65px] items-center scale-[0.9] sm:scale-100 origin-center">
+          <div className="flex justify-center my-1 sm:my-1.5 min-h-[54px] sm:min-h-[62px] items-center scale-[0.9] sm:scale-100 origin-center">
             <Turnstile
               ref={turnstileRef}
               siteKey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY}
@@ -551,7 +450,7 @@ export function LoginForm({
         )}
 
         <Button
-          className="mt-2 sm:mt-4 h-9.5 sm:h-11 w-full max-w-[200px] sm:max-w-[220px] mx-auto rounded-2xl bg-gradient-to-r from-amber-400 via-amber-500 to-amber-500 font-black text-[#3d0000] tracking-widest uppercase text-xs sm:text-sm transition-all duration-300 hover:from-amber-300 hover:to-amber-400 active:scale-[0.98] cursor-pointer shadow-lg shadow-black/50 hover:shadow-black/60 border border-amber-300/30 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="mt-2 sm:mt-3 h-9.5 sm:h-10.5 w-full max-w-[200px] sm:max-w-[215px] mx-auto rounded-xl bg-gradient-to-r from-amber-400 via-amber-500 to-amber-500 font-black text-[#3d0000] tracking-widest uppercase text-xs sm:text-sm transition-all duration-300 hover:from-amber-300 hover:to-amber-400 active:scale-[0.98] cursor-pointer shadow-lg shadow-black/50 hover:shadow-black/60 border border-amber-300/30 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
           type="submit"
           disabled={isLoading || (Boolean(process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY) && !captchaToken)}
         >
