@@ -55,23 +55,35 @@ export async function updateSupabaseSession(
     },
   );
 
-  const {
-    data: { user },
-    error,
-  } = await supabase.auth.getUser();
+  // If no Supabase auth token cookies exist, skip remote network call to prevent timeouts
+  const hasAuthCookie = request.cookies
+    .getAll()
+    .some((c) => c.name.startsWith("sb-") && c.name.includes("-auth-token"));
 
-  if (error) {
-    if (isInvalidRefreshTokenError(error)) {
-      clearSupabaseCookies(request, response);
-      return { response, user: null, supabase };
-    }
-
-    if (error.message !== "Auth session missing!") {
-      console.error("Supabase auth error:", error.message);
-    }
+  if (!hasAuthCookie) {
+    return { response, user: null, supabase };
   }
 
-  return { response, user: user ?? null, supabase };
+  try {
+    const {
+      data: { user },
+      error,
+    } = await supabase.auth.getUser();
+
+    if (error) {
+      if (isInvalidRefreshTokenError(error)) {
+        clearSupabaseCookies(request, response);
+        return { response, user: null, supabase };
+      }
+
+      if (error.message !== "Auth session missing!") {
+        console.error("Supabase auth error:", error.message);
+      }
+    }
+
+    return { response, user: user ?? null, supabase };
+  } catch (err) {
+    // Prevent unhandled network/fetch timeout errors (offline or unreachable Supabase) from breaking the proxy
+    return { response, user: null, supabase };
+  }
 }
-
-
