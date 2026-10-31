@@ -770,7 +770,7 @@ export default function Home() {
         <div className="absolute inset-0 bg-gradient-to-b from-[#2a0408]/45 via-transparent to-[#1c0205]/60" />
       </div>
 
-      <div className="relative z-10 w-full max-w-[420px] sm:max-w-[460px] md:max-w-4xl lg:max-w-5xl mx-auto my-auto py-0.5 md:py-3">
+      <div className="relative z-10 w-full max-w-[410px] sm:max-w-[450px] md:max-w-4xl lg:max-w-[880px] mx-auto my-auto py-0.5 md:py-2.5">
         {/* Wide Open-Book Card Container */}
         <div className="relative w-full mx-auto">
           {/* Desktop Curved Card Top Header SVG (>= md) */}
@@ -848,34 +848,34 @@ export default function Home() {
             </svg>
 
             {/* Logo of PUP positioned precisely inside the curved arch in top center */}
-            <div className="absolute -top-10 left-1/2 -translate-x-1/2 z-30">
-              <Logo size={120} className="mb-0 drop-shadow-[0_12px_24px_rgba(0,0,0,0.7)]" />
+            <div className="absolute -top-9 left-1/2 -translate-x-1/2 z-30">
+              <Logo size={114} className="mb-0 drop-shadow-[0_12px_22px_rgba(0,0,0,0.7)]" />
             </div>
           </div>
 
           {/* Continuous Center Spine Separator Line (Desktop) */}
           <div
             className="hidden md:block absolute left-1/2 -translate-x-1/2 w-[2px] bg-amber-400/40 pointer-events-none z-20"
-            style={{ top: "90px", bottom: "4px" }}
+            style={{ top: "80px", bottom: "4px" }}
           />
 
           {/* Card Body - Official PUP Brand Maroon (#800000) with 2-Sided Open Book Layout */}
           <section className="relative rounded-[1.5rem] sm:rounded-[2rem] md:rounded-t-none md:rounded-b-[2rem] border-3 sm:border-4 md:border-t-0 md:border-x-4 md:border-b-4 border-amber-400 bg-[#800000] overflow-hidden shadow-[0_20px_50px_rgba(0,0,0,0.6),0_0_30px_rgba(128,0,0,0.4)]">
-            <div className="grid grid-cols-1 md:grid-cols-12 items-stretch md:min-h-[420px]">
+            <div className="grid grid-cols-1 md:grid-cols-12 items-stretch md:min-h-[400px]">
               {/* Left Side (Desktop) / Top (Mobile): Login Form */}
-              <div className="md:col-span-6 relative z-10 flex flex-col justify-center px-4 pt-3 pb-1.5 sm:p-6 md:p-8 bg-transparent">
+              <div className="md:col-span-6 relative z-10 flex flex-col justify-center px-4 pt-3 pb-1.5 sm:p-5 md:px-7 md:py-6 bg-transparent">
                 {/* PUP Seal Logo (Mobile only, centered above SIGN IN) */}
                 <div className="flex md:hidden justify-center mb-1">
-                  <Logo size={56} className="drop-shadow-[0_6px_16px_rgba(0,0,0,0.6)]" />
+                  <Logo size={54} className="drop-shadow-[0_6px_16px_rgba(0,0,0,0.6)]" />
                 </div>
 
                 {/* Form Header */}
-                <div className="mb-1.5 sm:mb-4 text-center">
-                  <h2 className="text-xl sm:text-3xl font-black tracking-wider text-amber-300 uppercase mb-0.5 sm:mb-1 drop-shadow-[0_2px_4px_rgba(0,0,0,0.6)]">
+                <div className="mb-1.5 sm:mb-3.5 text-center">
+                  <h2 className="text-xl sm:text-2xl lg:text-[26px] font-black tracking-wider text-amber-300 uppercase mb-0.5 drop-shadow-[0_2px_4px_rgba(0,0,0,0.6)]">
                     Sign In
                   </h2>
-                  <div className="mx-auto my-1 sm:my-3 h-0.5 w-16 sm:w-20 rounded-full bg-gradient-to-r from-transparent via-amber-400 to-transparent shadow-[0_0_10px_rgba(251,191,36,0.8)]" />
-                  <p className="text-amber-100 text-[11px] sm:text-sm font-medium tracking-wide">
+                  <div className="mx-auto my-1 sm:my-2.5 h-0.5 w-16 sm:w-18 rounded-full bg-gradient-to-r from-transparent via-amber-400 to-transparent shadow-[0_0_10px_rgba(251,191,36,0.8)]" />
+                  <p className="text-amber-100 text-[11px] sm:text-xs lg:text-[13px] font-medium tracking-wide">
                     Enter your institutional credentials to continue
                   </p>
                 </div>
@@ -903,7 +903,7 @@ export default function Home() {
               </div>
 
               {/* Right Side (Desktop) / Bottom (Mobile): FOCUS Branding */}
-              <div className="md:col-span-6 relative flex flex-col items-center justify-center text-center pt-5 pb-4 px-2 sm:py-6 sm:px-6 md:p-8 min-h-[165px] sm:min-h-[200px] md:min-h-[420px] bg-transparent md:overflow-hidden">
+              <div className="md:col-span-6 relative flex flex-col items-center justify-center text-center pt-4 pb-3 px-2 sm:py-5 sm:px-5 md:p-7 min-h-[160px] sm:min-h-[190px] md:min-h-[400px] bg-transparent md:overflow-hidden">
                 {/* Pylon Monument Background (pylon.png) */}
                 <div className="absolute -top-14 inset-x-0 bottom-0 md:top-0 z-0 pointer-events-none md:overflow-hidden">
                   <Image
@@ -917,14 +917,14 @@ export default function Home() {
                 </div>
 
                 {/* Centered Typography: FOCUS & Faculty Online Compliance and Uploading System */}
-                <div className="relative z-10 w-full max-w-md mx-auto flex flex-col items-center justify-center text-center px-3">
+                <div className="relative z-10 w-full max-w-sm mx-auto flex flex-col items-center justify-center text-center px-3">
                   {/* Title */}
-                  <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black tracking-[0.2em] pl-[0.2em] bg-gradient-to-b from-[#fff3c4] via-amber-300 to-amber-500 bg-clip-text text-transparent uppercase drop-shadow-[0_4px_12px_rgba(0,0,0,0.9)]">
+                  <h1 className="text-3xl sm:text-4xl lg:text-[46px] font-black tracking-[0.2em] pl-[0.2em] bg-gradient-to-b from-[#fff3c4] via-amber-300 to-amber-500 bg-clip-text text-transparent uppercase drop-shadow-[0_4px_12px_rgba(0,0,0,0.9)]">
                     FOCUS
                   </h1>
 
                   {/* Sleek Golden Divider with Center Diamond */}
-                  <div className="flex items-center justify-center gap-2 my-1.5 sm:my-2.5 w-36 sm:w-44">
+                  <div className="flex items-center justify-center gap-2 my-1.5 sm:my-2 w-34 sm:w-42">
                     <div className="h-[1px] flex-1 bg-gradient-to-r from-transparent to-amber-400/90" />
                     <div className="h-1.5 w-1.5 rotate-45 bg-amber-300 shadow-[0_0_8px_rgba(251,191,36,0.9)]" />
                     <div className="h-[1px] flex-1 bg-gradient-to-l from-transparent to-amber-400/90" />
@@ -932,7 +932,7 @@ export default function Home() {
 
                   {/* Clean Institutional System Label Pill */}
                   <div className="inline-flex items-center justify-center rounded-full bg-[#3b0000]/65 backdrop-blur-[3px] border border-amber-400/35 px-3.5 sm:px-4 py-1 sm:py-1.5 shadow-[0_4px_14px_rgba(0,0,0,0.55)]">
-                    <p className="text-[10.5px] sm:text-xs lg:text-[13px] font-semibold tracking-wide text-amber-50/95 leading-snug">
+                    <p className="text-[10.5px] sm:text-xs lg:text-[12.5px] font-semibold tracking-wide text-amber-50/95 leading-snug">
                       <span className="text-amber-300 font-extrabold">F</span>aculty{" "}
                       <span className="text-amber-300 font-extrabold">O</span>nline{" "}
                       <span className="text-amber-300 font-extrabold">C</span>ompliance &{" "}
