@@ -273,14 +273,14 @@ export function LoginForm({
         {/* Universal Alert Banner */}
         {notice ? (
           <div
-            className={`rounded-xl p-3 text-xs flex items-start gap-2.5 border-2 transition-all shadow-[0_4px_16px_rgba(0,0,0,0.5)] ${
+            className={`rounded-xl px-3.5 py-2.5 text-xs flex items-start gap-2.5 border transition-all shadow-[0_4px_16px_rgba(0,0,0,0.5),inset_0_1px_0_rgba(251,191,36,0.15)] ${
               notice.type === "timeout"
-                ? "bg-[#2d1b00] border-amber-400 text-amber-50 shadow-amber-950/40"
+                ? "bg-[#300000]/95 border-amber-400/80 text-amber-50"
                 : notice.type === "success"
-                ? "bg-[#062c1d] border-emerald-400 text-emerald-50 shadow-emerald-950/40"
+                ? "bg-[#0b291a]/95 border-emerald-400/70 text-emerald-50"
                 : notice.type === "info"
-                ? "bg-[#082845] border-sky-400 text-sky-50 shadow-sky-950/40"
-                : "bg-[#3b070c] border-rose-400 text-rose-50 shadow-rose-950/40"
+                ? "bg-[#0a2036]/95 border-sky-400/70 text-sky-50"
+                : "bg-[#380205]/95 border-amber-400/80 text-amber-50"
             }`}
           >
             {notice.type === "timeout" ? (
@@ -290,14 +290,14 @@ export function LoginForm({
             ) : notice.type === "info" ? (
               <AppIcon icon={WarningCircle} size="md" color="inherit" className="mt-0.5 !text-sky-300 shrink-0 drop-shadow-[0_0_8px_rgba(56,189,248,0.7)]" />
             ) : (
-              <AppIcon icon={WarningCircle} size="md" color="inherit" className="mt-0.5 !text-rose-300 shrink-0 drop-shadow-[0_0_8px_rgba(244,63,94,0.7)]" />
+              <AppIcon icon={WarningCircle} size="md" color="inherit" className="mt-0.5 !text-amber-400 shrink-0 drop-shadow-[0_0_8px_rgba(251,191,36,0.7)]" />
             )}
-            <span className="leading-relaxed font-semibold tracking-wide drop-shadow-[0_1px_2px_rgba(0,0,0,0.7)]">{notice.message}</span>
+            <span className="leading-relaxed font-semibold tracking-wide text-amber-50 drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]">{notice.message}</span>
           </div>
         ) : error ? (
-          <div className="rounded-xl p-3 text-xs flex items-start gap-2.5 border-2 border-rose-400 bg-[#3b070c] text-rose-50 shadow-[0_4px_16px_rgba(0,0,0,0.5),0_0_12px_rgba(244,63,94,0.3)] transition-all">
-            <AppIcon icon={WarningCircle} size="md" color="inherit" className="mt-0.5 !text-rose-300 shrink-0 drop-shadow-[0_0_8px_rgba(244,63,94,0.7)]" />
-            <span className="leading-relaxed font-semibold tracking-wide text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.7)]">{error}</span>
+          <div className="rounded-xl px-3.5 py-2.5 text-xs flex items-start gap-2.5 border border-amber-400/80 bg-[#380205]/95 text-amber-50 shadow-[0_4px_16px_rgba(0,0,0,0.5),inset_0_1px_0_rgba(251,191,36,0.15)] transition-all">
+            <AppIcon icon={WarningCircle} size="md" color="inherit" className="mt-0.5 !text-amber-400 shrink-0 drop-shadow-[0_0_8px_rgba(251,191,36,0.7)]" />
+            <span className="leading-relaxed font-semibold tracking-wide text-amber-50 drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]">{error}</span>
           </div>
         ) : null}
 

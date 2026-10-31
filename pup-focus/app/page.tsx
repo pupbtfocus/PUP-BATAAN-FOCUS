@@ -550,6 +550,7 @@ export default function Home() {
         } else {
           signInError = new Error(json.error || "Invalid login credentials.");
           (signInError as any).status = res.status;
+          (signInError as any).is_deactivated = Boolean(json.is_deactivated);
         }
       } catch (err: unknown) {
         signInError = err instanceof Error ? err : new Error(String(err));
@@ -558,6 +559,11 @@ export default function Home() {
       if (signInError || !signInData?.user) {
         await ensureMinLoadingTime();
         const rawMessage = signInError?.message ?? "Sign in failed";
+        const isDeactivated =
+          (signInError as any)?.is_deactivated === true ||
+          (signInError as any)?.status === 403 ||
+          rawMessage.toLowerCase().includes("deactivated") ||
+          rawMessage.toLowerCase().includes("inactive");
         const isLockout =
           (signInError as any)?.status === 429 ||
           rawMessage.toLowerCase().includes("locked") ||
@@ -567,7 +573,17 @@ export default function Home() {
           rawMessage.toLowerCase().includes("invalid credentials");
         const isInvalidSecret = rawMessage.toLowerCase().includes("invalid-input-secret");
 
-        if (isLockout) {
+        if (isDeactivated) {
+          const deactMsg = "Your account has been deactivated. Please contact the campus administrator or IT support for assistance.";
+          setError(deactMsg);
+          setNotice({ type: "error", message: deactMsg });
+          setAuthModal({
+            title: "Account Deactivated",
+            message: deactMsg,
+            actionLabel: "Understood",
+            variant: "error",
+          });
+        } else if (isLockout) {
           setError(rawMessage);
           setNotice({ type: "timeout", message: rawMessage });
           setAuthModal({
@@ -660,11 +676,11 @@ export default function Home() {
         await ensureMinLoadingTime();
         await supabase.auth.signOut();
         console.warn("[Auth] Account is deactivated:", normalizedEmail);
-        const deactMsg = "Your account has been deactivated. Contact an administrator.";
+        const deactMsg = "Your account has been deactivated. Please contact the campus administrator or IT support for assistance.";
         setError(deactMsg);
         setNotice({ type: "error", message: deactMsg });
         setAuthModal({
-          title: "Login Failed",
+          title: "Account Deactivated",
           message: deactMsg,
           actionLabel: "Understood",
           variant: "error",

@@ -38,6 +38,9 @@ export function AuthFeedbackModal({ modal, onClose }: AuthFeedbackModalProps) {
   const isSuccess = modal.variant === "success";
   const isLoading = modal.variant === "loading";
   const isError = modal.variant === "error";
+  const isDeactivated =
+    modal.title === "Account Deactivated" ||
+    modal.message.toLowerCase().includes("deactivated");
 
   return (
     <div
@@ -83,11 +86,18 @@ export function AuthFeedbackModal({ modal, onClose }: AuthFeedbackModalProps) {
                 <LucideCheck className="w-7 h-7 stroke-[3.5] animate-auth-check" />
               </div>
             </div>
+          ) : isDeactivated ? (
+            <div className="relative w-16 h-16 flex items-center justify-center my-2">
+              <div className="absolute inset-0 rounded-full border-[3px] border-amber-400/60 bg-[#360000] shadow-[0_0_16px_rgba(251,191,36,0.25)] animate-auth-ring" />
+              <div className="relative z-10 w-11 h-11 rounded-full bg-[#520000] text-amber-300 flex items-center justify-center shadow-md border-2 border-amber-400 animate-auth-error">
+                <AppIcon icon={WarningCircle} size="lg" color="inherit" strokeWidth={2.5} />
+              </div>
+            </div>
           ) : (
             <div className="relative w-16 h-16 flex items-center justify-center my-2">
-              <div className="absolute inset-0 rounded-full border-[3px] border-rose-300 dark:border-rose-700 bg-rose-100/70 dark:bg-rose-950/50 animate-auth-ring" />
-              <div className="relative z-10 w-11 h-11 rounded-full bg-rose-600 dark:bg-rose-500 text-white flex items-center justify-center shadow-md animate-auth-error">
-                <LucideX className="w-7 h-7 stroke-[3.5] animate-auth-x" />
+              <div className="absolute inset-0 rounded-full border-[3px] border-amber-400/60 bg-[#360000] shadow-[0_0_16px_rgba(251,191,36,0.25)] animate-auth-ring" />
+              <div className="relative z-10 w-11 h-11 rounded-full bg-[#520000] text-amber-300 flex items-center justify-center shadow-md border-2 border-amber-400 animate-auth-error">
+                <LucideX className="w-6 h-6 stroke-[3.5]" />
               </div>
             </div>
           )}
@@ -130,10 +140,10 @@ export function AuthFeedbackModal({ modal, onClose }: AuthFeedbackModalProps) {
             <button
               type="button"
               onClick={onClose}
-              className="mt-5 w-full flex items-center justify-center gap-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs py-2.5 px-4 rounded-xl shadow-xs transition cursor-pointer"
+              className="mt-5 w-full flex items-center justify-center gap-2 bg-gradient-to-r from-amber-400 via-amber-500 to-amber-500 hover:from-amber-300 hover:to-amber-400 text-[#3d0000] font-black uppercase tracking-wider text-xs py-2.5 px-4 rounded-xl shadow-lg shadow-black/40 transition active:scale-95 cursor-pointer border border-amber-300/30"
             >
-              <AppIcon icon={Refresh} size="xs" color="inherit" />
-              <span>{modal.actionLabel || "Try Again"}</span>
+              {!isDeactivated && <AppIcon icon={Refresh} size="xs" color="inherit" />}
+              <span>{modal.actionLabel || (isDeactivated ? "Understood" : "Try Again")}</span>
             </button>
           )}
         </div>

@@ -39,7 +39,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 2. Check persistent lock in Supabase user_metadata across all browsers/devices
+    // 2. Check persistent lock and deactivation status in Supabase user_metadata across all browsers/devices
     let targetUser: any = null;
     try {
       const { data: usersData } = await serviceClient.auth.admin.listUsers({ perPage: 1000 });
@@ -64,6 +64,72 @@ export async function POST(request: NextRequest) {
       }
     } catch {
       // Continue if listUsers fails
+    }
+
+    // Check if account is deactivated or inactive across user_metadata, profiles, staff, or admins tables
+    let isDeactivated = false;
+    if (targetUser) {
+      if (
+        targetUser.user_metadata?.is_active === false ||
+        targetUser.app_metadata?.is_active === false ||
+        targetUser.user_metadata?.status === "inactive" ||
+        targetUser.user_metadata?.status === "deactivated"
+      ) {
+        isDeactivated = true;
+      }
+      if (targetUser.banned_until && new Date(targetUser.banned_until).getTime() > now) {
+        isDeactivated = true;
+      }
+    }
+
+    if (!isDeactivated) {
+      try {
+        const { data: profile } = await serviceClient
+          .from("profiles")
+          .select("status, is_active")
+          .or(targetUser?.id ? `id.eq.${targetUser.id},user_id.eq.${targetUser.id},email.eq.${email}` : `email.eq.${email}`)
+          .maybeSingle();
+        const pStatus = (profile?.status || "").toString().toLowerCase().trim();
+        if (pStatus === "inactive" || pStatus === "deactivated" || profile?.is_active === false) {
+          isDeactivated = true;
+        }
+      } catch {}
+    }
+
+    if (!isDeactivated) {
+      try {
+        const { data: staffRow } = await serviceClient
+          .from("staff")
+          .select("is_active")
+          .ilike("email", email)
+          .maybeSingle();
+        if (staffRow?.is_active === false) {
+          isDeactivated = true;
+        }
+      } catch {}
+    }
+
+    if (!isDeactivated) {
+      try {
+        const { data: adminRow } = await serviceClient
+          .from("admins")
+          .select("is_active")
+          .ilike("email", email)
+          .maybeSingle();
+        if (adminRow?.is_active === false) {
+          isDeactivated = true;
+        }
+      } catch {}
+    }
+
+    if (isDeactivated) {
+      return NextResponse.json(
+        {
+          error: "Your account has been deactivated. Please contact the campus administrator or IT support for assistance.",
+          is_deactivated: true,
+        },
+        { status: 403 },
+      );
     }
 
     // 3. Verify credentials via service role client
@@ -129,7 +195,24 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 4. Reset failed attempts upon successful login in memory and database
+    // 4. Verify account status before issuing session
+    const authedUser = signInData.user ?? targetUser;
+    if (
+      authedUser?.user_metadata?.is_active === false ||
+      authedUser?.app_metadata?.is_active === false ||
+      authedUser?.user_metadata?.status === "inactive" ||
+      authedUser?.user_metadata?.status === "deactivated"
+    ) {
+      return NextResponse.json(
+        {
+          error: "Your account has been deactivated. Please contact the campus administrator or IT support for assistance.",
+          is_deactivated: true,
+        },
+        { status: 403 },
+      );
+    }
+
+    // Reset failed attempts upon successful login in memory and database
     loginAttempts.delete(email);
     const authedUserId = signInData.user?.id || targetUser?.id;
     if (authedUserId) {
