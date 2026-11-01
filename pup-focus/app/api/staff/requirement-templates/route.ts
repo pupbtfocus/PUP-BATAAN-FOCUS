@@ -174,7 +174,6 @@ export async function GET(request: NextRequest) {
         .delete()
         .in("id", duplicateIds)
         .then(() => {
-          console.log(`Cleaned up ${duplicateIds.length} duplicate requirement template records.`);
         });
     }
 

@@ -1,43 +1,64 @@
-# Node modules
+# Dependencies
+/node_modules
 node_modules/
-# ignore nested node_modules folders anywhere
 **/node_modules/
+/.pnp
+.pnp.*
 
-# Logs
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-pnpm-debug.log*
-
-# Runtime data
-/pids/
-*.pid
-*.seed
-
-# Next.js build output
+# Next.js Build Outputs
 /.next/
-/out/
-# ignore nested .next build outputs anywhere
 **/.next/
-
-# Production
+/out/
+**/out/
 /build/
+**/build/
 /dist/
+**/dist/
 
-# Optional eslint cache
-.eslintcache
+# Production & Deployment
+/.vercel
+**/.vercel
 
-# Testing
-/coverage/
-
-# Environment files
+# Environment Variables
 .env
+.env.*
+**/.env
+**/.env.*
 .env.local
 .env.development.local
 .env.test.local
 .env.production.local
+!.env.example
+!**/.env.example
+!.env.local.example
+!**/.env.local.example
 
-# Editor directories and files
+# Debug & Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+.pnpm-debug.log*
+*.log
+
+# Runtime & Cache
+/pids/
+*.pid
+*.seed
+*.tsbuildinfo
+next-env.d.ts
+.eslintcache
+.stylelintcache
+/coverage/
+tmp/
+temp/
+.cache/
+
+# OS & Editor Junk
+.DS_Store
+Thumbs.db
+Desktop.ini
+*.pem
 .vscode/
 .idea/
 *.suo
@@ -45,25 +66,11 @@ pnpm-debug.log*
 *.njsproj
 *.sln
 
-# macOS
-.DS_Store
-
-# Windows
-Thumbs.db
-
-# Misc
-*.log
-tmp/
-temp/
-.cache/
-"pup-focus/public/images/attachments/IMG_9399.jpeg"  
-"pup-focus/public/images/attachments/IMG_9402.jpeg"  
-
-# QA test scripts with credentials
+# Project-Specific Exclusions
+"pup-focus/public/images/attachments/IMG_9399.jpeg"
+"pup-focus/public/images/attachments/IMG_9402.jpeg"
 pup-focus/scripts/create-qa-accounts.mjs
 scripts/create-qa-accounts.mjs
-
-# All scripts and batch files
 scripts/*
 pup-focus/scripts/*
 !pup-focus/scripts/ensure-deterministic-routes-manifest.mjs

@@ -130,7 +130,6 @@ export function SignUpForm() {
 
     try {
       const supabase = createClient();
-      console.log("[SignUp] Attempting signUp for:", normalizedEmail, { hasCaptcha: Boolean(token) });
       const { data, error } = await supabase.auth.signUp({
         email: normalizedEmail,
         password: currentPassword,
@@ -155,7 +154,6 @@ export function SignUpForm() {
       }
 
       if (data?.user) {
-        console.log("[SignUp] User successfully registered:", data.user.id);
         setToast({
           type: "success",
           message: "Registration successful! Please check your email to confirm your account.",

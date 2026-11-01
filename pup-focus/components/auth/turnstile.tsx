@@ -74,7 +74,6 @@ export const Turnstile = forwardRef<TurnstileInstance, TurnstileProps>(
             // Check if widget already has an unexpired response token
             const existingToken = window.turnstile.getResponse(widgetIdRef.current);
             if (existingToken) {
-              console.log("[Turnstile] Using existing response token");
               onSuccessRef.current?.(existingToken);
               return;
             }
@@ -143,7 +142,6 @@ export const Turnstile = forwardRef<TurnstileInstance, TurnstileProps>(
             "retry-interval": 2000,
             callback: (token: string) => {
               if (isMounted) {
-                console.log("[Turnstile] Challenge completed, token received");
                 onSuccessRef.current?.(token);
               }
             },

@@ -452,7 +452,6 @@ export default function Home() {
   }
 
   function handleTurnstileSuccess(token: string) {
-    console.log("[Auth] Turnstile pre-submit verification passed");
     setCaptchaToken(token);
     setError(null);
   }
@@ -525,7 +524,6 @@ export default function Home() {
     };
 
     const supabase = createClient();
-    console.log("[Auth] Signing in with password for:", normalizedEmail, { hasCaptcha: Boolean(token) });
 
     try {
       let signInData: { user: any; session: any } | null = null;
@@ -634,7 +632,6 @@ export default function Home() {
 
       const user = signInData.user;
       resetLoginAttempts(normalizedEmail);
-      console.log("[Auth] Sign in successful for user:", user.id);
 
       const mustChange =
         (user.user_metadata as any)?.must_change_password === true ||

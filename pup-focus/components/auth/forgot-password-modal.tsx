@@ -133,7 +133,6 @@ export function ForgotPasswordModal({
         } else {
           // Fallback to client-side resetPasswordForEmail if API fails for non-rate-limit reason
           const supabase = createClient();
-          console.log("[ForgotPassword] Trying client fallback resetPasswordForEmail...");
           const { error: fallbackErr } =
             await supabase.auth.resetPasswordForEmail(normalizedResetEmail, {
               redirectTo: `${window.location.origin}/auth/change-password`,
