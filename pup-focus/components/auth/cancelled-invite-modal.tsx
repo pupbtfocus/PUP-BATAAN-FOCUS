@@ -61,7 +61,7 @@ export function CancelledInviteModal({
         onClick={(e) => e.stopPropagation()}
       >
         {/* Email-style Maroon Header Banner (No Logo) */}
-        <div className="relative bg-gradient-to-br from-[#4d0000] to-[#780000] px-6 py-6 text-center text-white">
+        <div className="relative bg-[#800000] px-6 py-6 text-center text-white">
           {onClose && (
             <button
               type="button"

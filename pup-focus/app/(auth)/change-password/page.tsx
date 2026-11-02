@@ -381,7 +381,7 @@ export default function ChangePasswordPage() {
       <div className="relative z-10 w-full max-w-[420px] mx-auto my-auto py-3 sm:py-5 px-4">
         <div className="w-full bg-[#800000] border-2 border-amber-400 rounded-2xl shadow-2xl overflow-hidden transition-all text-[#fff8e7]">
           {/* Email-style Maroon Header Banner (No Logo, matching Account Ready) */}
-          <div className="bg-gradient-to-br from-[#680000] to-[#800000] border-b border-amber-400/30 px-5 py-4 sm:px-6 sm:py-4.5 text-center">
+          <div className="bg-[#800000] border-b border-amber-400/30 px-5 py-4 sm:px-6 sm:py-4.5 text-center">
             <h1 className="text-lg sm:text-xl font-bold tracking-tight text-[#fff8e7]">
               Set New Password
             </h1>

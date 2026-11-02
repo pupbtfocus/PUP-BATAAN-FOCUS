@@ -3760,12 +3760,12 @@ function FacultySubmissionPanelContent({
         <div className="flex min-h-0 flex-1 flex-col overflow-hidden border-l-0 bg-slate-100 dark:bg-[#0b0f19] shadow-sm transition-colors duration-200">
           <div className="min-h-0 flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 bg-slate-100 dark:bg-[#0b0f19] text-slate-900 dark:text-slate-100 transition-colors duration-200">
             {activeView === "submit" ? (
-              <div className="relative overflow-hidden rounded-2xl border-2 border-amber-500 dark:border-amber-500/70 bg-amber-400 dark:bg-[#2a1705] p-5 sm:p-6 shadow-md shadow-amber-500/10 mb-6">
+              <div className="relative overflow-hidden rounded-2xl border-2 border-amber-500 bg-amber-400 p-5 sm:p-6 shadow-md shadow-amber-500/10 mb-6">
                 <div>
-                  <h1 className="text-2xl sm:text-3xl font-black text-slate-950 dark:text-amber-100 tracking-tight">
+                  <h1 className="text-2xl sm:text-3xl font-black text-slate-950 tracking-tight">
                     Submit Requirements
                   </h1>
-                  <p className="mt-1.5 text-sm sm:text-base text-amber-950/90 dark:text-amber-200/90 font-medium leading-relaxed">
+                  <p className="mt-1.5 text-sm sm:text-base text-amber-950/90 font-medium leading-relaxed">
                     Upload and submit required academic and administrative compliance documents.
                   </p>
                 </div>
@@ -3774,10 +3774,10 @@ function FacultySubmissionPanelContent({
             {activeView === "dashboard" && (
               <article className="space-y-5 p-2 sm:p-4 md:p-5">
                 {/* Solid Amber Card Header */}
-                <div className="relative overflow-hidden rounded-2xl border-2 border-amber-500 dark:border-amber-500/70 bg-amber-400 dark:bg-[#2a1705] p-5 sm:p-6 shadow-md shadow-amber-500/10 space-y-3 transition-colors mb-6">
+                <div className="relative overflow-hidden rounded-2xl border-2 border-amber-500 bg-amber-400 p-5 sm:p-6 shadow-md shadow-amber-500/10 space-y-3 transition-colors mb-6">
                   <div>
                     <div className="flex items-center gap-2.5 flex-wrap">
-                      <h1 className="text-2xl sm:text-3xl font-black text-slate-950 dark:text-amber-100 tracking-tight">
+                      <h1 className="text-2xl sm:text-3xl font-black text-slate-950 tracking-tight">
                         Dashboard
                       </h1>
                       {isAllValidated && (
@@ -4595,14 +4595,14 @@ function FacultySubmissionPanelContent({
                   /* ─── STEP 1: CLASS / SUBJECT LOAD SELECTION ─────────────────── */
                   <div className="space-y-5">
                     {/* Solid Amber Card Header */}
-                    <div className="relative overflow-hidden rounded-2xl border-2 border-amber-500 dark:border-amber-500/70 bg-amber-400 dark:bg-[#2a1705] p-5 sm:p-6 shadow-md shadow-amber-500/10 space-y-3 transition-colors mb-2">
+                    <div className="relative overflow-hidden rounded-2xl border-2 border-amber-500 bg-amber-400 p-5 sm:p-6 shadow-md shadow-amber-500/10 space-y-3 transition-colors mb-2">
                       <div>
                         <div className="flex items-center gap-2.5 flex-wrap">
-                          <h1 className="text-2xl sm:text-3xl font-black text-slate-950 dark:text-amber-100 tracking-tight">
+                          <h1 className="text-2xl sm:text-3xl font-black text-slate-950 tracking-tight">
                             Documents to be Submitted
                           </h1>
                         </div>
-                        <p className="mt-1.5 text-sm sm:text-base text-amber-950/90 dark:text-amber-200/90 font-medium leading-relaxed">
+                        <p className="mt-1.5 text-sm sm:text-base text-amber-950/90 font-medium leading-relaxed">
                           Select your assigned class or subject load below before viewing and uploading required compliance documents for this term.
                         </p>
                       </div>

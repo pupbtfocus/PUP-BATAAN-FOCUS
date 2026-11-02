@@ -79,6 +79,7 @@ export function AdminAcademicTerms({
   const [isModalBackingUp, setIsModalBackingUp] = useState(false);
   const [modalBackupError, setModalBackupError] = useState<string | null>(null);
   const [pendingTargetTerm, setPendingTargetTerm] = useState<AcademicTermItem | null>(null);
+  const [isConfirmBackupOpen, setIsConfirmBackupOpen] = useState(false);
 
   useEffect(() => {
     void loadTerms();
@@ -421,6 +422,7 @@ export function AdminAcademicTerms({
         );
         setWarningModalData({ isOpen: false, title: "", description: "" });
         setPendingTargetTerm(null);
+        setIsConfirmBackupOpen(false);
         await loadTerms({ silent: true });
         emitRealtimeSync({ source: "academic-term-set-current", timestamp: Date.now() });
       } else {
@@ -428,6 +430,7 @@ export function AdminAcademicTerms({
           `Document backup for S.Y. ${currentTerm.academicYear} (${currentTerm.semester}) completed successfully!`,
         );
         setWarningModalData({ isOpen: false, title: "", description: "" });
+        setIsConfirmBackupOpen(false);
         await loadTerms({ silent: true });
       }
     } catch (err) {
@@ -1077,7 +1080,7 @@ export function AdminAcademicTerms({
       {/* Modal: Backup Required (System Transition Guard) */}
       {warningModalData.isOpen ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4 py-6 backdrop-blur-sm animate-in fade-in">
-          <div className="w-full max-w-lg rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 shadow-2xl text-slate-900 dark:text-slate-100 overflow-hidden flex flex-col">
+          <div className="w-full max-w-xl rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 shadow-2xl text-slate-900 dark:text-slate-100 overflow-hidden flex flex-col">
             <ModalHeader
               title={warningModalData.title || "Semester Backup Required"}
               subtitle="Each semester requires its own backup before changing terms"
@@ -1086,6 +1089,7 @@ export function AdminAcademicTerms({
                 setWarningModalData({ ...warningModalData, isOpen: false });
                 setPendingTargetTerm(null);
                 setModalBackupError(null);
+                setIsConfirmBackupOpen(false);
               }}
             />
 
@@ -1165,6 +1169,7 @@ export function AdminAcademicTerms({
                     setWarningModalData({ ...warningModalData, isOpen: false });
                     setPendingTargetTerm(null);
                     setModalBackupError(null);
+                    setIsConfirmBackupOpen(false);
                   }}
                   disabled={isModalBackingUp}
                   className="w-full sm:w-auto px-4 py-2 rounded-xl bg-[#780000] hover:bg-[#5e0000] text-white border border-[#5e0000] text-xs font-semibold transition-all cursor-pointer shadow-xs disabled:opacity-50"
@@ -1208,6 +1213,7 @@ export function AdminAcademicTerms({
                             ...warningModalData,
                             isOpen: false,
                           });
+                          setIsConfirmBackupOpen(false);
                           if (onNavigateToBackups) {
                             onNavigateToBackups();
                             return;
@@ -1225,17 +1231,21 @@ export function AdminAcademicTerms({
                             : `/staff/dashboard?tab=backups${query}`;
                         }}
                         disabled={isModalBackingUp}
-                        className="w-full sm:w-auto text-xs text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 underline px-2 py-1.5 transition cursor-pointer"
+                        className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-300 dark:border-slate-700 font-semibold text-xs transition-all cursor-pointer shadow-xs active:scale-[0.98] disabled:opacity-50 whitespace-nowrap"
                       >
-                        Open Backups &amp; Archive →
+                        <span>Open Backups &amp; Archive</span>
+                        <span aria-hidden="true">&rarr;</span>
                       </button>
 
                       {warningModalData.missingBackup ? (
                         <button
                           type="button"
-                          onClick={() => void handleDirectSemesterBackup()}
+                          onClick={() => {
+                            setModalBackupError(null);
+                            setIsConfirmBackupOpen(true);
+                          }}
                           disabled={isModalBackingUp}
-                          className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 border border-amber-600 font-semibold text-xs transition-all cursor-pointer shadow-xs active:scale-[0.98] disabled:opacity-50"
+                          className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 border border-amber-600 font-semibold text-xs transition-all cursor-pointer shadow-xs active:scale-[0.98] disabled:opacity-50 whitespace-nowrap"
                         >
                           {isModalBackingUp ? (
                             <>
@@ -1253,6 +1263,88 @@ export function AdminAcademicTerms({
                     </>
                   )}
                 </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {/* Modal: Confirm Backup & Activate Term */}
+      {isConfirmBackupOpen ? (
+        <div className="fixed inset-0 z-60 flex items-center justify-center bg-black/70 px-4 py-6 backdrop-blur-sm animate-in fade-in">
+          <div className="w-full max-w-md rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 shadow-2xl text-slate-900 dark:text-slate-100 overflow-hidden flex flex-col">
+            <ModalHeader
+              title="Confirm Semester Backup &amp; Activation"
+              subtitle="Please confirm before proceeding"
+              icon={Archive}
+              onClose={isModalBackingUp ? undefined : () => setIsConfirmBackupOpen(false)}
+              closeDisabled={isModalBackingUp}
+            />
+            <div className="p-6 space-y-4">
+              <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
+                Are you sure you want to download a backup of{" "}
+                <strong className="text-slate-900 dark:text-slate-100 font-semibold">
+                  {currentTerm ? `${currentTerm.academicYear} (${currentTerm.semester})` : "the current semester"}
+                </strong>
+                {pendingTargetTerm ? (
+                  <>
+                    {" "}and activate{" "}
+                    <strong className="text-slate-900 dark:text-slate-100 font-semibold">
+                      {pendingTargetTerm.academicYear} {pendingTargetTerm.semester}
+                    </strong>{" "}
+                    as the new active term?
+                  </>
+                ) : (
+                  "?"
+                )}
+              </p>
+
+              <div className="p-3 rounded-xl bg-amber-500 text-slate-950 border border-amber-600 text-xs font-semibold flex items-start gap-2.5 shadow-2xs">
+                <AppIcon icon={WarningTriangle} size="xs" color="inherit" className="shrink-0 mt-0.5 text-slate-950" />
+                <span className="leading-relaxed">
+                  This action will download a complete document vault zip archive and transition system workflows to the target term.
+                </span>
+              </div>
+
+              {modalBackupError && (
+                <div className="p-3 rounded-xl bg-[#780000] text-white border border-[#5e0000] text-xs font-semibold flex items-center gap-2.5 shadow-2xs">
+                  <AppIcon icon={WarningTriangle} size="xs" color="inherit" className="shrink-0 text-white" />
+                  <span>{modalBackupError}</span>
+                </div>
+              )}
+
+              <div className="flex items-center justify-end gap-2.5 pt-2 border-t border-slate-100 dark:border-slate-800/80">
+                <button
+                  type="button"
+                  onClick={() => setIsConfirmBackupOpen(false)}
+                  disabled={isModalBackingUp}
+                  className="px-4 py-2 rounded-xl bg-[#780000] hover:bg-[#5e0000] text-white border border-[#5e0000] text-xs font-semibold transition-all cursor-pointer shadow-xs disabled:opacity-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={() => void handleDirectSemesterBackup()}
+                  disabled={isModalBackingUp}
+                  className="inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 border border-amber-600 font-semibold text-xs transition-all cursor-pointer shadow-xs active:scale-[0.98] disabled:opacity-50"
+                >
+                  {isModalBackingUp ? (
+                    <>
+                      <AppIcon
+                        icon={SystemRestart}
+                        size="xs"
+                        color="inherit"
+                        className="animate-spin"
+                      />
+                      <span>Backing Up &amp; Activating...</span>
+                    </>
+                  ) : (
+                    <>
+                      <AppIcon icon={Check} size="xs" color="inherit" strokeWidth={2.5} />
+                      <span>Confirm &amp; Proceed</span>
+                    </>
+                  )}
+                </button>
               </div>
             </div>
           </div>

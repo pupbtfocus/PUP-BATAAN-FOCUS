@@ -318,12 +318,12 @@ export function TemplatesAndProgramsPanel({
   return (
     <article className="space-y-6 p-2 sm:p-4 md:p-5">
       {/* Solid Amber Card Header */}
-      <div className="relative overflow-hidden rounded-2xl border-2 border-amber-500 dark:border-amber-500/70 bg-amber-400 dark:bg-[#2a1705] p-5 sm:p-6 shadow-md shadow-amber-500/10 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="relative overflow-hidden rounded-2xl border-2 border-amber-500 bg-amber-400 p-5 sm:p-6 shadow-md shadow-amber-500/10 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-black text-slate-950 dark:text-amber-100 tracking-tight">
+          <h1 className="text-2xl sm:text-3xl font-black text-slate-950 tracking-tight">
             Requirement Templates & Academic Programs
           </h1>
-          <p className="mt-1.5 text-sm sm:text-base text-amber-950/90 dark:text-amber-200/90 font-medium leading-relaxed max-w-3xl">
+          <p className="mt-1.5 text-sm sm:text-base text-amber-950/90 font-medium leading-relaxed max-w-3xl">
             Configure compliance submission document checklists and manage degree programs for PUP Bataan campus.
           </p>
         </div>

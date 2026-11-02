@@ -148,7 +148,7 @@ export function EmailVerificationCard({
   return (
     <div className="w-full max-w-md bg-[#800000] border-2 border-amber-400 rounded-2xl shadow-lg overflow-hidden transition-all text-[#fff8e7]">
       {/* Email-style Maroon Header Banner (No Logo) */}
-      <div className="bg-gradient-to-br from-[#680000] to-[#800000] border-b border-amber-400/30 px-6 py-6 sm:px-8 sm:py-7 text-center">
+      <div className="bg-[#800000] border-b border-amber-400/30 px-6 py-6 sm:px-8 sm:py-7 text-center">
         <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-[#fff8e7]">
           {headerConfig.title}
         </h2>

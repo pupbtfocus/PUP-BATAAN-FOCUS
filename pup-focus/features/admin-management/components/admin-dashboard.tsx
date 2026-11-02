@@ -1911,12 +1911,12 @@ export function SuperAdminDashboard({
             {activeSection === "dashboard" ? (
               <article className="space-y-6">
                 {/* Solid Amber Card Header */}
-                <div className="relative overflow-hidden rounded-2xl border-2 border-amber-500 dark:border-amber-500/70 bg-amber-400 dark:bg-[#2a1705] p-5 sm:p-6 shadow-md shadow-amber-500/10 flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+                <div className="relative overflow-hidden rounded-2xl border-2 border-amber-500 bg-amber-400 p-5 sm:p-6 shadow-md shadow-amber-500/10 flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
                   <div>
-                    <h1 className="text-2xl sm:text-3xl font-black text-slate-950 dark:text-amber-100 tracking-tight">
+                    <h1 className="text-2xl sm:text-3xl font-black text-slate-950 tracking-tight">
                       Dashboard
                     </h1>
-                    <p className="mt-1.5 text-sm sm:text-base text-amber-950/90 dark:text-amber-200/90 font-medium leading-relaxed">
+                    <p className="mt-1.5 text-sm sm:text-base text-amber-950/90 font-medium leading-relaxed">
                       Oversee administrative accounts, manage faculty compliance, configure academic cycles, and monitor campus-wide operations.
                     </p>
                   </div>
@@ -2076,12 +2076,12 @@ export function SuperAdminDashboard({
             {activeSection === "accounts" ? (
               <article className="space-y-4 p-2 sm:p-4 md:p-5">
                 {/* Solid Amber Card Header */}
-                <div className="relative overflow-hidden rounded-2xl border-2 border-amber-500 dark:border-amber-500/70 bg-amber-400 dark:bg-[#2a1705] p-5 sm:p-6 shadow-md shadow-amber-500/10 flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+                <div className="relative overflow-hidden rounded-2xl border-2 border-amber-500 bg-amber-400 p-5 sm:p-6 shadow-md shadow-amber-500/10 flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
                   <div>
-                    <h1 className="text-2xl sm:text-3xl font-black text-slate-950 dark:text-amber-100 tracking-tight">
+                    <h1 className="text-2xl sm:text-3xl font-black text-slate-950 tracking-tight">
                       Staff Management
                     </h1>
-                    <p className="mt-1.5 text-sm sm:text-base text-amber-950/90 dark:text-amber-200/90 font-medium leading-relaxed">
+                    <p className="mt-1.5 text-sm sm:text-base text-amber-950/90 font-medium leading-relaxed">
                       Configure and oversee staff privileges and account accesses.
                     </p>
                   </div>
@@ -2148,12 +2148,12 @@ export function SuperAdminDashboard({
             {activeSection === "faculty" ? (
               <article className="space-y-4 p-2 sm:p-4 md:p-5">
                 {/* Solid Amber Card Header */}
-                <div className="relative overflow-hidden rounded-2xl border-2 border-amber-500 dark:border-amber-500/70 bg-amber-400 dark:bg-[#2a1705] p-5 sm:p-6 shadow-md shadow-amber-500/10 flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+                <div className="relative overflow-hidden rounded-2xl border-2 border-amber-500 bg-amber-400 p-5 sm:p-6 shadow-md shadow-amber-500/10 flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
                   <div>
-                    <h1 className="text-2xl sm:text-3xl font-black text-slate-950 dark:text-amber-100 tracking-tight">
+                    <h1 className="text-2xl sm:text-3xl font-black text-slate-950 tracking-tight">
                       Faculty Management
                     </h1>
-                    <p className="mt-1.5 text-sm sm:text-base text-amber-950/90 dark:text-amber-200/90 font-medium leading-relaxed">
+                    <p className="mt-1.5 text-sm sm:text-base text-amber-950/90 font-medium leading-relaxed">
                       View, manage, and monitor faculty profiles, department assignments, and account statuses.
                     </p>
                   </div>
@@ -2233,12 +2233,12 @@ export function SuperAdminDashboard({
               <article className="space-y-4 p-2 sm:p-4 md:p-5">
                 {/* Solid Amber Card Header - only show when in faculty list */}
                 {!selectedFaculty ? (
-                  <div className="relative overflow-hidden rounded-2xl border-2 border-amber-500 dark:border-amber-500/70 bg-amber-400 dark:bg-[#2a1705] p-5 sm:p-6 shadow-md shadow-amber-500/10 flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+                  <div className="relative overflow-hidden rounded-2xl border-2 border-amber-500 bg-amber-400 p-5 sm:p-6 shadow-md shadow-amber-500/10 flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
                     <div>
-                      <h1 className="text-2xl sm:text-3xl font-black text-slate-950 dark:text-amber-100 tracking-tight">
+                      <h1 className="text-2xl sm:text-3xl font-black text-slate-950 tracking-tight">
                         Requirements Verification
                       </h1>
-                      <p className="mt-1.5 text-sm sm:text-base text-amber-950/90 dark:text-amber-200/90 font-medium leading-relaxed">
+                      <p className="mt-1.5 text-sm sm:text-base text-amber-950/90 font-medium leading-relaxed">
                         Review, validate, or request revisions for submitted faculty compliance documents for this academic term.
                       </p>
                     </div>
@@ -2270,12 +2270,12 @@ export function SuperAdminDashboard({
             {activeSection === "terms" ? (
               <article className="space-y-4 p-2 sm:p-4 md:p-5">
                 {/* Solid Amber Card Header */}
-                <div className="relative overflow-hidden rounded-2xl border-2 border-amber-500 dark:border-amber-500/70 bg-amber-400 dark:bg-[#2a1705] p-5 sm:p-6 shadow-md shadow-amber-500/10 flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+                <div className="relative overflow-hidden rounded-2xl border-2 border-amber-500 bg-amber-400 p-5 sm:p-6 shadow-md shadow-amber-500/10 flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
                   <div>
-                    <h1 className="text-2xl sm:text-3xl font-black text-slate-950 dark:text-amber-100 tracking-tight">
+                    <h1 className="text-2xl sm:text-3xl font-black text-slate-950 tracking-tight">
                       Academic Year and Semester
                     </h1>
-                    <p className="mt-1.5 text-sm sm:text-base text-amber-950/90 dark:text-amber-200/90 font-medium leading-relaxed">
+                    <p className="mt-1.5 text-sm sm:text-base text-amber-950/90 font-medium leading-relaxed">
                       Manage academic years, semester cycles, and activate the current operational term.
                     </p>
                   </div>
@@ -2304,12 +2304,12 @@ export function SuperAdminDashboard({
             {activeSection === "window" ? (
               <article className="space-y-4 p-2 sm:p-4 md:p-5">
                 {/* Solid Amber Card Header */}
-                <div className="relative overflow-hidden rounded-2xl border-2 border-amber-500 dark:border-amber-500/70 bg-amber-400 dark:bg-[#2a1705] p-5 sm:p-6 shadow-md shadow-amber-500/10 flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+                <div className="relative overflow-hidden rounded-2xl border-2 border-amber-500 bg-amber-400 p-5 sm:p-6 shadow-md shadow-amber-500/10 flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
                   <div>
-                    <h1 className="text-2xl sm:text-3xl font-black text-slate-950 dark:text-amber-100 tracking-tight">
+                    <h1 className="text-2xl sm:text-3xl font-black text-slate-950 tracking-tight">
                       Submission Schedule
                     </h1>
-                    <p className="mt-1.5 text-sm sm:text-base text-amber-950/90 dark:text-amber-200/90 font-medium leading-relaxed">
+                    <p className="mt-1.5 text-sm sm:text-base text-amber-950/90 font-medium leading-relaxed">
                       Set and manage submission opening dates, closing deadlines, and faculty extension requests.
                     </p>
                   </div>
@@ -2346,12 +2346,12 @@ export function SuperAdminDashboard({
             {activeSection === "backups" ? (
               <article className="p-2 sm:p-4 md:p-5">
                 {/* Solid Amber Card Header */}
-                <div className="relative overflow-hidden rounded-2xl border-2 border-amber-500 dark:border-amber-500/70 bg-amber-400 dark:bg-[#2a1705] p-5 sm:p-6 shadow-md shadow-amber-500/10 flex flex-wrap items-center justify-between gap-3 mb-6">
+                <div className="relative overflow-hidden rounded-2xl border-2 border-amber-500 bg-amber-400 p-5 sm:p-6 shadow-md shadow-amber-500/10 flex flex-wrap items-center justify-between gap-3 mb-6">
                   <div>
-                    <h1 className="text-2xl sm:text-3xl font-black text-slate-950 dark:text-amber-100 tracking-tight">
+                    <h1 className="text-2xl sm:text-3xl font-black text-slate-950 tracking-tight">
                       Backups & Archive
                     </h1>
-                    <p className="mt-1.5 text-sm sm:text-base text-amber-950/90 dark:text-amber-200/90 font-medium leading-relaxed">
+                    <p className="mt-1.5 text-sm sm:text-base text-amber-950/90 font-medium leading-relaxed">
                       Download faculty files, save system backups, and view past school terms.
                     </p>
                   </div>
@@ -2364,12 +2364,12 @@ export function SuperAdminDashboard({
             {activeSection === "audit" ? (
               <article className="space-y-6 p-2 sm:p-4 md:p-5">
                 {/* Solid Amber Card Header */}
-                <div className="relative overflow-hidden rounded-2xl border-2 border-amber-500 dark:border-amber-500/70 bg-amber-400 dark:bg-[#2a1705] p-5 sm:p-6 shadow-md shadow-amber-500/10 flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+                <div className="relative overflow-hidden rounded-2xl border-2 border-amber-500 bg-amber-400 p-5 sm:p-6 shadow-md shadow-amber-500/10 flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
                   <div>
-                    <h1 className="text-2xl sm:text-3xl font-black text-slate-950 dark:text-amber-100 tracking-tight">
+                    <h1 className="text-2xl sm:text-3xl font-black text-slate-950 tracking-tight">
                       Transaction Log
                     </h1>
-                    <p className="mt-1.5 text-sm sm:text-base text-amber-950/90 dark:text-amber-200/90 font-medium leading-relaxed">
+                    <p className="mt-1.5 text-sm sm:text-base text-amber-950/90 font-medium leading-relaxed">
                       Track and inspect real-time security events, administrator actions, and user session activity.
                     </p>
                   </div>

@@ -1034,7 +1034,7 @@ export function DevPreviewPanel() {
             <div className="relative z-10 w-full max-w-[390px] sm:max-w-md mx-auto my-auto drop-shadow-2xl">
               <div className="w-full bg-[#800000] border-2 border-amber-400 rounded-2xl shadow-2xl overflow-hidden transition-all text-[#fff8e7]">
                 {/* Email-style Maroon Header Banner (No Logo, matching Account Ready) */}
-                <div className="bg-gradient-to-br from-[#680000] to-[#800000] border-b border-amber-400/30 px-6 py-6 sm:px-8 sm:py-7 text-center">
+                <div className="bg-[#800000] border-b border-amber-400/30 px-6 py-6 sm:px-8 sm:py-7 text-center">
                   <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-[#fff8e7]">
                     Set New Password
                   </h2>
@@ -2289,7 +2289,7 @@ export function DevPreviewPanel() {
           >
             <div className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl overflow-hidden transition-all">
               {/* Email-style Maroon Header Banner (No Logo, matching Account Ready) */}
-              <div className="bg-gradient-to-br from-[#4d0000] to-[#780000] px-6 py-6 sm:px-8 sm:py-7 text-center">
+              <div className="bg-[#800000] px-6 py-6 sm:px-8 sm:py-7 text-center">
                 <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-[#fff8e7]">
                   Set New Password
                 </h2>

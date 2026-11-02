@@ -21,7 +21,7 @@ export function FacultyHeader({
   nav = [],
 }: FacultyHeaderProps) {
   return (
-    <header className="fixed inset-x-0 top-0 z-50 border-t-2 border-amber-500 border-b border-amber-500/30 bg-gradient-to-r from-[#5a0000] via-[#480000] to-[#360000] shadow-md backdrop-blur">
+    <header className="fixed inset-x-0 top-0 z-50 border-t-2 border-amber-500 border-b border-amber-500/30 bg-[#800000] shadow-md">
       <div className="relative flex w-full items-center justify-between pl-4 pr-6 py-3">
         <div className="flex items-center gap-3 z-10">
           <BrandMark size={44} className="shrink-0" />
