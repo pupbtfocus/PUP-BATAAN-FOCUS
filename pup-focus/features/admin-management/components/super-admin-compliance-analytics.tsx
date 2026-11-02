@@ -197,10 +197,11 @@ export function SuperAdminComplianceAnalytics({
       count: summary.completedFaculty,
       pct: completedPct,
       color: "#0b5336",
-      gradient: "from-[#0b5336] to-emerald-600",
+      solidBg: "bg-[#0b5336]",
+      gradient: "from-[#0b5336] to-[#0b5336]",
       accentBg: "bg-white",
       accentText: "text-emerald-700 dark:text-emerald-400",
-      badgePill: "bg-emerald-50 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800",
+      badgePill: "bg-[#0b5336] text-white border border-[#08412a]",
       cardClass: "bg-[#0b5336] text-white border border-[#08412a] shadow-xs",
       titleClass: "text-white font-extrabold",
       detailClass: "text-emerald-100",
@@ -216,10 +217,11 @@ export function SuperAdminComplianceAnalytics({
       count: summary.inProgressFaculty,
       pct: inProgressPct,
       color: "#f59e0b",
-      gradient: "from-amber-600 to-amber-400",
+      solidBg: "bg-amber-500",
+      gradient: "from-amber-500 to-amber-500",
       accentBg: "bg-slate-950",
       accentText: "text-amber-700 dark:text-amber-400",
-      badgePill: "bg-amber-50 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-800",
+      badgePill: "bg-amber-500 text-slate-950 border border-amber-600",
       cardClass: "bg-amber-500 text-slate-950 border border-amber-600 shadow-xs",
       titleClass: "text-slate-950 font-extrabold",
       detailClass: "text-amber-950/90 font-medium",
@@ -235,10 +237,11 @@ export function SuperAdminComplianceAnalytics({
       count: summary.needsRevisionFaculty,
       pct: revisionPct,
       color: "#780000",
-      gradient: "from-[#780000] to-red-600",
+      solidBg: "bg-[#780000]",
+      gradient: "from-[#780000] to-[#780000]",
       accentBg: "bg-white",
       accentText: "text-[#780000] dark:text-rose-400",
-      badgePill: "bg-red-50 dark:bg-red-950/60 text-red-900 dark:text-red-300 border border-red-200 dark:border-red-900",
+      badgePill: "bg-[#780000] text-white border border-[#5e0000]",
       cardClass: "bg-[#780000] text-white border border-[#5e0000] shadow-xs",
       titleClass: "text-white font-extrabold",
       detailClass: "text-red-200",
@@ -254,10 +257,11 @@ export function SuperAdminComplianceAnalytics({
       count: summary.notStartedFaculty,
       pct: notStartedPct,
       color: "#475569",
-      gradient: "from-slate-700 to-slate-500",
+      solidBg: "bg-slate-700",
+      gradient: "from-slate-700 to-slate-700",
       accentBg: "bg-white",
       accentText: "text-slate-600 dark:text-slate-400",
-      badgePill: "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-300 dark:border-slate-700",
+      badgePill: "bg-slate-700 text-white border border-slate-800",
       cardClass: "bg-slate-700 text-white border border-slate-600 dark:bg-slate-800 dark:border-slate-700 shadow-xs",
       titleClass: "text-white font-extrabold",
       detailClass: "text-slate-300",
@@ -542,7 +546,7 @@ export function SuperAdminComplianceAnalytics({
                             {/* Column Track & Bar */}
                             <div className="w-10 sm:w-16 h-full flex flex-col justify-end items-center bg-slate-200/50 dark:bg-slate-800/50 rounded-t-xl overflow-hidden p-1">
                               <div
-                                className={`w-full rounded-t-lg bg-gradient-to-t ${cat.gradient} transition-all duration-700 ease-out shadow-xs`}
+                                className={`w-full rounded-t-lg ${cat.solidBg} transition-all duration-700 ease-out shadow-xs`}
                                 style={{ height: `${heightPct}%` }}
                               />
                             </div>
@@ -614,7 +618,7 @@ export function SuperAdminComplianceAnalytics({
 
                       <div className="h-3.5 w-full rounded-full bg-slate-100 dark:bg-slate-800 border border-slate-200/60 dark:border-slate-700/60 overflow-hidden p-0.5 shadow-inner">
                         <div
-                          className={`h-full rounded-full bg-gradient-to-r ${cat.gradient} transition-all duration-700 ease-out`}
+                          className={`h-full rounded-full ${cat.solidBg} transition-all duration-700 ease-out`}
                           style={{
                             width: `${summary.totalActive > 0 ? (cat.count > 0 ? Math.max(cat.pct, 3) : 0) : 0}%`,
                           }}
