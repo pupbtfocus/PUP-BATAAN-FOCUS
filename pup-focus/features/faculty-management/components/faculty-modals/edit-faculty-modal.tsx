@@ -647,13 +647,19 @@ export function EditFacultyModal({
                     <input
                       id="faculty-first-name"
                       ref={firstNameInputRef}
+                      readOnly={activeField !== "firstName"}
                       className={`w-full bg-slate-50 dark:bg-slate-950 border rounded-xl pl-3 pr-8 py-1.5 text-xs font-medium text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 outline-none focus:outline-none focus-visible:outline-none transition-all ${
                         activeField === "firstName"
                           ? "border-amber-500 ring-2 ring-amber-500/80 dark:ring-amber-500/60"
-                          : "border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700"
+                          : "border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 cursor-default"
                       }`}
                       value={firstName}
-                      onFocus={() => setActiveField("firstName")}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          e.preventDefault();
+                          setActiveField(null);
+                        }
+                      }}
                       onChange={(event) =>
                         handleNameChange("firstName", event.target.value)
                       }
@@ -698,13 +704,19 @@ export function EditFacultyModal({
                     <input
                       id="faculty-middle-name"
                       ref={middleNameInputRef}
+                      readOnly={activeField !== "middleName"}
                       className={`w-full bg-slate-50 dark:bg-slate-950 border rounded-xl pl-3 pr-8 py-1.5 text-xs font-medium text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 outline-none focus:outline-none focus-visible:outline-none transition-all ${
                         activeField === "middleName"
                           ? "border-amber-500 ring-2 ring-amber-500/80 dark:ring-amber-500/60"
-                          : "border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700"
+                          : "border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 cursor-default"
                       }`}
                       value={middleName}
-                      onFocus={() => setActiveField("middleName")}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          e.preventDefault();
+                          setActiveField(null);
+                        }
+                      }}
                       onChange={(event) =>
                         handleNameChange("middleName", event.target.value)
                       }
@@ -749,13 +761,19 @@ export function EditFacultyModal({
                     <input
                       id="faculty-last-name"
                       ref={lastNameInputRef}
+                      readOnly={activeField !== "lastName"}
                       className={`w-full bg-slate-50 dark:bg-slate-950 border rounded-xl pl-3 pr-8 py-1.5 text-xs font-medium text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 outline-none focus:outline-none focus-visible:outline-none transition-all ${
                         activeField === "lastName"
                           ? "border-amber-500 ring-2 ring-amber-500/80 dark:ring-amber-500/60"
-                          : "border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700"
+                          : "border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 cursor-default"
                       }`}
                       value={lastName}
-                      onFocus={() => setActiveField("lastName")}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          e.preventDefault();
+                          setActiveField(null);
+                        }
+                      }}
                       onChange={(event) =>
                         handleNameChange("lastName", event.target.value)
                       }
@@ -884,14 +902,20 @@ export function EditFacultyModal({
                   <input
                     id="faculty-email-address"
                     ref={emailInputRef}
+                    readOnly={activeField !== "email"}
                     type="email"
                     className={`w-full bg-slate-50 dark:bg-slate-950 border rounded-xl pl-3 pr-8 py-1.5 text-xs font-medium text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 outline-none focus:outline-none focus-visible:outline-none transition-all ${
                       activeField === "email"
                         ? "border-amber-500 ring-2 ring-amber-500/80 dark:ring-amber-500/60"
-                        : "border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700"
+                        : "border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 cursor-default"
                     }`}
                     value={email}
-                    onFocus={() => setActiveField("email")}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        setActiveField(null);
+                      }
+                    }}
                     onChange={(event) => {
                       const nextEmail = event.target.value;
                       setEmail(nextEmail);

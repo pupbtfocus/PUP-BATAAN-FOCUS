@@ -357,6 +357,18 @@ export async function PATCH(request: NextRequest) {
       );
     }
 
+    const nameRegex = /^[a-zA-Z\sñÑ]+$/;
+    if (
+      (firstName && !nameRegex.test(firstName.trim())) ||
+      (lastName && !nameRegex.test(lastName.trim())) ||
+      (middleName && !nameRegex.test(middleName.trim()))
+    ) {
+      return NextResponse.json(
+        { error: "Name can only contain letters (no numbers or special characters)" },
+        { status: 400 },
+      );
+    }
+
     if (!isValidEmailAddress(normalizedNewEmail)) {
       return NextResponse.json(
         { error: "Please provide a valid email address" },

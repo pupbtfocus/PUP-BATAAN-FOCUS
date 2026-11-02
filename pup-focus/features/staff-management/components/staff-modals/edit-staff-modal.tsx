@@ -62,6 +62,7 @@ export function EditStaffModal({
   const [hasReverifiedPendingSave, setHasReverifiedPendingSave] = useState(false);
   const [reverifySuccessMessage, setReverifySuccessMessage] = useState<string | null>(null);
   const [passwordResetSuccessMessage, setPasswordResetSuccessMessage] = useState<string | null>(null);
+  const [nameAlert, setNameAlert] = useState<string | null>(null);
   const [closeReminder, setCloseReminder] = useState<string | null>(null);
   const [saveError, setSaveError] = useState<string | null>(null);
 
@@ -131,6 +132,7 @@ export function EditStaffModal({
     });
 
     setActiveField(null);
+    setNameAlert(null);
     setSaveError(null);
     setHasReverifiedPendingSave(false);
     setReverifySuccessMessage(null);
@@ -226,6 +228,22 @@ export function EditStaffModal({
     }, 0);
   }
 
+  function handleNameChange(
+    fieldKey: "firstName" | "middleName" | "lastName",
+    value: string,
+  ) {
+    if (/[^a-zA-Z\sñÑ]/.test(value)) {
+      setNameAlert("Name can only contain letters (no numbers or special characters)");
+    } else {
+      setNameAlert(null);
+    }
+    const clean = value.replace(/[^a-zA-Z\sñÑ]/g, "");
+    if (fieldKey === "firstName") setFirstName(clean);
+    if (fieldKey === "middleName") setMiddleName(clean);
+    if (fieldKey === "lastName") setLastName(clean);
+    setCloseReminder(null);
+  }
+
   function handleCancelEdit(
     fieldKey: "firstName" | "middleName" | "lastName" | "email",
   ) {
@@ -311,6 +329,18 @@ export function EditStaffModal({
 
     if (!firstName.trim() || !lastName.trim()) {
       setSaveError("First name and last name are required.");
+      return;
+    }
+
+    const nameRegex = /^[a-zA-Z\sñÑ]+$/;
+    if (
+      !nameRegex.test(firstName.trim()) ||
+      !nameRegex.test(lastName.trim()) ||
+      (middleName.trim() && !nameRegex.test(middleName.trim()))
+    ) {
+      setSaveError(
+        "Name can only contain letters (no numbers or special characters).",
+      );
       return;
     }
 
@@ -421,6 +451,15 @@ export function EditStaffModal({
           />
 
           <div className="p-4 sm:p-5 space-y-3 overflow-y-auto flex-1">
+            {nameAlert ? (
+              <AlertPopup
+                type="warning"
+                message={nameAlert}
+                position="inline"
+                onClose={() => setNameAlert(null)}
+              />
+            ) : null}
+
             {saveError ? (
               <AlertPopup
                 type="error"
@@ -558,17 +597,22 @@ export function EditStaffModal({
                       id="staff-first-name"
                       ref={firstNameInputRef}
                       disabled={!canEdit}
+                      readOnly={activeField !== "firstName"}
                       className={`w-full bg-slate-50 dark:bg-slate-950 border rounded-xl pl-3 pr-8 py-1.5 text-xs font-medium text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 outline-none focus:outline-none focus-visible:outline-none transition-all ${
                         activeField === "firstName"
                           ? "border-amber-500 ring-2 ring-amber-500/80 dark:ring-amber-500/60"
-                          : "border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700"
+                          : "border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 cursor-default"
                       }`}
                       value={firstName}
-                      onFocus={() => setActiveField("firstName")}
-                      onChange={(event) => {
-                        setFirstName(event.target.value);
-                        setCloseReminder(null);
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          e.preventDefault();
+                          setActiveField(null);
+                        }
                       }}
+                      onChange={(event) =>
+                        handleNameChange("firstName", event.target.value)
+                      }
                       placeholder="First name"
                     />
                     {activeField === "firstName" ? (
@@ -612,17 +656,22 @@ export function EditStaffModal({
                       id="staff-middle-name"
                       ref={middleNameInputRef}
                       disabled={!canEdit}
+                      readOnly={activeField !== "middleName"}
                       className={`w-full bg-slate-50 dark:bg-slate-950 border rounded-xl pl-3 pr-8 py-1.5 text-xs font-medium text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 outline-none focus:outline-none focus-visible:outline-none transition-all ${
                         activeField === "middleName"
                           ? "border-amber-500 ring-2 ring-amber-500/80 dark:ring-amber-500/60"
-                          : "border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700"
+                          : "border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 cursor-default"
                       }`}
                       value={middleName}
-                      onFocus={() => setActiveField("middleName")}
-                      onChange={(event) => {
-                        setMiddleName(event.target.value);
-                        setCloseReminder(null);
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          e.preventDefault();
+                          setActiveField(null);
+                        }
                       }}
+                      onChange={(event) =>
+                        handleNameChange("middleName", event.target.value)
+                      }
                       placeholder="Middle name"
                     />
                     {activeField === "middleName" ? (
@@ -666,17 +715,22 @@ export function EditStaffModal({
                       id="staff-last-name"
                       ref={lastNameInputRef}
                       disabled={!canEdit}
+                      readOnly={activeField !== "lastName"}
                       className={`w-full bg-slate-50 dark:bg-slate-950 border rounded-xl pl-3 pr-8 py-1.5 text-xs font-medium text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 outline-none focus:outline-none focus-visible:outline-none transition-all ${
                         activeField === "lastName"
                           ? "border-amber-500 ring-2 ring-amber-500/80 dark:ring-amber-500/60"
-                          : "border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700"
+                          : "border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 cursor-default"
                       }`}
                       value={lastName}
-                      onFocus={() => setActiveField("lastName")}
-                      onChange={(event) => {
-                        setLastName(event.target.value);
-                        setCloseReminder(null);
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          e.preventDefault();
+                          setActiveField(null);
+                        }
                       }}
+                      onChange={(event) =>
+                        handleNameChange("lastName", event.target.value)
+                      }
                       placeholder="Last name"
                     />
                     {activeField === "lastName" ? (
@@ -765,14 +819,20 @@ export function EditStaffModal({
                     id="staff-email-address"
                     ref={emailInputRef}
                     disabled={!canEdit}
+                    readOnly={activeField !== "email"}
                     type="email"
                     className={`w-full bg-slate-50 dark:bg-slate-950 border rounded-xl pl-3 pr-8 py-1.5 text-xs font-medium text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 outline-none focus:outline-none focus-visible:outline-none transition-all ${
                       activeField === "email"
                         ? "border-amber-500 ring-2 ring-amber-500/80 dark:ring-amber-500/60"
-                        : "border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700"
+                        : "border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 cursor-default"
                     }`}
                     value={email}
-                    onFocus={() => setActiveField("email")}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        setActiveField(null);
+                      }
+                    }}
                     onChange={(event) => {
                       const nextEmail = event.target.value;
                       setEmail(nextEmail);
