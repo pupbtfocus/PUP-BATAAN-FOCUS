@@ -379,8 +379,8 @@ export function TemplatesAndProgramsPanel({
           onClick={() => setActiveTab("templates")}
           className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer ${
             activeTab === "templates"
-              ? "bg-[#780000] text-white shadow-xs"
-              : "text-slate-600 dark:text-slate-400 hover:text-slate-950 dark:hover:text-slate-200"
+              ? "bg-[#780000] text-white border border-[#5e0000] shadow-xs"
+              : "bg-white dark:bg-slate-800/80 text-slate-700 dark:text-slate-300 border border-slate-300 dark:border-slate-700 hover:border-slate-400 dark:hover:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-750 shadow-2xs"
           }`}
         >
           <AppIcon icon={Page} size="sm" color="inherit" />
@@ -392,8 +392,8 @@ export function TemplatesAndProgramsPanel({
           onClick={() => setActiveTab("programs")}
           className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer ${
             activeTab === "programs"
-              ? "bg-[#780000] text-white shadow-xs"
-              : "text-slate-600 dark:text-slate-400 hover:text-slate-950 dark:hover:text-slate-200"
+              ? "bg-[#780000] text-white border border-[#5e0000] shadow-xs"
+              : "bg-white dark:bg-slate-800/80 text-slate-700 dark:text-slate-300 border border-slate-300 dark:border-slate-700 hover:border-slate-400 dark:hover:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-750 shadow-2xs"
           }`}
         >
           <AppIcon icon={GraduationCap} size="sm" color="inherit" />
@@ -402,7 +402,7 @@ export function TemplatesAndProgramsPanel({
             className={`px-1.5 py-0.5 rounded-md text-[10px] font-black ${
               activeTab === "programs"
                 ? "bg-amber-400 text-slate-950"
-                : "bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300"
+                : "bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-600"
             }`}
           >
             {programs.length}
