@@ -1870,7 +1870,7 @@ export function SuperAdminDashboard({
             className="fixed inset-0 bg-black/70 backdrop-blur-sm"
             onClick={() => setIsMobileMenuOpen(false)}
           />
-          <aside className="relative w-72 max-w-[85%] bg-[#800000] text-amber-50 h-full p-4 border-r-4 border-amber-500 flex flex-col z-10 shadow-2xl overflow-y-auto transition-colors">
+          <aside className="relative w-72 max-w-[85%] bg-[#800000] text-amber-50 h-full p-4 border-r-4 border-amber-500 flex flex-col z-10 shadow-2xl overflow-y-auto sidebar-scrollbar transition-colors">
             <div className="flex items-center justify-between pb-3 border-b border-white/10 mb-2">
               <div className="flex items-center gap-2.5 min-w-0 pr-2">
                 <BrandMark size={38} className="shrink-0" />

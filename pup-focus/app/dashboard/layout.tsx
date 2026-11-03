@@ -21,7 +21,7 @@ export default function DashboardLayout({
     <div className="flex h-screen w-full bg-slate-50 text-slate-900 overflow-hidden font-sans">
       {/* Desktop Fixed Sidebar - Full Height with unified top header */}
       <aside className="hidden md:flex w-72 flex-col bg-[#800000] text-amber-50 relative shrink-0 shadow-md h-screen z-40">
-        <div className="flex-1 overflow-y-auto p-3.5 flex flex-col">
+        <div className="flex-1 overflow-y-auto sidebar-scrollbar p-3.5 flex flex-col">
           <SidebarContent
             activeSection={activeSection}
             setActiveSection={setActiveSection}
@@ -80,7 +80,7 @@ export default function DashboardLayout({
             className="fixed inset-0 bg-black/70 backdrop-blur-sm"
             onClick={() => setIsMobileMenuOpen(false)}
           />
-          <aside className="relative w-72 max-w-[85%] bg-[#800000] text-amber-50 border-r-4 border-amber-500 h-full p-4 flex flex-col z-10 shadow-2xl overflow-y-auto">
+          <aside className="relative w-72 max-w-[85%] bg-[#800000] text-amber-50 border-r-4 border-amber-500 h-full p-4 flex flex-col z-10 shadow-2xl overflow-y-auto sidebar-scrollbar">
             <div className="flex items-center justify-between pb-3 border-b border-white/10 mb-2">
               <div className="flex items-center gap-2.5 min-w-0 pr-2">
                 <BrandMark size={38} className="shrink-0" />
