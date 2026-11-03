@@ -1333,11 +1333,11 @@ export function SuperAdminSettings({
                   Automated Email Reminders on Submission Windows
                 </span>
                 {emailReminders ? (
-                  <span className="bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-950/50 dark:text-emerald-400 dark:border-emerald-800/80 px-2 py-0.5 text-xs font-semibold rounded-md">
+                  <span className="bg-[#0b5336] text-white border border-[#08412a] px-2 py-0.5 text-xs font-bold rounded-md shadow-2xs">
                     Active
                   </span>
                 ) : (
-                  <span className="bg-slate-100 text-slate-600 border border-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:border-slate-700 px-2 py-0.5 text-xs font-medium rounded-md">
+                  <span className="bg-slate-600 text-white border border-slate-700 px-2 py-0.5 text-xs font-bold rounded-md shadow-2xs">
                     Disabled
                   </span>
                 )}
@@ -1375,11 +1375,11 @@ export function SuperAdminSettings({
                   New Submission Alert Notifications
                 </span>
                 {submissionAlerts ? (
-                  <span className="bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-950/50 dark:text-emerald-400 dark:border-emerald-800/80 px-2 py-0.5 text-xs font-semibold rounded-md">
+                  <span className="bg-[#0b5336] text-white border border-[#08412a] px-2 py-0.5 text-xs font-bold rounded-md shadow-2xs">
                     Active
                   </span>
                 ) : (
-                  <span className="bg-slate-100 text-slate-600 border border-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:border-slate-700 px-2 py-0.5 text-xs font-medium rounded-md">
+                  <span className="bg-slate-600 text-white border border-slate-700 px-2 py-0.5 text-xs font-bold rounded-md shadow-2xs">
                     Disabled
                   </span>
                 )}
