@@ -2,10 +2,8 @@
 
 import React, { useState, useMemo } from "react";
 import {
-  Download,
   EditPencil,
   Eye,
-  Page,
   Trash,
   UserBadgeCheck,
   UserXmark,
@@ -237,7 +235,11 @@ export function AdminFilterBar({
               className="inline-flex items-center gap-1.5 rounded-xl bg-[#780000] hover:bg-[#5e0000] text-white border border-[#5e0000] px-3 py-1.5 text-xs font-bold transition cursor-pointer shadow-xs"
               title="Export Staff List to PDF"
             >
-              <AppIcon icon={Page} size="xs" color="white" />
+              <img
+                src="/icons/adobe-pdf.svg"
+                alt="PDF"
+                className="h-4 w-4 shrink-0 object-contain"
+              />
               <span>Export PDF</span>
             </button>
           )}
@@ -248,7 +250,11 @@ export function AdminFilterBar({
               className="inline-flex items-center gap-1.5 rounded-xl bg-[#0b5336] hover:bg-[#08412a] text-white border border-[#08412a] px-3 py-1.5 text-xs font-bold transition cursor-pointer shadow-xs"
               title="Export Staff List to Excel"
             >
-              <AppIcon icon={Download} size="xs" color="white" />
+              <img
+                src="/icons/microsoft-excel.svg"
+                alt="Excel"
+                className="h-4 w-4 shrink-0 object-contain"
+              />
               <span>Export Excel</span>
             </button>
           )}
