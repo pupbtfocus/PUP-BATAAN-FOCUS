@@ -219,15 +219,15 @@ export function SuperAdminComplianceAnalytics({
       color: "#f59e0b",
       solidBg: "bg-amber-500",
       gradient: "from-amber-500 to-amber-500",
-      accentBg: "bg-slate-950",
+      accentBg: "bg-white",
       accentText: "text-amber-700 dark:text-amber-400",
-      badgePill: "bg-amber-500 text-slate-950 border border-amber-600",
-      cardClass: "bg-amber-500 text-slate-950 border border-amber-600 shadow-xs",
-      titleClass: "text-slate-950 font-extrabold",
-      detailClass: "text-amber-950/90 font-medium",
-      countPill: "bg-slate-950/15 text-slate-950 border border-slate-950/25 font-bold",
-      divideClass: "border-slate-950/20",
-      pctClass: "text-slate-950 font-black",
+      badgePill: "bg-amber-500 text-white border border-amber-600",
+      cardClass: "bg-amber-500 text-white border border-amber-600 shadow-xs",
+      titleClass: "text-white font-extrabold",
+      detailClass: "text-amber-100 font-medium",
+      countPill: "bg-white/20 text-white border border-white/20 font-bold",
+      divideClass: "border-white/20",
+      pctClass: "text-white font-black",
     },
     {
       id: "needs_revision",
@@ -277,10 +277,7 @@ export function SuperAdminComplianceAnalytics({
         {/* Header with casual title & chart toggle */}
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
-            <span className="text-[11px] font-bold uppercase tracking-wider text-[#780000] dark:text-amber-400">
-              Submission Tracker
-            </span>
-            <h2 className="text-base sm:text-lg font-extrabold text-slate-900 dark:text-slate-100 mt-0.5">
+            <h2 className="text-base sm:text-lg font-extrabold text-slate-900 dark:text-slate-100">
               Faculty Submissions Overview
             </h2>
             <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
@@ -562,7 +559,7 @@ export function SuperAdminComplianceAnalytics({
                   {categories.map((cat) => (
                     <div key={cat.id} className="flex flex-col items-center text-center">
                       <div className="flex items-center gap-1.5">
-                        <span className={`h-2 w-2 rounded-full ${cat.accentBg} shrink-0`} />
+                        <span className={`h-2 w-2 rounded-full ${cat.solidBg} shrink-0`} />
                         <span className="font-extrabold text-[11px] sm:text-xs text-slate-800 dark:text-slate-100 truncate">
                           <span className="sm:hidden">{cat.shortLabel}</span>
                           <span className="hidden sm:inline">{cat.label}</span>
@@ -598,7 +595,7 @@ export function SuperAdminComplianceAnalytics({
                     >
                       <div className="flex items-center justify-between gap-2 text-xs">
                         <div className="flex items-center gap-2 min-w-0">
-                          <span className={`h-2.5 w-2.5 rounded-full ${cat.accentBg} shrink-0 ring-2 ring-slate-100 dark:ring-slate-800`} />
+                          <span className={`h-2.5 w-2.5 rounded-full ${cat.solidBg} shrink-0 ring-2 ring-slate-100 dark:ring-slate-800`} />
                           <span className="font-extrabold text-sm text-slate-900 dark:text-slate-100">
                             {cat.label}
                           </span>

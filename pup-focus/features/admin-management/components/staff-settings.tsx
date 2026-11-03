@@ -1446,10 +1446,8 @@ export function AdminSettings({
               }`}
             >
               <span
-                className={`pointer-events-none inline-block h-4 w-4 transform rounded-full shadow-md transition duration-200 ease-in-out my-auto ${
-                  emailReminders
-                    ? "translate-x-5.5 bg-slate-950"
-                    : "translate-x-1 bg-white dark:bg-slate-400"
+                className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-md transition duration-200 ease-in-out my-auto ${
+                  emailReminders ? "translate-x-5.5" : "translate-x-1"
                 }`}
               />
             </button>
@@ -1490,10 +1488,8 @@ export function AdminSettings({
               }`}
             >
               <span
-                className={`pointer-events-none inline-block h-4 w-4 transform rounded-full shadow-md transition duration-200 ease-in-out my-auto ${
-                  submissionAlerts
-                    ? "translate-x-5.5 bg-slate-950"
-                    : "translate-x-1 bg-white dark:bg-slate-400"
+                className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-md transition duration-200 ease-in-out my-auto ${
+                  submissionAlerts ? "translate-x-5.5" : "translate-x-1"
                 }`}
               />
             </button>
