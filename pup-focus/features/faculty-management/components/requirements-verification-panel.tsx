@@ -539,6 +539,18 @@ export function FacultyVerificationDrawer({
     progressText?: string;
   } | null>(null);
 
+  const zipAbortControllerRef = useRef<AbortController | null>(null);
+
+  const handleCancelZip = useCallback(() => {
+    if (zipAbortControllerRef.current) {
+      zipAbortControllerRef.current.abort();
+      zipAbortControllerRef.current = null;
+    }
+    setIsDownloadingHistoryZip(false);
+    setIsDownloadingZip(false);
+    setZipProgressData(null);
+  }, []);
+
   // Reset selected class whenever faculty or active term changes
   useEffect(() => {
     setSelectedClassId(null);
@@ -1334,7 +1346,7 @@ export function FacultyVerificationDrawer({
     setZipProgressData({
       status: "zipping",
       title: "Downloading File",
-      message: `Fetching file "${fileName}"...`,
+      message: `Getting "${fileName}"...`,
       progressText: "Preparing download...",
     });
 
@@ -1407,6 +1419,7 @@ export function FacultyVerificationDrawer({
         return;
       }
 
+      zipAbortControllerRef.current = new AbortController();
       setZipProgressData({
         status: "zipping",
         title: "Packaging Requirements (ZIP)",
@@ -1429,19 +1442,22 @@ export function FacultyVerificationDrawer({
           : "General_Requirements";
 
         for (const doc of docs) {
+          if (zipAbortControllerRef.current?.signal.aborted) return;
           if (!doc.storage_path) continue;
           processedCount++;
           setZipProgressData({
             status: "zipping",
             title: "Packaging Requirements (ZIP)",
-            message: `Fetching "${label}" (${classFolder})...`,
+            message: `Getting "${label}" (${classFolder})...`,
             progressText: `Processing file ${processedCount} of ${totalCount}...`,
           });
 
           const downloadUrl = `/api/storage/download?path=${encodeURIComponent(
             doc.storage_path
           )}`;
-          const fileRes = await fetch(downloadUrl);
+          const fileRes = await fetch(downloadUrl, {
+            signal: zipAbortControllerRef.current?.signal,
+          });
           if (fileRes.ok) {
             const fileBlob = await fileRes.blob();
             const ext = doc.storage_path.match(/\.[^.]+$/)?.[0] || ".pdf";
@@ -1450,6 +1466,8 @@ export function FacultyVerificationDrawer({
           }
         }
       }
+
+      if (zipAbortControllerRef.current?.signal.aborted) return;
 
       setZipProgressData({
         status: "zipping",
@@ -1474,7 +1492,10 @@ export function FacultyVerificationDrawer({
         message: `Requirement ZIP package generated successfully! (${totalCount} file(s))`,
         progressText: "Complete 100%",
       });
-    } catch (err) {
+    } catch (err: unknown) {
+      if ((err as Error)?.name === "AbortError" || zipAbortControllerRef.current?.signal.aborted) {
+        return;
+      }
       console.error("ZIP download failed:", err);
       setZipProgressData({
         status: "error",
@@ -1517,6 +1538,7 @@ export function FacultyVerificationDrawer({
         return;
       }
 
+      zipAbortControllerRef.current = new AbortController();
       setZipProgressData({
         status: "zipping",
         title: "Packaging History ZIP",
@@ -1539,19 +1561,22 @@ export function FacultyVerificationDrawer({
           : "General_Requirements";
 
         for (const doc of docs) {
+          if (zipAbortControllerRef.current?.signal.aborted) return;
           if (!doc.storage_path) continue;
           processedCount++;
           setZipProgressData({
             status: "zipping",
             title: "Packaging History ZIP",
-            message: `Fetching "${label}" (${classFolder})...`,
+            message: `Getting "${label}" (${classFolder})...`,
             progressText: `Processing file ${processedCount} of ${totalCount}...`,
           });
 
           const downloadUrl = `/api/storage/download?path=${encodeURIComponent(
             doc.storage_path
           )}`;
-          const fileRes = await fetch(downloadUrl);
+          const fileRes = await fetch(downloadUrl, {
+            signal: zipAbortControllerRef.current?.signal,
+          });
           if (fileRes.ok) {
             const fileBlob = await fileRes.blob();
             const ext = doc.storage_path.match(/\.[^.]+$/)?.[0] || ".pdf";
@@ -1560,6 +1585,8 @@ export function FacultyVerificationDrawer({
           }
         }
       }
+
+      if (zipAbortControllerRef.current?.signal.aborted) return;
 
       setZipProgressData({
         status: "zipping",
@@ -1584,7 +1611,10 @@ export function FacultyVerificationDrawer({
         message: `History ZIP archive generated successfully! (${totalCount} file(s))`,
         progressText: "Complete 100%",
       });
-    } catch (err) {
+    } catch (err: unknown) {
+      if ((err as Error)?.name === "AbortError" || zipAbortControllerRef.current?.signal.aborted) {
+        return;
+      }
       console.error("History ZIP download failed:", err);
       setZipProgressData({
         status: "error",
@@ -2825,12 +2855,19 @@ export function FacultyVerificationDrawer({
                     type="button"
                     disabled={isDownloadingHistoryZip}
                     onClick={handleDownloadHistoryZip}
-                    className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-100 text-slate-700 dark:border-slate-700 dark:bg-slate-800 dark:hover:bg-slate-750 dark:text-slate-200 text-xs font-semibold px-3.5 py-1.5 transition cursor-pointer disabled:opacity-50 shadow-2xs"
+                    className="inline-flex items-center gap-2 rounded-xl bg-[#780000] hover:bg-[#5e0000] active:scale-[0.98] text-white border border-[#5e0000] text-xs font-bold px-3.5 py-1.5 shadow-xs hover:shadow transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed shrink-0"
                   >
-                    <AppIcon icon={Download} size="sm" color="inherit" />
-                    {isDownloadingHistoryZip
-                      ? "Zipping..."
-                      : "Download History ZIP"}
+                    {isDownloadingHistoryZip ? (
+                      <>
+                        <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white/30 border-t-white shrink-0" />
+                        <span>Zipping...</span>
+                      </>
+                    ) : (
+                      <>
+                        <AppIcon icon={Download} size="sm" color="inherit" />
+                        <span>Download History ZIP</span>
+                      </>
+                    )}
                   </button>
                 </div>
               </div>
@@ -3681,7 +3718,9 @@ export function FacultyVerificationDrawer({
         <div
           className="fixed inset-0 z-70 flex items-center justify-center bg-slate-950/80 p-4 backdrop-blur-sm"
           onClick={() => {
-            if (zipProgressData.status !== "zipping") {
+            if (zipProgressData.status === "zipping") {
+              handleCancelZip();
+            } else {
               setZipProgressData(null);
             }
           }}
@@ -3691,68 +3730,125 @@ export function FacultyVerificationDrawer({
             onClick={(e) => e.stopPropagation()}
           >
             <ModalHeader
-              icon={Package}
+              icon={
+                zipProgressData.status === "zipping"
+                  ? Archive
+                  : zipProgressData.status === "success"
+                  ? CheckCircle
+                  : WarningTriangle
+              }
               title={zipProgressData.title}
+              onClose={zipProgressData.status === "zipping" ? handleCancelZip : () => setZipProgressData(null)}
               className="-mx-6 -mt-6 mb-4 rounded-t-3xl"
             />
 
-            <div className="flex flex-col items-center justify-center py-4 text-center space-y-4">
+            <div className="flex flex-col items-center justify-center py-2 text-center space-y-4">
               {zipProgressData.status === "zipping" ? (
                 <>
-                  <div className="relative flex h-14 w-14 items-center justify-center">
-                    <div className="absolute h-full w-full animate-spin rounded-full border-4 border-slate-200 border-t-slate-700 dark:border-slate-700 dark:border-t-slate-300"></div>
-                    <Package className="h-6 w-6 text-slate-600 dark:text-slate-300" />
+                  <div className="relative flex h-16 w-16 items-center justify-center">
+                    <div className="absolute -inset-1 rounded-full border-3 border-slate-200 dark:border-slate-800 border-t-[#780000] dark:border-t-rose-500 animate-spin" />
+                    <div className="flex h-14 w-14 items-center justify-center rounded-full bg-[#780000] text-white shadow-md shadow-[#780000]/30">
+                      <AppIcon icon={Archive} size="md" color="inherit" />
+                    </div>
                   </div>
-                  <div>
-                    <p className="text-xs font-semibold text-slate-800 dark:text-slate-200">
-                      {zipProgressData.message}
-                    </p>
-                    {zipProgressData.progressText ? (
-                      <p className="mt-1 text-[11px] font-mono text-slate-500 dark:text-slate-400">
-                        {zipProgressData.progressText}
+
+                  <div className="w-full space-y-2.5">
+                    <div className="space-y-1">
+                      <p className="text-xs font-semibold text-slate-800 dark:text-slate-200 leading-relaxed">
+                        {zipProgressData.message}
                       </p>
-                    ) : null}
+                    </div>
+
+                    <div className="rounded-2xl bg-[#780000] dark:bg-[#780000] text-white p-3.5 space-y-2.5 text-left shadow-sm">
+                      <div className="h-1.5 w-full overflow-hidden rounded-full bg-white/25">
+                        <div className="h-full w-2/3 rounded-full bg-amber-400 animate-pulse" />
+                      </div>
+                      <div className="flex items-center justify-between text-[11px] text-white font-medium">
+                        <span className="font-mono text-white/90">{zipProgressData.progressText || "Processing files..."}</span>
+                        <span className="text-[10px] text-slate-950 bg-amber-400 px-2.5 py-0.5 rounded-full font-bold">Please wait</span>
+                      </div>
+                    </div>
+
+                    <p className="text-[11px] text-slate-400 dark:text-slate-500">
+                      Please keep this window open while the archive is being created.
+                    </p>
                   </div>
                 </>
               ) : zipProgressData.status === "success" ? (
                 <>
-                  <div className="flex h-14 w-14 items-center justify-center rounded-full bg-white dark:bg-slate-800 text-emerald-600 dark:text-emerald-400 border border-slate-200 dark:border-slate-700 shadow-2xs">
-                    <AppIcon icon={Check} size="lg" color="inherit" />
+                  <div className="flex items-center justify-center py-1">
+                    <div className="flex h-16 w-16 items-center justify-center rounded-full bg-emerald-600 text-white shadow-md shadow-emerald-600/30">
+                      <AppIcon icon={Check} size="lg" color="inherit" />
+                    </div>
                   </div>
-                  <div>
-                    <p className="text-xs font-semibold text-emerald-800 dark:text-emerald-300">
-                      {zipProgressData.message}
-                    </p>
-                    <p className="mt-1 text-[11px] text-slate-500 dark:text-slate-400">
-                      Check your browser's downloads folder.
-                    </p>
+
+                  <div className="w-full space-y-3">
+                    <div>
+                      <h4 className="text-sm font-bold text-slate-900 dark:text-slate-100">
+                        Download Ready!
+                      </h4>
+                      <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                        Your archive has been assembled and passed to your browser.
+                      </p>
+                    </div>
+
+                    <div className="rounded-2xl bg-emerald-600 dark:bg-emerald-600 text-white p-3.5 space-y-1.5 text-left shadow-sm">
+                      <div className="flex items-center gap-2 text-white text-xs font-bold">
+                        <AppIcon icon={Download} size="sm" color="inherit" />
+                        <span>{zipProgressData.message}</span>
+                      </div>
+                      <p className="text-[11.5px] text-emerald-100 pl-5.5 font-medium">
+                        Check your device&apos;s <strong className="text-white font-semibold">Downloads</strong> folder to view the extracted files.
+                      </p>
+                    </div>
                   </div>
                 </>
               ) : (
                 <>
-                  <div className="flex h-14 w-14 items-center justify-center rounded-full bg-white dark:bg-slate-800 text-rose-600 dark:text-rose-400 border border-slate-200 dark:border-slate-700 shadow-2xs">
-                    <AppIcon icon={WarningTriangle} size="lg" color="inherit" />
+                  <div className="relative flex h-20 w-20 items-center justify-center">
+                    <div className="absolute inset-0 rounded-full bg-rose-500/15 animate-pulse" />
+                    <div className="relative flex h-14 w-14 items-center justify-center rounded-full bg-rose-100 dark:bg-rose-950/60 border-2 border-rose-400 text-rose-600 dark:text-rose-400 shadow-sm">
+                      <AppIcon icon={WarningTriangle} size="lg" color="inherit" />
+                    </div>
                   </div>
-                  <div>
-                    <p className="text-xs font-semibold text-rose-800 dark:text-rose-300">
-                      {zipProgressData.message}
-                    </p>
+
+                  <div className="w-full space-y-3">
+                    <div>
+                      <h4 className="text-sm font-bold text-slate-900 dark:text-slate-100">
+                        Download Failed
+                      </h4>
+                      <p className="mt-1 text-xs text-rose-700 dark:text-rose-300">
+                        {zipProgressData.message}
+                      </p>
+                    </div>
                   </div>
                 </>
               )}
             </div>
 
-            {zipProgressData.status !== "zipping" ? (
-              <div className="flex justify-end pt-2 border-t border-slate-200 dark:border-slate-800 mt-2">
+            {zipProgressData.status === "zipping" ? (
+              <div className="pt-3 border-t border-slate-200 dark:border-slate-800 mt-2">
+                <button
+                  type="button"
+                  onClick={handleCancelZip}
+                  className="w-full inline-flex items-center justify-center gap-1.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-750 text-slate-700 dark:text-slate-200 py-2.5 px-4 text-xs font-bold transition-all cursor-pointer active:scale-[0.98] shadow-2xs hover:border-slate-400"
+                >
+                  <AppIcon icon={Xmark} size="sm" color="inherit" />
+                  <span>Cancel Download</span>
+                </button>
+              </div>
+            ) : (
+              <div className="pt-3 border-t border-slate-200 dark:border-slate-800 mt-2">
                 <button
                   type="button"
                   onClick={() => setZipProgressData(null)}
-                  className="rounded-xl bg-[#780000] hover:bg-[#5e0000] text-white border border-[#5e0000] px-4 py-2 text-xs font-bold transition cursor-pointer shadow-xs"
+                  className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-[#780000] hover:bg-[#5e0000] active:scale-[0.98] text-white border border-[#5e0000] py-2.5 px-4 text-xs font-bold transition-all cursor-pointer shadow-xs hover:shadow"
                 >
-                  Done
+                  <AppIcon icon={Check} size="sm" color="inherit" />
+                  <span>Done</span>
                 </button>
               </div>
-            ) : null}
+            )}
           </div>
         </div>
       ) : null}
