@@ -1,6 +1,11 @@
 import { createClient } from "@supabase/supabase-js";
+import dns from "node:dns";
 import { getPublicEnv } from "@/config/env";
 import { getServiceRoleKey } from "@/config/env";
+
+try {
+  dns.setDefaultResultOrder("ipv4first");
+} catch {}
 
 export function getServiceRoleClient() {
   const env = getPublicEnv();

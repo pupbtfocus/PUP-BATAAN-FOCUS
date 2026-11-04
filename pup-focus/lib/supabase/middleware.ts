@@ -1,7 +1,12 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createServerClient } from "@supabase/ssr";
+import dns from "node:dns";
 import { getPublicEnvSafe } from "@/config/env";
 import type { SupabaseClient, User } from "@supabase/supabase-js";
+
+try {
+  dns.setDefaultResultOrder("ipv4first");
+} catch {}
 
 export type MiddlewareResult = {
   response: NextResponse;
@@ -65,10 +70,21 @@ export async function updateSupabaseSession(
   }
 
   try {
+    const authPromise = supabase.auth.getUser();
+    const timeoutPromise = new Promise<{
+      data: { user: User | null };
+      error: { message: string } | null;
+    }>((resolve) =>
+      setTimeout(
+        () => resolve({ data: { user: null }, error: { message: "Auth timeout" } }),
+        3500,
+      ),
+    );
+
     const {
       data: { user },
       error,
-    } = await supabase.auth.getUser();
+    } = await Promise.race([authPromise, timeoutPromise]);
 
     if (error) {
       if (isInvalidRefreshTokenError(error)) {
@@ -76,7 +92,7 @@ export async function updateSupabaseSession(
         return { response, user: null, supabase };
       }
 
-      if (error.message !== "Auth session missing!") {
+      if (error.message !== "Auth session missing!" && error.message !== "Auth timeout") {
         console.error("Supabase auth error:", error.message);
       }
     }

@@ -178,19 +178,24 @@ export async function GET(request: NextRequest) {
       }
     } catch {}
 
-    // Query auth.users to resolve avatars from user_metadata and storage buckets
+    // Query auth.users to resolve avatars from user_metadata and storage buckets (with fast fallback timeout)
     const authUserById = new Map<string, any>();
     const authUserByEmail = new Map<string, any>();
     try {
-      const { data: authUsersResult } = await supabase.auth.admin.listUsers({ perPage: 1000 });
+      const listPromise = supabase.auth.admin.listUsers({ perPage: 1000 }).catch(() => ({ data: null, error: null }));
+      const timeoutPromise = new Promise<{ data: null; error: null }>((resolve) =>
+        setTimeout(() => resolve({ data: null, error: null }), 3000),
+      );
+      const res = await Promise.race([listPromise, timeoutPromise]);
+      const authUsersResult = res?.data;
       if (authUsersResult?.users) {
         for (const u of authUsersResult.users) {
           if (u.id) authUserById.set(u.id, u);
           if (u.email) authUserByEmail.set(u.email.toLowerCase(), u);
         }
       }
-    } catch (e) {
-      console.warn("[ADMIN_NOTIFS] listUsers warning:", e);
+    } catch {
+      // Continue without user_metadata avatars; profile table avatars already loaded
     }
 
     // Cache resolved avatar signed URLs to minimize storage calls

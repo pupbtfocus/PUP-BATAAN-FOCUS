@@ -1,7 +1,12 @@
 import { cookies } from "next/headers";
 import { createServerClient } from "@supabase/ssr";
+import dns from "node:dns";
 import { getPublicEnv } from "@/config/env";
 import { isInvalidRefreshTokenError } from "@/lib/supabase/auth-errors";
+
+try {
+  dns.setDefaultResultOrder("ipv4first");
+} catch {}
 
 export async function createServerSupabaseClient() {
   const cookieStore = await cookies();

@@ -1,4 +1,10 @@
 import type { NextConfig } from "next";
+import dns from "node:dns";
+
+// Force IPv4 first to prevent 10s Undici connect timeouts with dead IPv6/NAT64 addresses
+try {
+  dns.setDefaultResultOrder("ipv4first");
+} catch {}
 
 const nextConfig: NextConfig = {
   distDir: process.env.NEXT_DIST_DIR || ".next",
