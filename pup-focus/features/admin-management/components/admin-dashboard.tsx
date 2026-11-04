@@ -1917,7 +1917,7 @@ export function SuperAdminDashboard({
                       Dashboard
                     </h1>
                     <p className="mt-1.5 text-sm sm:text-base text-amber-950/90 font-medium leading-relaxed">
-                      Oversee administrative accounts, manage faculty compliance, configure academic cycles, and monitor campus-wide operations.
+                      Here&apos;s a quick look at your campus: manage staff and faculty accounts, track submissions, and keep everything running smoothly.
                     </p>
                   </div>
                   <div className="flex items-center gap-2 w-full sm:w-auto shrink-0">
@@ -1980,14 +1980,14 @@ export function SuperAdminDashboard({
                       </div>
                       <div className="pt-1.5 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between gap-2">
                         <p className="text-xs text-slate-500 dark:text-slate-400">
-                          {adminAccounts.length} total administrative accounts
+                          {adminAccounts.length} total staff accounts
                         </p>
                         <button
                           type="button"
                           onClick={() => handleSetActiveSection("accounts")}
                           className="inline-flex items-center gap-1 text-xs font-bold text-[#800000] dark:text-amber-400 hover:underline cursor-pointer shrink-0"
                         >
-                          <span>Directory</span>
+                          <span>View staff</span>
                           <NavArrowRight className="h-3.5 w-3.5" />
                         </button>
                       </div>
@@ -2046,7 +2046,7 @@ export function SuperAdminDashboard({
                           onClick={() => handleSetActiveSection("faculty")}
                           className="inline-flex items-center gap-1 text-xs font-bold text-[#800000] dark:text-amber-400 hover:underline cursor-pointer shrink-0"
                         >
-                          <span>Manage</span>
+                          <span>View faculty</span>
                           <NavArrowRight className="h-3.5 w-3.5" />
                         </button>
                       </div>

@@ -126,7 +126,7 @@ export function DatabaseCapacityAlert({
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-1.5">
             <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">
-              Database &amp; File Storage
+              Storage Space
             </span>
             <span className="rounded bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-slate-700">
               {isProTier ? "Pro Tier" : "Free Tier"}
@@ -147,7 +147,7 @@ export function DatabaseCapacityAlert({
         <div className="space-y-2.5">
           <div className="flex items-baseline justify-between gap-2">
             <h3 className="text-xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">
-              {dbStatus.usagePercent}% Peak Quota
+              {dbStatus.usagePercent}% Used
             </h3>
             <span
               className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider border ${
@@ -158,7 +158,7 @@ export function DatabaseCapacityAlert({
                   : "bg-[#0b5336] text-white border-[#08412a]"
               }`}
             >
-              {isCritical ? "Almost Full" : isWarning ? "High Usage" : "Healthy"}
+              {isCritical ? "Almost Full" : isWarning ? "Getting Full" : "Looking Good"}
             </span>
           </div>
 
@@ -166,7 +166,7 @@ export function DatabaseCapacityAlert({
           <div className="space-y-1">
             <div className="flex items-center justify-between text-[11px]">
               <span className="font-medium text-slate-600 dark:text-slate-300">
-                Postgres DB ({tableCount} tables)
+                Database ({tableCount} tables)
               </span>
               <span className="font-bold text-slate-800 dark:text-slate-200">
                 {formatCapacityMb(dbMb)} / {formatCapacityMb(maxDbMb)} ({dbUsagePercent}%)
@@ -190,7 +190,7 @@ export function DatabaseCapacityAlert({
           <div className="space-y-1">
             <div className="flex items-center justify-between text-[11px]">
               <span className="font-medium text-slate-600 dark:text-slate-300">
-                File Buckets ({bucketCount} buckets)
+                File Storage ({bucketCount} folders)
               </span>
               <span className="font-bold text-slate-800 dark:text-slate-200">
                 {formatCapacityMb(bucketMb)} / {formatCapacityMb(maxBucketMb)} ({bucketUsagePercent}%)
@@ -212,7 +212,7 @@ export function DatabaseCapacityAlert({
 
           <div className="pt-1.5 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between gap-2">
             <p className="text-[11px] text-slate-500 dark:text-slate-400">
-              {formatCapacityMb(maxDbMb)} DB + {formatCapacityMb(maxBucketMb)} Files ({formatCapacityMb(maxUploadFileMb)}/upload max)
+              {formatCapacityMb(maxDbMb)} database + {formatCapacityMb(maxBucketMb)} files (max {formatCapacityMb(maxUploadFileMb)} per file)
             </p>
             {onManageStorage && (
               <button
@@ -255,8 +255,8 @@ export function DatabaseCapacityAlert({
               <Database className="h-4 w-4 shrink-0" />
               <span>
                 {isCritical
-                  ? `Critical Alert: Database & File Storage is About to Be Full (${dbStatus.usagePercent}%)`
-                  : `Storage Warning: Database & File Storage Usage is High (${dbStatus.usagePercent}%)`}
+                  ? `Heads up: Storage is almost completely full (${dbStatus.usagePercent}%)`
+                  : `Storage Notice: Storage is getting full (${dbStatus.usagePercent}%)`}
               </span>
             </p>
           </div>
@@ -265,7 +265,7 @@ export function DatabaseCapacityAlert({
               isCritical ? "text-amber-100" : "text-slate-900/90 font-medium"
             }`}
           >
-            Postgres DB ({tableCount} tables): <strong>{formatCapacityMb(dbMb)} / {formatCapacityMb(maxDbMb)} ({dbUsagePercent}%)</strong> • File Storage ({bucketCount} buckets): <strong>{formatCapacityMb(bucketMb)} / {formatCapacityMb(maxBucketMb)} ({bucketUsagePercent}%)</strong>. Exceeding {isProTier ? "Pro Tier" : "Free Tier"} limits locks the database into read-only mode — please archive completed terms or clean up files.
+            Database: <strong>{formatCapacityMb(dbMb)} of {formatCapacityMb(maxDbMb)} ({dbUsagePercent}%)</strong> • File Storage: <strong>{formatCapacityMb(bucketMb)} of {formatCapacityMb(maxBucketMb)} ({bucketUsagePercent}%)</strong>. If space runs out, the system will switch to read-only. Please back up past terms or remove old files to free up room.
           </p>
         </div>
       </div>

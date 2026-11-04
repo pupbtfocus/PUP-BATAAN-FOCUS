@@ -861,7 +861,7 @@ export function AdminFacultyDashboard({
                           </h1>
                         </div>
                         <p className="mt-1.5 text-sm sm:text-base text-amber-950/90 font-medium leading-relaxed">
-                          Overview of faculty compliance progress, submission verification, and recent document activity.
+                          Here&apos;s how everyone is doing: see who turned in requirements, check pending files, and track recent updates.
                         </p>
                       </div>
 
@@ -872,12 +872,12 @@ export function AdminFacultyDashboard({
                               A.Y. {dashboardStats.currentAcademicYear} • {dashboardStats?.currentSemester || "1st Semester"}
                               {windowStatus && (windowStatus.status === "Closed" || !windowStatus.isOpen) ? (
                                 <span className="ml-2 font-semibold">
-                                  • (Submission Window Closed)
+                                  • (Submissions Closed)
                                 </span>
                               ) : null}
                             </>
                           ) : (
-                            <span>No Active Academic Term Configured</span>
+                            <span>No active school term right now</span>
                           )}
                         </p>
 
@@ -900,38 +900,38 @@ export function AdminFacultyDashboard({
 
                     {/* Clean Status Counts with Legend Strip */}
                     <div className="flex flex-wrap items-center gap-3 sm:gap-4 text-xs sm:text-sm text-slate-600 dark:text-slate-400 font-medium pt-1">
-                      <span className="inline-flex items-center gap-1.5" title="Validated: Requirements reviewed and approved">
+                      <span className="inline-flex items-center gap-1.5" title="Approved: Requirements checked and accepted">
                         <span className="inline-flex items-center justify-center h-5 w-5 rounded-full bg-[#0b5336] text-white border border-[#08412a] shrink-0 shadow-2xs">
                           <AppIcon icon={Check} size="xs" color="white" />
                         </span>
                         <span>
-                          <strong className="text-slate-900 dark:text-slate-100 font-semibold">{dashboardStats?.verified ?? 0}</strong> Validated
+                          <strong className="text-slate-900 dark:text-slate-100 font-semibold">{dashboardStats?.verified ?? 0}</strong> Approved
                         </span>
                       </span>
-                      <span className="inline-flex items-center gap-1.5" title="Pending: Awaiting administration verification">
+                      <span className="inline-flex items-center gap-1.5" title="Waiting for review: Files needing your check">
                         <span className="inline-flex items-center justify-center h-5 w-5 rounded-full bg-amber-500 text-slate-950 border border-amber-600 shrink-0 shadow-2xs">
                           <AppIcon icon={Hourglass} size="xs" color="inherit" />
                         </span>
                         <span>
-                          <strong className="text-slate-900 dark:text-slate-100 font-semibold">{dashboardStats?.pending ?? 0}</strong> Pending Review
+                          <strong className="text-slate-900 dark:text-slate-100 font-semibold">{dashboardStats?.pending ?? 0}</strong> Waiting for Review
                         </span>
                       </span>
-                      <span className="inline-flex items-center gap-1.5" title="Needs Revision: Correction requested by reviewer">
+                      <span className="inline-flex items-center gap-1.5" title="Needs changes: Returned for corrections">
                         <span className="inline-flex items-center justify-center h-5 w-5 rounded-full bg-[#780000] text-white border border-[#5e0000] shrink-0 shadow-2xs">
                           <AppIcon icon={Xmark} size="xs" color="white" />
                         </span>
                         <span>
-                          <strong className="text-slate-900 dark:text-slate-100 font-semibold">{dashboardStats?.revisions ?? 0}</strong> Needs Revision
+                          <strong className="text-slate-900 dark:text-slate-100 font-semibold">{dashboardStats?.revisions ?? 0}</strong> Needs Changes
                         </span>
                       </span>
-                      <span className="inline-flex items-center gap-1.5" title="Active Faculty: Registered and active faculty members">
+                      <span className="inline-flex items-center gap-1.5" title="Active Faculty: Registered teachers in the system">
                         <span className="inline-flex items-center justify-center h-5 w-5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border border-slate-300 dark:border-slate-700 shrink-0 shadow-2xs">
                           <AppIcon icon={Group} size="xs" color="inherit" />
                         </span>
                         <span>
                           <strong className="text-slate-900 dark:text-slate-100 font-semibold">
                             {dashboardStats && dashboardStats.totalFaculty > 0 ? dashboardStats.activeFaculty : facultyAccounts.filter((f) => f.is_active).length}
-                          </strong> Active Faculty
+                          </strong> Active Teachers
                         </span>
                       </span>
                     </div>
@@ -949,7 +949,7 @@ export function AdminFacultyDashboard({
                         <div>
                           <div className="flex items-baseline justify-between">
                             <h3 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">
-                              {isLoadingStats ? "..." : `${dashboardStats?.verified ?? 0} Validated`}
+                              {isLoadingStats ? "..." : `${dashboardStats?.verified ?? 0} Approved`}
                             </h3>
                             <span className="text-xs sm:text-sm font-bold text-emerald-600 dark:text-emerald-400">
                               {(() => {
@@ -960,8 +960,8 @@ export function AdminFacultyDashboard({
                           </div>
                           <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1 font-medium">
                             {isLoadingStats
-                              ? "Loading compliance status..."
-                              : `${dashboardStats?.verified ?? 0} verified • ${dashboardStats?.pending ?? 0} pending review`}
+                              ? "Loading progress..."
+                              : `${dashboardStats?.verified ?? 0} approved • ${dashboardStats?.pending ?? 0} waiting for review`}
                           </p>
                         </div>
                         <div className="h-2.5 w-full overflow-hidden rounded-full bg-slate-200 dark:bg-slate-800/90 border border-slate-300 dark:border-slate-700">
@@ -981,7 +981,7 @@ export function AdminFacultyDashboard({
                       <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs p-5 sm:p-6 space-y-3 transition-colors">
                         <div className="flex items-center justify-between">
                           <span className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-                            Window Status
+                            Submission Window
                           </span>
                           <Calendar className="h-5 w-5 text-slate-400" strokeWidth={2} />
                         </div>
@@ -990,21 +990,21 @@ export function AdminFacultyDashboard({
                             {windowStatus?.isAlwaysOpen
                               ? "Always Open"
                               : windowStatus?.isOpen
-                                ? "Submission Open"
+                                ? "Open for Submissions"
                                 : windowStatus?.status === "Upcoming"
-                                  ? "Scheduled"
-                                  : "Window Closed"}
+                                  ? "Opening Soon"
+                                  : "Submissions Closed"}
                           </h3>
                           <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1 font-medium">
                             {windowStatus?.endDate && windowStatus?.endTimeLabel
-                              ? `Deadline: ${windowStatus.endDate} • ${windowStatus.endTimeLabel}`
-                              : "Awaiting schedule configuration"}
+                              ? `Deadline: ${windowStatus.endDate} at ${windowStatus.endTimeLabel}`
+                              : "No deadline set yet"}
                           </p>
                         </div>
                         <p className="text-xs text-slate-500 dark:text-slate-400">
                           {windowStatus?.isOpen
-                            ? "Faculty can upload and submit compliance documents"
-                            : "Document submissions are currently locked"}
+                            ? "Faculty members can upload and submit files right now"
+                            : "Submissions are currently closed"}
                         </p>
                       </div>
 
@@ -1012,27 +1012,27 @@ export function AdminFacultyDashboard({
                       <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs p-5 sm:p-6 space-y-3 transition-colors">
                         <div className="flex items-center justify-between">
                           <span className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-                            Action Required
+                            Needs Your Review
                           </span>
                           <TaskList className="h-5 w-5 text-slate-400" strokeWidth={2} />
                         </div>
                         <div>
                           <h3 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-slate-100 tracking-tight flex items-center gap-2">
-                            <span>{isLoadingStats ? "..." : `${dashboardStats?.pending ?? 0} Pending`}</span>
+                            <span>{isLoadingStats ? "..." : `${dashboardStats?.pending ?? 0} Waiting`}</span>
                             {!isLoadingStats && dashboardStats && dashboardStats.revisions > 0 && (
                               <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">
-                                {dashboardStats.revisions} revision{dashboardStats.revisions > 1 ? "s" : ""}
+                                {dashboardStats.revisions} sent back
                               </span>
                             )}
                           </h3>
                           <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1 font-medium">
-                            Submissions awaiting administrator verification
+                            Files waiting for you to check and approve
                           </p>
                         </div>
                         <p className="text-xs text-slate-500 dark:text-slate-400">
                           {(dashboardStats?.pending ?? 0) > 0
-                            ? `${dashboardStats?.pending} item(s) ready for review in queue`
-                            : "All submitted documents are reviewed"}
+                            ? `${dashboardStats?.pending} submission(s) waiting in your queue`
+                            : "You're all caught up! No files waiting."}
                         </p>
                       </div>
                     </section>
@@ -1045,7 +1045,7 @@ export function AdminFacultyDashboard({
                           <div className="flex items-center justify-between pb-3 border-b border-slate-300 dark:border-slate-800">
                             <div className="flex items-center gap-2">
                               <h3 className="text-base sm:text-lg font-bold text-slate-900 dark:text-slate-100 tracking-tight">
-                                Pending Submissions Verification Queue
+                                Files Waiting for Review
                               </h3>
                               {pendingQueue.length > 0 && (
                                 <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500 text-slate-950">
@@ -1067,8 +1067,8 @@ export function AdminFacultyDashboard({
                               <div className="inline-flex items-center justify-center h-10 w-10 rounded-full bg-[#0b5336] text-white border border-[#08412a] shadow-xs mb-1">
                                 <AppIcon icon={Check} size="md" color="white" strokeWidth={2.5} />
                               </div>
-                              <p className="text-sm font-semibold text-slate-800 dark:text-slate-200">All submissions up to date</p>
-                              <p className="text-xs text-slate-500 dark:text-slate-400">No pending submissions awaiting review.</p>
+                              <p className="text-sm font-semibold text-slate-800 dark:text-slate-200">All caught up!</p>
+                              <p className="text-xs text-slate-500 dark:text-slate-400">There are no submissions waiting for review right now.</p>
                             </div>
                           ) : (
                             <div className="space-y-3">
@@ -1089,7 +1089,7 @@ export function AdminFacultyDashboard({
                                       </p>
                                       {item.isRevision && (
                                         <span className="px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/30 text-[10px] font-bold">
-                                          Revision
+                                          Revised
                                         </span>
                                       )}
                                     </div>
@@ -1097,7 +1097,7 @@ export function AdminFacultyDashboard({
                                       {item.requirementTitle}
                                     </p>
                                     <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                                      Submitted: {new Date(item.submittedAt).toLocaleDateString("en-PH", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}
+                                      Turned in: {new Date(item.submittedAt).toLocaleDateString("en-PH", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}
                                     </p>
                                   </div>
                                   <button
@@ -1140,7 +1140,7 @@ export function AdminFacultyDashboard({
                           </div>
                           {recentActivity.length === 0 ? (
                             <div className="py-8 text-center">
-                              <p className="text-xs text-slate-500 dark:text-slate-400">No recent activity to display.</p>
+                              <p className="text-xs text-slate-500 dark:text-slate-400">No recent activity yet.</p>
                             </div>
                           ) : (
                             <div className="space-y-3">
@@ -1167,6 +1167,7 @@ export function AdminFacultyDashboard({
                                       </p>
                                       <SubmissionStatusBadge
                                         status={act.decision === "validated" ? "Validated" : "Revision Requested"}
+                                        label={act.decision === "validated" ? "Approved" : "Needs Changes"}
                                         size="sm"
                                       />
                                     </div>

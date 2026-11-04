@@ -193,7 +193,7 @@ export function SuperAdminComplianceAnalytics({
       id: "completed",
       label: "All Done",
       shortLabel: "Done",
-      detail: "Turned in all 6 requirements",
+      detail: "Turned in all requirements",
       count: summary.completedFaculty,
       pct: completedPct,
       color: "#0b5336",
@@ -213,7 +213,7 @@ export function SuperAdminComplianceAnalytics({
       id: "in_progress",
       label: "In Progress",
       shortLabel: "In Progress",
-      detail: "Working on requirements",
+      detail: "Still working on requirements",
       count: summary.inProgressFaculty,
       pct: inProgressPct,
       color: "#f59e0b",
@@ -233,7 +233,7 @@ export function SuperAdminComplianceAnalytics({
       id: "needs_revision",
       label: "Needs Changes",
       shortLabel: "Changes",
-      detail: "Returned for re-upload",
+      detail: "Sent back for corrections",
       count: summary.needsRevisionFaculty,
       pct: revisionPct,
       color: "#780000",
@@ -253,7 +253,7 @@ export function SuperAdminComplianceAnalytics({
       id: "not_started",
       label: "Haven't Started",
       shortLabel: "Not Started",
-      detail: "No documents uploaded yet",
+      detail: "No files uploaded yet",
       count: summary.notStartedFaculty,
       pct: notStartedPct,
       color: "#475569",
@@ -278,10 +278,10 @@ export function SuperAdminComplianceAnalytics({
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
             <h2 className="text-base sm:text-lg font-extrabold text-slate-900 dark:text-slate-100">
-              Faculty Submissions Overview
+              Faculty Progress Overview
             </h2>
             <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-              {summary.completedFaculty} of {summary.totalActive} faculty have finished everything ({termLabel})
+              {summary.completedFaculty} of {summary.totalActive} teachers are all done ({termLabel})
             </p>
           </div>
 
@@ -329,7 +329,7 @@ export function SuperAdminComplianceAnalytics({
                 onClick={() => onNavigateSection("verification")}
                 className="inline-flex items-center gap-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 border border-amber-600 px-3 py-1.5 text-xs font-bold transition cursor-pointer shadow-xs active:scale-[0.98]"
               >
-                <span>Review Submissions</span>
+                <span>Check Submissions</span>
                 <NavArrowRight className="h-3.5 w-3.5" />
               </button>
             )}
@@ -443,7 +443,7 @@ export function SuperAdminComplianceAnalytics({
                       </span>
                     </div>
                     <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold shrink-0 ${cat.countPill}`}>
-                      {cat.count} {cat.count === 1 ? "faculty" : "faculty"}
+                      {cat.count} {cat.count === 1 ? "teacher" : "teachers"}
                     </span>
                   </div>
                   <div className={`flex items-center justify-between mt-2 pt-1.5 border-t text-[11px] ${cat.divideClass} ${cat.detailClass}`}>
@@ -462,7 +462,7 @@ export function SuperAdminComplianceAnalytics({
             {/* Sub-header with orientation switch */}
             <div className="flex items-center justify-between pb-1 text-xs">
               <span className="font-bold text-slate-600 dark:text-slate-400">
-                Category Distribution ({summary.totalActive} Total Faculty)
+                Where Everyone Stands ({summary.totalActive} Total Teachers)
               </span>
               <div className="inline-flex items-center rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-100/80 dark:bg-slate-950 p-0.5">
                 <button
@@ -569,7 +569,7 @@ export function SuperAdminComplianceAnalytics({
                         {cat.detail}
                       </span>
                       <span className={`text-[10px] font-extrabold mt-0.5 sm:hidden ${cat.accentText}`}>
-                        {cat.count} {cat.count === 1 ? "faculty" : "faculty"}
+                        {cat.count} {cat.count === 1 ? "teacher" : "teachers"}
                       </span>
                     </div>
                   ))}
@@ -605,7 +605,7 @@ export function SuperAdminComplianceAnalytics({
                         </div>
                         <div className="flex items-center gap-2 shrink-0">
                           <span className="text-xs font-semibold text-slate-600 dark:text-slate-400">
-                            {cat.count} {cat.count === 1 ? "faculty" : "faculty"}
+                            {cat.count} {cat.count === 1 ? "teacher" : "teachers"}
                           </span>
                           <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-black ${cat.badgePill}`}>
                             {summary.totalActive > 0 ? `${cat.pct}%` : "0%"}
@@ -648,21 +648,21 @@ export function SuperAdminComplianceAnalytics({
                   style={{
                     width: `${(summary.totalValidatedDocs / summary.totalPossibleDocs) * 100}%`,
                   }}
-                  title={`Approved: ${summary.totalValidatedDocs}`}
+                  title={`Approved: ${summary.totalValidatedDocs} file(s)`}
                 />
                 <div
                   className="h-full bg-amber-500 transition-all duration-500"
                   style={{
                     width: `${(summary.totalPendingReviewDocs / summary.totalPossibleDocs) * 100}%`,
                   }}
-                  title={`Waiting for Review: ${summary.totalPendingReviewDocs}`}
+                  title={`Waiting for Review: ${summary.totalPendingReviewDocs} file(s)`}
                 />
                 <div
                   className="h-full bg-rose-600 transition-all duration-500"
                   style={{
                     width: `${(summary.totalRevisionDocs / summary.totalPossibleDocs) * 100}%`,
                   }}
-                  title={`Needs Changes: ${summary.totalRevisionDocs}`}
+                  title={`Needs Changes: ${summary.totalRevisionDocs} file(s)`}
                 />
               </>
             )}
