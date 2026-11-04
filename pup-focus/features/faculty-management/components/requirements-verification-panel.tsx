@@ -3831,7 +3831,7 @@ export function FacultyVerificationDrawer({
                 <button
                   type="button"
                   onClick={handleCancelZip}
-                  className="w-full inline-flex items-center justify-center gap-1.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-750 text-slate-700 dark:text-slate-200 py-2.5 px-4 text-xs font-bold transition-all cursor-pointer active:scale-[0.98] shadow-2xs hover:border-slate-400"
+                  className="w-full inline-flex items-center justify-center gap-1.5 rounded-xl bg-[#780000] hover:bg-[#5e0000] active:scale-[0.98] text-white border border-[#5e0000] py-2.5 px-4 text-xs font-bold transition-all cursor-pointer shadow-xs hover:shadow"
                 >
                   <AppIcon icon={Xmark} size="sm" color="inherit" />
                   <span>Cancel Download</span>
