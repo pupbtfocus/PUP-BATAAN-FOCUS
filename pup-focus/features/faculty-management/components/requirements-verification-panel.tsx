@@ -2364,11 +2364,11 @@ export function FacultyVerificationDrawer({
                       <table className="w-full text-left text-xs text-slate-600 dark:text-slate-300 min-w-[880px]">
                         <thead className="bg-slate-50/60 dark:bg-slate-950/50 border-b border-slate-200/80 dark:border-slate-800/80 text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
                           <tr>
-                            <th className="px-4 py-2.5 w-[26%]">Requirement</th>
-                            <th className="px-3 py-2.5 w-[12%] text-center">Type</th>
-                            <th className="px-4 py-2.5 w-[24%]">Attached File</th>
-                            <th className="px-4 py-2.5 w-[22%]">Notes &amp; Feedback</th>
-                            <th className="px-4 py-2.5 w-[16%] text-center">Status &amp; Action</th>
+                            <th className="px-3.5 py-2.5 w-[25%]">Requirement</th>
+                            <th className="px-2.5 py-2.5 w-[10%] text-center">Type</th>
+                            <th className="px-3.5 py-2.5 w-[23%]">Attached File</th>
+                            <th className="px-3.5 py-2.5 w-[26%]">Notes &amp; Feedback</th>
+                            <th className="px-3.5 py-2.5 w-[16%] text-center">Status &amp; Action</th>
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100 dark:divide-slate-800/70">
@@ -2595,41 +2595,37 @@ export function FacultyVerificationDrawer({
                                   </td>
 
                                   {/* Column 3: Notes & Feedback */}
-                                  <td className="px-4 py-3.5 align-middle">
+                                  <td className="px-3.5 py-2.5 align-middle">
                                     {facultyNote ||
                                     isRevisionRequested ||
                                     (isValidated && adminNote) ||
                                     (isRevisionUploaded && priorRejectionNote) ? (
-                                      <div className="rounded-xl border border-slate-200/80 dark:border-slate-800/80 bg-slate-50/70 dark:bg-slate-900/60 p-2.5 text-xs max-w-[320px] space-y-1.5 shadow-2xs">
+                                      <div className="rounded-lg border border-slate-200/80 dark:border-slate-800/80 bg-slate-50/70 dark:bg-slate-900/60 px-2.5 py-1.5 text-[11px] leading-tight space-y-1 shadow-2xs max-w-[380px]">
                                         {facultyNote ? (
-                                          <div className="flex items-start gap-1.5 leading-snug">
-                                            <span className="font-bold text-[10.5px] text-amber-700 dark:text-amber-400 shrink-0 mt-0.5 flex items-center gap-1.5">
-                                              <span className="inline-flex items-center justify-center h-4 w-4 rounded-full bg-amber-500/20 text-amber-700 dark:text-amber-400 border border-amber-500/30 shrink-0 shadow-2xs [&>svg]:h-2.5 [&>svg]:w-2.5">
+                                          <div className="line-clamp-2" title={facultyNote}>
+                                            <span className="inline-flex items-center gap-1 font-bold text-amber-700 dark:text-amber-400 mr-1.5 align-baseline">
+                                              <span className="inline-flex items-center justify-center h-3.5 w-3.5 rounded-full bg-amber-500/20 text-amber-700 dark:text-amber-400 border border-amber-500/30 shrink-0 [&>svg]:h-2 [&>svg]:w-2">
                                                 <AppIcon icon={ChatBubble} size="xs" color="active" />
                                               </span>
-                                              {isRevisionUploaded
-                                                ? "Faculty Remarks (Revision):"
-                                                : "Faculty Remarks:"}
+                                              <span>{isRevisionUploaded ? "Faculty (Rev):" : "Faculty Remarks:"}</span>
                                             </span>
-                                            <p
-                                              className="text-slate-700 dark:text-slate-300 italic line-clamp-2"
-                                              title={facultyNote}
-                                            >
+                                            <span className="text-slate-700 dark:text-slate-300 italic">
                                               &ldquo;{facultyNote}&rdquo;
-                                            </p>
+                                            </span>
                                           </div>
                                         ) : null}
 
                                         {isRevisionUploaded && priorRejectionNote ? (
                                           <div
-                                            className={`flex items-start gap-1.5 leading-snug ${
+                                            className={`line-clamp-2 ${
                                               facultyNote
-                                                ? "pt-1.5 border-t border-slate-200/70 dark:border-slate-800/80"
+                                                ? "pt-1 border-t border-slate-200/70 dark:border-slate-800/80"
                                                 : ""
                                             }`}
+                                            title={priorRejectionNote}
                                           >
-                                            <span className="font-bold text-[10.5px] text-[#780000] dark:text-rose-400 shrink-0 mt-0.5 flex items-center gap-1.5">
-                                              <span className="inline-flex items-center justify-center h-4 w-4 rounded-full bg-[#780000]/15 dark:bg-[#780000]/30 text-[#780000] dark:text-rose-400 border border-[#780000]/30 shrink-0 shadow-2xs [&>svg]:h-2.5 [&>svg]:w-2.5">
+                                            <span className="inline-flex items-center gap-1 font-bold text-[#780000] dark:text-rose-400 mr-1.5 align-baseline">
+                                              <span className="inline-flex items-center justify-center h-3.5 w-3.5 rounded-full bg-[#780000]/15 dark:bg-[#780000]/30 text-[#780000] dark:text-rose-400 border border-[#780000]/30 shrink-0 [&>svg]:h-2 [&>svg]:w-2">
                                                 <AppIcon
                                                   icon={Xmark}
                                                   size="xs"
@@ -2637,25 +2633,23 @@ export function FacultyVerificationDrawer({
                                                   strokeWidth={2.5}
                                                 />
                                               </span>
-                                              Prior Revision Request:
+                                              <span>Prior Revision:</span>
                                             </span>
-                                            <p
-                                              className="text-slate-700 dark:text-slate-300 italic line-clamp-2"
-                                              title={priorRejectionNote}
-                                            >
+                                            <span className="text-slate-700 dark:text-slate-300 italic">
                                               &ldquo;{priorRejectionNote}&rdquo;
-                                            </p>
+                                            </span>
                                           </div>
                                         ) : isRevisionRequested ? (
                                           <div
-                                            className={`flex items-start gap-1.5 leading-snug ${
+                                            className={`line-clamp-2 ${
                                               facultyNote
-                                                ? "pt-1.5 border-t border-slate-200/70 dark:border-slate-800/80"
+                                                ? "pt-1 border-t border-slate-200/70 dark:border-slate-800/80"
                                                 : ""
                                             }`}
+                                            title={adminNote || "Please review and re-upload the corrected requirement document."}
                                           >
-                                            <span className="font-bold text-[10.5px] text-[#780000] dark:text-rose-400 shrink-0 mt-0.5 flex items-center gap-1.5">
-                                              <span className="inline-flex items-center justify-center h-4 w-4 rounded-full bg-[#780000]/15 dark:bg-[#780000]/30 text-[#780000] dark:text-rose-400 border border-[#780000]/30 shrink-0 shadow-2xs [&>svg]:h-2.5 [&>svg]:w-2.5">
+                                            <span className="inline-flex items-center gap-1 font-bold text-[#780000] dark:text-rose-400 mr-1.5 align-baseline">
+                                              <span className="inline-flex items-center justify-center h-3.5 w-3.5 rounded-full bg-[#780000]/15 dark:bg-[#780000]/30 text-[#780000] dark:text-rose-400 border border-[#780000]/30 shrink-0 [&>svg]:h-2 [&>svg]:w-2">
                                                 <AppIcon
                                                   icon={Xmark}
                                                   size="xs"
@@ -2663,28 +2657,26 @@ export function FacultyVerificationDrawer({
                                                   strokeWidth={2.5}
                                                 />
                                               </span>
-                                              Revision Sent:
+                                              <span>Revision Sent:</span>
                                             </span>
-                                            <p
-                                              className="text-slate-700 dark:text-slate-300 italic line-clamp-2"
-                                              title={adminNote || ""}
-                                            >
+                                            <span className="text-slate-700 dark:text-slate-300 italic">
                                               &ldquo;
                                               {adminNote ||
                                                 "Please review and re-upload the corrected requirement document."}
                                               &rdquo;
-                                            </p>
+                                            </span>
                                           </div>
                                         ) : isValidated && adminNote ? (
                                           <div
-                                            className={`flex items-start gap-1.5 leading-snug ${
+                                            className={`line-clamp-2 ${
                                               facultyNote
-                                                ? "pt-1.5 border-t border-slate-200/70 dark:border-slate-800/80"
+                                                ? "pt-1 border-t border-slate-200/70 dark:border-slate-800/80"
                                                 : ""
                                             }`}
+                                            title={adminNote}
                                           >
-                                            <span className="font-bold text-[10.5px] text-[#0b5336] dark:text-emerald-400 shrink-0 mt-0.5 flex items-center gap-1.5">
-                                              <span className="inline-flex items-center justify-center h-4 w-4 rounded-full bg-[#0b5336]/15 dark:bg-[#0b5336]/30 text-[#0b5336] dark:text-emerald-400 border border-[#0b5336]/30 shrink-0 shadow-2xs [&>svg]:h-2.5 [&>svg]:w-2.5">
+                                            <span className="inline-flex items-center gap-1 font-bold text-[#0b5336] dark:text-emerald-400 mr-1.5 align-baseline">
+                                              <span className="inline-flex items-center justify-center h-3.5 w-3.5 rounded-full bg-[#0b5336]/15 dark:bg-[#0b5336]/30 text-[#0b5336] dark:text-emerald-400 border border-[#0b5336]/30 shrink-0 [&>svg]:h-2 [&>svg]:w-2">
                                                 <AppIcon
                                                   icon={Check}
                                                   size="xs"
@@ -2692,14 +2684,11 @@ export function FacultyVerificationDrawer({
                                                   strokeWidth={2.5}
                                                 />
                                               </span>
-                                              Validated Remarks:
+                                              <span>Validated Remarks:</span>
                                             </span>
-                                            <p
-                                              className="text-slate-700 dark:text-slate-300 italic line-clamp-2"
-                                              title={adminNote}
-                                            >
+                                            <span className="text-slate-700 dark:text-slate-300 italic">
                                               &ldquo;{adminNote}&rdquo;
-                                            </p>
+                                            </span>
                                           </div>
                                         ) : null}
                                       </div>
@@ -2711,7 +2700,7 @@ export function FacultyVerificationDrawer({
                                   </td>
 
                                   {/* Column 4: Status / Action */}
-                                  <td className="px-4 py-3.5 align-middle text-center">
+                                  <td className="px-3.5 py-2.5 align-middle text-center">
                                     {isValidated ? (
                                       <div className="flex items-center justify-center">
                                         <SubmissionStatusBadge status="Validated" size="md" />
@@ -3247,33 +3236,38 @@ export function FacultyVerificationDrawer({
                                 </td>
 
                                 {/* Notes */}
-                                <td className="px-4 py-3.5 align-middle">
+                                <td className="px-3.5 py-2.5 align-middle">
                                   {facultyNote || adminNote ? (
-                                    <div className="rounded-xl border border-slate-200/80 dark:border-slate-800/80 bg-slate-50/70 dark:bg-slate-900/60 p-2.5 text-xs max-w-[320px] space-y-1.5 shadow-2xs">
+                                    <div className="rounded-lg border border-slate-200/80 dark:border-slate-800/80 bg-slate-50/70 dark:bg-slate-900/60 px-2.5 py-1.5 text-[11px] leading-tight space-y-1 shadow-2xs max-w-[380px]">
                                       {facultyNote ? (
-                                        <div className="flex items-start gap-1.5 leading-snug">
-                                          <span className="font-bold text-[10.5px] text-amber-700 dark:text-amber-400 shrink-0 mt-0.5 flex items-center gap-1.5">
-                                            <span className="inline-flex items-center justify-center h-4 w-4 rounded-full bg-amber-500/20 text-amber-700 dark:text-amber-400 border border-amber-500/30 shrink-0 shadow-2xs [&>svg]:h-2.5 [&>svg]:w-2.5">
+                                        <div className="line-clamp-2" title={facultyNote}>
+                                          <span className="inline-flex items-center gap-1 font-bold text-amber-700 dark:text-amber-400 mr-1.5 align-baseline">
+                                            <span className="inline-flex items-center justify-center h-3.5 w-3.5 rounded-full bg-amber-500/20 text-amber-700 dark:text-amber-400 border border-amber-500/30 shrink-0 [&>svg]:h-2 [&>svg]:w-2">
                                               <AppIcon icon={ChatBubble} size="xs" color="active" />
                                             </span>
-                                            Faculty Remarks:
+                                            <span>Faculty Remarks:</span>
                                           </span>
-                                          <p className="text-slate-700 dark:text-slate-300 italic line-clamp-2" title={facultyNote}>
+                                          <span className="text-slate-700 dark:text-slate-300 italic">
                                             &ldquo;{facultyNote}&rdquo;
-                                          </p>
+                                          </span>
                                         </div>
                                       ) : null}
                                       {adminNote ? (
-                                        <div className={`flex items-start gap-1.5 leading-snug ${facultyNote ? "pt-1.5 border-t border-slate-200/70 dark:border-slate-800/80" : ""}`}>
-                                          <span className="font-bold text-[10.5px] text-[#0b5336] dark:text-emerald-400 shrink-0 mt-0.5 flex items-center gap-1.5">
-                                            <span className="inline-flex items-center justify-center h-4 w-4 rounded-full bg-[#0b5336]/15 dark:bg-[#0b5336]/30 text-[#0b5336] dark:text-emerald-400 border border-[#0b5336]/30 shrink-0 shadow-2xs [&>svg]:h-2.5 [&>svg]:w-2.5">
+                                        <div
+                                          className={`line-clamp-2 ${
+                                            facultyNote ? "pt-1 border-t border-slate-200/70 dark:border-slate-800/80" : ""
+                                          }`}
+                                          title={adminNote}
+                                        >
+                                          <span className="inline-flex items-center gap-1 font-bold text-[#0b5336] dark:text-emerald-400 mr-1.5 align-baseline">
+                                            <span className="inline-flex items-center justify-center h-3.5 w-3.5 rounded-full bg-[#0b5336]/15 dark:bg-[#0b5336]/30 text-[#0b5336] dark:text-emerald-400 border border-[#0b5336]/30 shrink-0 [&>svg]:h-2 [&>svg]:w-2">
                                               <AppIcon icon={Check} size="xs" color="success" strokeWidth={2.5} />
                                             </span>
-                                            Validated Remarks:
+                                            <span>Validated Remarks:</span>
                                           </span>
-                                          <p className="text-slate-700 dark:text-slate-300 italic line-clamp-2" title={adminNote}>
+                                          <span className="text-slate-700 dark:text-slate-300 italic">
                                             &ldquo;{adminNote}&rdquo;
-                                          </p>
+                                          </span>
                                         </div>
                                       ) : null}
                                     </div>
