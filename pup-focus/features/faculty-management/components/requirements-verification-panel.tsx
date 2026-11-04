@@ -4114,6 +4114,7 @@ export function RequirementsPanel({
         totalMandatoryCount: number;
         totalValidatedCount: number;
         hasPendingUpload: boolean;
+        isNotSubmitted: boolean;
       }
     >();
 
@@ -4233,11 +4234,9 @@ export function RequirementsPanel({
         overallStatus = "Not Submitted";
         statusBadgeClass =
           "bg-white text-slate-600 border border-slate-200 dark:bg-slate-900 dark:text-slate-400 dark:border-slate-800 font-semibold";
-        if (activePanelTab !== "history") {
-          actionButtonText = "Review Requirements";
-          actionButtonClass =
-            "bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold";
-        }
+        actionButtonText = "Not Submitted Yet";
+        actionButtonClass =
+          "bg-slate-100 text-slate-400 border border-slate-200 dark:bg-slate-800 dark:text-slate-500 dark:border-slate-700 font-semibold cursor-not-allowed opacity-60 shadow-none";
       }
 
       map.set(faculty.id, {
@@ -4250,6 +4249,7 @@ export function RequirementsPanel({
         totalMandatoryCount,
         totalValidatedCount,
         hasPendingUpload,
+        isNotSubmitted: category === "not_submitted",
       });
     }
 
@@ -4780,11 +4780,17 @@ export function RequirementsPanel({
                   const totalMandatoryCount = statInfo?.totalMandatoryCount ?? DEFAULT_REQUIREMENTS.length;
                   const totalValidatedCount = statInfo?.totalValidatedCount ?? 0;
                   const overallStatus = statInfo?.overallStatus ?? "Not Submitted";
+                  const isNotSubmitted =
+                    statInfo?.isNotSubmitted ??
+                    (overallStatus === "Not Submitted" || statInfo?.category === "not_submitted");
                   const statusBadgeClass = statInfo?.statusBadgeClass ?? "";
-                  const actionButtonText = statInfo?.actionButtonText ?? "Review Requirements";
-                  const actionButtonClass =
-                    statInfo?.actionButtonClass ??
-                    "bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold";
+                  const actionButtonText = isNotSubmitted
+                    ? "Not Submitted Yet"
+                    : statInfo?.actionButtonText ?? "Review Requirements";
+                  const actionButtonClass = isNotSubmitted
+                    ? "bg-slate-100 text-slate-400 border border-slate-200 dark:bg-slate-800 dark:text-slate-500 dark:border-slate-700 font-semibold cursor-not-allowed opacity-60 shadow-none"
+                    : statInfo?.actionButtonClass ??
+                      "bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold";
 
                   const programCode =
                     faculty.program?.code || faculty.program?.name || "N/A";
@@ -4929,12 +4935,23 @@ export function RequirementsPanel({
                       <td className="px-4 py-3 text-right">
                         <button
                           type="button"
+                          disabled={isNotSubmitted}
+                          title={
+                            isNotSubmitted
+                              ? "This faculty member has not submitted any requirements yet"
+                              : actionButtonText
+                          }
                           onClick={() => {
+                            if (isNotSubmitted) return;
                             initialOpenedRef.current = faculty.id;
                             setReviewingFaculty(faculty);
                             onSelectFaculty?.(faculty.id);
                           }}
-                          className={`${actionButtonClass} px-3.5 py-1.5 rounded-xl text-xs shadow-sm active:scale-[0.98] transition cursor-pointer`}
+                          className={`${actionButtonClass} px-3.5 py-1.5 rounded-xl text-xs shadow-sm transition ${
+                            isNotSubmitted
+                              ? "cursor-not-allowed opacity-60"
+                              : "active:scale-[0.98] cursor-pointer"
+                          }`}
                         >
                           {actionButtonText}
                         </button>
