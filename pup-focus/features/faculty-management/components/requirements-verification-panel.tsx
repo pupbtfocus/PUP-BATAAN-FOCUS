@@ -555,7 +555,16 @@ export function FacultyVerificationDrawer({
   // Reset selected class whenever faculty or active term changes
   useEffect(() => {
     setSelectedClassId(null);
+    setSubjectSearchTerm("");
+    setSubjectStatusFilter("all");
+    setIsSubjectStatusDropdownOpen(false);
   }, [faculty.id, academicYear, semester]);
+
+  const [subjectSearchTerm, setSubjectSearchTerm] = useState("");
+  const [subjectStatusFilter, setSubjectStatusFilter] = useState<
+    "all" | "completed" | "pending_review" | "needs_revision" | "not_submitted"
+  >("all");
+  const [isSubjectStatusDropdownOpen, setIsSubjectStatusDropdownOpen] = useState(false);
 
 
   useEffect(() => {
@@ -781,6 +790,116 @@ export function FacultyVerificationDrawer({
       ) || null
     );
   }, [selectedClassId, classGroups]);
+
+  type SubjectStatusFilter =
+    | "all"
+    | "completed"
+    | "pending_review"
+    | "needs_revision"
+    | "not_submitted";
+
+  const subjectStatusFilterOptions: Array<{
+    id: SubjectStatusFilter;
+    label: string;
+  }> = [
+    { id: "all", label: "All Subjects" },
+    { id: "completed", label: "Completed / Validated" },
+    { id: "pending_review", label: "Pending Review" },
+    { id: "needs_revision", label: "Needs Revision" },
+    { id: "not_submitted", label: "Not Submitted" },
+  ];
+
+  const currentSubjectStatusOption =
+    subjectStatusFilterOptions.find((opt) => opt.id === subjectStatusFilter) ||
+    subjectStatusFilterOptions[0];
+
+  const getGroupCategory = useCallback(
+    (group: SubmissionClassGroup): SubjectStatusFilter => {
+      const groupPendingCount = group.submissions.filter((s) => {
+        const st = (s.status || "").toLowerCase();
+        return (
+          doesSubmissionMatchTerm(s, academicYear, semester) &&
+          (st === "uploaded" ||
+            st === "pending" ||
+            st === "submitted" ||
+            st === "under_review" ||
+            st === "pending_review")
+        );
+      }).length;
+
+      const groupRevisionCount = group.submissions.filter((s) => {
+        const st = (s.status || "").toLowerCase();
+        return (
+          doesSubmissionMatchTerm(s, academicYear, semester) &&
+          (st === "rejected" || st === "needs_revision")
+        );
+      }).length;
+
+      const groupValidatedCount = group.submissions.filter((s) => {
+        const st = (s.status || "").toLowerCase();
+        return (
+          doesSubmissionMatchTerm(s, academicYear, semester) &&
+          (st === "validated" || st === "approved")
+        );
+      }).length;
+
+      const termSubmissions = group.submissions.filter((s) =>
+        doesSubmissionMatchTerm(s, academicYear, semester)
+      );
+
+      const mandatoryReqs = allRequirements.filter((r) => r.isMandatory);
+      const reqsToCheck = mandatoryReqs.length > 0 ? mandatoryReqs : allRequirements;
+      const isAllDone =
+        reqsToCheck.length > 0 && groupValidatedCount >= reqsToCheck.length;
+
+      if (groupPendingCount > 0) return "pending_review";
+      if (groupRevisionCount > 0) return "needs_revision";
+      if (isAllDone || groupValidatedCount > 0) return "completed";
+      if (termSubmissions.length === 0) return "not_submitted";
+      return "not_submitted";
+    },
+    [academicYear, semester, allRequirements]
+  );
+
+  const subjectStatusCounts = useMemo(() => {
+    let completed = 0;
+    let pending_review = 0;
+    let needs_revision = 0;
+    let not_submitted = 0;
+
+    classGroups.forEach((group) => {
+      const cat = getGroupCategory(group);
+      if (cat === "completed") completed++;
+      else if (cat === "pending_review") pending_review++;
+      else if (cat === "needs_revision") needs_revision++;
+      else if (cat === "not_submitted") not_submitted++;
+    });
+
+    return {
+      all: classGroups.length,
+      completed,
+      pending_review,
+      needs_revision,
+      not_submitted,
+    };
+  }, [classGroups, getGroupCategory]);
+
+  const filteredClassGroups = useMemo(() => {
+    return classGroups.filter((group) => {
+      const search = subjectSearchTerm.trim().toLowerCase();
+      const matchesSearch =
+        !search ||
+        group.sectionCode.toLowerCase().includes(search) ||
+        group.subjectCode.toLowerCase().includes(search) ||
+        group.description.toLowerCase().includes(search);
+
+      const cat = getGroupCategory(group);
+      const matchesStatus =
+        subjectStatusFilter === "all" || cat === subjectStatusFilter;
+
+      return matchesSearch && matchesStatus;
+    });
+  }, [classGroups, subjectSearchTerm, subjectStatusFilter, getGroupCategory]);
 
   const historyClassGroups = useMemo<SubmissionClassGroup[]>(() => {
     const groups: SubmissionClassGroup[] = [];
@@ -1744,21 +1863,13 @@ export function FacultyVerificationDrawer({
             </h1>
           </div>
           <p className="mt-1.5 text-sm sm:text-base text-amber-950/90 font-medium leading-relaxed">
-            {academicYear ? (
-              <>Select a class load below to review and verify submitted requirements for A.Y. {academicYear} &bull; {semester}.</>
-            ) : (
-              <>Select a class load below to review and verify submitted requirements.</>
-            )}
+            Select a class load below to review and verify submitted requirements.
           </p>
         </div>
 
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-0.5">
           <p className="text-xs sm:text-sm text-amber-950/90 dark:text-amber-300/80 font-semibold">
-            {academicYear ? (
-              <>A.Y. {academicYear} • {semester} &bull; {classGroups.length} Registered Class Load{classGroups.length === 1 ? "" : "s"}</>
-            ) : (
-              <span>No Active Academic Term Configured</span>
-            )}
+            {classGroups.length} Registered Class Load{classGroups.length === 1 ? "" : "s"}
           </p>
 
           <div className="flex items-center gap-2">
@@ -1898,7 +2009,90 @@ export function FacultyVerificationDrawer({
               </div>
             ) : selectedClassId === null || !selectedGroup ? (
               /* Step 1: Class Selection Step (Default) */
-              <div className="space-y-5 pt-1">
+              <div className="space-y-4 pt-1">
+                {/* Control Bar: Search & Status Dropdown */}
+                {classGroups.length > 0 && (
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-200 shadow-xs">
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2.5 w-full sm:w-auto flex-wrap">
+                      {/* Search Input */}
+                      <input
+                        type="text"
+                        placeholder="Search subject or section..."
+                        value={subjectSearchTerm}
+                        onChange={(e) => setSubjectSearchTerm(e.target.value)}
+                        className="w-full sm:w-64 rounded-xl border border-slate-400 dark:border-slate-800 bg-white dark:bg-slate-950 px-3.5 py-2 text-sm text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 outline-none transition focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20"
+                      />
+
+                      {/* Custom Status Dropdown Filter */}
+                      <div className="relative w-full sm:w-auto">
+                        <button
+                          type="button"
+                          onClick={() => setIsSubjectStatusDropdownOpen((prev) => !prev)}
+                          className="flex w-full sm:w-auto items-center justify-between gap-2.5 rounded-xl border border-slate-400 dark:border-slate-800 bg-white dark:bg-slate-900 px-3.5 py-2 text-sm text-slate-900 dark:text-slate-200 outline-none transition hover:border-slate-500 dark:hover:border-slate-700 focus:border-amber-500 cursor-pointer"
+                        >
+                          <div className="flex items-center gap-1.5 text-left">
+                            <span className="text-slate-500 dark:text-slate-400 font-medium">Status:</span>
+                            <span className="font-semibold text-slate-900 dark:text-slate-100">
+                              {currentSubjectStatusOption.label}
+                            </span>
+                            <span className="ml-1 inline-flex items-center justify-center px-2 py-0.5 rounded-full text-xs font-bold bg-amber-500 text-slate-950 shadow-2xs">
+                              ({subjectStatusCounts[subjectStatusFilter]})
+                            </span>
+                          </div>
+                          <NavArrowDown
+                            className={`h-4 w-4 text-slate-500 dark:text-slate-400 transition-transform ${
+                              isSubjectStatusDropdownOpen ? "rotate-180" : ""
+                            }`}
+                          />
+                        </button>
+
+                        {isSubjectStatusDropdownOpen && (
+                          <>
+                            <div
+                              className="fixed inset-0 z-20"
+                              onClick={() => setIsSubjectStatusDropdownOpen(false)}
+                            />
+                            <div className="absolute left-0 top-full mt-1.5 z-30 w-full sm:w-64 rounded-2xl border border-slate-400 dark:border-slate-800 bg-white dark:bg-slate-900 py-1 shadow-xl text-sm text-slate-900 dark:text-slate-200 overflow-hidden">
+                              {subjectStatusFilterOptions.map((opt) => {
+                                const isSelected = subjectStatusFilter === opt.id;
+                                const count = subjectStatusCounts[opt.id];
+                                return (
+                                  <button
+                                    key={opt.id}
+                                    type="button"
+                                    onClick={() => {
+                                      setSubjectStatusFilter(opt.id);
+                                      setIsSubjectStatusDropdownOpen(false);
+                                    }}
+                                    className={`w-full flex items-center justify-between gap-2.5 px-3.5 py-2 transition hover:bg-slate-100 dark:hover:bg-slate-800 text-left cursor-pointer ${
+                                      isSelected
+                                        ? "bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-slate-100 font-semibold"
+                                        : "text-slate-700 dark:text-slate-300"
+                                    }`}
+                                  >
+                                    <span className="truncate">{opt.label}</span>
+                                    <span
+                                      className={`ml-2 inline-flex items-center justify-center px-2 py-0.5 rounded-full text-xs font-bold shrink-0 shadow-2xs ${
+                                        isSelected
+                                          ? "bg-amber-500 text-slate-950"
+                                          : count > 0
+                                          ? "bg-slate-700 dark:bg-slate-600 text-white"
+                                          : "bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-400"
+                                      }`}
+                                    >
+                                      ({count})
+                                    </span>
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
                 {/* Responsive Grid of Class Cards */}
                 {classGroups.length === 0 ? (
                   <div className="overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xs py-14 text-center text-slate-500 dark:text-slate-400">
@@ -1914,9 +2108,21 @@ export function FacultyVerificationDrawer({
                       </p>
                     </div>
                   </div>
+                ) : filteredClassGroups.length === 0 ? (
+                  <div className="overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xs py-14 text-center text-slate-500 dark:text-slate-400">
+                    <div className="flex flex-col items-center justify-center gap-2 max-w-sm mx-auto">
+                      <AppIcon icon={InfoCircle} size="lg" color="muted" />
+                      <h5 className="text-sm font-bold text-slate-800 dark:text-slate-200">
+                        No Matching Subjects
+                      </h5>
+                      <p className="text-xs text-slate-500 dark:text-slate-400">
+                        No subject loads match the current search or status filter.
+                      </p>
+                    </div>
+                  </div>
                 ) : (
-                  <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5 pt-3">
-                    {classGroups.map((group) => {
+                  <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5 pt-1">
+                    {filteredClassGroups.map((group) => {
                       const groupPendingCount = group.submissions.filter((s) => {
                         const st = (s.status || "").toLowerCase();
                         return (
