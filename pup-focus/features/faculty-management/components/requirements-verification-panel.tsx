@@ -1986,21 +1986,27 @@ export function FacultyVerificationDrawer({
           </div>
         ) : null}
 
-        {/* Tab Switcher */}
-        <div className="border-b border-slate-200 dark:border-slate-800/80 px-6 py-3 bg-white dark:bg-slate-900">
-          <div className="inline-flex p-1 bg-slate-100 dark:bg-slate-950/80 rounded-2xl border border-slate-200/80 dark:border-slate-800/80">
+        {/* Unified Tab Switcher & Search/Filter Controls in 1 Row */}
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 border-b border-slate-200 dark:border-slate-800/80 px-6 py-3 bg-white dark:bg-slate-900">
+          <div className="inline-flex p-1 bg-slate-100 dark:bg-slate-950/80 rounded-2xl border border-slate-200/80 dark:border-slate-800/80 shrink-0">
             <button
               type="button"
               onClick={() => setActiveTab("current")}
-              className={`inline-flex items-center gap-2 rounded-xl px-4 py-2 text-xs sm:text-sm font-semibold transition cursor-pointer ${
+              className={`inline-flex items-center gap-2 rounded-xl px-4 py-2 text-xs sm:text-sm font-bold transition cursor-pointer ${
                 activeTab === "current"
-                  ? "bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 shadow-2xs font-bold"
+                  ? "bg-amber-500 text-slate-950 border border-amber-600 shadow-xs"
                   : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200"
               }`}
             >
               <span>Current Submissions</span>
               {pendingSubmissionsCount > 0 ? (
-                <span className="inline-flex items-center justify-center rounded-full bg-amber-500 text-slate-950 px-2 py-0.5 text-xs font-bold leading-none">
+                <span
+                  className={`inline-flex items-center justify-center rounded-full px-2 py-0.5 text-xs font-black leading-none ${
+                    activeTab === "current"
+                      ? "bg-slate-950 text-amber-400"
+                      : "bg-amber-500 text-slate-950"
+                  }`}
+                >
                   {pendingSubmissionsCount}
                 </span>
               ) : null}
@@ -2013,15 +2019,96 @@ export function FacultyVerificationDrawer({
                   setIsLoadingHistory(true);
                 }
               }}
-              className={`rounded-xl px-4 py-2 text-xs sm:text-sm font-semibold transition cursor-pointer ${
+              className={`rounded-xl px-4 py-2 text-xs sm:text-sm font-bold transition cursor-pointer ${
                 activeTab === "history"
-                  ? "bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 shadow-2xs font-bold"
+                  ? "bg-amber-500 text-slate-950 border border-amber-600 shadow-xs"
                   : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200"
               }`}
             >
               Verification History
             </button>
           </div>
+
+          {/* Subject Search & Status Filter Controls (Row Partner) */}
+          {activeTab === "current" && selectedClassId === null && classGroups.length > 0 && (
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2.5 w-full lg:w-auto">
+              {/* Search Input */}
+              <input
+                type="text"
+                placeholder="Search subject or section..."
+                value={subjectSearchTerm}
+                onChange={(e) => setSubjectSearchTerm(e.target.value)}
+                className="w-full sm:w-60 rounded-xl border border-slate-400 dark:border-slate-800 bg-white dark:bg-slate-950 px-3.5 py-2 text-xs sm:text-sm text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 outline-none transition focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20"
+              />
+
+              {/* Custom Status Dropdown Filter */}
+              <div className="relative w-full sm:w-auto">
+                <button
+                  type="button"
+                  onClick={() => setIsSubjectStatusDropdownOpen((prev) => !prev)}
+                  className="flex w-full sm:w-auto items-center justify-between gap-2.5 rounded-xl border border-slate-400 dark:border-slate-800 bg-white dark:bg-slate-900 px-3.5 py-2 text-xs sm:text-sm text-slate-900 dark:text-slate-200 outline-none transition hover:border-slate-500 dark:hover:border-slate-700 focus:border-amber-500 cursor-pointer shadow-2xs"
+                >
+                  <div className="flex items-center gap-1.5 text-left">
+                    <span className="text-slate-500 dark:text-slate-400 font-medium">Status:</span>
+                    <span className="font-semibold text-slate-900 dark:text-slate-100">
+                      {currentSubjectStatusOption.label}
+                    </span>
+                    <span className="ml-1 inline-flex items-center justify-center px-2 py-0.5 rounded-full text-xs font-bold bg-amber-500 text-slate-950 shadow-2xs">
+                      ({subjectStatusCounts[subjectStatusFilter]})
+                    </span>
+                  </div>
+                  <NavArrowDown
+                    className={`h-4 w-4 text-slate-500 dark:text-slate-400 transition-transform ${
+                      isSubjectStatusDropdownOpen ? "rotate-180" : ""
+                    }`}
+                  />
+                </button>
+
+                {isSubjectStatusDropdownOpen && (
+                  <>
+                    <div
+                      className="fixed inset-0 z-20"
+                      onClick={() => setIsSubjectStatusDropdownOpen(false)}
+                    />
+                    <div className="absolute right-0 top-full mt-1.5 z-30 w-full sm:w-64 rounded-2xl border border-slate-400 dark:border-slate-800 bg-white dark:bg-slate-900 py-1 shadow-xl text-xs sm:text-sm text-slate-900 dark:text-slate-200 overflow-hidden">
+                      {subjectStatusFilterOptions.map((opt) => {
+                        const isSelected = subjectStatusFilter === opt.id;
+                        const count = subjectStatusCounts[opt.id];
+                        return (
+                          <button
+                            key={opt.id}
+                            type="button"
+                            onClick={() => {
+                              setSubjectStatusFilter(opt.id);
+                              setIsSubjectStatusDropdownOpen(false);
+                            }}
+                            className={`w-full flex items-center justify-between gap-2.5 px-3.5 py-2 transition hover:bg-slate-100 dark:hover:bg-slate-800 text-left cursor-pointer ${
+                              isSelected
+                                ? "bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-slate-100 font-semibold"
+                                : "text-slate-700 dark:text-slate-300"
+                            }`}
+                          >
+                            <span className="truncate">{opt.label}</span>
+                            <span
+                              className={`ml-2 inline-flex items-center justify-center px-2 py-0.5 rounded-full text-xs font-bold shrink-0 shadow-2xs ${
+                                isSelected
+                                  ? "bg-amber-500 text-slate-950"
+                                  : count > 0
+                                  ? "bg-slate-700 dark:bg-slate-600 text-white"
+                                  : "bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-400"
+                              }`}
+                            >
+                              ({count})
+                            </span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </>
+                )}
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Body Content */}
@@ -2040,89 +2127,6 @@ export function FacultyVerificationDrawer({
             ) : selectedClassId === null || !selectedGroup ? (
               /* Step 1: Class Selection Step (Default) */
               <div className="space-y-4 pt-1">
-                {/* Control Bar: Search & Status Dropdown */}
-                {classGroups.length > 0 && (
-                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-200 shadow-xs">
-                    <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2.5 w-full sm:w-auto flex-wrap">
-                      {/* Search Input */}
-                      <input
-                        type="text"
-                        placeholder="Search subject or section..."
-                        value={subjectSearchTerm}
-                        onChange={(e) => setSubjectSearchTerm(e.target.value)}
-                        className="w-full sm:w-64 rounded-xl border border-slate-400 dark:border-slate-800 bg-white dark:bg-slate-950 px-3.5 py-2 text-sm text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 outline-none transition focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20"
-                      />
-
-                      {/* Custom Status Dropdown Filter */}
-                      <div className="relative w-full sm:w-auto">
-                        <button
-                          type="button"
-                          onClick={() => setIsSubjectStatusDropdownOpen((prev) => !prev)}
-                          className="flex w-full sm:w-auto items-center justify-between gap-2.5 rounded-xl border border-slate-400 dark:border-slate-800 bg-white dark:bg-slate-900 px-3.5 py-2 text-sm text-slate-900 dark:text-slate-200 outline-none transition hover:border-slate-500 dark:hover:border-slate-700 focus:border-amber-500 cursor-pointer"
-                        >
-                          <div className="flex items-center gap-1.5 text-left">
-                            <span className="text-slate-500 dark:text-slate-400 font-medium">Status:</span>
-                            <span className="font-semibold text-slate-900 dark:text-slate-100">
-                              {currentSubjectStatusOption.label}
-                            </span>
-                            <span className="ml-1 inline-flex items-center justify-center px-2 py-0.5 rounded-full text-xs font-bold bg-amber-500 text-slate-950 shadow-2xs">
-                              ({subjectStatusCounts[subjectStatusFilter]})
-                            </span>
-                          </div>
-                          <NavArrowDown
-                            className={`h-4 w-4 text-slate-500 dark:text-slate-400 transition-transform ${
-                              isSubjectStatusDropdownOpen ? "rotate-180" : ""
-                            }`}
-                          />
-                        </button>
-
-                        {isSubjectStatusDropdownOpen && (
-                          <>
-                            <div
-                              className="fixed inset-0 z-20"
-                              onClick={() => setIsSubjectStatusDropdownOpen(false)}
-                            />
-                            <div className="absolute left-0 top-full mt-1.5 z-30 w-full sm:w-64 rounded-2xl border border-slate-400 dark:border-slate-800 bg-white dark:bg-slate-900 py-1 shadow-xl text-sm text-slate-900 dark:text-slate-200 overflow-hidden">
-                              {subjectStatusFilterOptions.map((opt) => {
-                                const isSelected = subjectStatusFilter === opt.id;
-                                const count = subjectStatusCounts[opt.id];
-                                return (
-                                  <button
-                                    key={opt.id}
-                                    type="button"
-                                    onClick={() => {
-                                      setSubjectStatusFilter(opt.id);
-                                      setIsSubjectStatusDropdownOpen(false);
-                                    }}
-                                    className={`w-full flex items-center justify-between gap-2.5 px-3.5 py-2 transition hover:bg-slate-100 dark:hover:bg-slate-800 text-left cursor-pointer ${
-                                      isSelected
-                                        ? "bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-slate-100 font-semibold"
-                                        : "text-slate-700 dark:text-slate-300"
-                                    }`}
-                                  >
-                                    <span className="truncate">{opt.label}</span>
-                                    <span
-                                      className={`ml-2 inline-flex items-center justify-center px-2 py-0.5 rounded-full text-xs font-bold shrink-0 shadow-2xs ${
-                                        isSelected
-                                          ? "bg-amber-500 text-slate-950"
-                                          : count > 0
-                                          ? "bg-slate-700 dark:bg-slate-600 text-white"
-                                          : "bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-400"
-                                      }`}
-                                    >
-                                      ({count})
-                                    </span>
-                                  </button>
-                                );
-                              })}
-                            </div>
-                          </>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                )}
-
                 {/* Responsive Grid of Class Cards */}
                 {classGroups.length === 0 ? (
                   <div className="overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xs py-14 text-center text-slate-500 dark:text-slate-400">
