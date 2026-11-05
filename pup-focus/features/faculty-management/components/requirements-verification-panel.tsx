@@ -1999,17 +1999,15 @@ export function FacultyVerificationDrawer({
               }`}
             >
               <span>Current Submissions</span>
-              {pendingSubmissionsCount > 0 ? (
-                <span
-                  className={`inline-flex items-center justify-center rounded-full px-2 py-0.5 text-xs font-black leading-none ${
-                    activeTab === "current"
-                      ? "bg-slate-950 text-amber-400"
-                      : "bg-amber-500 text-slate-950"
-                  }`}
-                >
-                  {pendingSubmissionsCount}
-                </span>
-              ) : null}
+              <span
+                className={`inline-flex items-center justify-center rounded-full px-2 py-0.5 text-xs font-black leading-none ${
+                  activeTab === "current"
+                    ? "bg-white text-slate-950 border border-amber-600/30 shadow-2xs"
+                    : "bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300"
+                }`}
+              >
+                {classGroups.length}
+              </span>
             </button>
             <button
               type="button"
@@ -2019,13 +2017,22 @@ export function FacultyVerificationDrawer({
                   setIsLoadingHistory(true);
                 }
               }}
-              className={`rounded-xl px-4 py-2 text-xs sm:text-sm font-bold transition cursor-pointer ${
+              className={`inline-flex items-center gap-2 rounded-xl px-4 py-2 text-xs sm:text-sm font-bold transition cursor-pointer ${
                 activeTab === "history"
                   ? "bg-amber-500 text-slate-950 border border-amber-600 shadow-xs"
                   : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200"
               }`}
             >
-              Verification History
+              <span>Verification History</span>
+              <span
+                className={`inline-flex items-center justify-center rounded-full px-2 py-0.5 text-xs font-black leading-none ${
+                  activeTab === "history"
+                    ? "bg-white text-slate-950 border border-amber-600/30 shadow-2xs"
+                    : "bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300"
+                }`}
+              >
+                {historySubmissions.length}
+              </span>
             </button>
           </div>
 
@@ -2429,7 +2436,7 @@ export function FacultyVerificationDrawer({
                       <span
                         className={`rounded-full px-1.5 py-0.5 text-[10.5px] font-bold ${
                           filterMode === "all"
-                            ? "bg-slate-950/20 text-slate-950"
+                            ? "bg-white text-slate-950 border border-amber-600/30 shadow-2xs"
                             : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400"
                         }`}
                       >
@@ -2451,7 +2458,7 @@ export function FacultyVerificationDrawer({
                       <span
                         className={`rounded-full px-1.5 py-0.5 text-[10.5px] font-bold ${
                           filterMode === "pending"
-                            ? "bg-slate-950/20 text-slate-950"
+                            ? "bg-white text-slate-950 border border-amber-600/30 shadow-2xs"
                             : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400"
                         }`}
                       >
@@ -2474,7 +2481,7 @@ export function FacultyVerificationDrawer({
                         <span
                           className={`rounded-full px-1.5 py-0.5 text-[10.5px] font-bold ${
                             filterMode === "revision_uploaded"
-                              ? "bg-slate-950/20 text-slate-950"
+                              ? "bg-white text-slate-950 border border-amber-600/30 shadow-2xs"
                               : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400"
                           }`}
                         >
@@ -2497,7 +2504,7 @@ export function FacultyVerificationDrawer({
                       <span
                         className={`rounded-full px-1.5 py-0.5 text-[10.5px] font-bold ${
                           filterMode === "validated"
-                            ? "bg-slate-950/20 text-slate-950"
+                            ? "bg-white text-slate-950 border border-amber-600/30 shadow-2xs"
                             : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400"
                         }`}
                       >
@@ -2520,7 +2527,7 @@ export function FacultyVerificationDrawer({
                         <span
                           className={`rounded-full px-1.5 py-0.5 text-[10.5px] font-bold ${
                             filterMode === "revision"
-                              ? "bg-slate-950/20 text-slate-950"
+                              ? "bg-white text-slate-950 border border-amber-600/30 shadow-2xs"
                               : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400"
                           }`}
                         >

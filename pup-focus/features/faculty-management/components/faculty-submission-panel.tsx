@@ -508,6 +508,20 @@ function FacultySubmissionPanelContent({
     }
     return "Unassigned";
   }, [initialData?.department, initialData?.program]);
+
+  const facultyDisplayName = useMemo(() => {
+    if (resolvedLastName && resolvedFirstName) {
+      return `${resolvedLastName}, ${resolvedFirstName}${resolvedMiddleName ? ` ${resolvedMiddleName}` : ""}`.toUpperCase();
+    }
+    const rawName = currentFacultyName || facultyName || "Faculty Member";
+    const tokens = rawName.trim().split(/\s+/);
+    if (tokens.length > 1) {
+      const last = tokens[tokens.length - 1];
+      const rest = tokens.slice(0, -1).join(" ");
+      return `${last}, ${rest}`.toUpperCase();
+    }
+    return rawName.toUpperCase();
+  }, [resolvedLastName, resolvedFirstName, resolvedMiddleName, currentFacultyName, facultyName]);
   const avatarUrl = useMemo(() => {
     return (
       facultyAvatarUrl ??
@@ -4595,7 +4609,7 @@ function FacultySubmissionPanelContent({
                   /* ─── STEP 1: CLASS / SUBJECT LOAD SELECTION ─────────────────── */
                   <div className="space-y-5">
                     {/* Solid Amber Card Header */}
-                    <div className="relative overflow-hidden rounded-2xl border-2 border-amber-500 bg-amber-400 p-5 sm:p-6 shadow-md shadow-amber-500/10 space-y-3 transition-colors mb-2">
+                    <div className="relative overflow-hidden rounded-2xl border-2 border-amber-500 bg-amber-400 p-5 sm:p-6 shadow-md shadow-amber-500/10 flex flex-col sm:flex-row sm:items-center justify-between gap-4 transition-colors mb-2">
                       <div>
                         <div className="flex items-center gap-2.5 flex-wrap">
                           <h1 className="text-2xl sm:text-3xl font-black text-slate-950 tracking-tight">
@@ -4607,64 +4621,95 @@ function FacultySubmissionPanelContent({
                         </p>
                       </div>
 
-                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-0.5">
-                        <div className="flex items-center justify-between gap-2 w-full sm:w-auto">
-                          <p className="text-xs sm:text-sm text-amber-950/90 dark:text-amber-300/80 font-semibold">
-                            {hasActiveAcademicTerm && activeAY ? (
-                              <>
-                                A.Y. {activeAY} • {activeSem} &bull; {facultyClasses.length} Registered Class Load{facultyClasses.length === 1 ? "" : "s"}
-                              </>
-                            ) : (
-                              <span>No Active Academic Term Configured</span>
-                            )}
-                          </p>
-                          <button
-                            type="button"
-                            onClick={() => void handleManualRefresh()}
-                            disabled={isRefreshing}
-                            title="Refresh status and classes"
-                            className="sm:hidden inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold rounded-xl border border-slate-300 dark:border-slate-700 bg-white hover:bg-slate-50 dark:bg-slate-900 dark:hover:bg-slate-800 text-slate-800 dark:text-slate-100 transition-all disabled:opacity-50 cursor-pointer shadow-xs active:scale-[0.98] shrink-0"
-                          >
-                            <Refresh
-                              className={`h-3.5 w-3.5 ${isRefreshing ? "animate-spin" : ""}`}
+                      <div className="flex flex-wrap items-center gap-2.5 shrink-0">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setClassFormError(null);
+                            setIsAddClassModalOpen(true);
+                          }}
+                          className="inline-flex items-center justify-center gap-1.5 bg-[#780000] hover:bg-[#5e0000] text-white border border-[#5e0000] rounded-xl px-4 py-2 sm:px-4.5 sm:py-2.5 text-xs sm:text-sm font-bold transition-all cursor-pointer whitespace-nowrap shadow-xs active:scale-[0.98]"
+                        >
+                          <AppIcon icon={Plus} size="sm" color="white" />
+                          <span>Add Class / Subject Load</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={openHistoryModal}
+                          className="inline-flex items-center justify-center gap-2 bg-[#0b5336] hover:bg-[#08412a] text-white border border-[#08412a] rounded-xl px-4 py-2 sm:px-4.5 sm:py-2.5 text-xs sm:text-sm font-semibold transition-all cursor-pointer whitespace-nowrap shadow-xs active:scale-[0.98]"
+                          title="View validated documents history"
+                        >
+                          <AppIcon icon={CheckCircle} size="md" color="white" />
+                          <span>Validation History</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => void handleManualRefresh()}
+                          disabled={isRefreshing}
+                          title="Refresh status and classes"
+                          className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white hover:bg-slate-50 dark:bg-slate-900 dark:hover:bg-slate-800 text-slate-800 dark:text-slate-100 px-4 py-2 sm:px-4.5 sm:py-2.5 text-xs sm:text-sm font-semibold transition-all disabled:opacity-50 cursor-pointer whitespace-nowrap shadow-xs active:scale-[0.98]"
+                        >
+                          <Refresh
+                            className={`h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`}
+                          />
+                          <span>{isRefreshing ? "Refreshing..." : "Refresh"}</span>
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Top row with PUP SIS style Faculty Name Header */}
+                    <div className="flex items-center justify-between gap-3 flex-wrap">
+                      <div className="flex items-center gap-2.5">
+                        <div className="flex h-7 w-7 shrink-0 items-center justify-center overflow-hidden rounded-full border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 text-[10px] font-bold text-slate-800 dark:text-slate-200 shadow-2xs">
+                          {avatarUrl ? (
+                            <img
+                              src={avatarUrl}
+                              alt={currentFacultyName || "Faculty Profile"}
+                              className="h-full w-full object-cover"
                             />
-                            <span>{isRefreshing ? "Refreshing..." : "Refresh"}</span>
-                          </button>
+                          ) : (
+                            <span>{buildFacultyInitials(currentFacultyName || "Faculty")}</span>
+                          )}
+                        </div>
+                        <span className="text-xs sm:text-sm font-black text-[#780000] dark:text-rose-400 tracking-wide uppercase">
+                          {facultyDisplayName}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* PUP SIS Style Academic Term & Info Card */}
+                    <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 overflow-hidden shadow-2xs">
+                      <div className="bg-[#780000] text-white px-4 py-2 font-bold text-xs sm:text-sm tracking-wide">
+                        {hasActiveAcademicTerm && activeAY
+                          ? `School Year ${activeAY} ${activeSem}`
+                          : "No Active Academic Term Configured"}
+                      </div>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-y-3.5 gap-x-6 p-4 bg-white dark:bg-slate-900 text-xs">
+                        <div>
+                          <span className="font-bold text-slate-900 dark:text-slate-100 block mb-0.5">
+                            Course Code &amp; Description
+                          </span>
+                          <p className="font-medium text-slate-700 dark:text-slate-300">
+                            {departmentName}
+                          </p>
                         </div>
 
-                        <div className="flex flex-wrap items-center gap-2.5">
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setClassFormError(null);
-                              setIsAddClassModalOpen(true);
-                            }}
-                            className="inline-flex items-center justify-center gap-1.5 bg-[#780000] hover:bg-[#5e0000] text-white border border-[#5e0000] rounded-xl px-4 py-2 sm:px-4.5 sm:py-2.5 text-xs sm:text-sm font-bold transition-all cursor-pointer whitespace-nowrap shadow-xs active:scale-[0.98]"
-                          >
-                            <AppIcon icon={Plus} size="sm" color="white" />
-                            <span>Add Class / Subject Load</span>
-                          </button>
-                          <button
-                            type="button"
-                            onClick={openHistoryModal}
-                            className="inline-flex items-center justify-center gap-2 bg-[#0b5336] hover:bg-[#08412a] text-white border border-[#08412a] rounded-xl px-4 py-2 sm:px-4.5 sm:py-2.5 text-xs sm:text-sm font-semibold transition-all cursor-pointer whitespace-nowrap shadow-xs active:scale-[0.98]"
-                            title="View validated documents history"
-                          >
-                            <AppIcon icon={CheckCircle} size="md" color="white" />
-                            <span>Validation History</span>
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => void handleManualRefresh()}
-                            disabled={isRefreshing}
-                            title="Refresh status and classes"
-                            className="hidden sm:inline-flex items-center justify-center gap-1.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white hover:bg-slate-50 dark:bg-slate-900 dark:hover:bg-slate-800 text-slate-800 dark:text-slate-100 px-4 py-2 sm:px-4.5 sm:py-2.5 text-xs sm:text-sm font-semibold transition-all disabled:opacity-50 cursor-pointer whitespace-nowrap shadow-xs active:scale-[0.98]"
-                          >
-                            <Refresh
-                              className={`h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`}
-                            />
-                            <span>{isRefreshing ? "Refreshing..." : "Refresh"}</span>
-                          </button>
+                        <div>
+                          <span className="font-bold text-slate-900 dark:text-slate-100 block mb-0.5">
+                            Assigned Class Loads
+                          </span>
+                          <p className="font-medium text-slate-700 dark:text-slate-300">
+                            {facultyClasses.length} Registered Class Load{facultyClasses.length === 1 ? "" : "s"}
+                          </p>
+                        </div>
+
+                        <div>
+                          <span className="font-bold text-slate-900 dark:text-slate-100 block mb-0.5">
+                            Faculty Email
+                          </span>
+                          <p className="font-medium text-slate-700 dark:text-slate-300 truncate" title={facultyEmail || undefined}>
+                            {facultyEmail || "—"}
+                          </p>
                         </div>
                       </div>
                     </div>
@@ -4704,83 +4749,64 @@ function FacultySubmissionPanelContent({
                       </div>
                     ) : (
                       <div className="space-y-4">
-                        {/* Header, Count Badges & Filter Controls */}
-                        <div className="flex flex-col gap-3 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 shadow-sm">
-                          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
-                            <div>
-                              <div className="flex items-center gap-2 flex-wrap">
-                                <h2 className="text-sm font-black uppercase tracking-wider text-[#780000]">
-                                  Assigned Subject Loads
-                                </h2>
-                                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-black bg-[#780000] text-white shadow-xs">
-                                  {displayedClasses.length} of {classTab === "active" ? activeFacultyClasses.length : archivedFacultyClasses.length} Subjects
-                                </span>
-                                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-black bg-amber-400 text-amber-950 border border-amber-500 shadow-xs">
-                                  {facultyClasses.length} Total Load{facultyClasses.length === 1 ? "" : "s"}
-                                </span>
-                              </div>
-                              <p className="text-xs font-medium text-slate-600 mt-1">
-                                Click any class to upload requirements, or filter and manage loads below.
-                              </p>
-                            </div>
-
-                            {/* Active / Archive Toggle Pills */}
-                            <div className="inline-flex items-center p-1 bg-slate-100 rounded-xl border border-slate-200 self-start lg:self-auto">
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  setClassTab("active");
-                                  setClassSectionFilter("ALL");
-                                }}
-                                className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-black transition-all cursor-pointer ${
+                        {/* Unified Tabs & Search/Filter Controls in 1 Row */}
+                        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 shadow-sm">
+                          {/* Active / Archive Toggle Pills with Solid Highlight */}
+                          <div className="inline-flex p-1 bg-slate-100 dark:bg-slate-950/80 rounded-2xl border border-slate-200/80 dark:border-slate-800/80 shrink-0 self-start lg:self-auto">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setClassTab("active");
+                                setClassSectionFilter("ALL");
+                              }}
+                              className={`inline-flex items-center gap-2 rounded-xl px-4 py-2 text-xs sm:text-sm font-bold transition cursor-pointer ${
+                                classTab === "active"
+                                  ? "bg-amber-500 text-slate-950 border border-amber-600 shadow-xs"
+                                  : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200"
+                              }`}
+                            >
+                              <span>Active Loads</span>
+                              <span
+                                className={`inline-flex items-center justify-center rounded-full px-2 py-0.5 text-xs font-black leading-none ${
                                   classTab === "active"
-                                    ? "bg-[#780000] text-white shadow-xs"
-                                    : "text-slate-700 hover:bg-slate-200"
+                                    ? "bg-white text-slate-950 border border-amber-600/30 shadow-2xs"
+                                    : "bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300"
                                 }`}
                               >
-                                <span>Active</span>
-                                <span
-                                  className={`px-1.5 py-0.5 rounded-md text-[10px] font-black ${
-                                    classTab === "active"
-                                      ? "bg-amber-400 text-amber-950"
-                                      : "bg-slate-200 text-slate-700"
-                                  }`}
-                                >
-                                  {activeFacultyClasses.length}
-                                </span>
-                              </button>
+                                {activeFacultyClasses.length}
+                              </span>
+                            </button>
 
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  setClassTab("archived");
-                                  setClassSectionFilter("ALL");
-                                }}
-                                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-black transition-all cursor-pointer ${
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setClassTab("archived");
+                                setClassSectionFilter("ALL");
+                              }}
+                              className={`inline-flex items-center gap-1.5 rounded-xl px-4 py-2 text-xs sm:text-sm font-bold transition cursor-pointer ${
+                                classTab === "archived"
+                                  ? "bg-amber-500 text-slate-950 border border-amber-600 shadow-xs"
+                                  : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200"
+                              }`}
+                            >
+                              <AppIcon icon={Archive} size="sm" color="inherit" />
+                              <span>Archived</span>
+                              <span
+                                className={`inline-flex items-center justify-center rounded-full px-2 py-0.5 text-xs font-black leading-none ${
                                   classTab === "archived"
-                                    ? "bg-[#780000] text-white shadow-xs"
-                                    : "text-slate-700 hover:bg-slate-200"
+                                    ? "bg-white text-slate-950 border border-amber-600/30 shadow-2xs"
+                                    : "bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300"
                                 }`}
                               >
-                                <AppIcon icon={Archive} size="sm" color="inherit" />
-                                <span>Archived</span>
-                                <span
-                                  className={`px-1.5 py-0.5 rounded-md text-[10px] font-black ${
-                                    classTab === "archived"
-                                      ? "bg-amber-400 text-amber-950"
-                                      : "bg-slate-200 text-slate-700"
-                                  }`}
-                                >
-                                  {archivedFacultyClasses.length}
-                                </span>
-                              </button>
-                            </div>
+                                {archivedFacultyClasses.length}
+                              </span>
+                            </button>
                           </div>
 
-                          {/* Search & Section Filter Row */}
-                          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 pt-2 border-t border-slate-200">
-                            <div className="relative flex-1">
-                              <span className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-[#780000]">
+                          {/* Search & Section Filter in the Same Row */}
+                          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 w-full lg:w-auto">
+                            <div className="relative flex-1 sm:w-64">
+                              <span className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400">
                                 <AppIcon icon={Search} size="sm" color="inherit" />
                               </span>
                               <input
@@ -4788,13 +4814,13 @@ function FacultySubmissionPanelContent({
                                 value={classSearchQuery}
                                 onChange={(e) => setClassSearchQuery(e.target.value)}
                                 placeholder="Search by subject code, description, or section..."
-                                className="w-full rounded-xl border border-slate-200 bg-white pl-9 pr-8 py-2 text-xs font-bold text-slate-800 placeholder:text-slate-400 focus:border-[#780000] focus:outline-none"
+                                className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 pl-9 pr-8 py-2 text-xs sm:text-sm font-medium text-slate-900 dark:text-slate-100 placeholder:text-slate-400 outline-none transition focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20"
                               />
                               {classSearchQuery && (
                                 <button
                                   type="button"
                                   onClick={() => setClassSearchQuery("")}
-                                  className="absolute inset-y-0 right-0 flex items-center pr-2.5 text-slate-500 hover:text-[#780000] cursor-pointer"
+                                  className="absolute inset-y-0 right-0 flex items-center pr-2.5 text-slate-400 hover:text-slate-600 cursor-pointer"
                                   title="Clear search"
                                 >
                                   <AppIcon icon={Xmark} size="sm" color="inherit" />
@@ -4802,42 +4828,40 @@ function FacultySubmissionPanelContent({
                               )}
                             </div>
 
-                            <div className="flex items-center gap-2">
-                              <div className="relative flex items-center">
-                                <span className="pointer-events-none absolute left-3 text-[#780000]">
-                                  <AppIcon icon={FilterList} size="sm" color="inherit" />
-                                </span>
-                                <select
-                                  value={classSectionFilter}
-                                  onChange={(e) => setClassSectionFilter(e.target.value)}
-                                  aria-label="Filter by section"
-                                  className="rounded-xl border border-slate-200 bg-slate-50 pl-9 pr-8 py-2 text-xs font-black text-slate-800 focus:border-[#780000] focus:outline-none cursor-pointer"
-                                >
-                                  <option value="ALL">
-                                    All Sections ({classTab === "active" ? activeFacultyClasses.length : archivedFacultyClasses.length})
+                            <div className="relative flex items-center">
+                              <span className="pointer-events-none absolute left-3 text-slate-400">
+                                <AppIcon icon={FilterList} size="sm" color="inherit" />
+                              </span>
+                              <select
+                                value={classSectionFilter}
+                                onChange={(e) => setClassSectionFilter(e.target.value)}
+                                aria-label="Filter by section"
+                                className="w-full sm:w-auto rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 pl-9 pr-8 py-2 text-xs sm:text-sm font-semibold text-slate-900 dark:text-slate-100 focus:border-amber-500 outline-none cursor-pointer shadow-2xs"
+                              >
+                                <option value="ALL">
+                                  All Sections ({classTab === "active" ? activeFacultyClasses.length : archivedFacultyClasses.length})
+                                </option>
+                                {uniqueClassSections.map((sec) => (
+                                  <option key={sec} value={sec}>
+                                    {sec}
                                   </option>
-                                  {uniqueClassSections.map((sec) => (
-                                    <option key={sec} value={sec}>
-                                      {sec}
-                                    </option>
-                                  ))}
-                                </select>
-                              </div>
-
-                              {(classSearchQuery.trim() !== "" || classSectionFilter !== "ALL") && (
-                                <button
-                                  type="button"
-                                  onClick={() => {
-                                    setClassSearchQuery("");
-                                    setClassSectionFilter("ALL");
-                                  }}
-                                  className="inline-flex items-center gap-1 rounded-xl bg-amber-400 hover:bg-amber-500 px-3 py-2 text-xs font-black text-amber-950 border border-amber-500 transition-colors cursor-pointer shrink-0"
-                                >
-                                  <AppIcon icon={Xmark} size="xs" color="inherit" />
-                                  Reset
-                                </button>
-                              )}
+                                ))}
+                              </select>
                             </div>
+
+                            {(classSearchQuery.trim() !== "" || classSectionFilter !== "ALL") && (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setClassSearchQuery("");
+                                  setClassSectionFilter("ALL");
+                                }}
+                                className="inline-flex items-center gap-1 rounded-xl bg-amber-400 hover:bg-amber-500 px-3 py-2 text-xs font-bold text-amber-950 border border-amber-500 transition-colors cursor-pointer shrink-0"
+                              >
+                                <AppIcon icon={Xmark} size="xs" color="inherit" />
+                                <span>Reset</span>
+                              </button>
+                            )}
                           </div>
                         </div>
 
@@ -5080,10 +5104,10 @@ function FacultySubmissionPanelContent({
                   /* ─── STEP 2: CLASS REQUIREMENTS UPLOAD ZONE ─────────────────── */
                   <div className="space-y-5">
                     {/* Solid Amber Card Header */}
-                    <div className="relative overflow-hidden rounded-2xl border-2 border-amber-500 bg-amber-400 p-5 sm:p-6 shadow-md shadow-amber-500/10 space-y-3 transition-colors">
+                    <div className="relative overflow-hidden rounded-2xl border-2 border-amber-500 bg-amber-400 p-5 sm:p-6 shadow-md shadow-amber-500/10 flex flex-col sm:flex-row sm:items-center justify-between gap-4 transition-colors">
                       <div>
                         <div className="flex items-center gap-2.5 flex-wrap">
-                          <h1 className="text-2xl sm:text-3xl font-black text-amber-950 tracking-tight">
+                          <h1 className="text-2xl sm:text-3xl font-black text-slate-950 tracking-tight">
                             Documents to be Submitted
                           </h1>
                         </div>
@@ -5092,81 +5116,42 @@ function FacultySubmissionPanelContent({
                         </p>
                       </div>
 
-                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-0.5">
-                        <div className="flex items-center justify-between gap-2 w-full sm:w-auto">
-                          <p className="text-xs sm:text-sm text-amber-950/90 font-semibold">
-                            {hasActiveAcademicTerm && activeAY ? (
-                              <>
-                                A.Y. {activeAY} • {activeSem}
-                                {hasActiveGracePeriod && !isAllValidated ? (
-                                  <span className="ml-2 font-semibold">
-                                    • (Personal Schedule Active)
-                                  </span>
-                                ) : isWindowNotConfigured && !isAllValidated && !isEffectivelyOpen ? (
-                                  <span className="ml-2 font-semibold">
-                                    • (Awaiting Schedule)
-                                  </span>
-                                ) : isWindowClosed && !isAllValidated && !isEffectivelyOpen ? (
-                                  <span className="ml-2 font-semibold">
-                                    • (Submission Window Closed)
-                                  </span>
-                                ) : null}
-                              </>
-                            ) : (
-                              <span>No Active Academic Term Configured</span>
-                            )}
-                          </p>
-                          <button
-                            type="button"
-                            onClick={() => void handleManualRefresh()}
-                            disabled={isRefreshing}
-                            title="Refresh status"
-                            className="sm:hidden inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold rounded-xl border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 transition-all disabled:opacity-50 cursor-pointer shadow-xs active:scale-[0.98] shrink-0"
-                          >
-                            <Refresh
-                              className={`h-3.5 w-3.5 ${isRefreshing ? "animate-spin" : ""}`}
-                            />
-                            <span>{isRefreshing ? "Refreshing..." : "Refresh"}</span>
-                          </button>
-                        </div>
-
-                        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-end gap-2.5 shrink-0 sm:ml-auto w-full sm:w-auto">
-                          <button
-                            type="button"
-                            onClick={openHistoryModal}
-                            className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-[#0b5336] hover:bg-[#08412a] text-white border border-[#08412a] rounded-xl px-4 py-2 sm:px-4.5 sm:py-2.5 text-xs sm:text-sm font-semibold transition-all cursor-pointer whitespace-nowrap shadow-xs active:scale-[0.98]"
-                            title="View validated documents history"
-                          >
-                            <AppIcon icon={CheckCircle} size="md" color="white" />
-                            <span>Validation History</span>
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() =>
-                              window.open(
-                                "https://www.pup.edu.ph/about/calendar",
-                                "_blank",
-                                "noopener,noreferrer",
-                              )
-                            }
-                            className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-[#780000] hover:bg-[#5e0000] text-white border border-[#5e0000] rounded-xl px-4 py-2 sm:px-4.5 sm:py-2.5 text-xs sm:text-sm font-semibold transition-all cursor-pointer whitespace-nowrap shadow-xs active:scale-[0.98]"
-                          >
-                            <Logo size={18} className="shrink-0" />
-                            <span>University Calendar</span>
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => void handleManualRefresh()}
-                            disabled={isRefreshing}
-                            title="Refresh status"
-                            className="hidden sm:inline-flex items-center justify-center gap-1.5 rounded-xl border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 px-4 py-2 sm:px-4.5 sm:py-2.5 text-xs sm:text-sm font-semibold transition-all disabled:opacity-50 cursor-pointer shadow-xs active:scale-[0.98]"
-                          >
-                            <Refresh
-                              className={`h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`}
-                            />
-                            <span>{isRefreshing ? "Refreshing..." : "Refresh"}</span>
-                          </button>
-                        </div>
+                      <div className="flex flex-wrap items-center gap-2.5 shrink-0">
+                        <button
+                          type="button"
+                          onClick={openHistoryModal}
+                          className="inline-flex items-center justify-center gap-2 bg-[#0b5336] hover:bg-[#08412a] text-white border border-[#08412a] rounded-xl px-4 py-2 sm:px-4.5 sm:py-2.5 text-xs sm:text-sm font-semibold transition-all cursor-pointer whitespace-nowrap shadow-xs active:scale-[0.98]"
+                          title="View validated documents history"
+                        >
+                          <AppIcon icon={CheckCircle} size="md" color="white" />
+                          <span>Validation History</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            window.open(
+                              "https://www.pup.edu.ph/about/calendar",
+                              "_blank",
+                              "noopener,noreferrer",
+                            )
+                          }
+                          className="inline-flex items-center justify-center gap-2 bg-[#780000] hover:bg-[#5e0000] text-white border border-[#5e0000] rounded-xl px-4 py-2 sm:px-4.5 sm:py-2.5 text-xs sm:text-sm font-semibold transition-all cursor-pointer whitespace-nowrap shadow-xs active:scale-[0.98]"
+                        >
+                          <Logo size={18} className="shrink-0" />
+                          <span>University Calendar</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => void handleManualRefresh()}
+                          disabled={isRefreshing}
+                          title="Refresh status"
+                          className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white hover:bg-slate-50 dark:bg-slate-900 dark:hover:bg-slate-800 text-slate-800 dark:text-slate-100 px-4 py-2 sm:px-4.5 sm:py-2.5 text-xs sm:text-sm font-semibold transition-all disabled:opacity-50 cursor-pointer whitespace-nowrap shadow-xs active:scale-[0.98]"
+                        >
+                          <Refresh
+                            className={`h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`}
+                          />
+                          <span>{isRefreshing ? "Refreshing..." : "Refresh"}</span>
+                        </button>
                       </div>
                     </div>
 
