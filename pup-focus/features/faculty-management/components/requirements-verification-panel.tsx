@@ -1855,7 +1855,7 @@ export function FacultyVerificationDrawer({
   return (
     <div className="space-y-4">
       {/* Solid Amber Card Header matching Documents to be Submitted - Swapped to the top */}
-      <div className="relative overflow-hidden rounded-2xl border-2 border-amber-500 bg-amber-400 p-5 sm:p-6 shadow-md shadow-amber-500/10 space-y-3 transition-colors">
+      <div className="relative overflow-hidden rounded-2xl border-2 border-amber-500 bg-amber-400 p-5 sm:p-6 shadow-md shadow-amber-500/10 flex flex-col sm:flex-row sm:items-center justify-between gap-4 transition-colors">
         <div>
           <div className="flex items-center gap-2.5 flex-wrap">
             <h1 className="text-2xl sm:text-3xl font-black text-slate-950 tracking-tight">
@@ -1867,35 +1867,29 @@ export function FacultyVerificationDrawer({
           </p>
         </div>
 
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-0.5">
-          <p className="text-xs sm:text-sm text-amber-950/90 dark:text-amber-300/80 font-semibold">
-            {classGroups.length} Registered Class Load{classGroups.length === 1 ? "" : "s"}
-          </p>
+        <div className="flex items-center gap-2 shrink-0">
+          <button
+            type="button"
+            disabled={isRefreshing || isLoading}
+            onClick={handleRefresh}
+            className="inline-flex items-center gap-1.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white hover:bg-slate-50 dark:bg-slate-800 dark:hover:bg-slate-750 text-slate-700 dark:text-slate-200 px-3.5 py-2 text-xs font-semibold transition-all disabled:opacity-50 cursor-pointer shadow-xs active:scale-[0.98] whitespace-nowrap"
+            title="Refresh current submissions"
+          >
+            <SystemRestart
+              className={`h-3.5 w-3.5 ${isRefreshing ? "animate-spin" : ""}`}
+            />
+            <span>{isRefreshing ? "Refreshing..." : "Refresh"}</span>
+          </button>
 
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              disabled={isRefreshing || isLoading}
-              onClick={handleRefresh}
-              className="inline-flex items-center gap-1.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white hover:bg-slate-50 dark:bg-slate-800 dark:hover:bg-slate-750 text-slate-700 dark:text-slate-200 px-3.5 py-2 text-xs font-semibold transition-all disabled:opacity-50 cursor-pointer shadow-xs active:scale-[0.98] whitespace-nowrap"
-              title="Refresh current submissions"
-            >
-              <SystemRestart
-                className={`h-3.5 w-3.5 ${isRefreshing ? "animate-spin" : ""}`}
-              />
-              <span>{isRefreshing ? "Refreshing..." : "Refresh"}</span>
-            </button>
-
-            <button
-              type="button"
-              disabled={isDownloadingZip}
-              onClick={handleDownloadZip}
-              className="inline-flex items-center gap-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 border border-amber-600 px-3.5 py-2 text-xs font-semibold whitespace-nowrap shadow-2xs transition cursor-pointer disabled:opacity-50"
-            >
-              <AppIcon icon={Download} size="xs" color="inherit" className="text-slate-950" />
-              <span>{isDownloadingZip ? "Zipping..." : "Download All (ZIP)"}</span>
-            </button>
-          </div>
+          <button
+            type="button"
+            disabled={isDownloadingZip}
+            onClick={handleDownloadZip}
+            className="inline-flex items-center gap-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 border border-amber-600 px-3.5 py-2 text-xs font-semibold whitespace-nowrap shadow-2xs transition cursor-pointer disabled:opacity-50"
+          >
+            <AppIcon icon={Download} size="xs" color="inherit" className="text-slate-950" />
+            <span>{isDownloadingZip ? "Zipping..." : "Download All (ZIP)"}</span>
+          </button>
         </div>
       </div>
 
@@ -1945,12 +1939,12 @@ export function FacultyVerificationDrawer({
             {academicYear ? (
               <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl border border-amber-600 bg-amber-500 text-slate-950 text-xs font-bold shadow-2xs">
                 <span className="h-2 w-2 rounded-full bg-[#0b5336]" />
-                <span>Active Term: A.Y. {academicYear} &bull; {semester}</span>
+                <span>Active Term: A.Y. {academicYear} &bull; {semester} &bull; {classGroups.length} Registered Class Load{classGroups.length === 1 ? "" : "s"}</span>
               </div>
             ) : (
               <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-xs font-bold shadow-2xs">
                 <span className="h-2 w-2 rounded-full bg-slate-400" />
-                <span>No Active Academic Term Configured</span>
+                <span>{classGroups.length} Registered Class Load{classGroups.length === 1 ? "" : "s"}</span>
               </div>
             )}
           </div>
