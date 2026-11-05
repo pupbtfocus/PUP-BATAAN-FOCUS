@@ -2181,18 +2181,10 @@ export function FacultyVerificationDrawer({
                       className={`inline-flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-semibold whitespace-nowrap transition cursor-pointer shadow-2xs ${
                         filterMode === "all"
                           ? "bg-amber-500 hover:bg-amber-400 text-slate-950 border border-amber-600/30 shadow-xs font-bold"
-                          : "bg-white text-slate-600 hover:border-amber-500/50 hover:bg-amber-50/40 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-amber-950/20 border border-slate-200 dark:border-slate-800"
+                          : "bg-white hover:bg-slate-50 text-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800 border border-slate-300 dark:border-slate-700"
                       }`}
                     >
-                      <span
-                        className={`inline-flex items-center justify-center h-4 w-4 rounded-full shrink-0 shadow-2xs [&>svg]:h-2.5 [&>svg]:w-2.5 ${
-                          filterMode === "all"
-                            ? "bg-slate-950/20 text-slate-950 border border-slate-950/30"
-                            : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-300 dark:border-slate-700"
-                        }`}
-                      >
-                        <AppIcon icon={Page} size="xs" color="inherit" />
-                      </span>
+                      <AppIcon icon={Page} size="xs" color="inherit" />
                       <span>All Files</span>
                       <span
                         className={`rounded-full px-1.5 py-0.5 text-[10.5px] font-bold ${
@@ -2210,25 +2202,17 @@ export function FacultyVerificationDrawer({
                       onClick={() => setFilterMode("pending")}
                       className={`inline-flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-semibold whitespace-nowrap transition cursor-pointer shadow-2xs ${
                         filterMode === "pending"
-                          ? "bg-amber-500 text-slate-950 shadow-xs font-bold"
-                          : "bg-white text-slate-600 hover:border-amber-500/50 hover:bg-amber-50/40 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-amber-950/20 border border-slate-200 dark:border-slate-800"
+                          ? "bg-amber-500 hover:bg-amber-400 text-slate-950 border border-amber-600/30 shadow-xs font-bold"
+                          : "bg-white hover:bg-slate-50 text-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800 border border-slate-300 dark:border-slate-700"
                       }`}
                     >
-                      <span
-                        className={`inline-flex items-center justify-center h-4 w-4 rounded-full shrink-0 shadow-2xs [&>svg]:h-2.5 [&>svg]:w-2.5 ${
-                          filterMode === "pending"
-                            ? "bg-slate-950/20 text-slate-950 border border-slate-950/30"
-                            : "bg-amber-500 text-slate-950 border border-amber-600"
-                        }`}
-                      >
-                        <AppIcon icon={Hourglass} size="xs" color="inherit" />
-                      </span>
+                      <AppIcon icon={Hourglass} size="xs" color="inherit" />
                       <span>Need Review</span>
                       <span
                         className={`rounded-full px-1.5 py-0.5 text-[10.5px] font-bold ${
                           filterMode === "pending"
                             ? "bg-slate-950/20 text-slate-950"
-                            : "bg-amber-100 dark:bg-amber-950/80 text-amber-800 dark:text-amber-300"
+                            : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400"
                         }`}
                       >
                         {selectedGroupPendingCount}
@@ -2241,25 +2225,17 @@ export function FacultyVerificationDrawer({
                         onClick={() => setFilterMode("revision_uploaded")}
                         className={`inline-flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-semibold whitespace-nowrap transition cursor-pointer shadow-2xs ${
                           filterMode === "revision_uploaded"
-                            ? "bg-amber-500 text-slate-950 font-bold shadow-xs"
-                            : "bg-white text-slate-600 hover:border-amber-500/50 hover:bg-amber-50/40 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-amber-950/20 border border-slate-200 dark:border-slate-800"
+                            ? "bg-amber-500 hover:bg-amber-400 text-slate-950 border border-amber-600/30 shadow-xs font-bold"
+                            : "bg-white hover:bg-slate-50 text-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800 border border-slate-300 dark:border-slate-700"
                         }`}
                       >
-                        <span
-                          className={`inline-flex items-center justify-center h-4 w-4 rounded-full shrink-0 shadow-2xs [&>svg]:h-2.5 [&>svg]:w-2.5 ${
-                            filterMode === "revision_uploaded"
-                              ? "bg-slate-950/20 text-slate-950 border border-slate-950/30"
-                              : "bg-amber-500 text-slate-950 border border-amber-600"
-                          }`}
-                        >
-                          <AppIcon icon={WarningCircle} size="xs" color="inherit" />
-                        </span>
+                        <AppIcon icon={WarningCircle} size="xs" color="inherit" />
                         <span>Revisions Uploaded</span>
                         <span
                           className={`rounded-full px-1.5 py-0.5 text-[10.5px] font-bold ${
                             filterMode === "revision_uploaded"
                               ? "bg-slate-950/20 text-slate-950"
-                              : "bg-amber-100 text-amber-800 dark:bg-amber-950/50 dark:text-amber-300"
+                              : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400"
                           }`}
                         >
                           {selectedGroupRevisionsUploadedCount}
@@ -2272,25 +2248,17 @@ export function FacultyVerificationDrawer({
                       onClick={() => setFilterMode("validated")}
                       className={`inline-flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-semibold whitespace-nowrap transition cursor-pointer shadow-2xs ${
                         filterMode === "validated"
-                          ? "bg-[#0b5336] text-white shadow-xs ring-1 ring-[#08412a] font-bold"
-                          : "bg-white text-slate-600 hover:border-emerald-500/50 hover:bg-emerald-50/40 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-emerald-950/20 border border-slate-200 dark:border-slate-800"
+                          ? "bg-amber-500 hover:bg-amber-400 text-slate-950 border border-amber-600/30 shadow-xs font-bold"
+                          : "bg-white hover:bg-slate-50 text-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800 border border-slate-300 dark:border-slate-700"
                       }`}
                     >
-                      <span
-                        className={`inline-flex items-center justify-center h-4 w-4 rounded-full shrink-0 shadow-2xs [&>svg]:h-2.5 [&>svg]:w-2.5 ${
-                          filterMode === "validated"
-                            ? "bg-white/20 text-white border border-white/30"
-                            : "bg-[#0b5336] text-white border border-[#08412a]"
-                        }`}
-                      >
-                        <AppIcon icon={Check} size="xs" color="white" strokeWidth={2.5} />
-                      </span>
+                      <AppIcon icon={Check} size="xs" color="inherit" />
                       <span>Validated</span>
                       <span
                         className={`rounded-full px-1.5 py-0.5 text-[10.5px] font-bold ${
                           filterMode === "validated"
-                            ? "bg-white/20 text-white"
-                            : "bg-emerald-100 dark:bg-emerald-950/80 text-emerald-800 dark:text-emerald-300"
+                            ? "bg-slate-950/20 text-slate-950"
+                            : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400"
                         }`}
                       >
                         {selectedGroupValidatedCount}
@@ -2303,25 +2271,17 @@ export function FacultyVerificationDrawer({
                         onClick={() => setFilterMode("revision")}
                         className={`inline-flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-semibold whitespace-nowrap transition cursor-pointer shadow-2xs ${
                           filterMode === "revision"
-                            ? "bg-[#780000] text-white shadow-xs ring-1 ring-[#5e0000] font-bold"
-                            : "bg-white text-slate-600 hover:border-rose-500/50 hover:bg-rose-50/40 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-rose-950/20 border border-slate-200 dark:border-slate-800"
+                            ? "bg-amber-500 hover:bg-amber-400 text-slate-950 border border-amber-600/30 shadow-xs font-bold"
+                            : "bg-white hover:bg-slate-50 text-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800 border border-slate-300 dark:border-slate-700"
                         }`}
                       >
-                        <span
-                          className={`inline-flex items-center justify-center h-4 w-4 rounded-full shrink-0 shadow-2xs [&>svg]:h-2.5 [&>svg]:w-2.5 ${
-                            filterMode === "revision"
-                              ? "bg-white/20 text-white border border-white/30"
-                              : "bg-[#780000] text-white border border-[#5e0000]"
-                          }`}
-                        >
-                          <AppIcon icon={Xmark} size="xs" color="white" strokeWidth={2.5} />
-                        </span>
+                        <AppIcon icon={Xmark} size="xs" color="inherit" />
                         <span>Needs Revision</span>
                         <span
                           className={`rounded-full px-1.5 py-0.5 text-[10.5px] font-bold ${
                             filterMode === "revision"
-                              ? "bg-white/20 text-white"
-                              : "bg-rose-100 dark:bg-rose-950/80 text-rose-800 dark:text-rose-300"
+                              ? "bg-slate-950/20 text-slate-950"
+                              : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400"
                           }`}
                         >
                           {selectedGroupRevisionCount}
