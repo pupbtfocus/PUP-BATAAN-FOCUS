@@ -4406,22 +4406,11 @@ export function RequirementsPanel({
     { id: "not_submitted", label: "Not Submitted" },
   ];
 
-  const [reportScope, setReportScope] = useState<"all" | "completed" | "not_completed">("all");
-
   const currentStatusOption =
     statusFilterOptions.find((opt) => opt.id === statusFilter) || statusFilterOptions[0];
 
-  const buildVerificationReportPayload = (
-    scopeOverride?: "all" | "completed" | "not_completed"
-  ) => {
-    const scope = scopeOverride ?? reportScope;
-    const baseList = filteredFaculty.filter((f) => {
-      const statInfo = facultyStatusMap.get(f.id);
-      const isDone = statInfo?.category === "completed";
-      if (scope === "completed") return isDone;
-      if (scope === "not_completed") return !isDone;
-      return true;
-    });
+  const buildVerificationReportPayload = () => {
+    const baseList = filteredFaculty;
 
     let completedCount = 0;
     let notCompletedCount = 0;
@@ -4432,16 +4421,14 @@ export function RequirementsPanel({
     });
 
     const scopeLabel =
-      scope === "completed"
-        ? "Completed (Done) Faculty Only"
-        : scope === "not_completed"
-        ? "Not Completed Faculty Only"
-        : "All Listed Faculty (Completed & Not Completed)";
+      currentStatusOption.id === "all"
+        ? "All Faculty"
+        : `${currentStatusOption.label} Only`;
 
     return {
       title: `Requirements Verification Report — ${scopeLabel}`,
       subtitle: `Term: A.Y. ${academicYear || "2026-2027"} • ${semester} • Program: ${selectedProgram}`,
-      fileName: `PUP_FOCUS_Verification_${scope}_${academicYear}_${new Date()
+      fileName: `PUP_FOCUS_Verification_${currentStatusOption.id}_${academicYear}_${new Date()
         .toISOString()
         .slice(0, 10)}`,
       summaryStats: [
@@ -4723,7 +4710,7 @@ export function RequirementsPanel({
                 <span className="font-semibold text-slate-900 dark:text-slate-100">
                   {currentStatusOption.label}
                 </span>
-                <span className="ml-1 inline-flex items-center justify-center px-2 py-0.5 rounded-full text-xs font-bold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-300 dark:border-slate-700">
+                <span className="ml-1 inline-flex items-center justify-center px-2 py-0.5 rounded-full text-xs font-bold bg-amber-500 text-slate-950 shadow-2xs">
                   ({statusCounts[statusFilter]})
                 </span>
               </div>
@@ -4760,10 +4747,12 @@ export function RequirementsPanel({
                       >
                         <span className="truncate">{opt.label}</span>
                         <span
-                          className={`ml-2 inline-flex items-center justify-center px-2 py-0.5 rounded-full text-xs font-bold shrink-0 ${
+                          className={`ml-2 inline-flex items-center justify-center px-2 py-0.5 rounded-full text-xs font-bold shrink-0 shadow-2xs ${
                             isSelected
-                              ? "bg-amber-500/20 text-amber-800 dark:text-amber-300 border border-amber-500/30"
-                              : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-300 dark:border-slate-700"
+                              ? "bg-amber-500 text-slate-950"
+                              : count > 0
+                              ? "bg-slate-700 dark:bg-slate-600 text-white"
+                              : "bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-400"
                           }`}
                         >
                           ({count})
@@ -4777,25 +4766,8 @@ export function RequirementsPanel({
           </div>
         </div>
 
-        {/* Report Export Controls (All / Completed / Not Completed -> PDF or Excel) */}
+        {/* Report Export Controls (PDF / Excel) */}
         <div className="flex flex-wrap items-center gap-2 w-full lg:w-auto justify-end shrink-0">
-          <select
-            value={reportScope}
-            onChange={(e) =>
-              setReportScope(e.target.value as "all" | "completed" | "not_completed")
-            }
-            aria-label="Report Completion Scope"
-            className="h-9 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 px-3 text-xs font-bold text-slate-800 dark:text-slate-200 outline-none focus:border-amber-500 cursor-pointer"
-          >
-            <option value="all">Report: All Faculty ({statusCounts.all})</option>
-            <option value="completed">
-              Report: Completed / Done ({statusCounts.completed})
-            </option>
-            <option value="not_completed">
-              Report: Not Completed ({statusCounts.all - statusCounts.completed})
-            </option>
-          </select>
-
           <button
             type="button"
             onClick={() => exportReportToPdf(buildVerificationReportPayload())}
