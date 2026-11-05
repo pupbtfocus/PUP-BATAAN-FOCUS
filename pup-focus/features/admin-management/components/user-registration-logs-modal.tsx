@@ -758,9 +758,9 @@ export function UserRegistrationLogsModal({
                                 type="button"
                                 onClick={() => openEditModal(log)}
                                 title="Edit Details"
-                                className="bg-slate-800 hover:bg-slate-700 text-white font-semibold border border-slate-700 text-xs rounded-lg px-2.5 py-1.5 transition-colors cursor-pointer inline-flex items-center justify-center gap-1.5 shadow-2xs"
+                                className="bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold border border-amber-600/30 text-xs rounded-lg px-2.5 py-1.5 transition-colors cursor-pointer inline-flex items-center justify-center gap-1.5 shadow-2xs"
                               >
-                                <AppIcon icon={EditPencil} size="sm" color="white" />
+                                <AppIcon icon={EditPencil} size="sm" color="inherit" className="text-slate-950" />
                                 <span>Edit</span>
                               </button>
 
@@ -905,14 +905,14 @@ export function UserRegistrationLogsModal({
 
                                 {!isAccepted ? (
                                   <>
-                                    {/* Edit Invite Button - Solid Slate */}
+                                    {/* Edit Invite Button - Amber */}
                                     <button
                                       type="button"
                                       onClick={() => openEditModal(log)}
                                       title="Edit Details"
-                                      className="bg-slate-800 hover:bg-slate-700 text-white font-semibold border border-slate-700 text-xs rounded-md px-2.5 py-1 transition-colors cursor-pointer inline-flex items-center gap-1.5 shadow-2xs"
+                                      className="bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold border border-amber-600/30 text-xs rounded-md px-2.5 py-1 transition-colors cursor-pointer inline-flex items-center gap-1.5 shadow-2xs"
                                     >
-                                      <AppIcon icon={EditPencil} size="sm" color="white" />
+                                      <AppIcon icon={EditPencil} size="sm" color="inherit" className="text-slate-950" />
                                       <span>Edit</span>
                                     </button>
 
@@ -1187,9 +1187,9 @@ export function UserRegistrationLogsModal({
                         setSelectedLogForDetails(null);
                         openEditModal(target);
                       }}
-                      className="flex-1 sm:flex-initial bg-slate-800 hover:bg-slate-700 text-white font-semibold border border-slate-700 text-xs rounded-xl px-3.5 py-2 transition-colors cursor-pointer inline-flex items-center justify-center gap-1.5 shadow-2xs"
+                      className="flex-1 sm:flex-initial bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold border border-amber-600/30 text-xs rounded-xl px-3.5 py-2 transition-colors cursor-pointer inline-flex items-center justify-center gap-1.5 shadow-2xs"
                     >
-                      <AppIcon icon={EditPencil} size="sm" color="white" />
+                      <AppIcon icon={EditPencil} size="sm" color="inherit" className="text-slate-950" />
                       <span>Edit Details</span>
                     </button>
                   ) : null}
@@ -1343,7 +1343,7 @@ export function UserRegistrationLogsModal({
                   type="button"
                   onClick={() => setEditingLog(null)}
                   disabled={isSavingEdit}
-                  className="px-4 py-2 rounded-xl text-xs font-semibold text-white bg-slate-600 hover:bg-slate-500 border border-slate-700 transition cursor-pointer text-center shadow-2xs"
+                  className="px-4 py-2 rounded-xl text-xs font-semibold text-white bg-[#780000] hover:bg-[#5e0000] border border-[#5e0000] transition cursor-pointer text-center shadow-xs"
                 >
                   Cancel
                 </button>
@@ -1351,7 +1351,7 @@ export function UserRegistrationLogsModal({
                   type="button"
                   onClick={() => void handleSaveEdit(false)}
                   disabled={isSavingEdit || !editEmail.trim() || !editFirstName.trim() || !editLastName.trim()}
-                  className="px-4 py-2 rounded-xl text-xs font-bold text-white bg-[#780000] hover:bg-[#5e0000] border border-[#5e0000] transition cursor-pointer disabled:opacity-50 shadow-xs text-center"
+                  className="px-4 py-2 rounded-xl text-xs font-bold text-white bg-[#0b5336] hover:bg-[#08412a] border border-[#08412a] transition cursor-pointer disabled:opacity-50 shadow-xs text-center"
                 >
                   {isSavingEdit ? "Saving..." : "Save Changes"}
                 </button>
@@ -1433,7 +1433,7 @@ export function UserRegistrationLogsModal({
                   type="button"
                   onClick={() => setPendingCancelLog(null)}
                   disabled={isCancelling}
-                  className="w-full sm:w-auto rounded-xl border border-slate-700 bg-slate-800 hover:bg-slate-700 px-4 py-2 text-xs font-semibold text-white transition cursor-pointer disabled:opacity-50 text-center shadow-2xs"
+                  className="w-full sm:w-auto rounded-xl border border-slate-300 dark:border-slate-700 bg-white hover:bg-slate-50 dark:bg-slate-800 dark:hover:bg-slate-750 px-4 py-2 text-xs font-semibold text-slate-700 dark:text-slate-200 transition cursor-pointer disabled:opacity-50 text-center shadow-2xs"
                 >
                   Keep Invitation
                 </button>
