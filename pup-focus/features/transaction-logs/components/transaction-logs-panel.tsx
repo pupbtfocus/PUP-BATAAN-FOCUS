@@ -2,11 +2,13 @@
 
 import { Fragment, useCallback, useEffect, useRef, useState } from "react";
 import {
+  Activity,
   CheckCircle,
   EditPencil,
   Eye,
   Filter,
   Hourglass,
+  NavArrowDown,
   NavArrowLeft,
   NavArrowRight,
   Page,
@@ -53,6 +55,7 @@ type TransactionLogsResponse = {
   page: number;
   limit: number;
   totalPages: number;
+  categoryCounts?: Record<string, number>;
 };
 
 type ActionCategory =
@@ -309,6 +312,18 @@ function MetadataModal({
 export function TransactionLogsPanel() {
   const [logs, setLogs] = useState<TransactionLogEntry[]>([]);
   const [total, setTotal] = useState(0);
+  const [categoryCounts, setCategoryCounts] = useState<Record<string, number>>({
+    all: 0,
+    auth: 0,
+    uploads: 0,
+    reviews: 0,
+    user_management: 0,
+    submission_windows: 0,
+    academic_terms: 0,
+    templates: 0,
+    classes: 0,
+    backup: 0,
+  });
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
@@ -319,7 +334,16 @@ export function TransactionLogsPanel() {
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [actionCategory, setActionCategory] = useState<ActionCategory>("");
+  const [isCategoryDropdownOpen, setIsCategoryDropdownOpen] = useState(false);
   const [selectedEntry, setSelectedEntry] = useState<TransactionLogEntry | null>(null);
+
+  const currentCategoryOption =
+    ACTION_CATEGORY_OPTIONS.find((opt) => opt.value === actionCategory) ||
+    ACTION_CATEGORY_OPTIONS[0];
+  const currentCategoryCount =
+    actionCategory === ""
+      ? categoryCounts.all || total
+      : categoryCounts[actionCategory] || 0;
 
   // Selection state
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -366,6 +390,9 @@ export function TransactionLogsPanel() {
       setLogs(data.logs);
       setTotal(data.total);
       setTotalPages(data.totalPages);
+      if (data.categoryCounts) {
+        setCategoryCounts(data.categoryCounts);
+      }
       hasLoadedRef.current = true;
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to fetch transaction logs");
@@ -468,8 +495,76 @@ export function TransactionLogsPanel() {
 
   return (
     <div className="mt-4 space-y-4">
+      {/* ── System Activity Overview Cards ── */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+        <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 shadow-2xs">
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">
+              Total Activity
+            </span>
+            <AppIcon icon={Activity} size="md" color="muted" />
+          </div>
+          <p className="mt-2 text-2xl font-black text-slate-900 dark:text-slate-100">
+            {categoryCounts.all || total}
+          </p>
+          <span className="text-[11px] font-medium text-slate-500 dark:text-slate-400">
+            All system events logged
+          </span>
+        </div>
+
+        <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 shadow-2xs">
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">
+              Logins &amp; Auth
+            </span>
+            <AppIcon icon={LogIn} size="md" color="muted" />
+          </div>
+          <p className="mt-2 text-2xl font-black text-slate-900 dark:text-slate-100">
+            {categoryCounts.auth || 0}
+          </p>
+          <span className="text-[11px] font-medium text-slate-500 dark:text-slate-400">
+            Session &amp; access events
+          </span>
+        </div>
+
+        <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 shadow-2xs">
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">
+              Uploads &amp; Reviews
+            </span>
+            <AppIcon icon={Page} size="md" color="muted" />
+          </div>
+          <p className="mt-2 text-2xl font-black text-slate-900 dark:text-slate-100">
+            {(categoryCounts.uploads || 0) + (categoryCounts.reviews || 0)}
+          </p>
+          <span className="text-[11px] font-medium text-slate-500 dark:text-slate-400">
+            {categoryCounts.uploads || 0} uploads &bull; {categoryCounts.reviews || 0} reviews
+          </span>
+        </div>
+
+        <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 shadow-2xs">
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">
+              Admin &amp; Settings
+            </span>
+            <AppIcon icon={Settings} size="md" color="muted" />
+          </div>
+          <p className="mt-2 text-2xl font-black text-slate-900 dark:text-slate-100">
+            {(categoryCounts.user_management || 0) +
+              (categoryCounts.submission_windows || 0) +
+              (categoryCounts.academic_terms || 0) +
+              (categoryCounts.templates || 0) +
+              (categoryCounts.classes || 0) +
+              (categoryCounts.backup || 0)}
+          </p>
+          <span className="text-[11px] font-medium text-slate-500 dark:text-slate-400">
+            Administrative operations
+          </span>
+        </div>
+      </div>
+
       {/* ── Filter Bar ── */}
-      <div className="rounded-2xl border border-slate-400 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 shadow-sm">
+      <div className="rounded-2xl border border-slate-300 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 shadow-sm space-y-2.5">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           {/* Search */}
           <div className="relative flex-1">
@@ -481,43 +576,95 @@ export function TransactionLogsPanel() {
               placeholder="Search actions, entity types…"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full rounded-xl border border-slate-400 dark:border-slate-800 bg-white dark:bg-slate-950 py-2 pl-9 pr-3 text-xs text-slate-900 dark:text-slate-100 outline-none placeholder-slate-400 dark:placeholder-slate-500 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 transition"
+              className="w-full rounded-xl border border-slate-300 dark:border-slate-800 bg-white dark:bg-slate-950 py-2 pl-9 pr-3 text-xs text-slate-900 dark:text-slate-100 outline-none placeholder-slate-400 dark:placeholder-slate-500 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 transition"
             />
           </div>
 
-          {/* Category Filter + Refresh */}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 shrink-0">
+            {/* Custom Category Dropdown Filter */}
             <div className="relative">
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none">
-                <AppIcon icon={Filter} size="sm" color="muted" />
-              </span>
-              <select
-                value={actionCategory}
-                onChange={(e) => handleCategoryChange(e.target.value)}
-                className="appearance-none rounded-xl border border-slate-400 dark:border-slate-800 bg-white dark:bg-slate-950 py-2 pl-9 pr-8 text-xs text-slate-900 dark:text-slate-100 outline-none focus:border-amber-500 transition cursor-pointer"
+              <button
+                type="button"
+                onClick={() => setIsCategoryDropdownOpen((prev) => !prev)}
+                className="flex items-center justify-between gap-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-3.5 py-2 text-xs font-semibold text-slate-900 dark:text-slate-200 outline-none transition hover:border-slate-400 dark:hover:border-slate-600 focus:border-amber-500 cursor-pointer shadow-2xs"
               >
-                {ACTION_CATEGORY_OPTIONS.map((opt) => (
-                  <option key={opt.value} value={opt.value}>
-                    {opt.label}
-                  </option>
-                ))}
-              </select>
+                <div className="flex items-center gap-1.5 text-left">
+                  <span className="text-slate-500 dark:text-slate-400 font-medium">Category:</span>
+                  <span className="font-semibold text-slate-900 dark:text-slate-100">
+                    {currentCategoryOption.label}
+                  </span>
+                  <span className="ml-1 inline-flex items-center justify-center px-2 py-0.5 rounded-full text-[11px] font-bold bg-amber-500 text-slate-950 shadow-2xs">
+                    {currentCategoryCount}
+                  </span>
+                </div>
+                <NavArrowDown
+                  className={`h-4 w-4 text-slate-500 dark:text-slate-400 transition-transform ${
+                    isCategoryDropdownOpen ? "rotate-180" : ""
+                  }`}
+                />
+              </button>
+
+              {isCategoryDropdownOpen && (
+                <>
+                  <div
+                    className="fixed inset-0 z-20"
+                    onClick={() => setIsCategoryDropdownOpen(false)}
+                  />
+                  <div className="absolute right-0 top-full mt-1.5 z-30 w-72 rounded-2xl border border-slate-300 dark:border-slate-800 bg-white dark:bg-slate-900 py-1.5 shadow-xl text-xs text-slate-900 dark:text-slate-200 overflow-hidden max-h-80 overflow-y-auto">
+                    {ACTION_CATEGORY_OPTIONS.map((opt) => {
+                      const isSelected = actionCategory === opt.value;
+                      const count =
+                        opt.value === ""
+                          ? categoryCounts.all || total
+                          : categoryCounts[opt.value] || 0;
+                      return (
+                        <button
+                          key={opt.value}
+                          type="button"
+                          onClick={() => {
+                            handleCategoryChange(opt.value);
+                            setIsCategoryDropdownOpen(false);
+                          }}
+                          className={`w-full flex items-center justify-between gap-2.5 px-3.5 py-2 transition hover:bg-slate-100 dark:hover:bg-slate-800 text-left cursor-pointer ${
+                            isSelected
+                              ? "bg-amber-50 dark:bg-amber-950/30 text-slate-900 dark:text-slate-100 font-bold"
+                              : "text-slate-700 dark:text-slate-300"
+                          }`}
+                        >
+                          <span className="truncate">{opt.label}</span>
+                          <span
+                            className={`ml-2 inline-flex items-center justify-center px-2 py-0.5 rounded-full text-[11px] font-bold shrink-0 shadow-2xs ${
+                              isSelected
+                                ? "bg-amber-500 text-slate-950"
+                                : count > 0
+                                ? "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300"
+                                : "bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500"
+                            }`}
+                          >
+                            {count}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </>
+              )}
             </div>
 
             <button
               type="button"
               onClick={() => void handleRefresh()}
               disabled={isRefreshing}
-              className="flex items-center gap-1.5 rounded-xl border border-slate-400 dark:border-slate-700 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 text-slate-900 dark:text-slate-200 text-xs font-semibold px-3.5 py-2 transition disabled:opacity-50 cursor-pointer"
+              className="flex items-center gap-1.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 text-slate-900 dark:text-slate-200 text-xs font-semibold px-3.5 py-2 transition disabled:opacity-50 cursor-pointer shadow-2xs"
             >
               <Refresh className={`h-3.5 w-3.5 ${isRefreshing ? "animate-spin" : ""}`} />
-              {isRefreshing ? "Refreshing…" : "Refresh"}
+              <span>{isRefreshing ? "Refreshing…" : "Refresh"}</span>
             </button>
           </div>
         </div>
 
         {/* Result Count */}
-        <p className="mt-2.5 text-xs text-slate-600 dark:text-slate-400">
+        <p className="text-xs text-slate-600 dark:text-slate-400">
           {isLoading
             ? "Loading transaction logs…"
             : `${total} ${total === 1 ? "record" : "records"} found`}

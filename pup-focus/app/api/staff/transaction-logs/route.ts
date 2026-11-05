@@ -12,19 +12,26 @@ const ACTION_CATEGORY_FILTERS: Record<string, string[]> = {
   uploads: ["submission.upload", "document.upload"],
   reviews: ["submission.approve", "submission.reject", "submission.review"],
   user_management: [
+    "admin.create",
     "faculty.create",
     "faculty.update",
+    "faculty.email_change",
     "user.invite",
+    "user.invite_updated",
+    "user.invite_cancelled",
     "user.update",
     "user.activate",
     "user.deactivate",
     "user.delete",
+    "user.password_reset",
   ],
   submission_windows: [
     "submission_window.update",
     "submission_window.close",
     "submission_window.extend",
     "submission_window.reminder",
+    "submission_window.broadcast_reminder",
+    "submission_window.extension_request",
   ],
   academic_terms: [
     "academic_term.create",
@@ -118,9 +125,10 @@ export async function GET(request: NextRequest) {
 
     const supabase = getServiceRoleClient();
 
+    let effectiveTable: "transaction_logs" | "audit_logs" = "transaction_logs";
     let [countResult, dataResult] = await executeTableQuery(
       supabase,
-      "transaction_logs",
+      effectiveTable,
       offset,
       limit,
       actionCategory,
@@ -132,9 +140,10 @@ export async function GET(request: NextRequest) {
       (countResult.error && (countResult.error.code === "42P01" || countResult.error.message.includes("does not exist"))) ||
       (dataResult.error && (dataResult.error.code === "42P01" || dataResult.error.message.includes("does not exist")))
     ) {
+      effectiveTable = "audit_logs";
       [countResult, dataResult] = await executeTableQuery(
         supabase,
-        "audit_logs",
+        effectiveTable,
         offset,
         limit,
         actionCategory,
@@ -164,6 +173,35 @@ export async function GET(request: NextRequest) {
 
     const total = countResult.count ?? 0;
     const totalPages = Math.ceil(total / limit);
+
+    // Compute category counts across all logs in the table
+    const { data: allActionsData } = await supabase
+      .from(effectiveTable)
+      .select("action");
+
+    const categoryCounts: Record<string, number> = {
+      all: allActionsData?.length ?? total,
+      auth: 0,
+      uploads: 0,
+      reviews: 0,
+      user_management: 0,
+      submission_windows: 0,
+      academic_terms: 0,
+      templates: 0,
+      classes: 0,
+      backup: 0,
+    };
+
+    if (allActionsData && Array.isArray(allActionsData)) {
+      for (const row of allActionsData) {
+        const act = (row.action as string) || "";
+        for (const [cat, actions] of Object.entries(ACTION_CATEGORY_FILTERS)) {
+          if (actions.includes(act)) {
+            categoryCounts[cat] = (categoryCounts[cat] || 0) + 1;
+          }
+        }
+      }
+    }
 
     // Try to resolve actor names from profiles
     const actorIds = [
@@ -209,6 +247,7 @@ export async function GET(request: NextRequest) {
       page,
       limit,
       totalPages,
+      categoryCounts,
     });
   } catch (error) {
     logger.error("transaction_logs_endpoint_error", {
