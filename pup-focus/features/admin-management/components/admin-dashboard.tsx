@@ -1048,8 +1048,11 @@ export function SuperAdminDashboard({
     try {
       if (activeSection === "accounts") {
         await loadAdminAccounts(true);
-      } else if (activeSection === "faculty" || activeSection === "verification") {
+      } else if (activeSection === "faculty") {
         await loadFacultyFromDatabase(true);
+      } else if (activeSection === "verification") {
+        await loadFacultyFromDatabase(true);
+        setVerificationResetTrigger((prev) => prev + 1);
       } else if (activeSection === "settings") {
         await loadAccountSettings(true);
       } else if (activeSection === "templates" || activeSection === "programs") {

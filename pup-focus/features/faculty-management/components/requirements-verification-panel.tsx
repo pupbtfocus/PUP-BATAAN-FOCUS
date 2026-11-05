@@ -25,6 +25,7 @@ import {
   OpenNewWindow,
   Package,
   Page,
+  Refresh,
   Reports,
   SendMail,
   SystemRestart,
@@ -1144,7 +1145,7 @@ export function FacultyVerificationDrawer({
             faculty.id
           )}&academicYear=${encodeURIComponent(
             activeAy
-          )}&semester=${encodeURIComponent(activeSem)}`,
+          )}&semester=${encodeURIComponent(activeSem)}&_t=${Date.now()}`,
           { credentials: "include", cache: "no-store" }
         );
         if (subRes.ok) {
@@ -1161,7 +1162,7 @@ export function FacultyVerificationDrawer({
               faculty.id
             )}&academicYear=${encodeURIComponent(
               selectedHistoryAy
-            )}&semester=${encodeURIComponent(selectedHistorySem)}`,
+            )}&semester=${encodeURIComponent(selectedHistorySem)}&_t=${Date.now()}`,
             { credentials: "include", cache: "no-store" }
           );
           if (res.ok) {
@@ -4033,8 +4034,9 @@ export function RequirementsPanel({
         return;
       }
 
+      const isManualTrigger = (resetTrigger ?? 0) > 0;
       const hasExistingStatuses = Object.keys(facultyStatuses).length > 0;
-      if (!hasExistingStatuses) {
+      if (!hasExistingStatuses || isManualTrigger) {
         setIsLoadingStatuses(true);
       }
       try {
@@ -4081,11 +4083,11 @@ export function RequirementsPanel({
             // Batch load status for all faculty
             const targetAy = activePanelTab === "history" ? chosenAy : activeAy;
             const targetSem = activePanelTab === "history" ? defaultSem : activeSem;
-            await fetchAllStatuses(targetAy, targetSem, { silent: hasExistingStatuses });
+            await fetchAllStatuses(targetAy, targetSem, { silent: !isManualTrigger && hasExistingStatuses });
           } else {
             const targetAy = activePanelTab === "history" ? historyAy : activeAy;
             const targetSem = activePanelTab === "history" ? historySem : activeSem;
-            await fetchAllStatuses(targetAy, targetSem, { silent: hasExistingStatuses });
+            await fetchAllStatuses(targetAy, targetSem, { silent: !isManualTrigger && hasExistingStatuses });
           }
         }
       } catch (err) {
