@@ -176,6 +176,26 @@ export async function GET(request: NextRequest) {
       .eq("action", "user.invite_cancelled")
       .order("created_at", { ascending: false });
 
+    const { data: updatedAuditLogs } = await supabase
+      .from("transaction_logs")
+      .select("id, metadata, created_at")
+      .eq("action", "user.invite_updated")
+      .order("created_at", { ascending: false });
+
+    const updatedPreviousEmails = new Set<string>();
+    if (updatedAuditLogs) {
+      for (const log of updatedAuditLogs) {
+        const prev = (
+          log.metadata?.previous_email ||
+          log.metadata?.old_email ||
+          ""
+        ).trim().toLowerCase();
+        if (prev) {
+          updatedPreviousEmails.add(prev);
+        }
+      }
+    }
+
     const { data: deletedAuditLogs } = await supabase
       .from("transaction_logs")
       .select("id, entity_id, metadata, created_at")
@@ -393,7 +413,11 @@ export async function GET(request: NextRequest) {
           log.metadata?.email ||
           ""
         ).trim().toLowerCase();
-        if (!targetEmail || logsMap.has(targetEmail)) {
+        if (
+          !targetEmail ||
+          logsMap.has(targetEmail) ||
+          updatedPreviousEmails.has(targetEmail)
+        ) {
           continue;
         }
 
@@ -412,6 +436,16 @@ export async function GET(request: NextRequest) {
           continue;
         }
 
+        // If this log's entity_id matches an existing auth user or profile already loaded, skip it
+        const entityId = log.entity_id;
+        if (
+          entityId &&
+          (authUsers.some((u) => u.id === entityId) ||
+            (profiles && profiles.some((p) => p.id === entityId)))
+        ) {
+          continue;
+        }
+
         const targetFullName =
           (log.metadata?.target_full_name as string)?.trim() ||
           targetEmail.split("@")[0];
@@ -419,10 +453,22 @@ export async function GET(request: NextRequest) {
         const isFaculty = log.action === "faculty.create";
         const actorProfile = profileByUserId.get(log.actor_id) || profileById.get(log.actor_id);
         const fallbackProfile = profileByEmail.get(targetEmail);
+        const resolvedFullName = fallbackProfile?.full_name || targetFullName;
+
+        // If an accepted user with the same full name and role already exists, skip duplicate pending log
+        const alreadyAccepted = Array.from(logsMap.values()).some(
+          (item) =>
+            item.status === "Accepted" &&
+            item.role === (isFaculty ? "Faculty" : "Staff") &&
+            item.fullName.toLowerCase().trim() === resolvedFullName.toLowerCase().trim()
+        );
+        if (alreadyAccepted) {
+          continue;
+        }
 
         logsMap.set(targetEmail, {
           id: log.id,
-          fullName: fallbackProfile?.full_name || targetFullName,
+          fullName: resolvedFullName,
           email: targetEmail,
           role: isFaculty ? "Faculty" : "Staff",
           status: "Pending",
@@ -435,6 +481,32 @@ export async function GET(request: NextRequest) {
           avatarUrl: fallbackProfile?.avatar_url || (fallbackProfile as any)?.profile_image_url || null,
           invitedBy: actorProfile?.full_name || actorProfile?.email || null,
         });
+      }
+    }
+
+    // Deduplicate: If an Accepted account exists for a person, remove any lingering/ghost Pending entries
+    // for that same person (suppresses superseded typo email invites, stale audit logs, and unconfirmed duplicate auth records)
+    const acceptedPersonKeys = new Set<string>();
+    for (const item of logsMap.values()) {
+      if (item.status === "Accepted") {
+        const normName = item.fullName.toLowerCase().replace(/[^a-z0-9]/g, "");
+        if (normName) {
+          acceptedPersonKeys.add(normName);
+        }
+      }
+    }
+
+    for (const [key, item] of Array.from(logsMap.entries())) {
+      if (item.status === "Pending") {
+        const normName = item.fullName.toLowerCase().replace(/[^a-z0-9]/g, "");
+        const emailLower = item.email.toLowerCase().trim();
+        const isPreviousEmail = updatedPreviousEmails.has(emailLower);
+        const isCancelled = cancelledByEmail.has(emailLower);
+        const hasAcceptedDuplicate = Boolean(normName && acceptedPersonKeys.has(normName));
+
+        if (isPreviousEmail || isCancelled || hasAcceptedDuplicate) {
+          logsMap.delete(key);
+        }
       }
     }
 
@@ -981,6 +1053,20 @@ export async function PATCH(request: NextRequest) {
           resend_requested: resendNow,
         },
       });
+
+      if (newEmail !== email) {
+        await logAuditEvent({
+          actorId: currentUser.id,
+          action: "user.invite_cancelled",
+          entityType: "user",
+          entityId: updatedUserId || currentUser.id,
+          metadata: {
+            target_email: email,
+            superseded_by: newEmail,
+            reason: "Superseded by updated invitation email",
+          },
+        });
+      }
     } catch {}
 
     // 4. Optionally resend invite immediately

@@ -317,9 +317,28 @@ export function UserRegistrationLogsModal({
         throw new Error("Failed to load registration logs");
       }
       const data = await response.json();
-      setLogs(data.logs || []);
+      const rawLogs: RegistrationLogItem[] = data.logs || [];
+      const acceptedNames = new Set<string>();
+      for (const item of rawLogs) {
+        if (item.status === "Accepted") {
+          const norm = (item.fullName || "").toLowerCase().replace(/[^a-z0-9]/g, "");
+          if (norm) acceptedNames.add(norm);
+        }
+      }
+      const sanitizedLogs = rawLogs.filter((item) => {
+        if (item.status === "Pending") {
+          const norm = (item.fullName || "").toLowerCase().replace(/[^a-z0-9]/g, "");
+          if (norm && acceptedNames.has(norm)) return false;
+        }
+        return true;
+      });
+      setLogs(sanitizedLogs);
       if (data.stats) {
-        setStats(data.stats);
+        setStats({
+          total: sanitizedLogs.length,
+          accepted: sanitizedLogs.filter((i) => i.status === "Accepted").length,
+          pending: sanitizedLogs.filter((i) => i.status === "Pending").length,
+        });
       }
     } catch (err: any) {
       setError(err?.message || "Failed to load registration logs");
@@ -442,7 +461,23 @@ export function UserRegistrationLogsModal({
   };
 
   const filteredLogs = useMemo(() => {
+    const acceptedNames = new Set<string>();
+    for (const item of logs) {
+      if (item.status === "Accepted") {
+        const norm = (item.fullName || "").toLowerCase().replace(/[^a-z0-9]/g, "");
+        if (norm) acceptedNames.add(norm);
+      }
+    }
+
     return logs.filter((item) => {
+      // Suppress duplicate pending item if an accepted account exists for the same user
+      if (item.status === "Pending") {
+        const norm = (item.fullName || "").toLowerCase().replace(/[^a-z0-9]/g, "");
+        if (norm && acceptedNames.has(norm)) {
+          return false;
+        }
+      }
+
       // Role filter
       if (targetRole === "admin") {
         if (adminRoleFilter === "super" && item.role !== "Admin" && item.role !== "Super Admin") return false;
