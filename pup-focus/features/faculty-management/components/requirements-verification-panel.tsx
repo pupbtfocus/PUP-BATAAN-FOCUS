@@ -1849,8 +1849,36 @@ export function FacultyVerificationDrawer({
     }
   }
 
-  const departmentLabel =
-    faculty.program?.name || faculty.program?.code || "Department";
+  const departmentLabel = useMemo(() => {
+    const PROGRAM_EXPANSIONS: Record<string, string> = {
+      BSIT: "Bachelor of Science in Information Technology",
+      BSIE: "Bachelor of Science in Industrial Engineering",
+      BSA: "Bachelor of Science in Accountancy",
+      BSMA: "Bachelor of Science in Management Accounting",
+      BEED: "Bachelor of Elementary Education",
+      BSBAHRM: "Bachelor of Science in Business Administration major in Human Resource Management",
+      BSEnt: "Bachelor of Science in Entrepreneurship",
+      BSE: "Bachelor of Science in Entrepreneurship",
+      BSBA: "Bachelor of Science in Business Administration",
+      DIT: "Diploma in Information Technology",
+      "DOMT-LOM": "Diploma in Office Management Technology major in Legal Office Management",
+    };
+
+    const code = faculty.program?.code || "";
+    let name = faculty.program?.name || "";
+    const normCode = code.toUpperCase().trim();
+
+    if (PROGRAM_EXPANSIONS[normCode]) {
+      name = PROGRAM_EXPANSIONS[normCode];
+    } else if (name.startsWith("BS ")) {
+      name = name.replace(/^BS\s+/i, "Bachelor of Science in ");
+    }
+
+    if (code && name) {
+      return `${code} — ${name}`;
+    }
+    return name || code || "Department";
+  }, [faculty.program]);
 
   const facultyDisplayName = useMemo(() => {
     const rawName = faculty.fullName || "";
@@ -1957,10 +1985,10 @@ export function FacultyVerificationDrawer({
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-y-3.5 gap-x-6 p-4 bg-white dark:bg-slate-900 text-xs">
                 <div>
                   <span className="font-bold text-slate-900 dark:text-slate-100 block mb-0.5">
-                    Course Code &amp; Description
+                    Faculty Department &amp; Program
                   </span>
                   <p className="font-medium text-slate-700 dark:text-slate-300">
-                    {faculty.program?.code ? `${faculty.program.code} — ${faculty.program.name}` : departmentLabel}
+                    {departmentLabel}
                   </p>
                 </div>
 

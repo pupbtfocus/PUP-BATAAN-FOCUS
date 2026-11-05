@@ -338,12 +338,18 @@ export async function getFacultyInitialData(
         const p = (row as any).programs;
         const prog = Array.isArray(p) ? p[0] : p;
         if (prog?.code && prog?.name) {
+          const expandedName =
+            prog.code === "BSIT" && prog.name === "BS Information Technology"
+              ? "Bachelor of Science in Information Technology"
+              : prog.name.startsWith("BS ")
+              ? prog.name.replace(/^BS\s+/i, "Bachelor of Science in ")
+              : prog.name;
           programInfo = {
             id: prog.id,
             code: prog.code,
-            name: prog.name,
+            name: expandedName,
           };
-          departmentName = `${prog.code} — ${prog.name}`;
+          departmentName = `${prog.code} — ${expandedName}`;
           break;
         }
       }
