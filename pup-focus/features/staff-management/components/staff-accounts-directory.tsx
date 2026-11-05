@@ -4,6 +4,8 @@ import React, { useState, useMemo } from "react";
 import {
   EditPencil,
   Eye,
+  Group,
+  Shield,
   Trash,
   UserBadgeCheck,
   UserXmark,
@@ -99,12 +101,24 @@ function formatLastLogin(isoDate?: string | null): string {
   });
 }
 
+export function isAdministratorAccount(account: AdminAccount): boolean {
+  const r = (account.role || "").toLowerCase().trim();
+  return (
+    r === "admin" ||
+    r.includes("super") ||
+    account.email?.toLowerCase() === "pupbataanfocus.superadmin@gmail.com" ||
+    account.email?.toLowerCase() === "pupbataanfocus.admin@gmail.com"
+  );
+}
+
 export function AdminStatsCards({
   adminAccounts,
   isLoading = false,
+  entityLabel = "Staff",
 }: {
   adminAccounts: AdminAccount[];
   isLoading?: boolean;
+  entityLabel?: string;
 }) {
   const totalCount = adminAccounts.length;
   const activeCount = adminAccounts.filter((a) => a.is_active).length;
@@ -112,30 +126,30 @@ export function AdminStatsCards({
 
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
-      {/* 1. TOTAL STAFF */}
+      {/* 1. TOTAL */}
       <div className="rounded-xl bg-white text-slate-900 border border-slate-200 shadow-xs dark:bg-slate-900 dark:text-slate-100 dark:border-slate-800 p-5 transition-colors">
         <p className="text-slate-500 dark:text-slate-400 text-xs font-medium uppercase tracking-wider">
-          Total Staff
+          Total {entityLabel}
         </p>
         <p className="mt-2 text-2xl font-bold text-slate-900 dark:text-slate-100">
           {isLoading ? "..." : totalCount}
         </p>
       </div>
 
-      {/* 2. ACTIVE STAFF */}
+      {/* 2. ACTIVE */}
       <div className="rounded-xl bg-white text-slate-900 border border-slate-200 shadow-xs dark:bg-slate-900 dark:text-slate-100 dark:border-slate-800 p-5 transition-colors">
         <p className="text-slate-500 dark:text-slate-400 text-xs font-medium uppercase tracking-wider">
-          Active Staff
+          Active {entityLabel}
         </p>
         <p className="mt-2 text-2xl font-bold text-slate-900 dark:text-slate-100">
           {isLoading ? "..." : activeCount}
         </p>
       </div>
 
-      {/* 3. INACTIVE STAFF */}
+      {/* 3. INACTIVE */}
       <div className="rounded-xl bg-white text-slate-900 border border-slate-200 shadow-xs dark:bg-slate-900 dark:text-slate-100 dark:border-slate-800 p-5 transition-colors">
         <p className="text-slate-500 dark:text-slate-400 text-xs font-medium uppercase tracking-wider">
-          Inactive Staff
+          Inactive {entityLabel}
         </p>
         <p className="mt-2 text-2xl font-bold text-slate-900 dark:text-slate-100">
           {isLoading ? "..." : inactiveCount}
@@ -155,6 +169,8 @@ export function AdminFilterBar({
   onExportPdf,
   onExportExcel,
   placeholder = "Search staff by name or email...",
+  showRoleFilter = true,
+  exportLabel = "Staff",
 }: {
   searchTerm: string;
   onSearchChange: (value: string) => void;
@@ -165,6 +181,8 @@ export function AdminFilterBar({
   onExportPdf?: () => void;
   onExportExcel?: () => void;
   placeholder?: string;
+  showRoleFilter?: boolean;
+  exportLabel?: string;
 }) {
   return (
     <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-4 bg-white text-slate-900 border border-slate-200 dark:border-slate-800 shadow-xs dark:bg-slate-900 dark:text-slate-100 rounded-xl mb-6 transition-colors">
@@ -177,15 +195,17 @@ export function AdminFilterBar({
           className="w-full sm:w-64 h-9 rounded-xl bg-white text-slate-900 border border-slate-200 focus:border-slate-400 dark:bg-slate-900 dark:text-slate-100 dark:border-slate-800 dark:focus:border-slate-600 px-3 text-xs placeholder-slate-400 dark:placeholder-slate-500 outline-none transition"
         />
 
-        <select
-          value={roleFilter}
-          onChange={(e) => onRoleFilterChange(e.target.value)}
-          className="w-full sm:w-44 h-9 rounded-xl bg-white text-slate-900 border border-slate-200 focus:border-slate-400 dark:bg-slate-900 dark:text-slate-100 dark:border-slate-800 dark:focus:border-slate-600 px-3 text-xs outline-none transition cursor-pointer"
-        >
-          <option value="all">All Roles</option>
-          <option value={ROLE.STAFF}>Staff</option>
-          <option value={ROLE.ADMIN}>Admin</option>
-        </select>
+        {showRoleFilter && (
+          <select
+            value={roleFilter}
+            onChange={(e) => onRoleFilterChange(e.target.value)}
+            className="w-full sm:w-44 h-9 rounded-xl bg-white text-slate-900 border border-slate-200 focus:border-slate-400 dark:bg-slate-900 dark:text-slate-100 dark:border-slate-800 dark:focus:border-slate-600 px-3 text-xs outline-none transition cursor-pointer"
+          >
+            <option value="all">All Roles</option>
+            <option value={ROLE.STAFF}>Staff</option>
+            <option value={ROLE.ADMIN}>Admin</option>
+          </select>
+        )}
 
         <div className="flex items-center justify-start gap-2 w-full sm:w-auto overflow-x-auto pb-1 sm:pb-0">
           <div className="flex items-center gap-1 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 p-1 h-9 shrink-0">
@@ -233,7 +253,7 @@ export function AdminFilterBar({
               type="button"
               onClick={onExportPdf}
               className="inline-flex items-center gap-1.5 rounded-xl bg-[#780000] hover:bg-[#5e0000] text-white border border-[#5e0000] px-3 py-1.5 text-xs font-bold transition cursor-pointer shadow-xs"
-              title="Export Staff List to PDF"
+              title={`Export ${exportLabel} List to PDF`}
             >
               <img
                 src="/icons/adobe-pdf.svg"
@@ -248,7 +268,7 @@ export function AdminFilterBar({
               type="button"
               onClick={onExportExcel}
               className="inline-flex items-center gap-1.5 rounded-xl bg-[#0b5336] hover:bg-[#08412a] text-white border border-[#08412a] px-3 py-1.5 text-xs font-bold transition cursor-pointer shadow-xs"
-              title="Export Staff List to Excel"
+              title={`Export ${exportLabel} List to Excel`}
             >
               <img
                 src="/icons/microsoft-excel.svg"
@@ -280,6 +300,7 @@ export function AdminAccountsTable({
   onClearMessages = () => {},
   currentAdminEmail,
 }: AdminAccountsTableProps) {
+  const [activeTab, setActiveTab] = useState<"staff" | "admin" | "all">("staff");
   const [searchTerm, setSearchTerm] = useState("");
   const [roleFilter, setRoleFilter] = useState<"all" | string>("all");
   const [statusFilter, setStatusFilter] = useState<
@@ -287,16 +308,31 @@ export function AdminAccountsTable({
   >("all");
   const [failedImageIds, setFailedImageIds] = useState<Set<string>>(new Set());
 
-  const filteredAccounts = useMemo(() => {
-    let result = adminAccounts;
+  const staffOnlyAccounts = useMemo(
+    () => adminAccounts.filter((a) => !isAdministratorAccount(a)),
+    [adminAccounts]
+  );
+  const adminOnlyAccounts = useMemo(
+    () => adminAccounts.filter((a) => isAdministratorAccount(a)),
+    [adminAccounts]
+  );
 
-    if (roleFilter !== "all") {
+  const currentTabBaseAccounts = useMemo(() => {
+    if (activeTab === "staff") return staffOnlyAccounts;
+    if (activeTab === "admin") return adminOnlyAccounts;
+    return adminAccounts;
+  }, [activeTab, staffOnlyAccounts, adminOnlyAccounts, adminAccounts]);
+
+  const filteredAccounts = useMemo(() => {
+    let result = currentTabBaseAccounts;
+
+    if (activeTab === "all" && roleFilter !== "all") {
       result = result.filter((a) => {
-        const r = (a.role || "").toLowerCase().trim();
+        const isAdmin = isAdministratorAccount(a);
         if (roleFilter === ROLE.ADMIN) {
-          return r.includes("super");
+          return isAdmin;
         }
-        return !r.includes("super");
+        return !isAdmin;
       });
     }
 
@@ -314,44 +350,52 @@ export function AdminAccountsTable({
       const email = (admin.email || "").toLowerCase();
       return name.includes(query) || email.includes(query);
     });
-  }, [adminAccounts, searchTerm, roleFilter, statusFilter]);
+  }, [currentTabBaseAccounts, activeTab, roleFilter, statusFilter, searchTerm]);
+
+  const entityLabel =
+    activeTab === "staff"
+      ? "Staff"
+      : activeTab === "admin"
+      ? "Administrator"
+      : "Staff & Admin";
 
   const buildStaffReportPayload = () => {
     const activeCount = filteredAccounts.filter((a) => a.is_active).length;
     const inactiveCount = filteredAccounts.length - activeCount;
 
     return {
-      title: "Staff & Administrative Directory Report",
-      subtitle: `Role Filter: ${roleFilter === "all" ? "All Roles" : roleFilter} • Status: ${statusFilter.toUpperCase()}`,
-      fileName: `PUP_FOCUS_Staff_Report_${new Date().toISOString().slice(0, 10)}`,
+      title: `${entityLabel} Directory Report`,
+      subtitle: `View: ${
+        activeTab === "staff"
+          ? "Staff Accounts"
+          : activeTab === "admin"
+          ? "Administrator Accounts"
+          : "All Accounts"
+      } • Status: ${statusFilter.toUpperCase()}`,
+      fileName: `PUP_FOCUS_${activeTab === "admin" ? "Admin" : "Staff"}_Report_${new Date().toISOString().slice(0, 10)}`,
       summaryStats: [
         {
-          label: "Total Listed Staff",
+          label: `Total Listed ${entityLabel}`,
           value: filteredAccounts.length,
           tone: "default" as const,
         },
-        { label: "Active Staff", value: activeCount, tone: "success" as const },
+        { label: `Active ${entityLabel}`, value: activeCount, tone: "success" as const },
         {
-          label: "Inactive Staff",
+          label: `Inactive ${entityLabel}`,
           value: inactiveCount,
           tone: "danger" as const,
         },
       ],
       columns: [
         { header: "#", key: "index", align: "center" as const },
-        { header: "Staff Name", key: "name" },
+        { header: `${entityLabel} Member`, key: "name" },
         { header: "Email Address", key: "email" },
         { header: "Role", key: "role", align: "center" as const },
         { header: "Status", key: "status", align: "center" as const },
         { header: "Last Login", key: "lastLogin" },
       ],
       rows: filteredAccounts.map((admin, index) => {
-        const isSuperAdmin =
-          (admin.role || "").toLowerCase() === "admin" ||
-          (admin.role || "").toLowerCase().includes("super") ||
-          admin.email?.toLowerCase() ===
-            "pupbataanfocus.superadmin@gmail.com" ||
-          admin.email?.toLowerCase() === "pupbataanfocus.admin@gmail.com";
+        const isSuperAdmin = isAdministratorAccount(admin);
         return {
           index: index + 1,
           name: formatAdminName(admin),
@@ -367,7 +411,7 @@ export function AdminAccountsTable({
   };
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-4">
       <AlertPopup
         type="error"
         message={accountsError}
@@ -386,8 +430,96 @@ export function AdminAccountsTable({
         onClose={onClearMessages}
       />
 
-      {/* 3 Stat Cards */}
-      <AdminStatsCards adminAccounts={adminAccounts} isLoading={isLoading} />
+      {/* Segmented Workspace Tabs - Separates Admin and Staff accounts */}
+      <div className="flex flex-wrap items-center gap-2 p-1.5 bg-slate-100 dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800">
+        <button
+          type="button"
+          onClick={() => {
+            setActiveTab("staff");
+            setRoleFilter("all");
+          }}
+          className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer ${
+            activeTab === "staff"
+              ? "bg-[#780000] text-white border border-[#5e0000] shadow-xs"
+              : "bg-white dark:bg-slate-800/80 text-slate-700 dark:text-slate-300 border border-slate-300 dark:border-slate-700 hover:border-slate-400 dark:hover:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-750 shadow-2xs"
+          }`}
+        >
+          <AppIcon icon={UserBadgeCheck} size="sm" color="inherit" />
+          <span>Staff Accounts</span>
+          <span
+            className={`px-1.5 py-0.5 rounded-md text-[10px] font-black ${
+              activeTab === "staff"
+                ? "bg-amber-400 text-slate-950"
+                : "bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-600"
+            }`}
+          >
+            {staffOnlyAccounts.length}
+          </span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => {
+            setActiveTab("admin");
+            setRoleFilter("all");
+          }}
+          className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer ${
+            activeTab === "admin"
+              ? "bg-[#780000] text-white border border-[#5e0000] shadow-xs"
+              : "bg-white dark:bg-slate-800/80 text-slate-700 dark:text-slate-300 border border-slate-300 dark:border-slate-700 hover:border-slate-400 dark:hover:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-750 shadow-2xs"
+          }`}
+        >
+          <AppIcon icon={Shield} size="sm" color="inherit" />
+          <span>Administrator Accounts</span>
+          <span
+            className={`px-1.5 py-0.5 rounded-md text-[10px] font-black ${
+              activeTab === "admin"
+                ? "bg-amber-400 text-slate-950"
+                : "bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-600"
+            }`}
+          >
+            {adminOnlyAccounts.length}
+          </span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => {
+            setActiveTab("all");
+            setRoleFilter("all");
+          }}
+          className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer ${
+            activeTab === "all"
+              ? "bg-[#780000] text-white border border-[#5e0000] shadow-xs"
+              : "bg-white dark:bg-slate-800/80 text-slate-700 dark:text-slate-300 border border-slate-300 dark:border-slate-700 hover:border-slate-400 dark:hover:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-750 shadow-2xs"
+          }`}
+        >
+          <AppIcon icon={Group} size="sm" color="inherit" />
+          <span>All Accounts</span>
+          <span
+            className={`px-1.5 py-0.5 rounded-md text-[10px] font-black ${
+              activeTab === "all"
+                ? "bg-amber-400 text-slate-950"
+                : "bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-600"
+            }`}
+          >
+            {adminAccounts.length}
+          </span>
+        </button>
+      </div>
+
+      {/* 3 Stat Cards tailored to active tab */}
+      <AdminStatsCards
+        adminAccounts={currentTabBaseAccounts}
+        isLoading={isLoading}
+        entityLabel={
+          activeTab === "staff"
+            ? "Staff"
+            : activeTab === "admin"
+            ? "Administrators"
+            : "Accounts"
+        }
+      />
 
       {/* Filter Bar */}
       <AdminFilterBar
@@ -399,6 +531,21 @@ export function AdminAccountsTable({
         onStatusFilterChange={setStatusFilter}
         onExportPdf={() => exportReportToPdf(buildStaffReportPayload())}
         onExportExcel={() => exportReportToExcel(buildStaffReportPayload())}
+        placeholder={
+          activeTab === "staff"
+            ? "Search staff by name or email..."
+            : activeTab === "admin"
+            ? "Search administrators by name or email..."
+            : "Search accounts by name or email..."
+        }
+        showRoleFilter={activeTab === "all"}
+        exportLabel={
+          activeTab === "staff"
+            ? "Staff"
+            : activeTab === "admin"
+            ? "Administrator"
+            : "Staff & Admin"
+        }
       />
 
       {/* Clean Data Table */}
@@ -407,7 +554,13 @@ export function AdminAccountsTable({
           <thead className="border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/60 uppercase tracking-wider text-[10px] text-slate-600 dark:text-slate-400">
             <tr>
               <th className="px-3 py-2.5 font-semibold w-10 text-center">#</th>
-              <th className="px-4 py-2.5 font-semibold">Staff Member</th>
+              <th className="px-4 py-2.5 font-semibold">
+                {activeTab === "staff"
+                  ? "Staff Member"
+                  : activeTab === "admin"
+                  ? "Administrator"
+                  : "Member"}
+              </th>
               <th className="px-4 py-2.5 font-semibold">Role</th>
               <th className="px-4 py-2.5 font-semibold">Status</th>
               <th className="px-4 py-2.5 font-semibold">Last Login</th>
@@ -432,18 +585,16 @@ export function AdminAccountsTable({
                   colSpan={6}
                   className="px-4 py-8 text-center text-xs text-slate-500 dark:text-slate-400"
                 >
-                  No staff members match the selected criteria.
+                  {activeTab === "staff"
+                    ? "No staff members match the selected criteria."
+                    : activeTab === "admin"
+                    ? "No administrator accounts match the selected criteria."
+                    : "No accounts match the selected criteria."}
                 </td>
               </tr>
             ) : (
               filteredAccounts.map((admin, index) => {
-                const isSuperAdmin =
-                  (admin.role || "").toLowerCase() === "admin" ||
-                  (admin.role || "").toLowerCase().includes("super") ||
-                  admin.email?.toLowerCase() ===
-                    "pupbataanfocus.superadmin@gmail.com" ||
-                  admin.email?.toLowerCase() ===
-                    "pupbataanfocus.admin@gmail.com";
+                const isSuperAdmin = isAdministratorAccount(admin);
                 const hasAvatar =
                   admin.profileImageUrl &&
                   !failedImageIds.has(admin.profile_id);
@@ -563,7 +714,7 @@ export function AdminAccountsTable({
                         <button
                           type="button"
                           onClick={() => onViewDetails(admin.profile_id)}
-                          title="View Admin Details"
+                          title={`View ${isSuperAdmin ? "Admin" : "Staff"} Details`}
                           className="bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold border border-amber-600/30 text-xs rounded-md px-2.5 py-1 transition-colors cursor-pointer inline-flex items-center gap-1.5 shadow-2xs shrink-0 whitespace-nowrap"
                         >
                           <AppIcon
@@ -580,7 +731,7 @@ export function AdminAccountsTable({
                           <button
                             type="button"
                             onClick={() => onEditAdmin(admin.profile_id)}
-                            title="Edit Admin"
+                            title={`Edit ${isSuperAdmin ? "Admin" : "Staff"}`}
                             className="bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold border border-amber-600/30 text-xs rounded-md px-2.5 py-1 transition-colors cursor-pointer inline-flex items-center gap-1.5 shadow-2xs shrink-0 whitespace-nowrap"
                           >
                             <AppIcon
@@ -604,7 +755,7 @@ export function AdminAccountsTable({
                               disabled={
                                 isDeactivatingOrActivating || isDeleting
                               }
-                              title="Deactivate Admin"
+                              title={`Deactivate ${isSuperAdmin ? "Admin" : "Staff"}`}
                               className="bg-[#780000] hover:bg-[#5e0000] text-white font-semibold border border-[#5e0000] text-xs rounded-md px-2.5 py-1 transition-colors cursor-pointer inline-flex items-center gap-1.5 disabled:opacity-50 shadow-2xs shrink-0 whitespace-nowrap"
                             >
                               <AppIcon
@@ -625,7 +776,7 @@ export function AdminAccountsTable({
                               disabled={
                                 isDeactivatingOrActivating || isDeleting
                               }
-                              title="Activate Admin"
+                              title={`Activate ${isSuperAdmin ? "Admin" : "Staff"}`}
                               className="bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold border border-amber-600/30 text-xs rounded-md px-2.5 py-1 transition-colors cursor-pointer inline-flex items-center gap-1.5 disabled:opacity-50 shadow-2xs shrink-0 whitespace-nowrap"
                             >
                               <AppIcon
@@ -649,7 +800,7 @@ export function AdminAccountsTable({
                             type="button"
                             onClick={() => onDeleteAdmin(admin.profile_id)}
                             disabled={isDeactivatingOrActivating || isDeleting}
-                            title="Delete Admin"
+                            title={`Delete ${isSuperAdmin ? "Admin" : "Staff"}`}
                             className="bg-[#780000] hover:bg-[#5e0000] text-white font-semibold border border-[#5e0000] text-xs rounded-md px-2.5 py-1 transition-colors cursor-pointer inline-flex items-center gap-1.5 disabled:opacity-50 shadow-2xs shrink-0 whitespace-nowrap"
                           >
                             <AppIcon icon={Trash} size="sm" color="white" />
