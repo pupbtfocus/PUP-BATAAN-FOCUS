@@ -1175,18 +1175,8 @@ export function FacultyVerificationDrawer({
         }
       }
       onStatusUpdated?.();
-      setActionFeedback({
-        type: "info",
-        message: "Requirements data refreshed successfully.",
-      });
-      setTimeout(() => setActionFeedback(null), 3000);
     } catch (err) {
       console.error("Failed to refresh requirements:", err);
-      setActionFeedback({
-        type: "error",
-        message: "Failed to refresh requirements. Please try again.",
-      });
-      setTimeout(() => setActionFeedback(null), 3000);
     } finally {
       setIsRefreshing(false);
     }
