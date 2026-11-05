@@ -44,7 +44,7 @@ function formatDate(isoDate?: string | null): string {
   });
 }
 
-type ActionFilterType = "all" | "SCHEDULE_UPDATE" | "EXTENSION" | "FACULTY_ONBOARDING" | "SCHEDULE_CLOSE";
+type ActionFilterType = "all" | "SCHEDULE_UPDATE" | "EXTENSION" | "SCHEDULE_CLOSE";
 
 export function SubmissionScheduleLogsModal({
   isOpen,
@@ -101,6 +101,11 @@ export function SubmissionScheduleLogsModal({
 
   const filteredLogs = useMemo(() => {
     return logs.filter((log) => {
+      // Exclude non-schedule events
+      if ((log.action_type as string) === "FACULTY_ONBOARDING") {
+        return false;
+      }
+
       // Filter by action category
       if (actionFilter !== "all" && log.action_type !== actionFilter) {
         return false;
@@ -251,42 +256,8 @@ export function SubmissionScheduleLogsModal({
           </button>
         </ModalHeader>
 
-        {/* Top Solid Banner */}
-        <div className="p-4 sm:p-6 pb-2 space-y-4">
-          <div
-            className={`rounded-xl p-3.5 flex flex-wrap items-center justify-between gap-3 text-xs shadow-xs text-white ${
-              currentSchedule?.isOpen
-                ? "bg-[#0b5336] border border-[#08412a]"
-                : "bg-[#780000] border border-[#5e0000]"
-            }`}
-          >
-            <div className="flex items-center gap-2.5">
-              <div className="p-2 rounded-lg bg-black/20 text-white">
-                <Calendar className="h-4 w-4" />
-              </div>
-              <div>
-                <span className="font-bold text-white block text-sm">
-                  Active Term: {activeTerm ? `${activeTerm.academicYear} • ${activeTerm.semester}` : academicYear ? `${academicYear} • ${semester}` : "2026-2027 • 1st Semester"}
-                </span>
-                <span className="text-xs text-emerald-100 dark:text-emerald-200 font-medium">
-                  {currentSchedule?.startDate && currentSchedule?.endDate
-                    ? `Window: ${currentSchedule.startDate} (${currentSchedule.startTime || "9:00 AM"}) → ${currentSchedule.endDate} (${currentSchedule.endTime || "5:00 PM"})`
-                    : "No submission window currently open."}
-                </span>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-2">
-              <span className="px-3 py-1 rounded-full text-xs font-bold bg-white text-slate-900 border border-white shadow-xs">
-                {currentSchedule?.isOpen ? "● Submissions Open" : "○ Submissions Closed"}
-              </span>
-              <span className="text-xs text-white font-bold bg-black/20 px-3 py-1 rounded-full border border-white/20">
-                {logs.length} logged {logs.length === 1 ? "event" : "events"}
-              </span>
-            </div>
-          </div>
-
-          {/* Filters & Search Toolbar */}
+        {/* Filters & Search Toolbar */}
+        <div className="p-4 sm:p-6 pb-2">
           <div className="flex flex-col sm:flex-row items-center gap-2.5">
             <div className="relative w-full sm:flex-1">
               <Search className="h-3.5 w-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
@@ -319,7 +290,6 @@ export function SubmissionScheduleLogsModal({
                   { key: "all", label: "All" },
                   { key: "SCHEDULE_UPDATE", label: "Updates" },
                   { key: "EXTENSION", label: "Extensions" },
-                  { key: "FACULTY_ONBOARDING", label: "Faculty Onboarding" },
                   { key: "SCHEDULE_CLOSE", label: "Closures" },
                 ] as const
               ).map((tab) => (
