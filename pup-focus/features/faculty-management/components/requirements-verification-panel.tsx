@@ -2091,7 +2091,7 @@ export function FacultyVerificationDrawer({
               /* Step 2: Class Detail Step */
               <div className="space-y-4">
                 {/* Top Navigation Bar: Back Button, Header Banner & Dropdown Switcher */}
-                <div className="rounded-2xl border-2 border-amber-400/80 dark:border-amber-500/60 bg-amber-50/80 dark:bg-amber-950/20 p-3 sm:p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 py-1">
                   <div className="flex items-center gap-2.5 min-w-0 flex-1">
                     <button
                       type="button"
@@ -3037,7 +3037,7 @@ export function FacultyVerificationDrawer({
                 /* History Step 2: Subject Historical Requirements View */
                 <div className="space-y-4">
                   {/* Top Context Navigation Bar */}
-                  <div className="rounded-2xl border-2 border-amber-400/80 dark:border-amber-500/60 bg-amber-50/80 dark:bg-amber-950/20 p-3 sm:p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 py-1">
                     <div className="flex items-center gap-2.5 min-w-0 flex-1">
                       <button
                         type="button"

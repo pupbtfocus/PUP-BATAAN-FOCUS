@@ -5171,7 +5171,7 @@ function FacultySubmissionPanelContent({
                     </div>
 
                     {/* Class Context Navigation Bar (Between Header & Status Filter/Counts) */}
-                    <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-3.5 sm:p-4 flex flex-col lg:flex-row lg:items-center justify-between gap-3 shadow-sm">
+                    <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 py-1">
                       <div className="flex flex-col sm:flex-row sm:items-center gap-2.5 min-w-0 flex-1">
                         {/* Mobile Top Row: Back Button + Edit/Archive Actions */}
                         <div className="flex items-center justify-between sm:justify-start gap-2">
