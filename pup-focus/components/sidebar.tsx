@@ -301,7 +301,7 @@ export function SidebarContent({
                       isAccountsActive ? "text-amber-300 stroke-[2]" : "text-amber-200/70"
                     }`}
                   />
-                  <span>Staff Management</span>
+                  <span>Admin & Staff Management</span>
                 </button>
                 <button
                   type="button"

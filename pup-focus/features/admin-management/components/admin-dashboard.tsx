@@ -2079,10 +2079,10 @@ export function SuperAdminDashboard({
                 <div className="relative overflow-hidden rounded-2xl border-2 border-amber-500 bg-amber-400 p-5 sm:p-6 shadow-md shadow-amber-500/10 flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
                   <div>
                     <h1 className="text-2xl sm:text-3xl font-black text-slate-950 tracking-tight">
-                      Staff Management
+                      Admin & Staff Management
                     </h1>
                     <p className="mt-1.5 text-sm sm:text-base text-amber-950/90 font-medium leading-relaxed">
-                      Configure and oversee staff privileges and account accesses.
+                      Configure and oversee administrator and staff privileges and account accesses.
                     </p>
                   </div>
                   <div className="flex items-center gap-2 w-full sm:w-auto flex-wrap">

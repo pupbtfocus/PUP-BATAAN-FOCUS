@@ -300,7 +300,7 @@ export function AdminAccountsTable({
   onClearMessages = () => {},
   currentAdminEmail,
 }: AdminAccountsTableProps) {
-  const [activeTab, setActiveTab] = useState<"staff" | "admin" | "all">("staff");
+  const [activeTab, setActiveTab] = useState<"admin" | "staff" | "all">("admin");
   const [searchTerm, setSearchTerm] = useState("");
   const [roleFilter, setRoleFilter] = useState<"all" | string>("all");
   const [statusFilter, setStatusFilter] = useState<
@@ -353,11 +353,11 @@ export function AdminAccountsTable({
   }, [currentTabBaseAccounts, activeTab, roleFilter, statusFilter, searchTerm]);
 
   const entityLabel =
-    activeTab === "staff"
-      ? "Staff"
-      : activeTab === "admin"
+    activeTab === "admin"
       ? "Administrator"
-      : "Staff & Admin";
+      : activeTab === "staff"
+      ? "Staff"
+      : "Admin & Staff";
 
   const buildStaffReportPayload = () => {
     const activeCount = filteredAccounts.filter((a) => a.is_active).length;
@@ -435,31 +435,6 @@ export function AdminAccountsTable({
         <button
           type="button"
           onClick={() => {
-            setActiveTab("staff");
-            setRoleFilter("all");
-          }}
-          className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer ${
-            activeTab === "staff"
-              ? "bg-[#780000] text-white border border-[#5e0000] shadow-xs"
-              : "bg-white dark:bg-slate-800/80 text-slate-700 dark:text-slate-300 border border-slate-300 dark:border-slate-700 hover:border-slate-400 dark:hover:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-750 shadow-2xs"
-          }`}
-        >
-          <AppIcon icon={UserBadgeCheck} size="sm" color="inherit" />
-          <span>Staff Accounts</span>
-          <span
-            className={`px-1.5 py-0.5 rounded-md text-[10px] font-black ${
-              activeTab === "staff"
-                ? "bg-amber-400 text-slate-950"
-                : "bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-600"
-            }`}
-          >
-            {staffOnlyAccounts.length}
-          </span>
-        </button>
-
-        <button
-          type="button"
-          onClick={() => {
             setActiveTab("admin");
             setRoleFilter("all");
           }}
@@ -479,6 +454,31 @@ export function AdminAccountsTable({
             }`}
           >
             {adminOnlyAccounts.length}
+          </span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => {
+            setActiveTab("staff");
+            setRoleFilter("all");
+          }}
+          className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer ${
+            activeTab === "staff"
+              ? "bg-[#780000] text-white border border-[#5e0000] shadow-xs"
+              : "bg-white dark:bg-slate-800/80 text-slate-700 dark:text-slate-300 border border-slate-300 dark:border-slate-700 hover:border-slate-400 dark:hover:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-750 shadow-2xs"
+          }`}
+        >
+          <AppIcon icon={UserBadgeCheck} size="sm" color="inherit" />
+          <span>Staff Accounts</span>
+          <span
+            className={`px-1.5 py-0.5 rounded-md text-[10px] font-black ${
+              activeTab === "staff"
+                ? "bg-amber-400 text-slate-950"
+                : "bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-600"
+            }`}
+          >
+            {staffOnlyAccounts.length}
           </span>
         </button>
 
@@ -513,10 +513,10 @@ export function AdminAccountsTable({
         adminAccounts={currentTabBaseAccounts}
         isLoading={isLoading}
         entityLabel={
-          activeTab === "staff"
-            ? "Staff"
-            : activeTab === "admin"
+          activeTab === "admin"
             ? "Administrators"
+            : activeTab === "staff"
+            ? "Staff"
             : "Accounts"
         }
       />
@@ -532,19 +532,19 @@ export function AdminAccountsTable({
         onExportPdf={() => exportReportToPdf(buildStaffReportPayload())}
         onExportExcel={() => exportReportToExcel(buildStaffReportPayload())}
         placeholder={
-          activeTab === "staff"
-            ? "Search staff by name or email..."
-            : activeTab === "admin"
+          activeTab === "admin"
             ? "Search administrators by name or email..."
+            : activeTab === "staff"
+            ? "Search staff by name or email..."
             : "Search accounts by name or email..."
         }
         showRoleFilter={activeTab === "all"}
         exportLabel={
-          activeTab === "staff"
-            ? "Staff"
-            : activeTab === "admin"
+          activeTab === "admin"
             ? "Administrator"
-            : "Staff & Admin"
+            : activeTab === "staff"
+            ? "Staff"
+            : "Admin & Staff"
         }
       />
 
