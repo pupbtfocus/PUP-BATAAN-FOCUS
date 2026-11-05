@@ -505,7 +505,6 @@ export function EditFacultyModal({
             title="Faculty Details"
             subtitle="View and manage faculty profile and department assignments"
             className="rounded-t-2xl shrink-0"
-            onClose={handleAttemptClose}
           />
 
           <div className="p-4 sm:p-5 space-y-3 overflow-y-auto flex-1">
@@ -1006,8 +1005,6 @@ export function EditFacultyModal({
               icon={EditPencil}
               title="Save Changes?"
               subtitle="Confirm Faculty Profile Update"
-              onClose={isSaving ? undefined : () => setShowConfirmModal(false)}
-              closeDisabled={isSaving}
               className="-mx-6 -mt-6 mb-5 rounded-t-2xl"
             />
 

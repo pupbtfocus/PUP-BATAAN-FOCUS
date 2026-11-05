@@ -6398,8 +6398,6 @@ function FacultySubmissionPanelContent({
                   <ModalHeader
                     title="Submit Requirement"
                     icon={Upload}
-                    onClose={closeSubmitModal}
-                    closeAriaLabel="Close submission modal"
                   />
                   <div className="flex-1 overflow-y-auto p-6 min-h-0">
                     {isEffectivelyOpen ? (
@@ -6728,13 +6726,6 @@ function FacultySubmissionPanelContent({
                         ? `Register a subject load for A.Y. ${activeAY} • ${activeSem}`
                         : "No active academic term configured"
                     }
-                    onClose={() => {
-                      if (!isSubmittingClass) {
-                        setIsAddClassModalOpen(false);
-                        setClassFormError(null);
-                      }
-                    }}
-                    closeAriaLabel="Close modal"
                   />
 
                   <form onSubmit={handleAddClassSubmit} className="p-5 sm:p-6 space-y-4">
@@ -7042,16 +7033,6 @@ function FacultySubmissionPanelContent({
                         </p>
                       </div>
                     </div>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setIsViewClassModalOpen(false);
-                        setClassToView(null);
-                      }}
-                      className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer"
-                    >
-                      <AppIcon icon={Xmark} size="md" color="inherit" />
-                    </button>
                   </div>
 
                   {/* Solid Amber Card Content */}
@@ -7171,17 +7152,6 @@ function FacultySubmissionPanelContent({
                         </p>
                       </div>
                     </div>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setIsEditClassModalOpen(false);
-                        setClassToEdit(null);
-                        setEditClassError(null);
-                      }}
-                      className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer"
-                    >
-                      <AppIcon icon={Xmark} size="md" color="inherit" />
-                    </button>
                   </div>
 
                   {editClassError && (

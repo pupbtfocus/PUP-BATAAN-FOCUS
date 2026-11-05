@@ -133,7 +133,6 @@ export function StaffDetailsModal({
             title="Staff Member Details"
             subtitle="Full profile, administrative role, and account details"
             className="sticky top-0 z-10"
-            onClose={onClose}
           />
 
           {/* Content Body */}

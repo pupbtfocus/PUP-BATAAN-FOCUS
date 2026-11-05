@@ -512,7 +512,6 @@ export function UserRegistrationLogsModal({
               icon={Page}
               title={modalTitle}
               subtitle={modalSubtitle}
-              onClose={onClose}
               className="-mx-4 -mt-4 sm:-mx-6 sm:-mt-6 mb-3 sm:mb-4 rounded-t-2xl"
             />
 
@@ -1048,7 +1047,6 @@ export function UserRegistrationLogsModal({
               icon={User}
               title="Invitation Details"
               subtitle="Comprehensive registration and account invite status"
-              onClose={() => setSelectedLogForDetails(null)}
               className="-mx-4 -mt-4 sm:-mx-6 sm:-mt-6 mb-4 sm:mb-5 rounded-t-2xl"
             />
 
@@ -1236,8 +1234,6 @@ export function UserRegistrationLogsModal({
               icon={EditPencil}
               title="Edit Registration Details"
               subtitle={`Update credentials for ${editingLog.role}`}
-              onClose={() => !isSavingEdit && setEditingLog(null)}
-              closeDisabled={isSavingEdit}
               className="rounded-t-2xl shrink-0"
             />
 
@@ -1386,8 +1382,6 @@ export function UserRegistrationLogsModal({
               icon={Trash}
               title="Cancel Invitation?"
               subtitle="Revoke pending account invitation"
-              onClose={() => !isCancelling && setPendingCancelLog(null)}
-              closeDisabled={isCancelling}
               className="-mx-4 -mt-4 sm:-mx-6 sm:-mt-6 mb-4 sm:mb-5 rounded-t-2xl"
             />
 
@@ -1474,8 +1468,6 @@ export function UserRegistrationLogsModal({
                   ? "Dispatch fresh activation email"
                   : "Dispatch account credentials email"
               }
-              onClose={() => !resendingEmail && setPendingResendLog(null)}
-              closeDisabled={Boolean(resendingEmail)}
               className="-mx-4 -mt-4 sm:-mx-6 sm:-mt-6 mb-4 sm:mb-5 rounded-t-2xl"
             />
 

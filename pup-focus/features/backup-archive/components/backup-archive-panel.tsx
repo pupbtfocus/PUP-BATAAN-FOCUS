@@ -1276,7 +1276,7 @@ export function BackupArchivePanel() {
         return (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4 backdrop-blur-sm animate-in fade-in">
             <div className="w-full max-w-2xl rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xl text-slate-900 dark:text-slate-100 max-h-[88vh] overflow-hidden flex flex-col">
-              <ModalHeader title={inspectedBackup.backup_name} icon={Archive} onClose={() => setInspectedBackup(null)} />
+              <ModalHeader title={inspectedBackup.backup_name} icon={Archive} />
               <div className="p-5 overflow-y-auto flex-1 space-y-4 text-xs">
                 {/* Meta stats bar */}
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 p-3.5 rounded-xl bg-slate-50 border border-slate-200 dark:bg-slate-950/60 dark:border-slate-800">

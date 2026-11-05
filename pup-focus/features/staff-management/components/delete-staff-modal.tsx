@@ -84,8 +84,6 @@ export function DeleteAdminModal({
               ? "Confirm Account Activation"
               : "Confirm Account Deactivation"
           }
-          onClose={onCancel}
-          closeDisabled={isLoading}
           className="-mx-6 -mt-6 mb-5 rounded-t-2xl"
         />
 

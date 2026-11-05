@@ -946,8 +946,6 @@ export function AdminAcademicTerms({
               title="Set Current Academic Term"
               subtitle="Update active institutional academic period"
               icon={Calendar}
-              onClose={isSaving ? undefined : () => setTermToSetCurrent(null)}
-              closeDisabled={isSaving}
             />
             <div className="p-6 space-y-4">
               <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
@@ -1013,8 +1011,6 @@ export function AdminAcademicTerms({
               title="Delete Academic Term"
               subtitle="Permanently remove scheduled academic term"
               icon={WarningTriangle}
-              onClose={isSaving ? undefined : () => setTermToDelete(null)}
-              closeDisabled={isSaving}
             />
             <div className="p-6 space-y-4">
               <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
@@ -1085,12 +1081,6 @@ export function AdminAcademicTerms({
               title={warningModalData.title || "Semester Backup Required"}
               subtitle="Each semester requires its own backup before changing terms"
               icon={WarningTriangle}
-              onClose={() => {
-                setWarningModalData({ ...warningModalData, isOpen: false });
-                setPendingTargetTerm(null);
-                setModalBackupError(null);
-                setIsConfirmBackupOpen(false);
-              }}
             />
 
             <div className="p-6 space-y-4">
@@ -1277,8 +1267,6 @@ export function AdminAcademicTerms({
               title="Confirm Semester Backup &amp; Activation"
               subtitle="Please confirm before proceeding"
               icon={Archive}
-              onClose={isModalBackingUp ? undefined : () => setIsConfirmBackupOpen(false)}
-              closeDisabled={isModalBackingUp}
             />
             <div className="p-6 space-y-4">
               <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">

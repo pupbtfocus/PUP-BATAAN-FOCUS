@@ -3738,7 +3738,6 @@ export function FacultyVerificationDrawer({
                   : WarningTriangle
               }
               title={zipProgressData.title}
-              onClose={zipProgressData.status === "zipping" ? handleCancelZip : () => setZipProgressData(null)}
               className="-mx-6 -mt-6 mb-4 rounded-t-3xl"
             />
 
@@ -3831,10 +3830,9 @@ export function FacultyVerificationDrawer({
                 <button
                   type="button"
                   onClick={handleCancelZip}
-                  className="w-full inline-flex items-center justify-center gap-1.5 rounded-xl bg-[#780000] hover:bg-[#5e0000] active:scale-[0.98] text-white border border-[#5e0000] py-2.5 px-4 text-xs font-bold transition-all cursor-pointer shadow-xs hover:shadow"
+                  className="w-full inline-flex items-center justify-center rounded-xl bg-[#780000] hover:bg-[#5e0000] active:scale-[0.98] text-white border border-[#5e0000] py-2.5 px-4 text-xs font-bold transition-all cursor-pointer shadow-xs hover:shadow"
                 >
-                  <AppIcon icon={Xmark} size="sm" color="inherit" />
-                  <span>Cancel Download</span>
+                  Cancel Download
                 </button>
               </div>
             ) : (
@@ -3842,10 +3840,9 @@ export function FacultyVerificationDrawer({
                 <button
                   type="button"
                   onClick={() => setZipProgressData(null)}
-                  className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-[#780000] hover:bg-[#5e0000] active:scale-[0.98] text-white border border-[#5e0000] py-2.5 px-4 text-xs font-bold transition-all cursor-pointer shadow-xs hover:shadow"
+                  className="w-full inline-flex items-center justify-center rounded-xl bg-[#780000] hover:bg-[#5e0000] active:scale-[0.98] text-white border border-[#5e0000] py-2.5 px-4 text-xs font-bold transition-all cursor-pointer shadow-xs hover:shadow"
                 >
-                  <AppIcon icon={Check} size="sm" color="inherit" />
-                  <span>Done</span>
+                  Done
                 </button>
               </div>
             )}

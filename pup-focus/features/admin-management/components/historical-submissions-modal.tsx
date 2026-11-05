@@ -128,7 +128,6 @@ export function HistoricalSubmissionsModal({
               : "Read-only historical archive of submissions from past inactive academic terms."
           }
           icon={isCurrentTerm ? Page : Archive}
-          onClose={onClose}
         />
 
         {/* Filter Toolbar */}

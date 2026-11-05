@@ -970,8 +970,6 @@ export function FacultyRequirementsModule({
               }
               titleId="submit-modal-title"
               icon={isRevisionModal || selectedReqStatus?.status === "Rejected" ? WarningCircle : Upload}
-              onClose={closeModal}
-              closeAriaLabel="Close submission modal"
             />
 
             {/* Modal Form with Scrollable Content */}

@@ -61,7 +61,6 @@ export function RequirementTemplateDetailsModal({
           icon={Page}
           title="Requirement Template Details"
           subtitle="Full specification, compliance rules, and submission settings"
-          onClose={onClose}
         />
 
         {/* Scrollable Content Body */}

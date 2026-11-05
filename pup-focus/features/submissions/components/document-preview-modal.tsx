@@ -539,8 +539,6 @@ export function DocumentPreviewModal({
               : "Official Document Verification Details"
           }
           titleId="document-preview-modal-title"
-          onClose={onClose}
-          closeAriaLabel="Close preview"
         />
 
         {/* Subheader Metadata Bar */}

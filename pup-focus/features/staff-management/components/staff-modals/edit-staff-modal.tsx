@@ -447,7 +447,6 @@ export function EditStaffModal({
             title="Staff Details"
             subtitle="View and manage staff profile and account credentials"
             className="rounded-t-2xl shrink-0"
-            onClose={handleAttemptClose}
           />
 
           <div className="p-4 sm:p-5 space-y-3 overflow-y-auto flex-1">

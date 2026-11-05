@@ -237,7 +237,6 @@ export function SubmissionScheduleLogsModal({
           icon={ClockRotateRight}
           title="Submission Schedule Logs"
           subtitle="Audit record of submission deadlines, extensions, manual closures, and faculty grace period assignments"
-          onClose={onClose}
           className="rounded-t-2xl border-b border-slate-200 dark:border-slate-800 px-6 py-4"
         >
           <button
@@ -565,7 +564,6 @@ export function SubmissionScheduleLogsModal({
               icon={ClockRotateRight}
               title="Schedule Log Details"
               subtitle={`Audit record #${filteredLogs.findIndex((l) => l.id === selectedLogForDetails.id) + 1}`}
-              onClose={() => setSelectedLogForDetails(null)}
               className="rounded-t-2xl border-b border-slate-200 dark:border-slate-800 px-6 py-4"
             />
 

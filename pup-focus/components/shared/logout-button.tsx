@@ -74,15 +74,6 @@ export function LogoutButton({ className }: { className?: string }) {
                   </p>
                 </div>
               </div>
-              <button
-                type="button"
-                disabled={isLoggingOut}
-                onClick={() => setIsModalOpen(false)}
-                className="p-1.5 rounded-lg border border-[#5e0000] bg-[#780000] hover:bg-[#5e0000] text-white transition-colors cursor-pointer shadow-xs disabled:opacity-50"
-                aria-label="Close"
-              >
-                <AppIcon icon={Xmark} size="sm" color="inherit" />
-              </button>
             </div>
 
             {/* Body */}

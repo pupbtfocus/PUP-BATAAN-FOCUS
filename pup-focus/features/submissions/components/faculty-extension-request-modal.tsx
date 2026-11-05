@@ -160,8 +160,6 @@ export function FacultyExtensionRequestModal({
           icon={Hourglass}
           title="Request Submission Extension"
           subtitle={`A.Y. ${academicYear} • ${semester}`}
-          onClose={onClose}
-          closeAriaLabel="Close extension request modal"
           className="shrink-0"
         />
 

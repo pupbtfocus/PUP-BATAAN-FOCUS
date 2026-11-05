@@ -104,7 +104,6 @@ export function FacultyDetailsModal({
             title="Faculty Member Details"
             subtitle="Full profile, department, and account details"
             className="sticky top-0 z-10"
-            onClose={onClose}
           />
 
           {/* Content Body */}
