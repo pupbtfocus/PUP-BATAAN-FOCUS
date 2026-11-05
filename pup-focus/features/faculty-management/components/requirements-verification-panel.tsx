@@ -1852,6 +1852,22 @@ export function FacultyVerificationDrawer({
   const departmentLabel =
     faculty.program?.name || faculty.program?.code || "Department";
 
+  const facultyDisplayName = useMemo(() => {
+    const rawName = faculty.fullName || "";
+    let nameFormatted = rawName;
+    if (faculty.lastName && faculty.firstName) {
+      nameFormatted = `${faculty.lastName}, ${faculty.firstName}${faculty.middleName ? ` ${faculty.middleName}` : ""}`;
+    } else {
+      const tokens = rawName.trim().split(/\s+/);
+      if (tokens.length > 1) {
+        const last = tokens[tokens.length - 1];
+        const rest = tokens.slice(0, -1).join(" ");
+        nameFormatted = `${last}, ${rest}`;
+      }
+    }
+    return nameFormatted.toUpperCase();
+  }, [faculty]);
+
   return (
     <div className="space-y-4">
       {/* Solid Amber Card Header matching Documents to be Submitted - Swapped to the top */}
@@ -1901,52 +1917,72 @@ export function FacultyVerificationDrawer({
         />
         {/* Inline Section Header - Only visible when in Class Selection Step */}
         {selectedClassId === null ? (
-          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 dark:border-slate-800/80 px-6 py-4 bg-slate-50/50 dark:bg-slate-950/30 rounded-t-2xl">
-            <div className="flex items-center gap-3.5 flex-wrap">
-              <button
-                type="button"
-                onClick={handleClose}
-                className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-[#780000] hover:bg-[#5e0000] text-white border border-[#5e0000] text-xs font-bold transition-all cursor-pointer shadow-xs active:scale-95 shrink-0"
-                title="Return to Faculty List"
-              >
-                <AppIcon icon={NavArrowLeft} size="sm" color="white" />
-                <span>Back to Faculty List</span>
-              </button>
-              <div className="h-8 w-px bg-slate-200 dark:bg-slate-800 hidden sm:block" />
-              <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 text-xs font-bold text-slate-800 dark:text-slate-200 shadow-2xs">
-                  {faculty.profileImageUrl ? (
-                    <img
-                      src={faculty.profileImageUrl}
-                      alt={faculty.fullName}
-                      className="h-full w-full object-cover"
-                    />
-                  ) : (
-                    <span>{buildFacultyInitials(faculty.fullName)}</span>
-                  )}
-                </div>
-                <div className="flex flex-col justify-center">
-                  <h3 className="text-base font-bold leading-tight text-slate-900 dark:text-slate-100">
-                    {faculty.fullName}
-                  </h3>
-                  <span className="mt-0.5 text-xs font-medium text-slate-500 dark:text-slate-400">
-                    {departmentLabel}
+          <div className="border-b border-slate-200 dark:border-slate-800/80 p-5 sm:p-6 bg-slate-50/50 dark:bg-slate-950/30 rounded-t-2xl space-y-3">
+            {/* Top row with Back button and PUP SIS style Faculty Name Header */}
+            <div className="flex items-center justify-between gap-3 flex-wrap">
+              <div className="flex items-center gap-3 flex-wrap">
+                <button
+                  type="button"
+                  onClick={handleClose}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#780000] hover:bg-[#5e0000] text-white border border-[#5e0000] text-xs font-bold transition-all cursor-pointer shadow-xs active:scale-95 shrink-0"
+                  title="Return to Faculty List"
+                >
+                  <AppIcon icon={NavArrowLeft} size="sm" color="white" />
+                  <span>Back to Faculty List</span>
+                </button>
+                <div className="flex items-center gap-2.5">
+                  <div className="flex h-7 w-7 shrink-0 items-center justify-center overflow-hidden rounded-full border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 text-[10px] font-bold text-slate-800 dark:text-slate-200 shadow-2xs">
+                    {faculty.profileImageUrl ? (
+                      <img
+                        src={faculty.profileImageUrl}
+                        alt={faculty.fullName}
+                        className="h-full w-full object-cover"
+                      />
+                    ) : (
+                      <span>{buildFacultyInitials(faculty.fullName)}</span>
+                    )}
+                  </div>
+                  <span className="text-xs sm:text-sm font-black text-[#780000] dark:text-rose-400 tracking-wide uppercase">
+                    {facultyDisplayName}
                   </span>
                 </div>
               </div>
             </div>
 
-            {academicYear ? (
-              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl border border-amber-600 bg-amber-500 text-slate-950 text-xs font-bold shadow-2xs">
-                <span className="h-2 w-2 rounded-full bg-[#0b5336]" />
-                <span>Active Term: A.Y. {academicYear} &bull; {semester} &bull; {classGroups.length} Registered Class Load{classGroups.length === 1 ? "" : "s"}</span>
+            {/* PUP SIS Style Academic Term & Info Card */}
+            <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 overflow-hidden shadow-2xs">
+              <div className="bg-[#780000] text-white px-4 py-2 font-bold text-xs sm:text-sm tracking-wide">
+                {academicYear ? `School Year ${academicYear} ${semester}` : "No Active Academic Term Configured"}
               </div>
-            ) : (
-              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-xs font-bold shadow-2xs">
-                <span className="h-2 w-2 rounded-full bg-slate-400" />
-                <span>{classGroups.length} Registered Class Load{classGroups.length === 1 ? "" : "s"}</span>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-y-3.5 gap-x-6 p-4 bg-white dark:bg-slate-900 text-xs">
+                <div>
+                  <span className="font-bold text-slate-900 dark:text-slate-100 block mb-0.5">
+                    Course Code &amp; Description
+                  </span>
+                  <p className="font-medium text-slate-700 dark:text-slate-300">
+                    {faculty.program?.code ? `${faculty.program.code} — ${faculty.program.name}` : departmentLabel}
+                  </p>
+                </div>
+
+                <div>
+                  <span className="font-bold text-slate-900 dark:text-slate-100 block mb-0.5">
+                    Assigned Class Loads
+                  </span>
+                  <p className="font-medium text-slate-700 dark:text-slate-300">
+                    {classGroups.length} Registered Class Load{classGroups.length === 1 ? "" : "s"}
+                  </p>
+                </div>
+
+                <div>
+                  <span className="font-bold text-slate-900 dark:text-slate-100 block mb-0.5">
+                    Faculty Email
+                  </span>
+                  <p className="font-medium text-slate-700 dark:text-slate-300 truncate" title={faculty.email}>
+                    {faculty.email || "—"}
+                  </p>
+                </div>
               </div>
-            )}
+            </div>
           </div>
         ) : null}
 
