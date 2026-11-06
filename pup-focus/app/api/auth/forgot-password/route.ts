@@ -3,16 +3,30 @@ import { getServiceRoleClient } from "@/lib/supabase/service-role";
 import { sendForgotPasswordEmail } from "@/lib/email/send-invite";
 import { isValidEmailAddress } from "@/lib/validation/email";
 import { getAppBaseUrl } from "@/lib/email/email-templates";
+import { verifyTurnstileToken } from "@/lib/turnstile/verify";
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     const email = body?.email?.trim().toLowerCase();
+    const token = body?.["cf-turnstile-response"] ?? body?.captchaToken;
 
     if (!email || !isValidEmailAddress(email)) {
       return NextResponse.json(
         { error: "Please enter a valid email address." },
         { status: 400 },
+      );
+    }
+
+    const turnstileCheck = await verifyTurnstileToken({
+      token,
+      expectedAction: "forgot-password",
+      request,
+    });
+    if (!turnstileCheck.ok) {
+      return NextResponse.json(
+        { error: turnstileCheck.error ?? "forbidden" },
+        { status: turnstileCheck.status },
       );
     }
 

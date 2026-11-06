@@ -536,6 +536,8 @@ export default function Home() {
           body: JSON.stringify({
             email: normalizedEmail,
             password: currentPassword,
+            captchaToken: token,
+            "cf-turnstile-response": token,
           }),
         });
         const json = await res.json().catch(() => ({}));

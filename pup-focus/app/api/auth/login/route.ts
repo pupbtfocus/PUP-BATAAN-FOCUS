@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { getServiceRoleClient } from "@/lib/supabase/service-role";
+import { verifyTurnstileToken } from "@/lib/turnstile/verify";
 
 // In-memory lockout cache: 5 failed attempts -> 15-minute timeout
 interface AttemptRecord {
@@ -16,11 +17,24 @@ export async function POST(request: NextRequest) {
     const body = await request.json().catch(() => ({}));
     const email = typeof body.email === "string" ? body.email.trim().toLowerCase() : "";
     const password = typeof body.password === "string" ? body.password : "";
+    const token = body["cf-turnstile-response"] ?? body.captchaToken;
 
     if (!email || !password) {
       return NextResponse.json(
         { error: "Email and password are required." },
         { status: 400 },
+      );
+    }
+
+    const turnstileCheck = await verifyTurnstileToken({
+      token,
+      expectedAction: "login",
+      request,
+    });
+    if (!turnstileCheck.ok) {
+      return NextResponse.json(
+        { error: turnstileCheck.error ?? "forbidden" },
+        { status: turnstileCheck.status },
       );
     }
 

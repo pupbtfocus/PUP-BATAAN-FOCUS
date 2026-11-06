@@ -105,7 +105,11 @@ export function ForgotPasswordModal({
       const res = await fetch("/api/auth/forgot-password", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: normalizedResetEmail, captchaToken: token }),
+        body: JSON.stringify({
+          email: normalizedResetEmail,
+          captchaToken: token,
+          "cf-turnstile-response": token,
+        }),
       });
 
       const data = await res.json().catch(() => ({}));
@@ -121,6 +125,17 @@ export function ForgotPasswordModal({
       } else {
         const rawMsg = data.error || "Failed to send password reset email.";
         console.error("[ForgotPassword] API route failed:", rawMsg);
+        if (
+          res.status === 403 ||
+          rawMsg.toLowerCase().includes("security verification") ||
+          rawMsg.toLowerCase().includes("invalid-input-secret")
+        ) {
+          setToast({
+            type: "error",
+            message: rawMsg,
+          });
+          return;
+        }
         if (
           rawMsg.toLowerCase().includes("rate limit") ||
           rawMsg.toLowerCase().includes("over_email_send_rate_limit")
@@ -269,6 +284,7 @@ export function ForgotPasswordModal({
                     options={{
                       theme: "dark",
                       size: "normal",
+                      action: "forgot-password",
                       execution: "render",
                     }}
                   />

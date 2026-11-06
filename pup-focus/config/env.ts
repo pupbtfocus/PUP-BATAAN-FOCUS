@@ -15,6 +15,8 @@ const serviceRoleSchema = z.object({
 const serverSecretsSchema = z.object({
   SUPABASE_SERVICE_ROLE_KEY: z.string().min(1),
   TURNSTILE_SECRET_KEY: z.string().min(1).optional(),
+  TURNSTILE_SECRET: z.string().min(1).optional(),
+  TURNSTILE_HOSTNAMES: z.string().min(1).optional(),
   BOOTSTRAP_SECRET: z.string().min(16).optional(),
   CRON_SECRET: z.string().min(16).optional(),
   SUPER_ADMIN_PASSWORD: z.string().min(8).optional(),
@@ -52,6 +54,8 @@ export function getServerSecretsSafe(): ServerSecretsEnv | null {
   const parsed = serverSecretsSchema.safeParse({
     SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY,
     TURNSTILE_SECRET_KEY: process.env.TURNSTILE_SECRET_KEY || undefined,
+    TURNSTILE_SECRET: process.env.TURNSTILE_SECRET || undefined,
+    TURNSTILE_HOSTNAMES: process.env.TURNSTILE_HOSTNAMES || undefined,
     BOOTSTRAP_SECRET: process.env.BOOTSTRAP_SECRET || undefined,
     CRON_SECRET: process.env.CRON_SECRET || undefined,
     SUPER_ADMIN_PASSWORD: process.env.SUPER_ADMIN_PASSWORD || undefined,
@@ -65,7 +69,9 @@ export function getBootstrapSecret(): string | null {
 }
 
 export function getTurnstileSecretKey(): string | null {
-  const secret = process.env.TURNSTILE_SECRET_KEY?.trim();
+  const secret = (
+    process.env.TURNSTILE_SECRET ?? process.env.TURNSTILE_SECRET_KEY
+  )?.trim();
   return secret && secret.length > 0 ? secret : null;
 }
 

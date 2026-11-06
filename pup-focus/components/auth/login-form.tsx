@@ -443,6 +443,7 @@ export function LoginForm({
               options={{
                 theme: "dark",
                 size: "normal",
+                action: "login",
                 execution: "render",
               }}
             />

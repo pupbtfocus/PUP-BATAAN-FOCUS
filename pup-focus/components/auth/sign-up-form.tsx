@@ -330,6 +330,7 @@ export function SignUpForm() {
               options={{
                 theme: "dark",
                 size: "normal",
+                action: "signup",
                 execution: "render",
               }}
             />
