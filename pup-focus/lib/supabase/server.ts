@@ -4,18 +4,22 @@ import dns from "node:dns";
 import { getPublicEnv } from "@/config/env";
 import { isInvalidRefreshTokenError } from "@/lib/supabase/auth-errors";
 
-try {
-  dns.setDefaultResultOrder("ipv4first");
-  const { Agent, setGlobalDispatcher } = require("undici");
-  const agent = new Agent({
-    connect: {
-      lookup: (hostname: string, opts: any, cb: any) => {
-        dns.lookup(hostname, { ...opts, family: 4 }, cb);
+const g = globalThis as typeof globalThis & { __pupFocusUndiciPatched?: boolean };
+if (!g.__pupFocusUndiciPatched) {
+  g.__pupFocusUndiciPatched = true;
+  try {
+    dns.setDefaultResultOrder("ipv4first");
+    const { Agent, setGlobalDispatcher } = require("undici");
+    const agent = new Agent({
+      connect: {
+        lookup: (hostname: string, opts: any, cb: any) => {
+          dns.lookup(hostname, { ...opts, family: 4 }, cb);
+        },
       },
-    },
-  });
-  setGlobalDispatcher(agent);
-} catch {}
+    });
+    setGlobalDispatcher(agent);
+  } catch {}
+}
 
 export async function createServerSupabaseClient() {
   const cookieStore = await cookies();

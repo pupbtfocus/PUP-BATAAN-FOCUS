@@ -5,6 +5,7 @@ CREATE SCHEMA IF NOT EXISTS app_private;
 GRANT USAGE ON SCHEMA app_private TO authenticated, service_role;
 
 -- Internal helper function with elevated privileges to check admin roles safely without recursion
+-- SECURITY: Never trust client-mutable user_metadata; rely strictly on app_metadata and public.user_roles.
 CREATE OR REPLACE FUNCTION app_private.is_admin_or_super_admin()
 RETURNS boolean
 LANGUAGE sql
@@ -13,10 +14,6 @@ SECURITY DEFINER
 SET search_path = public, pg_temp
 AS $$
   SELECT COALESCE(
-    (auth.jwt() -> 'user_metadata' ->> 'role') IN ('admin', 'super_admin'),
-    FALSE
-  )
-  OR COALESCE(
     (auth.jwt() -> 'app_metadata' ->> 'role') IN ('admin', 'super_admin'),
     FALSE
   )
@@ -32,6 +29,29 @@ $$;
 GRANT EXECUTE ON FUNCTION app_private.is_admin_or_super_admin() TO authenticated, service_role;
 REVOKE EXECUTE ON FUNCTION app_private.is_admin_or_super_admin() FROM PUBLIC, anon;
 
+CREATE OR REPLACE FUNCTION app_private.is_staff_or_admin()
+RETURNS boolean
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = public, pg_temp
+AS $$
+  SELECT COALESCE(
+    (auth.jwt() -> 'app_metadata' ->> 'role') IN ('staff', 'admin', 'super_admin'),
+    FALSE
+  )
+  OR EXISTS (
+    SELECT 1 FROM public.user_roles ur
+    JOIN public.profiles p ON p.id = ur.profile_id
+    JOIN public.roles r ON r.id = ur.role_id
+    WHERE p.user_id = auth.uid()
+      AND r.code IN ('staff', 'admin', 'super_admin')
+  );
+$$;
+
+GRANT EXECUTE ON FUNCTION app_private.is_staff_or_admin() TO authenticated, service_role;
+REVOKE EXECUTE ON FUNCTION app_private.is_staff_or_admin() FROM PUBLIC, anon;
+
 -- Public wrapper defined as SECURITY INVOKER to avoid exposing SECURITY DEFINER over PostgREST API
 CREATE OR REPLACE FUNCTION public.is_admin_or_super_admin()
 RETURNS boolean
@@ -45,6 +65,19 @@ $$;
 
 GRANT EXECUTE ON FUNCTION public.is_admin_or_super_admin() TO authenticated, service_role;
 REVOKE EXECUTE ON FUNCTION public.is_admin_or_super_admin() FROM PUBLIC, anon;
+
+CREATE OR REPLACE FUNCTION public.is_staff_or_admin()
+RETURNS boolean
+LANGUAGE sql
+STABLE
+SECURITY INVOKER
+SET search_path = public, pg_temp
+AS $$
+  SELECT app_private.is_staff_or_admin();
+$$;
+
+GRANT EXECUTE ON FUNCTION public.is_staff_or_admin() TO authenticated, service_role;
+REVOKE EXECUTE ON FUNCTION public.is_staff_or_admin() FROM PUBLIC, anon;
 
 -- Enable RLS on core tables
 ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;

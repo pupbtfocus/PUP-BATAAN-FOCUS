@@ -106,9 +106,7 @@ export async function GET(request: NextRequest) {
         return NextResponse.json({ error: "Forbidden" }, { status: 403 });
       }
 
-      requesterRole =
-        (user?.user_metadata?.role as string | undefined) ??
-        (user?.app_metadata?.role as string | undefined);
+      requesterRole = user?.app_metadata?.role as string | undefined;
       const normalizedRequesterRole = (requesterRole ?? "").toLowerCase().trim();
 
       const normalizedEmail = (user?.email ?? "").toLowerCase().trim();
@@ -128,7 +126,7 @@ export async function GET(request: NextRequest) {
         isQaAdmin(normalizedEmail) ||
         isQaSuperAdmin(normalizedEmail) ||
         (configuredSuperAdmin !== "" && normalizedEmail === configuredSuperAdmin) ||
-        normalizedEmail === "preview@pupfocus.dev" ||
+        (process.env.NODE_ENV !== "production" && normalizedEmail === "preview@pupfocus.dev") ||
         user?.app_metadata?.claims_admin === true;
 
       // Fallback: check database user_roles, profiles, and admins tables if metadata is missing/incomplete

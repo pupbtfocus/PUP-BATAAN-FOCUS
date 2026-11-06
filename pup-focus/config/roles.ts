@@ -30,6 +30,7 @@ export function isOriginalAdmin(email?: string | null): boolean {
 export const isOriginalSuperAdmin = isOriginalAdmin;
 
 export function isQaAdmin(email?: string | null): boolean {
+  if (process.env.NODE_ENV === "production") return false;
   if (!email) return false;
   const normalized = email.toLowerCase().trim();
   return (
@@ -45,6 +46,7 @@ export function isQaAdmin(email?: string | null): boolean {
 export const isQaSuperAdmin = isQaAdmin;
 
 export function isQaStaff(email?: string | null): boolean {
+  if (process.env.NODE_ENV === "production") return false;
   if (!email) return false;
   const normalized = email.toLowerCase().trim();
   return (
@@ -53,6 +55,7 @@ export function isQaStaff(email?: string | null): boolean {
 }
 
 export function isQaFaculty(email?: string | null): boolean {
+  if (process.env.NODE_ENV === "production") return false;
   if (!email) return false;
   const normalized = email.toLowerCase().trim();
   return (

@@ -6,7 +6,7 @@ import {
   ROLE_ROUTE_PREFIX,
   ROUTE_BY_ROLE,
 } from "@/config/routes";
-import { ROLE, type AppRole } from "@/config/roles";
+import { ROLE, isOriginalAdmin, type AppRole } from "@/config/roles";
 
 /**
  * Determines the role-gated path prefix the current pathname falls under.
@@ -28,8 +28,9 @@ function matchProtectedPrefix(pathname: string): string | null {
 }
 
 /**
- * Safely resolves the user's role from user_metadata, app_metadata,
- * or database profile (`profiles` + `user_roles`), falling back to `ROLE.FACULTY`.
+ * Safely resolves the user's role from authoritative app_metadata or
+ * database profile (`profiles` + `user_roles`), never trusting client-writable
+ * `user_metadata` for elevated (`admin` / `staff`) roles without DB verification.
  */
 async function getUserRole(
   user: User,
@@ -37,9 +38,8 @@ async function getUserRole(
 ): Promise<AppRole> {
   const validRoles = Object.values(ROLE) as AppRole[];
 
-  const userMetaRole = user.user_metadata?.role as AppRole | undefined;
-  if (userMetaRole && validRoles.includes(userMetaRole)) {
-    return userMetaRole;
+  if (isOriginalAdmin(user.email)) {
+    return ROLE.ADMIN;
   }
 
   const appMetaRole = user.app_metadata?.role as AppRole | undefined;

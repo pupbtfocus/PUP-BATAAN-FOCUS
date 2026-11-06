@@ -1,16 +1,59 @@
-import { NextResponse } from "next/server";
+import { timingSafeEqual } from "node:crypto";
+import { NextResponse, type NextRequest } from "next/server";
 import { APP_CONFIG } from "@/config/app";
+import { getBootstrapSecret } from "@/config/env";
 import { getServiceRoleClient } from "@/lib/supabase/service-role";
 import { ROLE } from "@/config/roles";
 import { isValidEmailAddress } from "@/lib/validation/email";
 
 const SUPER_ADMIN_EMAIL = APP_CONFIG.superAdminEmail;
-const SUPER_ADMIN_PASSWORD =
-  process.env.SUPER_ADMIN_PASSWORD?.trim() || "SuperAdmin123!";
+const SUPER_ADMIN_PASSWORD = process.env.SUPER_ADMIN_PASSWORD?.trim();
 const SUPER_ADMIN_FULL_NAME = "PUP FOCUS Admin";
 
-export async function POST() {
+function isAuthorizedBootstrapRequest(request: NextRequest): boolean {
+  const configuredSecret = getBootstrapSecret();
+  const isProd = process.env.NODE_ENV === "production";
+
+  if (!configuredSecret) {
+    // Allow local dev bootstrapping only when not in production
+    return !isProd;
+  }
+
+  const headerSecret =
+    request.headers.get("x-bootstrap-secret")?.trim() ||
+    (request.headers.get("authorization")?.startsWith("Bearer ")
+      ? request.headers.get("authorization")!.slice(7).trim()
+      : "");
+
+  if (!headerSecret) {
+    return false;
+  }
+
+  const a = Buffer.from(configuredSecret);
+  const b = Buffer.from(headerSecret);
+  return a.length === b.length && timingSafeEqual(a, b);
+}
+
+export async function POST(request: NextRequest) {
   try {
+    if (!isAuthorizedBootstrapRequest(request)) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+
+    const effectivePassword =
+      SUPER_ADMIN_PASSWORD ||
+      (process.env.NODE_ENV !== "production" ? "SuperAdmin123!" : "");
+
+    if (!effectivePassword) {
+      return NextResponse.json(
+        {
+          error:
+            "SUPER_ADMIN_PASSWORD environment variable must be configured in production.",
+        },
+        { status: 400 },
+      );
+    }
+
     if (!isValidEmailAddress(SUPER_ADMIN_EMAIL)) {
       return NextResponse.json(
         {
@@ -74,8 +117,11 @@ export async function POST() {
         existingUser.id,
         {
           email: SUPER_ADMIN_EMAIL,
-          password: SUPER_ADMIN_PASSWORD,
+          password: effectivePassword,
           email_confirm: true,
+          app_metadata: {
+            role: ROLE.SUPER_ADMIN,
+          },
           user_metadata: {
             full_name: SUPER_ADMIN_FULL_NAME,
             role: ROLE.SUPER_ADMIN,
@@ -93,8 +139,11 @@ export async function POST() {
       const { data: createdUser, error: createError } =
         await supabase.auth.admin.createUser({
           email: SUPER_ADMIN_EMAIL,
-          password: SUPER_ADMIN_PASSWORD,
+          password: effectivePassword,
           email_confirm: true,
+          app_metadata: {
+            role: ROLE.SUPER_ADMIN,
+          },
           user_metadata: {
             full_name: SUPER_ADMIN_FULL_NAME,
             role: ROLE.SUPER_ADMIN,
@@ -238,6 +287,9 @@ export async function POST() {
 
     await supabase.auth.admin.updateUserById(authUserId, {
       email_confirm: true,
+      app_metadata: {
+        role: ROLE.SUPER_ADMIN,
+      },
       user_metadata: {
         full_name: SUPER_ADMIN_FULL_NAME,
         role: ROLE.SUPER_ADMIN,
@@ -251,7 +303,6 @@ export async function POST() {
         email: SUPER_ADMIN_EMAIL,
         fullName: SUPER_ADMIN_FULL_NAME,
       },
-      password: SUPER_ADMIN_PASSWORD,
     });
   } catch (error) {
     return NextResponse.json(

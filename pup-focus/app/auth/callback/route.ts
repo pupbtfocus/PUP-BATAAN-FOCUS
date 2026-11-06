@@ -18,13 +18,22 @@ function formatInviteErrorMessage(rawError: string): string {
   return rawError;
 }
 
+function getSafeRedirectPath(rawNext: string | null): string | null {
+  if (!rawNext) return null;
+  const trimmed = rawNext.trim();
+  if (trimmed.startsWith("/") && !trimmed.startsWith("//") && !trimmed.includes("\\")) {
+    return trimmed;
+  }
+  return null;
+}
+
 export async function GET(request: NextRequest) {
   const url = request.nextUrl.clone();
   const code = url.searchParams.get("code");
   const tokenHash = url.searchParams.get("token_hash");
   const token = url.searchParams.get("token");
   const type = url.searchParams.get("type") as EmailOtpType | null;
-  const next = url.searchParams.get("next");
+  const next = getSafeRedirectPath(url.searchParams.get("next"));
   const error = url.searchParams.get("error");
   const errorDescription = url.searchParams.get("error_description");
 
@@ -50,7 +59,7 @@ export async function GET(request: NextRequest) {
   <script>
     var hash = window.location.hash || '';
     var search = window.location.search || '';
-    window.location.replace('${targetPath}' + search + hash);
+    window.location.replace(${JSON.stringify(targetPath)} + search + hash);
   </script>
 </head>
 <body style="background:#4d0000;color:#fef3c7;font-family:sans-serif;display:flex;align-items:center;justify-content:center;height:100vh;margin:0;">

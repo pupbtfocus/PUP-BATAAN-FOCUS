@@ -7,12 +7,21 @@ import { ROUTE_BY_ROLE } from "@/config/routes";
 import { ROLE, type AppRole } from "@/config/roles";
 import type { EmailOtpType } from "@supabase/supabase-js";
 
+function getSafeRedirectPath(rawNext: string | null): string {
+  if (!rawNext) return "/";
+  const trimmed = rawNext.trim();
+  if (trimmed.startsWith("/") && !trimmed.startsWith("//") && !trimmed.includes("\\")) {
+    return trimmed;
+  }
+  return "/";
+}
+
 export async function GET(request: NextRequest) {
   const url = request.nextUrl.clone();
   const code = url.searchParams.get("code");
   const tokenHash = url.searchParams.get("token_hash");
   const type = url.searchParams.get("type") as EmailOtpType | null;
-  const next = url.searchParams.get("next") ?? "/";
+  const next = getSafeRedirectPath(url.searchParams.get("next"));
   const error = url.searchParams.get("error");
   const errorDescription = url.searchParams.get("error_description");
 
@@ -31,7 +40,7 @@ export async function GET(request: NextRequest) {
       next === "/auth/change-password" ||
       next === "/change-password"
     ) {
-      const targetPath = next || "/auth/change-password";
+      const targetPath = next !== "/" ? next : "/auth/change-password";
       const html = `<!DOCTYPE html>
 <html>
 <head>
@@ -40,7 +49,7 @@ export async function GET(request: NextRequest) {
   <script>
     var hash = window.location.hash || '';
     var search = window.location.search || '';
-    window.location.replace('${targetPath}' + search + hash);
+    window.location.replace(${JSON.stringify(targetPath)} + search + hash);
   </script>
 </head>
 <body style="background:#4d0000;color:#fef3c7;font-family:sans-serif;display:flex;align-items:center;justify-content:center;height:100vh;margin:0;">

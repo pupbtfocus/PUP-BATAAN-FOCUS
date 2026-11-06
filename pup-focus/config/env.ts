@@ -12,7 +12,16 @@ const serviceRoleSchema = z.object({
   SUPABASE_SERVICE_ROLE_KEY: z.string().min(1),
 });
 
+const serverSecretsSchema = z.object({
+  SUPABASE_SERVICE_ROLE_KEY: z.string().min(1),
+  TURNSTILE_SECRET_KEY: z.string().min(1).optional(),
+  BOOTSTRAP_SECRET: z.string().min(16).optional(),
+  CRON_SECRET: z.string().min(16).optional(),
+  SUPER_ADMIN_PASSWORD: z.string().min(8).optional(),
+});
+
 type PublicEnv = z.infer<typeof publicEnvSchema>;
+type ServerSecretsEnv = z.infer<typeof serverSecretsSchema>;
 
 function readPublicEnv() {
   return {
@@ -38,6 +47,28 @@ export function getServiceRoleKey(): string {
     SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY,
   }).SUPABASE_SERVICE_ROLE_KEY;
 }
+
+export function getServerSecretsSafe(): ServerSecretsEnv | null {
+  const parsed = serverSecretsSchema.safeParse({
+    SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY,
+    TURNSTILE_SECRET_KEY: process.env.TURNSTILE_SECRET_KEY || undefined,
+    BOOTSTRAP_SECRET: process.env.BOOTSTRAP_SECRET || undefined,
+    CRON_SECRET: process.env.CRON_SECRET || undefined,
+    SUPER_ADMIN_PASSWORD: process.env.SUPER_ADMIN_PASSWORD || undefined,
+  });
+  return parsed.success ? parsed.data : null;
+}
+
+export function getBootstrapSecret(): string | null {
+  const secret = process.env.BOOTSTRAP_SECRET?.trim();
+  return secret && secret.length >= 16 ? secret : null;
+}
+
+export function getTurnstileSecretKey(): string | null {
+  const secret = process.env.TURNSTILE_SECRET_KEY?.trim();
+  return secret && secret.length > 0 ? secret : null;
+}
+
 
 export function getPublicAppUrl(): string {
   const envUrl =
