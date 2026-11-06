@@ -6,6 +6,15 @@ import { isInvalidRefreshTokenError } from "@/lib/supabase/auth-errors";
 
 try {
   dns.setDefaultResultOrder("ipv4first");
+  const { Agent, setGlobalDispatcher } = require("undici");
+  const agent = new Agent({
+    connect: {
+      lookup: (hostname: string, opts: any, cb: any) => {
+        dns.lookup(hostname, { ...opts, family: 4 }, cb);
+      },
+    },
+  });
+  setGlobalDispatcher(agent);
 } catch {}
 
 export async function createServerSupabaseClient() {
@@ -42,14 +51,6 @@ export async function createServerSupabaseClient() {
 
     if (error) {
       if (isInvalidRefreshTokenError(error)) {
-        try {
-          const { data: sessionData } = await client.auth.getSession();
-          if (sessionData?.session?.user) {
-            return { data: { user: sessionData.session.user }, error: null };
-          }
-        } catch {
-          // Ignore fallback errors
-        }
         return { data: { user: null }, error: null };
       }
     }

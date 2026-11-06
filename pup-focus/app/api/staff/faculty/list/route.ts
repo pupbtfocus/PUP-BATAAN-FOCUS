@@ -88,12 +88,6 @@ export async function GET(request: NextRequest) {
       } = await sessionClient.auth.getUser();
 
       user = sessionUser;
-      if (!user) {
-        const {
-          data: { session },
-        } = await sessionClient.auth.getSession();
-        user = session?.user ?? null;
-      }
 
       // Fallback: check Authorization: Bearer <token>
       if (!user) {

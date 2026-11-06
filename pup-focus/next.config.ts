@@ -1,9 +1,18 @@
 import type { NextConfig } from "next";
 import dns from "node:dns";
 
-// Force IPv4 first to prevent 10s Undici connect timeouts with dead IPv6/NAT64 addresses
+// Force IPv4-only lookup to prevent 10s Undici connect timeouts with dead IPv6/NAT64 addresses
 try {
   dns.setDefaultResultOrder("ipv4first");
+  const { Agent, setGlobalDispatcher } = require("undici");
+  const agent = new Agent({
+    connect: {
+      lookup: (hostname: string, opts: any, cb: any) => {
+        dns.lookup(hostname, { ...opts, family: 4 }, cb);
+      },
+    },
+  });
+  setGlobalDispatcher(agent);
 } catch {}
 
 const nextConfig: NextConfig = {

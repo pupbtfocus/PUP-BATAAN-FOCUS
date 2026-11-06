@@ -5,6 +5,15 @@ import { getServiceRoleKey } from "@/config/env";
 
 try {
   dns.setDefaultResultOrder("ipv4first");
+  const { Agent, setGlobalDispatcher } = require("undici");
+  const agent = new Agent({
+    connect: {
+      lookup: (hostname: string, opts: any, cb: any) => {
+        dns.lookup(hostname, { ...opts, family: 4 }, cb);
+      },
+    },
+  });
+  setGlobalDispatcher(agent);
 } catch {}
 
 export function getServiceRoleClient() {
