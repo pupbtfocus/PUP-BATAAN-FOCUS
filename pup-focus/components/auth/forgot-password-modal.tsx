@@ -275,6 +275,11 @@ export function ForgotPasswordModal({
               {/* Turnstile Widget */}
               {process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY && (
                 <div className="flex justify-center my-2.5 min-h-[65px] items-center">
+                  <input
+                    type="hidden"
+                    name="cf-turnstile-response"
+                    value={captchaToken ?? ""}
+                  />
                   <Turnstile
                     ref={turnstileRef}
                     siteKey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY}

@@ -69,10 +69,11 @@ export function getBootstrapSecret(): string | null {
 }
 
 export function getTurnstileSecretKey(): string | null {
-  const secret = (
-    process.env.TURNSTILE_SECRET ?? process.env.TURNSTILE_SECRET_KEY
-  )?.trim();
-  return secret && secret.length > 0 ? secret : null;
+  const secret =
+    process.env.TURNSTILE_SECRET_KEY?.trim() ||
+    process.env.TURNSTILE_SECRET?.trim() ||
+    "";
+  return secret.length > 0 ? secret : null;
 }
 
 

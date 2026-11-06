@@ -434,6 +434,11 @@ export function LoginForm({
 
         {process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY && (
           <div className="flex justify-center my-1 sm:my-1.5 min-h-[54px] sm:min-h-[62px] items-center scale-[0.9] sm:scale-100 origin-center">
+            <input
+              type="hidden"
+              name="cf-turnstile-response"
+              value={captchaToken ?? ""}
+            />
             <Turnstile
               ref={turnstileRef}
               siteKey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY}

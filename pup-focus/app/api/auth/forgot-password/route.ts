@@ -3,17 +3,39 @@ import { getServiceRoleClient } from "@/lib/supabase/service-role";
 import { sendForgotPasswordEmail } from "@/lib/email/send-invite";
 import { isValidEmailAddress } from "@/lib/validation/email";
 import { getAppBaseUrl } from "@/lib/email/email-templates";
-import { verifyTurnstileToken } from "@/lib/turnstile/verify";
+import {
+  extractTurnstileToken,
+  verifyTurnstileToken,
+} from "@/lib/turnstile/verify";
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json();
-    const email = body?.email?.trim().toLowerCase();
-    const token = body?.["cf-turnstile-response"] ?? body?.captchaToken;
+    const contentType = request.headers.get("content-type") ?? "";
+    let body: Record<string, unknown> = {};
+
+    if (
+      contentType.includes("multipart/form-data") ||
+      contentType.includes("application/x-www-form-urlencoded")
+    ) {
+      const formData = await request.formData().catch(() => null);
+      if (formData) {
+        body = Object.fromEntries(formData.entries());
+      }
+    } else {
+      body = await request.json().catch(() => ({}));
+    }
+
+    const email =
+      typeof body?.email === "string" ? body.email.trim().toLowerCase() : "";
+    const token = extractTurnstileToken(body);
 
     if (!email || !isValidEmailAddress(email)) {
       return NextResponse.json(
-        { error: "Please enter a valid email address." },
+        {
+          success: false,
+          code: "invalid-email",
+          error: "Please enter a valid institutional email address.",
+        },
         { status: 400 },
       );
     }
@@ -25,7 +47,14 @@ export async function POST(request: NextRequest) {
     });
     if (!turnstileCheck.ok) {
       return NextResponse.json(
-        { error: turnstileCheck.error ?? "forbidden" },
+        {
+          success: false,
+          code: turnstileCheck.code ?? "turnstile-verification-failed",
+          errorCodes: turnstileCheck.errorCodes,
+          error:
+            turnstileCheck.error ??
+            "Security verification failed. Please complete the Turnstile challenge and try again.",
+        },
         { status: turnstileCheck.status },
       );
     }

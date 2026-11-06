@@ -1,7 +1,10 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { getServiceRoleClient } from "@/lib/supabase/service-role";
-import { verifyTurnstileToken } from "@/lib/turnstile/verify";
+import {
+  extractTurnstileToken,
+  verifyTurnstileToken,
+} from "@/lib/turnstile/verify";
 
 // In-memory lockout cache: 5 failed attempts -> 15-minute timeout
 interface AttemptRecord {
@@ -14,14 +17,33 @@ const LOCKOUT_DURATION_MS = 15 * 60 * 1000;
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json().catch(() => ({}));
-    const email = typeof body.email === "string" ? body.email.trim().toLowerCase() : "";
+    const contentType = request.headers.get("content-type") ?? "";
+    let body: Record<string, unknown> = {};
+
+    if (
+      contentType.includes("multipart/form-data") ||
+      contentType.includes("application/x-www-form-urlencoded")
+    ) {
+      const formData = await request.formData().catch(() => null);
+      if (formData) {
+        body = Object.fromEntries(formData.entries());
+      }
+    } else {
+      body = await request.json().catch(() => ({}));
+    }
+
+    const email =
+      typeof body.email === "string" ? body.email.trim().toLowerCase() : "";
     const password = typeof body.password === "string" ? body.password : "";
-    const token = body["cf-turnstile-response"] ?? body.captchaToken;
+    const token = extractTurnstileToken(body);
 
     if (!email || !password) {
       return NextResponse.json(
-        { error: "Email and password are required." },
+        {
+          success: false,
+          code: "invalid-credentials-payload",
+          error: "Email and password are required.",
+        },
         { status: 400 },
       );
     }
@@ -33,7 +55,14 @@ export async function POST(request: NextRequest) {
     });
     if (!turnstileCheck.ok) {
       return NextResponse.json(
-        { error: turnstileCheck.error ?? "forbidden" },
+        {
+          success: false,
+          code: turnstileCheck.code ?? "turnstile-verification-failed",
+          errorCodes: turnstileCheck.errorCodes,
+          error:
+            turnstileCheck.error ??
+            "Security verification failed. Please complete the Turnstile challenge and try again.",
+        },
         { status: turnstileCheck.status },
       );
     }

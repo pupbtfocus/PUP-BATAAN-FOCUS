@@ -1,11 +1,36 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { getServiceRoleClient } from "@/lib/supabase/service-role";
 import { formatPasswordError } from "@/lib/validation/password";
+import {
+  extractTurnstileToken,
+  verifyTurnstileToken,
+} from "@/lib/turnstile/verify";
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json();
+    const body = await request.json().catch(() => ({}));
     const { password, accessToken } = body;
+    const token = extractTurnstileToken(body);
+
+    if (token !== null) {
+      const turnstileCheck = await verifyTurnstileToken({
+        token,
+        request,
+      });
+      if (!turnstileCheck.ok) {
+        return NextResponse.json(
+          {
+            success: false,
+            code: turnstileCheck.code ?? "turnstile-verification-failed",
+            errorCodes: turnstileCheck.errorCodes,
+            error:
+              turnstileCheck.error ??
+              "Security verification failed. Please complete the Turnstile challenge and try again.",
+          },
+          { status: turnstileCheck.status },
+        );
+      }
+    }
 
     if (!password || typeof password !== "string" || password.length < 8) {
       return NextResponse.json(
