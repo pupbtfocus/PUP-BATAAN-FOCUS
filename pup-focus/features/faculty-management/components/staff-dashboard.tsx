@@ -1275,6 +1275,8 @@ export function AdminFacultyDashboard({
                       resetTrigger={verificationResetTrigger}
                       initialReviewFacultyId={initialReviewFacultyId}
                       initialRequirementCode={initialHighlightRequirementCode}
+                      initialAcademicYear={dashboardStats?.currentAcademicYear}
+                      initialSemester={dashboardStats?.currentSemester as any}
                     />
                   </article>
                 ) : null}

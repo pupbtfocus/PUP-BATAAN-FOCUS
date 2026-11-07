@@ -397,6 +397,19 @@ export interface FacultyVerificationDrawerProps {
     is_mandatory: boolean;
     is_active?: boolean;
   }>;
+  initialClasses?: Array<{
+    id: string;
+    subject_code: string;
+    description: string;
+    units: number | null;
+    section_code: string;
+  }>;
+  initialSubmissions?: FacultyRequirementSubmission[];
+  initialAvailableAcademicYears?: string[];
+  onSubmissionsLoaded?: (
+    facultyId: string,
+    payload: { submissions: FacultyRequirementSubmission[]; classes: any[] },
+  ) => void;
   onClose?: () => void;
   onBack?: () => void;
   onStatusUpdated?: () => void;
@@ -419,6 +432,10 @@ export function FacultyVerificationDrawer({
   initialTab = "current",
   initialRequirementCode,
   requirementTemplates: requirementTemplatesProp,
+  initialClasses,
+  initialSubmissions,
+  initialAvailableAcademicYears,
+  onSubmissionsLoaded,
   onClose,
   onBack,
   onStatusUpdated,
@@ -426,7 +443,9 @@ export function FacultyVerificationDrawer({
   const activeAy = academicYear || "";
   const activeSem = semester || "";
   const [activeTab, setActiveTab] = useState<"current" | "history">(initialTab);
-  const [submissions, setSubmissions] = useState<FacultyRequirementSubmission[]>([]);
+  const [submissions, setSubmissions] = useState<FacultyRequirementSubmission[]>(
+    initialSubmissions ?? [],
+  );
   const [facultyClasses, setFacultyClasses] = useState<
     Array<{
       id: string;
@@ -435,9 +454,33 @@ export function FacultyVerificationDrawer({
       units: number;
       section_code: string;
     }>
-  >([]);
+  >(() =>
+    (initialClasses ?? []).map((c) => ({
+      id: c.id,
+      subject_code: c.subject_code,
+      description: c.description,
+      units: Number(c.units ?? 0),
+      section_code: c.section_code,
+    })),
+  );
   const [selectedClassId, setSelectedClassId] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(
+    () => initialSubmissions === undefined && initialClasses === undefined,
+  );
+  useEffect(() => {
+    if (initialClasses !== undefined && !hasLoadedCurrentRef.current) {
+      setFacultyClasses(
+        initialClasses.map((c) => ({
+          id: c.id,
+          subject_code: c.subject_code,
+          description: c.description,
+          units: Number(c.units ?? 0),
+          section_code: c.section_code,
+        })),
+      );
+      setIsLoading(false);
+    }
+  }, [initialClasses]);
   const [reviewingCode, setReviewingCode] = useState<string | null>(null);
   const [submittingAction, setSubmittingAction] = useState<"validate" | "revision" | null>(null);
   const [isDownloadingZip, setIsDownloadingZip] = useState(false);
@@ -454,6 +497,10 @@ export function FacultyVerificationDrawer({
   >(requirementTemplatesProp || []);
 
   useEffect(() => {
+    if (requirementTemplatesProp && requirementTemplatesProp.length > 0) {
+      setDbTemplates(requirementTemplatesProp.filter((t) => t.is_active !== false));
+      return;
+    }
     let isCancelled = false;
     async function loadTemplates() {
       try {
@@ -481,17 +528,27 @@ export function FacultyVerificationDrawer({
     return () => {
       isCancelled = true;
     };
-  }, []);
+  }, [requirementTemplatesProp]);
 
   // History Tab States
   const [historySubmissions, setHistorySubmissions] = useState<FacultyRequirementSubmission[]>([]);
   const [historyClasses, setHistoryClasses] = useState<any[]>([]);
   const [selectedHistoryClassId, setSelectedHistoryClassId] = useState<string | null>(null);
   const [isLoadingHistory, setIsLoadingHistory] = useState(false);
-  const [historyAcademicYears, setHistoryAcademicYears] = useState<string[]>([]);
-  const [selectedHistoryAy, setSelectedHistoryAy] = useState<string>(
-    initialTab === "history" ? activeAy : ""
+  const [historyAcademicYears, setHistoryAcademicYears] = useState<string[]>(() =>
+    initialAvailableAcademicYears && initialAvailableAcademicYears.length > 0
+      ? Array.from(new Set([...initialAvailableAcademicYears, activeAy].filter(Boolean))).sort().reverse()
+      : [],
   );
+  const [selectedHistoryAy, setSelectedHistoryAy] = useState<string>(() => {
+    if (initialTab === "history" && activeAy) return activeAy;
+    if (initialAvailableAcademicYears && initialAvailableAcademicYears.length > 0) {
+      return activeAy && initialAvailableAcademicYears.includes(activeAy)
+        ? activeAy
+        : initialAvailableAcademicYears[0] || "";
+    }
+    return "";
+  });
   const [selectedHistorySem, setSelectedHistorySem] = useState<SemesterOption>(
     initialTab === "history" ? activeSem : "1st Semester"
   );
@@ -1119,7 +1176,9 @@ export function FacultyVerificationDrawer({
     return () => clearTimeout(timeout);
   }, [initialRequirementCode, isLoading, classGroups, selectedClassId]);
 
-  const hasLoadedCurrentRef = useRef(false);
+  const hasLoadedCurrentRef = useRef(
+    Boolean(initialSubmissions !== undefined || initialClasses !== undefined),
+  );
   const hasLoadedHistoryRef = useRef(false);
 
   const refreshCurrentSubmissions = useCallback(
@@ -1140,21 +1199,25 @@ export function FacultyVerificationDrawer({
 
         if (subRes.ok) {
           const subData = await subRes.json();
-          setSubmissions(subData.submissions || []);
+          const nextSubs = subData.submissions || [];
+          const nextClasses = Array.isArray(subData.classes) ? subData.classes : [];
+          setSubmissions(nextSubs);
           if (Array.isArray(subData.classes)) {
-            setFacultyClasses(subData.classes);
+            setFacultyClasses(nextClasses);
           }
+          onSubmissionsLoaded?.(faculty.id, {
+            submissions: nextSubs,
+            classes: nextClasses,
+          });
           hasLoadedCurrentRef.current = true;
         }
       } catch (err) {
         console.error("Failed to load current submissions:", err);
       } finally {
-        if (!isSilent) {
-          setIsLoading(false);
-        }
+        setIsLoading(false);
       }
     },
-    [faculty.id, activeAy, activeSem]
+    [faculty.id, activeAy, activeSem, onSubmissionsLoaded]
   );
 
   // 1. Fetch current term submissions (only on faculty/term change, without retriggering on history state updates)
@@ -1162,8 +1225,24 @@ export function FacultyVerificationDrawer({
     void refreshCurrentSubmissions();
   }, [refreshCurrentSubmissions]);
 
-  // 2. Fetch history academic years once on mount (isolated from current submissions to prevent double reload)
+  // 2. Fetch history academic years once on mount (skip if already provided from parent)
   useEffect(() => {
+    if (initialAvailableAcademicYears && initialAvailableAcademicYears.length > 0) {
+      const merged = Array.from(
+        new Set([...initialAvailableAcademicYears, activeAy].filter(Boolean)),
+      )
+        .sort()
+        .reverse();
+      setHistoryAcademicYears(merged);
+      setSelectedHistoryAy((prev) => {
+        if (prev) return prev;
+        return activeAy && initialAvailableAcademicYears.includes(activeAy)
+          ? activeAy
+          : initialAvailableAcademicYears[0] || "";
+      });
+      return;
+    }
+
     let isCancelled = false;
     async function loadHistoryMetadata() {
       if (!faculty.id) return;
@@ -1195,7 +1274,7 @@ export function FacultyVerificationDrawer({
     return () => {
       isCancelled = true;
     };
-  }, [faculty.id, activeAy, activeSem]);
+  }, [faculty.id, activeAy, activeSem, initialAvailableAcademicYears]);
 
   const refreshHistorySubmissions = useCallback(
     async (options?: { silent?: boolean }) => {
@@ -4105,6 +4184,8 @@ export interface RequirementsPanelProps {
   resetTrigger?: number;
   initialReviewFacultyId?: string | null;
   initialRequirementCode?: string | null;
+  initialAcademicYear?: string;
+  initialSemester?: SemesterOption;
 }
 
 export function RequirementsPanel({
@@ -4114,6 +4195,8 @@ export function RequirementsPanel({
   resetTrigger,
   initialReviewFacultyId,
   initialRequirementCode,
+  initialAcademicYear,
+  initialSemester,
 }: RequirementsPanelProps) {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedProgram, setSelectedProgram] = useState("All Programs");
@@ -4124,18 +4207,67 @@ export function RequirementsPanel({
   >("all");
 
   const [activePanelTab, setActivePanelTab] = useState<"current" | "history">("current");
-  const [activeTermAy, setActiveTermAy] = useState("");
-  const [activeTermSem, setActiveTermSem] = useState<SemesterOption>("1st Semester");
-  const [historyAy, setHistoryAy] = useState("");
-  const [historySem, setHistorySem] = useState<SemesterOption>("1st Semester");
-  const [availableAcademicYears, setAvailableAcademicYears] = useState<string[]>([]);
+  const [activeTermAy, setActiveTermAy] = useState(initialAcademicYear || "");
+  const [activeTermSem, setActiveTermSem] = useState<SemesterOption>(
+    initialSemester || "1st Semester",
+  );
+  const [historyAy, setHistoryAy] = useState(initialAcademicYear || "");
+  const [historySem, setHistorySem] = useState<SemesterOption>(
+    initialSemester || "1st Semester",
+  );
+  const [availableAcademicYears, setAvailableAcademicYears] = useState<string[]>(
+    initialAcademicYear ? [initialAcademicYear] : [],
+  );
   const [termsByYear, setTermsByYear] = useState<Record<string, SemesterOption[]>>({});
-  const [academicYear, setAcademicYear] = useState("");
-  const [semester, setSemester] = useState<SemesterOption>("1st Semester");
+  const [academicYear, setAcademicYear] = useState(initialAcademicYear || "");
+  const [semester, setSemester] = useState<SemesterOption>(
+    initialSemester || "1st Semester",
+  );
+
+  // Sync initial term props when parent finishes loading them
+  useEffect(() => {
+    if (initialAcademicYear && !activeTermAy) {
+      setActiveTermAy(initialAcademicYear);
+      if (activePanelTab === "current") {
+        setAcademicYear(initialAcademicYear);
+      }
+    }
+    if (initialSemester && !activeTermAy) {
+      setActiveTermSem(initialSemester);
+      if (activePanelTab === "current") {
+        setSemester(initialSemester);
+      }
+    }
+  }, [initialAcademicYear, initialSemester, activeTermAy, activePanelTab]);
 
   const [facultyStatuses, setFacultyStatuses] = useState<
     Record<string, Record<string, RequirementStatus>>
-  >({});
+  >(() => {
+    const initial: Record<string, Record<string, RequirementStatus>> = {};
+    for (const f of facultyAccounts) {
+      if (f?.id && f.requirementStatus) {
+        initial[f.id] = f.requirementStatus;
+      }
+    }
+    return initial;
+  });
+
+  // Seed statuses from facultyAccounts whenever new accounts arrive and don't have a status entry yet
+  useEffect(() => {
+    if (facultyAccounts.length === 0) return;
+    setFacultyStatuses((prev) => {
+      let changed = false;
+      const next = { ...prev };
+      for (const f of facultyAccounts) {
+        if (f?.id && f.requirementStatus && !next[f.id]) {
+          next[f.id] = f.requirementStatus;
+          changed = true;
+        }
+      }
+      return changed ? next : prev;
+    });
+  }, [facultyAccounts]);
+
   const [facultyClassProgress, setFacultyClassProgress] = useState<
     Record<string, FacultyClassProgress[]>
   >({});
@@ -4143,6 +4275,43 @@ export function RequirementsPanel({
     Record<string, FacultySubjectProgress>
   >({});
   const [isLoadingStatuses, setIsLoadingStatuses] = useState(false);
+
+  const [submissionsCache, setSubmissionsCache] = useState<
+    Record<string, { submissions: FacultyRequirementSubmission[]; classes: any[] }>
+  >({});
+  const inflightPrefetchRef = useRef<Set<string>>(new Set());
+
+  const prefetchFacultySubmissions = useCallback(
+    async (targetFacultyId: string, ayOverride?: string, semOverride?: string) => {
+      if (!targetFacultyId) return;
+      const targetAy = ayOverride ?? academicYear ?? activeTermAy;
+      const targetSem = semOverride ?? semester ?? activeTermSem;
+      const cacheKey = `${targetFacultyId}::${targetAy}::${targetSem}`;
+      if (inflightPrefetchRef.current.has(cacheKey)) return;
+      inflightPrefetchRef.current.add(cacheKey);
+      try {
+        const res = await fetch(
+          `/api/staff/faculty/submissions?facultyId=${encodeURIComponent(targetFacultyId)}&academicYear=${encodeURIComponent(targetAy)}&semester=${encodeURIComponent(targetSem)}`,
+          { credentials: "include", cache: "no-store" },
+        );
+        if (res.ok) {
+          const data = await res.json();
+          setSubmissionsCache((prev) => ({
+            ...prev,
+            [targetFacultyId]: {
+              submissions: data.submissions || [],
+              classes: Array.isArray(data.classes) ? data.classes : [],
+            },
+          }));
+        }
+      } catch {
+        // Silent prefetch failure
+      } finally {
+        inflightPrefetchRef.current.delete(cacheKey);
+      }
+    },
+    [academicYear, activeTermAy, semester, activeTermSem],
+  );
 
   const [requirementTemplates, setRequirementTemplates] = useState<
     Array<{
@@ -4173,10 +4342,6 @@ export function RequirementsPanel({
       // Fallback
     }
   }, []);
-
-  useEffect(() => {
-    void loadTemplates();
-  }, [loadTemplates]);
 
   const [reviewingFaculty, setReviewingFaculty] = useState<FacultyAccount | null>(
     selectedFaculty || null
@@ -4244,149 +4409,104 @@ export function RequirementsPanel({
     return sortSemestersList(list);
   }, [termsByYear, historyAy, sortSemestersList]);
 
-  // Load active term & statuses on mount
-  useEffect(() => {
-    let isMounted = true;
-    async function loadActiveTermAndStatuses() {
-      const targetFacultyId =
-        reviewingFaculty?.id ||
-        selectedFaculty?.id ||
-        facultyAccounts[0]?.id ||
-        "";
-
-      if (!targetFacultyId) {
-        setIsLoadingStatuses(false);
-        return;
-      }
-
-      const isManualTrigger = (resetTrigger ?? 0) > 0;
-      const hasExistingStatuses = Object.keys(facultyStatuses).length > 0;
-      if (!hasExistingStatuses || isManualTrigger) {
-        setIsLoadingStatuses(true);
-      }
-      try {
-        const res = await fetch(
-          `/api/staff/faculty/requirements/verification?facultyId=${encodeURIComponent(
-            targetFacultyId
-          )}&_t=${Date.now()}`,
-          { credentials: "include", cache: "no-store" }
-        );
-        if (res.ok && isMounted) {
-          const data = await res.json();
-          const activeAy = data.currentAcademicYear || "";
-          const activeSem: SemesterOption =
-            data.currentSemester || "1st Semester";
-
-          setActiveTermAy(activeAy);
-          setActiveTermSem(activeSem);
-          if (activePanelTab === "current") {
-            setAcademicYear(activeAy);
-            setSemester(activeSem);
-          }
-
-          if (data.termsByYear && typeof data.termsByYear === "object") {
-            setTermsByYear(data.termsByYear);
-          }
-
-          if (Array.isArray(data.availableAcademicYears) && data.availableAcademicYears.length > 0) {
-            setAvailableAcademicYears(data.availableAcademicYears);
-            const chosenAy =
-              (historyAy && data.availableAcademicYears.includes(historyAy))
-                ? historyAy
-                : (activeAy && data.availableAcademicYears.includes(activeAy))
-                  ? activeAy
-                  : data.availableAcademicYears[0];
-            setHistoryAy(chosenAy);
-
-            const validSemsForAy = sortSemestersList(
-              (data.termsByYear && data.termsByYear[chosenAy]) || ["1st Semester", "2nd Semester"]
-            );
-            // Default to current semester if available, otherwise first semester
-            const defaultSem = validSemsForAy.includes(activeSem) ? activeSem : validSemsForAy[0];
-            setHistorySem(defaultSem);
-
-            // Batch load status for all faculty
-            const targetAy = activePanelTab === "history" ? chosenAy : activeAy;
-            const targetSem = activePanelTab === "history" ? defaultSem : activeSem;
-            await fetchAllStatuses(targetAy, targetSem, { silent: !isManualTrigger && hasExistingStatuses });
-          } else {
-            const targetAy = activePanelTab === "history" ? historyAy : activeAy;
-            const targetSem = activePanelTab === "history" ? historySem : activeSem;
-            await fetchAllStatuses(targetAy, targetSem, { silent: !isManualTrigger && hasExistingStatuses });
-          }
-        }
-      } catch (err) {
-        console.error("Failed to load active term:", err);
-      } finally {
-        if (isMounted) setIsLoadingStatuses(false);
-      }
+  async function fetchAllStatuses(
+    ay?: string,
+    sem?: SemesterOption,
+    options?: { silent?: boolean; syncActiveTerm?: boolean }
+  ) {
+    const allIds = facultyAccounts.map((f) => f?.id).filter(Boolean);
+    if (allIds.length === 0) {
+      setIsLoadingStatuses(false);
+      return;
     }
 
-    loadActiveTermAndStatuses();
-
-    return () => {
-      isMounted = false;
-    };
-  }, [facultyAccounts, reviewingFaculty?.id, selectedFaculty?.id, resetTrigger]);
-
-  async function fetchAllStatuses(
-    ay: string,
-    sem: SemesterOption,
-    options?: { silent?: boolean }
-  ) {
-    if (facultyAccounts.length === 0) return;
-    const safeAy = ay || "2026-2027";
-    const safeSem = sem || "1st Semester";
     if (!options?.silent) {
       setIsLoadingStatuses(true);
     }
+
     try {
-      const results = await Promise.all(
-        facultyAccounts.map(async (faculty) => {
-          if (!faculty?.id) return { facultyId: "", status: null, classProgress: [], subjectProgress: null };
-          try {
-            const res = await fetch(
-              `/api/staff/faculty/requirements/verification?facultyId=${encodeURIComponent(
-                faculty.id
-              )}&academicYear=${encodeURIComponent(safeAy)}&semester=${encodeURIComponent(
-                safeSem
-              )}&_t=${Date.now()}`,
-              { credentials: "include", cache: "no-store" }
-            );
-            if (res.ok) {
-              const data = await res.json();
-              return {
-                facultyId: faculty.id,
-                status: data.requirementStatus,
-                classProgress: data.classProgress || [],
-                subjectProgress: data.subjectProgress || null,
-              };
-            }
-          } catch {
-            // Handled
-          }
-          return { facultyId: faculty.id, status: null, classProgress: [], subjectProgress: null };
-        })
+      const params = new URLSearchParams();
+      params.set("facultyIds", allIds.join(","));
+      if (ay) params.set("academicYear", ay);
+      if (sem) params.set("semester", sem);
+      params.set("_t", String(Date.now()));
+
+      const res = await fetch(
+        `/api/staff/faculty/requirements/verification?${params.toString()}`,
+        { credentials: "include", cache: "no-store" },
       );
 
-      const statusMap: Record<string, Record<string, RequirementStatus>> =
-        {};
-      const classProgressMap: Record<string, FacultyClassProgress[]> = {};
-      const subjectProgressMap: Record<string, FacultySubjectProgress> = {};
-      for (const item of results) {
-        if (item.status) {
-          statusMap[item.facultyId] = item.status;
+      if (!res.ok) return;
+      const data = await res.json();
+
+      if (Array.isArray(data.requirementTemplates) && data.requirementTemplates.length > 0) {
+        setRequirementTemplates(
+          data.requirementTemplates.map((t: any) => ({
+            code: t.code,
+            title: t.title,
+            is_mandatory: Boolean(t.is_mandatory),
+            is_active: t.is_active !== false,
+          })),
+        );
+      }
+
+      if (options?.syncActiveTerm) {
+        const resolvedAy = data.currentAcademicYear || data.selectedAcademicYear || "";
+        const resolvedSem: SemesterOption =
+          data.currentSemester || data.selectedSemester || "1st Semester";
+
+        setActiveTermAy(resolvedAy);
+        setActiveTermSem(resolvedSem);
+        if (activePanelTab === "current") {
+          setAcademicYear(resolvedAy);
+          setSemester(resolvedSem);
         }
-        if (item.classProgress) {
-          classProgressMap[item.facultyId] = item.classProgress;
+
+        if (data.termsByYear && typeof data.termsByYear === "object") {
+          setTermsByYear(data.termsByYear);
         }
-        if (item.subjectProgress) {
-          subjectProgressMap[item.facultyId] = item.subjectProgress;
+
+        if (Array.isArray(data.availableAcademicYears) && data.availableAcademicYears.length > 0) {
+          setAvailableAcademicYears(data.availableAcademicYears);
+          const chosenAy =
+            historyAy && data.availableAcademicYears.includes(historyAy)
+              ? historyAy
+              : resolvedAy && data.availableAcademicYears.includes(resolvedAy)
+                ? resolvedAy
+                : data.availableAcademicYears[0];
+          setHistoryAy(chosenAy);
+
+          const validSemsForAy = sortSemestersList(
+            (data.termsByYear && data.termsByYear[chosenAy]) || ["1st Semester", "2nd Semester"],
+          );
+          const defaultSem = validSemsForAy.includes(resolvedSem)
+            ? resolvedSem
+            : validSemsForAy[0];
+          setHistorySem(defaultSem);
         }
       }
-      setFacultyStatuses(statusMap);
-      setFacultyClassProgress(classProgressMap);
-      setFacultySubjectProgress(subjectProgressMap);
+
+      if (data.resultsByFacultyId && typeof data.resultsByFacultyId === "object") {
+        const statusMap: Record<string, Record<string, RequirementStatus>> = {};
+        const classProgressMap: Record<string, FacultyClassProgress[]> = {};
+        const subjectProgressMap: Record<string, FacultySubjectProgress> = {};
+
+        for (const [fId, item] of Object.entries<any>(data.resultsByFacultyId)) {
+          if (item?.requirementStatus) {
+            statusMap[fId] = item.requirementStatus;
+          }
+          if (item?.classProgress) {
+            classProgressMap[fId] = item.classProgress;
+          }
+          if (item?.subjectProgress) {
+            subjectProgressMap[fId] = item.subjectProgress;
+          }
+        }
+
+        setFacultyStatuses(statusMap);
+        setFacultyClassProgress(classProgressMap);
+        setFacultySubjectProgress(subjectProgressMap);
+      }
     } catch (err) {
       console.error("Error fetching faculty statuses:", err);
     } finally {
@@ -4395,6 +4515,26 @@ export function RequirementsPanel({
       }
     }
   }
+
+  // Load active term, templates, and all faculty statuses in a single batched request on mount
+  useEffect(() => {
+    if (facultyAccounts.length === 0) {
+      setIsLoadingStatuses(false);
+      return;
+    }
+    const isManualTrigger = (resetTrigger ?? 0) > 0;
+    const hasSeededStatuses =
+      Object.keys(facultyStatuses).length > 0 ||
+      facultyAccounts.some((f) => Boolean(f.requirementStatus));
+
+    const targetAy = activePanelTab === "history" ? historyAy : (academicYear || undefined);
+    const targetSem = activePanelTab === "history" ? historySem : (academicYear ? semester : undefined);
+
+    void fetchAllStatuses(targetAy, targetSem, {
+      silent: !isManualTrigger && hasSeededStatuses,
+      syncActiveTerm: true,
+    });
+  }, [facultyAccounts, resetTrigger]);
 
   // Realtime sync for RequirementsPanel (subjects added/edited/archived & requirements uploaded/reviewed)
   useRealtimeSync(() => {
@@ -4711,6 +4851,18 @@ export function RequirementsPanel({
           initialTab={activePanelTab}
           initialRequirementCode={initialRequirementCode}
           requirementTemplates={requirementTemplates}
+          initialClasses={
+            submissionsCache[reviewingFaculty.id]?.classes ??
+            facultyClassProgress[reviewingFaculty.id]
+          }
+          initialSubmissions={submissionsCache[reviewingFaculty.id]?.submissions}
+          initialAvailableAcademicYears={availableAcademicYears}
+          onSubmissionsLoaded={(fId, payload) => {
+            setSubmissionsCache((prev) => ({
+              ...prev,
+              [fId]: payload,
+            }));
+          }}
           onBack={() => {
             initialOpenedRef.current = "__closed__";
             setReviewingFaculty(null);
@@ -5084,6 +5236,11 @@ export function RequirementsPanel({
                   return (
                     <tr
                       key={faculty.id}
+                      onMouseEnter={() => {
+                        if (!isNotSubmitted) {
+                          void prefetchFacultySubmissions(faculty.id);
+                        }
+                      }}
                       className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 border-b border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/40 transition"
                     >
                       <td className="px-3 py-3 text-center text-xs font-mono text-slate-400 dark:text-slate-500">

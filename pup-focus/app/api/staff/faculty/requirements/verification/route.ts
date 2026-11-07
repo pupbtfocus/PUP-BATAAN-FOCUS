@@ -259,57 +259,90 @@ export async function GET(request: NextRequest) {
 
     const url = new URL(request.url);
     const facultyId = url.searchParams.get("facultyId");
+    const facultyIdsParam = url.searchParams.get("facultyIds");
     const requestedAcademicYear = url.searchParams.get("academicYear");
+    const hasSemesterParam = url.searchParams.has("semester");
     const selectedSemester = normalizeSemester(
       url.searchParams.get("semester"),
     );
 
-    if (!facultyId) {
+    const requestedIds = facultyIdsParam
+      ? facultyIdsParam.split(",").map((s) => s.trim()).filter(Boolean)
+      : facultyId
+        ? [facultyId.trim()]
+        : [];
+
+    if (requestedIds.length === 0) {
       return NextResponse.json(
-        { error: "facultyId is required" },
+        { error: "facultyId or facultyIds is required" },
         { status: 400 },
       );
     }
 
     const supabase = getServiceRoleClient();
 
-    // Try to locate profile row by either profiles.id or user_id (front-end may pass profile id)
-    const { data: profileRow, error: profileError } = await supabase
-      .from("profiles")
-      .select("id")
-      .or(`id.eq.${facultyId},user_id.eq.${facultyId}`)
-      .maybeSingle();
+    // Wave 1: Fetch profiles, current term, all academic terms, submission window, and templates in parallel
+    const [
+      profilesByIdRes,
+      profilesByUserIdRes,
+      currentAcademicTerm,
+      dbTermsRes,
+      submissionWindow,
+      dbTemplatesRes,
+    ] = await Promise.all([
+      supabase.from("profiles").select("id, user_id").in("id", requestedIds),
+      supabase.from("profiles").select("id, user_id").in("user_id", requestedIds),
+      getCurrentAcademicTerm(supabase),
+      supabase
+        .from("academic_terms")
+        .select("academic_year, semester, status")
+        .order("academic_year", { ascending: false }),
+      getSubmissionWindow(supabase),
+      supabase
+        .from("requirement_templates")
+        .select("code, title, is_mandatory, max_size_mb, allowed_formats, is_active")
+        .eq("is_active", true)
+        .order("is_mandatory", { ascending: false })
+        .order("created_at", { ascending: true }),
+    ]);
 
-    if (profileError || !profileRow?.id) {
-      console.error(
-        "Faculty profile not found in /api/admin/faculty/requirements/verification:",
-        profileError || `No profile for facultyId: ${facultyId}`,
-      );
+    const profileMap = new Map<string, string>(); // requestedId -> profile.id
+    const allProfileIds = new Set<string>();
+    for (const row of [
+      ...(profilesByIdRes.data ?? []),
+      ...(profilesByUserIdRes.data ?? []),
+    ]) {
+      allProfileIds.add(row.id);
+      if (requestedIds.includes(row.id)) profileMap.set(row.id, row.id);
+      if (row.user_id && requestedIds.includes(row.user_id)) {
+        profileMap.set(row.user_id, row.id);
+      }
+    }
+
+    if (!facultyIdsParam && allProfileIds.size === 0) {
       return NextResponse.json(
         {
           error: "Faculty profile not found",
-          details: profileError?.message || "No profile for this faculty",
+          details: "No profile for this faculty",
         },
         { status: 404 },
       );
     }
 
-    const facultyProfileId = profileRow.id;
-    const assignmentFacultyIds = Array.from(
-      new Set([facultyId, facultyProfileId].filter(Boolean)),
+    const assignmentLookupIds = Array.from(
+      new Set([...requestedIds, ...Array.from(allProfileIds)]),
     );
 
-    const { data: assignmentRows, error: assignmentError } = await supabase
-      .from("faculty_program_assignments")
-      .select("id, academic_year, term")
-      .in("faculty_profile_id", assignmentFacultyIds)
-      .limit(500);
+    const { data: assignmentRows, error: assignmentError } =
+      assignmentLookupIds.length > 0
+        ? await supabase
+            .from("faculty_program_assignments")
+            .select("id, faculty_profile_id, academic_year, term")
+            .in("faculty_profile_id", assignmentLookupIds)
+            .limit(2000)
+        : { data: [], error: null };
 
     if (assignmentError) {
-      console.error(
-        "Failed to load faculty assignments in /api/admin/faculty/requirements/verification:",
-        assignmentError,
-      );
       return NextResponse.json(
         {
           error: "Failed to load faculty assignments",
@@ -319,13 +352,7 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const currentAcademicTerm = await getCurrentAcademicTerm(supabase);
-
-    const { data: dbTerms } = await supabase
-      .from("academic_terms")
-      .select("academic_year, semester, status")
-      .order("academic_year", { ascending: false });
-
+    const dbTerms = dbTermsRes.data;
     const termsByYear: Record<string, SemesterOption[]> = {};
 
     const registerTerm = (ay?: string | null, sem?: string | null) => {
@@ -379,41 +406,11 @@ export async function GET(request: NextRequest) {
     }
 
     const effectiveSelectedSemester =
-      selectedSemester && availableSemesters.includes(selectedSemester)
+      hasSemesterParam && selectedSemester && availableSemesters.includes(selectedSemester)
         ? selectedSemester
         : (currentAcademicTerm?.semester && availableSemesters.includes(currentAcademicTerm.semester)
           ? currentAcademicTerm.semester
           : availableSemesters[0] ?? "1st Semester");
-
-    const filteredAssignmentIds = (assignmentRows ?? [])
-      .filter(
-        (row: any) =>
-          row.academic_year === selectedAcademicYear &&
-          normalizeSemester(row.term) === effectiveSelectedSemester,
-      )
-      .map((row: any) => row.id);
-
-    const submissionWindow = await getSubmissionWindow(supabase);
-    const windowState = evaluateSubmissionWindow(submissionWindow);
-    const currentWindowStart = convertManilaDateTimeToUtcIso(
-      windowState.startDate && windowState.startTime
-        ? `${windowState.startDate}T${normalizeTime24Hour(windowState.startTime)}`
-        : null,
-    );
-    const currentWindowEnd = convertManilaDateTimeToUtcIso(
-      windowState.endDate && windowState.endTime
-        ? `${windowState.endDate}T${normalizeTime24Hour(windowState.endTime)}`
-        : null,
-    );
-    const selectedTermMatchesCurrentTerm =
-      currentAcademicTerm &&
-      selectedAcademicYear === currentAcademicTerm.academicYear &&
-      effectiveSelectedSemester === currentAcademicTerm.semester;
-    const shouldUseCurrentWindowFallback =
-      windowState.isConfigured &&
-      currentWindowStart &&
-      currentWindowEnd &&
-      selectedTermMatchesCurrentTerm;
 
     let activeTemplateRows: Array<{
       code: string;
@@ -429,71 +426,56 @@ export async function GET(request: NextRequest) {
       allowed_formats: ["PDF", "DOCX", "XLSX"],
     }));
 
-    try {
-      const { data: dbTemplates } = await supabase
-        .from("requirement_templates")
-        .select("code, title, is_mandatory, max_size_mb, allowed_formats, is_active")
-        .eq("is_active", true)
-        .order("is_mandatory", { ascending: false })
-        .order("created_at", { ascending: true });
-
-      if (dbTemplates && dbTemplates.length > 0) {
-        activeTemplateRows = dbTemplates.map((t) => ({
-          code: t.code,
-          title: t.title,
-          is_mandatory: t.is_mandatory,
-          max_size_mb: t.max_size_mb || 5,
-          allowed_formats: t.allowed_formats || ["PDF"],
-        }));
-      }
-    } catch {
-      // Keep defaults
+    if (dbTemplatesRes.data && dbTemplatesRes.data.length > 0) {
+      activeTemplateRows = dbTemplatesRes.data.map((t: any) => ({
+        code: t.code,
+        title: t.title,
+        is_mandatory: t.is_mandatory,
+        max_size_mb: t.max_size_mb || 5,
+        allowed_formats: t.allowed_formats || ["PDF"],
+      }));
     }
 
-    const requirementStatus: Record<string, RequirementStatus> = {};
-    for (const tpl of activeTemplateRows) {
-      requirementStatus[tpl.code] = "not_submitted";
-    }
-    for (const code of DEFAULT_REQUIREMENTS) {
-      if (!requirementStatus[code]) {
-        requirementStatus[code] = "not_submitted";
-      }
-    }
+    const filteredAssignments = (assignmentRows ?? []).filter(
+      (row: any) =>
+        row.academic_year === selectedAcademicYear &&
+        normalizeSemester(row.term) === effectiveSelectedSemester,
+    );
+    const allFilteredAssignmentIds = filteredAssignments.map((row: any) => row.id);
 
-    let submissionRows: SubmissionRow[] | null = null;
-    let submissionsError: { message?: string } | null = null;
+    // Wave 2: Batch fetch submissions and faculty_classes for all requested profiles in parallel
+    const [submissionsRes, classesRes] = await Promise.all([
+      allFilteredAssignmentIds.length > 0 && assignmentLookupIds.length > 0
+        ? supabase
+            .from("submissions")
+            .select(
+              "id, faculty_profile_id, requirement_code, status, submitted_at, faculty_assignment_id, class_id",
+            )
+            .in("faculty_profile_id", assignmentLookupIds)
+            .in("faculty_assignment_id", allFilteredAssignmentIds)
+            .order("submitted_at", { ascending: false })
+        : Promise.resolve({ data: [], error: null }),
+      assignmentLookupIds.length > 0
+        ? supabase
+            .from("faculty_classes")
+            .select("id, faculty_profile_id, subject_code, description, section_code, units, is_archived, academic_year, semester")
+            .in("faculty_profile_id", assignmentLookupIds)
+            .eq("is_archived", false)
+        : Promise.resolve({ data: [], error: null }),
+    ]);
 
-    if (filteredAssignmentIds.length > 0) {
-      // Strict query: only get submissions for the target term's assignment IDs
-      const { data: termSubmissions, error: fetchSubError } = await supabase
-        .from("submissions")
-        .select(
-          "id, requirement_code, status, submitted_at, faculty_assignment_id, class_id",
-        )
-        .eq("faculty_profile_id", facultyProfileId)
-        .in("faculty_assignment_id", filteredAssignmentIds)
-        .order("submitted_at", { ascending: false });
-
-      submissionsError = fetchSubError;
-      submissionRows = (termSubmissions as SubmissionRow[] | null) ?? [];
-    } else {
-      // No assignment exists for this term — return empty (all requirements = not_submitted)
-      submissionRows = [];
-    }
-
-    if (submissionsError) {
-      console.error(
-        "Failed to load faculty requirements in /api/admin/faculty/requirements/verification:",
-        submissionsError,
-      );
+    if (submissionsRes.error) {
       return NextResponse.json(
         {
           error: "Failed to load faculty requirements",
-          details: submissionsError.message,
+          details: submissionsRes.error.message,
         },
         { status: 500 },
       );
     }
+
+    const allSubmissionRows = (submissionsRes.data as any[] | null) ?? [];
+    const allFacultyClasses = (classesRes.data as any[] | null) ?? [];
 
     const rank: Record<RequirementStatus, number> = {
       not_submitted: 0,
@@ -501,99 +483,133 @@ export async function GET(request: NextRequest) {
       validated: 2,
     };
 
-    // Process submissions: get the best status for each requirement (highest rank)
-    for (const row of submissionRows ?? []) {
-      const code = matchRequirementCode(
-        row.requirement_code,
-        (row as { requirement_id?: string }).requirement_id,
-        activeTemplateRows,
-      );
-
-      if (!code) {
-        continue;
-      }
-
-      if (!hasDocumentVersion(row)) {
-        continue;
-      }
-
-      const mappedStatus = toRequirementStatus(row.status);
-
-      if (!requirementStatus[code] || rank[mappedStatus] > rank[requirementStatus[code]]) {
-        requirementStatus[code] = mappedStatus;
-      }
-    }
-
-    // Query faculty classes for per-subject verification progress
-    let facultyClassesData: any[] = [];
-    try {
-      const { data: fcData } = await supabase
-        .from("faculty_classes")
-        .select("id, subject_code, description, section_code, units, is_archived, academic_year, semester")
-        .eq("faculty_profile_id", facultyProfileId)
-        .eq("is_archived", false);
-
-      if (fcData && fcData.length > 0) {
-        facultyClassesData = fcData.filter((fc: any) => {
-          if (fc.academic_year && selectedAcademicYear) {
-            const ayMatches = normalizeAcademicYear(fc.academic_year) === normalizeAcademicYear(selectedAcademicYear);
-            if (!ayMatches) return false;
-          }
-          if (fc.semester && effectiveSelectedSemester) {
-            const semMatches = normalizeSemester(fc.semester) === normalizeSemester(effectiveSelectedSemester);
-            if (!semMatches) return false;
-          }
-          return true;
-        });
-
-        // Fallback to all unarchived classes if scoped filter yielded 0
-        if (facultyClassesData.length === 0) {
-          facultyClassesData = fcData;
-        }
-      }
-    } catch {
-      // faculty_classes optional
-    }
-
     const mandatoryTemplates = activeTemplateRows.filter((t) => t.is_mandatory);
     const reqsToCheck = mandatoryTemplates.length > 0 ? mandatoryTemplates : activeTemplateRows;
 
-    const classProgressList = facultyClassesData.map((cls) => {
-      const classSubs = (submissionRows || []).filter((s: any) => s.class_id === cls.id);
-      const validatedReqs = new Set<string>();
+    const computeForFaculty = (reqFacultyId: string) => {
+      const resolvedProfileId = profileMap.get(reqFacultyId) || reqFacultyId;
+      const validIds = new Set([reqFacultyId, resolvedProfileId]);
 
-      for (const s of classSubs) {
-        const mappedStatus = toRequirementStatus(s.status);
-        if (mappedStatus === "validated") {
-          const code = matchRequirementCode(
-            s.requirement_code,
-            (s as any).requirement_id,
-            activeTemplateRows,
-          );
-          if (code) {
-            validatedReqs.add(code);
-          }
+      const requirementStatus: Record<string, RequirementStatus> = {};
+      for (const tpl of activeTemplateRows) {
+        requirementStatus[tpl.code] = "not_submitted";
+      }
+      for (const code of DEFAULT_REQUIREMENTS) {
+        if (!requirementStatus[code]) {
+          requirementStatus[code] = "not_submitted";
         }
       }
 
-      const validatedCount = reqsToCheck.filter((t) => validatedReqs.has(t.code)).length;
-      const totalRequired = reqsToCheck.length;
-      const isDone = totalRequired > 0 && validatedCount >= totalRequired;
+      const facultyAssignmentIds = new Set(
+        filteredAssignments
+          .filter((a: any) => validIds.has(a.faculty_profile_id))
+          .map((a: any) => a.id),
+      );
+
+      const facultySubmissions = allSubmissionRows.filter(
+        (s: any) =>
+          validIds.has(s.faculty_profile_id) &&
+          facultyAssignmentIds.has(s.faculty_assignment_id),
+      );
+
+      for (const row of facultySubmissions) {
+        const code = matchRequirementCode(
+          row.requirement_code,
+          (row as { requirement_id?: string }).requirement_id,
+          activeTemplateRows,
+        );
+        if (!code || !hasDocumentVersion(row)) continue;
+        const mappedStatus = toRequirementStatus(row.status);
+        if (!requirementStatus[code] || rank[mappedStatus] > rank[requirementStatus[code]]) {
+          requirementStatus[code] = mappedStatus;
+        }
+      }
+
+      const rawClasses = allFacultyClasses.filter((fc: any) =>
+        validIds.has(fc.faculty_profile_id),
+      );
+      let facultyClassesData = rawClasses.filter((fc: any) => {
+        if (fc.academic_year && selectedAcademicYear) {
+          if (normalizeAcademicYear(fc.academic_year) !== normalizeAcademicYear(selectedAcademicYear)) {
+            return false;
+          }
+        }
+        if (fc.semester && effectiveSelectedSemester) {
+          if (normalizeSemester(fc.semester) !== normalizeSemester(effectiveSelectedSemester)) {
+            return false;
+          }
+        }
+        return true;
+      });
+      if (facultyClassesData.length === 0 && rawClasses.length > 0) {
+        facultyClassesData = rawClasses;
+      }
+
+      const classProgressList = facultyClassesData.map((cls: any) => {
+        const classSubs = facultySubmissions.filter((s: any) => s.class_id === cls.id);
+        const validatedReqs = new Set<string>();
+        for (const s of classSubs) {
+          if (toRequirementStatus(s.status) === "validated") {
+            const code = matchRequirementCode(
+              s.requirement_code,
+              (s as any).requirement_id,
+              activeTemplateRows,
+            );
+            if (code) validatedReqs.add(code);
+          }
+        }
+        const validatedCount = reqsToCheck.filter((t) => validatedReqs.has(t.code)).length;
+        const totalRequired = reqsToCheck.length;
+        const isDone = totalRequired > 0 && validatedCount >= totalRequired;
+
+        return {
+          id: cls.id,
+          subject_code: cls.subject_code,
+          section_code: cls.section_code,
+          description: cls.description,
+          units: cls.units,
+          totalRequired,
+          validatedCount,
+          isDone,
+        };
+      });
+
+      const totalSubjects = classProgressList.length;
+      const doneSubjects = classProgressList.filter((c: any) => c.isDone).length;
 
       return {
-        id: cls.id,
-        subject_code: cls.subject_code,
-        section_code: cls.section_code,
-        description: cls.description,
-        units: cls.units,
-        totalRequired,
-        validatedCount,
-        isDone,
+        requirementStatus,
+        classProgress: classProgressList,
+        subjectProgress: {
+          totalSubjects,
+          doneSubjects,
+          allDone: totalSubjects > 0 && doneSubjects === totalSubjects,
+        },
       };
-    });
+    };
 
-    const totalSubjects = classProgressList.length;
-    const doneSubjects = classProgressList.filter((c) => c.isDone).length;
+    if (facultyIdsParam) {
+      const resultsByFacultyId: Record<string, ReturnType<typeof computeForFaculty>> = {};
+      for (const id of requestedIds) {
+        resultsByFacultyId[id] = computeForFaculty(id);
+      }
+
+      return NextResponse.json({
+        availableAcademicYears,
+        semesters: SEMESTER_OPTIONS,
+        availableSemesters,
+        termsByYear,
+        selectedAcademicYear,
+        selectedSemester: effectiveSelectedSemester,
+        currentAcademicYear: currentAcademicTerm?.academicYear ?? null,
+        currentSemester: currentAcademicTerm?.semester ?? null,
+        currentTermConfigured: Boolean(currentAcademicTerm),
+        requirementTemplates: activeTemplateRows,
+        resultsByFacultyId,
+      });
+    }
+
+    const singleResult = computeForFaculty(requestedIds[0]);
 
     return NextResponse.json({
       availableAcademicYears,
@@ -605,14 +621,10 @@ export async function GET(request: NextRequest) {
       currentAcademicYear: currentAcademicTerm?.academicYear ?? null,
       currentSemester: currentAcademicTerm?.semester ?? null,
       currentTermConfigured: Boolean(currentAcademicTerm),
-      requirementStatus,
+      requirementStatus: singleResult.requirementStatus,
       requirementTemplates: activeTemplateRows,
-      classProgress: classProgressList,
-      subjectProgress: {
-        totalSubjects,
-        doneSubjects,
-        allDone: totalSubjects > 0 && doneSubjects === totalSubjects,
-      },
+      classProgress: singleResult.classProgress,
+      subjectProgress: singleResult.subjectProgress,
     });
   } catch (error) {
     console.error(

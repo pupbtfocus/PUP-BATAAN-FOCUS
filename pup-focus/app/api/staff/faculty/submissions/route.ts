@@ -74,12 +74,26 @@ export async function GET(request: NextRequest) {
 
     const supabase = getServiceRoleClient();
 
-    // Get faculty profile ID. Accept either profiles.id or profiles.user_id
-    const { data: profileRow, error: profileError } = await supabase
-      .from("profiles")
-      .select("id")
-      .or(`id.eq.${facultyId},user_id.eq.${facultyId}`)
-      .maybeSingle();
+    const requestedAcademicYear = url.searchParams.get("academicYear")?.trim();
+    const requestedSemester = url.searchParams.get("semester")?.trim();
+
+    // Wave 1: Resolve faculty profile ID and active academic term in parallel
+    const [profileRes, activeTermRes] = await Promise.all([
+      supabase
+        .from("profiles")
+        .select("id")
+        .or(`id.eq.${facultyId},user_id.eq.${facultyId}`)
+        .maybeSingle(),
+      !requestedAcademicYear || !requestedSemester
+        ? supabase
+            .from("academic_terms")
+            .select("academic_year, semester, created_at")
+            .eq("status", "Current")
+            .maybeSingle()
+        : Promise.resolve({ data: null, error: null }),
+    ]);
+
+    const { data: profileRow, error: profileError } = profileRes;
 
     if (profileError || !profileRow?.id) {
       console.error(
@@ -97,17 +111,10 @@ export async function GET(request: NextRequest) {
 
     const facultyProfileId = profileRow.id;
 
-    const requestedAcademicYear = url.searchParams.get("academicYear")?.trim();
-    const requestedSemester = url.searchParams.get("semester")?.trim();
-
     let targetAcademicYear = requestedAcademicYear;
     let targetSemester = requestedSemester;
 
-    const { data: activeTermRow, error: termError } = await supabase
-      .from("academic_terms")
-      .select("academic_year, semester, created_at")
-      .eq("status", "Current")
-      .maybeSingle();
+    const { data: activeTermRow, error: termError } = activeTermRes;
 
     if (termError) {
       console.error(
@@ -126,13 +133,21 @@ export async function GET(request: NextRequest) {
     targetAcademicYear = targetAcademicYear || "2026-2027";
     targetSemester = targetSemester || "2nd Semester";
 
-    // Fetch target assignment IDs for this faculty & requested term
-    const { data: targetAssignments, error: targetAssignmentsError } = await supabase
-      .from("faculty_program_assignments")
-      .select("id")
-      .eq("faculty_profile_id", facultyProfileId)
-      .eq("academic_year", targetAcademicYear)
-      .ilike("term", `%${targetSemester}%`);
+    // Wave 2: Fetch target assignments and faculty classes in parallel
+    const [targetAssignmentsRes, allFacultyClassesRes] = await Promise.all([
+      supabase
+        .from("faculty_program_assignments")
+        .select("id")
+        .eq("faculty_profile_id", facultyProfileId)
+        .eq("academic_year", targetAcademicYear)
+        .ilike("term", `%${targetSemester}%`),
+      supabase
+        .from("faculty_classes")
+        .select("id, subject_code, description, units, section_code, academic_year, semester, academic_term_id, is_archived")
+        .eq("faculty_profile_id", facultyProfileId),
+    ]);
+
+    const { data: targetAssignments, error: targetAssignmentsError } = targetAssignmentsRes;
 
     if (targetAssignmentsError) {
       console.error(
@@ -203,40 +218,39 @@ export async function GET(request: NextRequest) {
     const docVersionsMap = new Map<string, Array<any>>();
     const reviewDecisionsMap = new Map<string, Array<any>>();
 
+    // Wave 3: Fetch document_versions and review_decisions in parallel
     if (submissionIds.length > 0) {
-      try {
-        const { data: docVersions } = await supabase
+      const [docVersionsRes, reviewsRes] = await Promise.all([
+        supabase
           .from("document_versions")
           .select("id, submission_id, version_number, storage_path, mime_type, size_bytes, created_at")
           .in("submission_id", submissionIds)
-          .order("version_number", { ascending: false });
+          .order("version_number", { ascending: false })
+          .then((r) => r, () => ({ data: null, error: null })),
+        supabase
+          .from("review_decisions")
+          .select("submission_id, decision, remarks, created_at")
+          .in("submission_id", submissionIds)
+          .order("created_at", { ascending: false }),
+      ]);
 
-        if (docVersions) {
-          for (const doc of docVersions) {
-            const list = docVersionsMap.get(doc.submission_id) || [];
-            list.push(doc);
-            docVersionsMap.set(doc.submission_id, list);
-          }
+      if (docVersionsRes.data) {
+        for (const doc of docVersionsRes.data) {
+          const list = docVersionsMap.get(doc.submission_id) || [];
+          list.push(doc);
+          docVersionsMap.set(doc.submission_id, list);
         }
-      } catch {
-        // document_versions table not available
       }
 
-      const { data: reviews, error: reviewsError } = await supabase
-        .from("review_decisions")
-        .select("submission_id, decision, remarks, created_at")
-        .in("submission_id", submissionIds)
-        .order("created_at", { ascending: false });
-
-      if (reviewsError) {
+      if (reviewsRes.error) {
         console.error(
           "Failed to fetch review_decisions in /api/admin/faculty/submissions:",
-          reviewsError,
+          reviewsRes.error,
         );
       }
 
-      if (reviews) {
-        for (const rev of reviews) {
+      if (reviewsRes.data) {
+        for (const rev of reviewsRes.data) {
           const list = reviewDecisionsMap.get(rev.submission_id) || [];
           list.push(rev);
           reviewDecisionsMap.set(rev.submission_id, list);
@@ -249,13 +263,8 @@ export async function GET(request: NextRequest) {
     let facultyClassesList: any[] = [];
 
     try {
-      const { data: allFacultyClasses, error: classesErr } = await supabase
-        .from("faculty_classes")
-        .select("id, subject_code, description, units, section_code, academic_year, semester, academic_term_id, is_archived")
-        .eq("faculty_profile_id", facultyProfileId);
-
-      let fetchedClasses: any[] | null = allFacultyClasses;
-      if (classesErr) {
+      let fetchedClasses: any[] | null = allFacultyClassesRes.data;
+      if (allFacultyClassesRes.error) {
         const { data: fallbackClasses } = await supabase
           .from("faculty_classes")
           .select("id, subject_code, description, units, section_code, academic_year, semester, academic_term_id")
