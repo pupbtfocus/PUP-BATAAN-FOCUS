@@ -615,92 +615,122 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    const faculty = await Promise.all(
-      (profiles ?? []).map(async (profile: any) => {
-        const authUser =
-          (profile?.user_id ? authUsersById.get(profile.user_id) : null) ??
-          (profile?.id ? authUsersById.get(profile.id) : null) ??
-          (profile?.email ? authUsersByEmail.get(profile.email.toLowerCase()) : null) ??
-          null;
-        const authUserMetadata = authUser?.user_metadata ?? {};
-        const lastSignInAt = authUser?.last_sign_in_at ?? null;
-        const metadata = authUserMetadata as Record<string, unknown>;
+    // Batch-sign profile images per storage bucket instead of N individual createSignedUrl calls
+    const pathsByBucket = new Map<string, Set<string>>();
+    for (const profile of profiles ?? []) {
+      const authUser =
+        (profile?.user_id ? authUsersById.get(profile.user_id) : null) ??
+        (profile?.id ? authUsersById.get(profile.id) : null) ??
+        (profile?.email ? authUsersByEmail.get(profile.email.toLowerCase()) : null) ??
+        null;
+      const metadata = (authUser?.user_metadata ?? {}) as Record<string, unknown>;
+      const bucket =
+        typeof metadata.profile_image_bucket === "string" &&
+        metadata.profile_image_bucket.trim()
+          ? metadata.profile_image_bucket.trim()
+          : FACULTY_PROFILE_IMAGE_BUCKET;
+      const path =
+        typeof metadata.profile_image_path === "string" &&
+        metadata.profile_image_path.trim()
+          ? metadata.profile_image_path.trim()
+          : null;
+      if (path) {
+        if (!pathsByBucket.has(bucket)) pathsByBucket.set(bucket, new Set());
+        pathsByBucket.get(bucket)!.add(path);
+      }
+    }
 
-        const firstName =
-          typeof metadata.first_name === "string" ? metadata.first_name.trim() : "";
-        const middleName =
-          typeof metadata.middle_name === "string" ? metadata.middle_name.trim() : "";
-        const lastName =
-          typeof metadata.last_name === "string" ? metadata.last_name.trim() : "";
-
-        const fullNameFromMetadata = buildFacultyFullName({
-          firstName,
-          middleName,
-          lastName,
-        });
-
-        // Resolve assigned program: 1) from faculty_program_assignments, 2) auth metadata
-        let resolvedProgram = programByProfileId.get(profile.id) ?? null;
-        if (!resolvedProgram && metadata.program_id) {
-          resolvedProgram =
-            programsLookup.get(String(metadata.program_id).toLowerCase()) ??
-            programsLookup.get(String(metadata.program_id).toUpperCase()) ??
-            null;
-        }
-        if (!resolvedProgram && metadata.program_code) {
-          resolvedProgram =
-            programsLookup.get(String(metadata.program_code).toUpperCase()) ??
-            null;
-        }
-
-        const profileImageBucket =
-          typeof metadata.profile_image_bucket === "string" &&
-          metadata.profile_image_bucket.trim()
-            ? metadata.profile_image_bucket.trim()
-            : FACULTY_PROFILE_IMAGE_BUCKET;
-        const profileImagePath =
-          typeof metadata.profile_image_path === "string" &&
-          metadata.profile_image_path.trim()
-            ? metadata.profile_image_path.trim()
-            : null;
-        const requirementStatus =
-          requirementStatusByProfileId.get(profile.id) ??
-          buildInitialRequirementStatus();
-
-        let profileImageUrl: string | null = null;
-
-        if (profileImagePath) {
-          const { data: signedImage, error: signedImageError } =
-            await supabase.storage
-              .from(profileImageBucket)
-              .createSignedUrl(profileImagePath, 60 * 60 * 24);
-
-          if (!signedImageError) {
-            profileImageUrl = signedImage.signedUrl;
+    const signedUrlMap = new Map<string, string>();
+    await Promise.all(
+      Array.from(pathsByBucket.entries()).map(async ([bucket, pathSet]) => {
+        const paths = Array.from(pathSet);
+        if (paths.length === 0) return;
+        const { data: signedBatch } = await supabase.storage
+          .from(bucket)
+          .createSignedUrls(paths, 60 * 60 * 24);
+        for (const item of signedBatch ?? []) {
+          if (item.path && item.signedUrl) {
+            signedUrlMap.set(`${bucket}:${item.path}`, item.signedUrl);
           }
         }
-
-        return {
-          id: profile.id,
-          user_id: profile.user_id ?? null,
-          fullName: fullNameFromMetadata || profile.full_name || "Unknown",
-          firstName: firstName || "",
-          middleName: middleName || "",
-          lastName: lastName || "",
-          first_name: firstName || "",
-          middle_name: middleName || "",
-          last_name: lastName || "",
-          email: profile.email || "Unknown",
-          profileImageUrl,
-          program: resolvedProgram,
-          is_active: (metadata.is_active as boolean | undefined) ?? true,
-          created_at: profile.created_at || new Date().toISOString(),
-          last_sign_in_at: lastSignInAt,
-          lastLoginAt: lastSignInAt,
-          requirementStatus,
-        };
       }),
     );
+
+    const faculty = (profiles ?? []).map((profile: any) => {
+      const authUser =
+        (profile?.user_id ? authUsersById.get(profile.user_id) : null) ??
+        (profile?.id ? authUsersById.get(profile.id) : null) ??
+        (profile?.email ? authUsersByEmail.get(profile.email.toLowerCase()) : null) ??
+        null;
+      const authUserMetadata = authUser?.user_metadata ?? {};
+      const lastSignInAt = authUser?.last_sign_in_at ?? null;
+      const metadata = authUserMetadata as Record<string, unknown>;
+
+      const firstName =
+        typeof metadata.first_name === "string" ? metadata.first_name.trim() : "";
+      const middleName =
+        typeof metadata.middle_name === "string" ? metadata.middle_name.trim() : "";
+      const lastName =
+        typeof metadata.last_name === "string" ? metadata.last_name.trim() : "";
+
+      const fullNameFromMetadata = buildFacultyFullName({
+        firstName,
+        middleName,
+        lastName,
+      });
+
+      // Resolve assigned program: 1) from faculty_program_assignments, 2) auth metadata
+      let resolvedProgram = programByProfileId.get(profile.id) ?? null;
+      if (!resolvedProgram && metadata.program_id) {
+        resolvedProgram =
+          programsLookup.get(String(metadata.program_id).toLowerCase()) ??
+          programsLookup.get(String(metadata.program_id).toUpperCase()) ??
+          null;
+      }
+      if (!resolvedProgram && metadata.program_code) {
+        resolvedProgram =
+          programsLookup.get(String(metadata.program_code).toUpperCase()) ??
+          null;
+      }
+
+      const profileImageBucket =
+        typeof metadata.profile_image_bucket === "string" &&
+        metadata.profile_image_bucket.trim()
+          ? metadata.profile_image_bucket.trim()
+          : FACULTY_PROFILE_IMAGE_BUCKET;
+      const profileImagePath =
+        typeof metadata.profile_image_path === "string" &&
+        metadata.profile_image_path.trim()
+          ? metadata.profile_image_path.trim()
+          : null;
+      const requirementStatus =
+        requirementStatusByProfileId.get(profile.id) ??
+        buildInitialRequirementStatus();
+
+      const profileImageUrl = profileImagePath
+        ? signedUrlMap.get(`${profileImageBucket}:${profileImagePath}`) ?? null
+        : null;
+
+      return {
+        id: profile.id,
+        user_id: profile.user_id ?? null,
+        fullName: fullNameFromMetadata || profile.full_name || "Unknown",
+        firstName: firstName || "",
+        middleName: middleName || "",
+        lastName: lastName || "",
+        first_name: firstName || "",
+        middle_name: middleName || "",
+        last_name: lastName || "",
+        email: profile.email || "Unknown",
+        profileImageUrl,
+        program: resolvedProgram,
+        is_active: (metadata.is_active as boolean | undefined) ?? true,
+        created_at: profile.created_at || new Date().toISOString(),
+        last_sign_in_at: lastSignInAt,
+        lastLoginAt: lastSignInAt,
+        requirementStatus,
+      };
+    });
 
     faculty.sort((a: any, b: any) => a.fullName.localeCompare(b.fullName));
 

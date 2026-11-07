@@ -7,13 +7,30 @@ import {
   SubmissionWindowSkeleton,
   ComplianceListSkeleton,
 } from "@/features/submissions/components/submission-skeletons";
+import type { AuthUser } from "@/types/global";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
+async function FacultySubmitStream({ user }: { user: AuthUser | null }) {
+  const initialData = user ? await getFacultyInitialData(user.id) : null;
+
+  return (
+    <FacultySubmissionPanel
+      facultyName={user?.fullName ?? null}
+      facultyEmail={user?.email ?? null}
+      facultyAvatarUrl={initialData?.avatarUrl ?? null}
+      initialFirstName={user?.firstName ?? null}
+      initialMiddleName={user?.middleName ?? null}
+      initialLastName={user?.lastName ?? null}
+      initialData={initialData}
+      initialView="submit"
+    />
+  );
+}
+
 export default async function FacultySubmitPage() {
   const user = await getCurrentUser();
-  const initialData = user ? await getFacultyInitialData(user.id) : null;
 
   return (
     <AppShell title="Submit Requirement" nav={[]} fullBleed>
@@ -25,16 +42,7 @@ export default async function FacultySubmitPage() {
           </div>
         }
       >
-        <FacultySubmissionPanel
-          facultyName={user?.fullName ?? null}
-          facultyEmail={user?.email ?? null}
-          facultyAvatarUrl={initialData?.avatarUrl ?? null}
-          initialFirstName={user?.firstName ?? null}
-          initialMiddleName={user?.middleName ?? null}
-          initialLastName={user?.lastName ?? null}
-          initialData={initialData}
-          initialView="submit"
-        />
+        <FacultySubmitStream user={user} />
       </Suspense>
     </AppShell>
   );

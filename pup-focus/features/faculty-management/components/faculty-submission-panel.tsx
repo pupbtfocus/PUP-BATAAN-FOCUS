@@ -1184,10 +1184,12 @@ function FacultySubmissionPanelContent({
     void fetchStatuses(undefined, undefined, undefined, { silent: true });
   }, [refetchSubmissionWindow]);
   useEffect(() => {
-    void fetchHistory();
     if (!initialData) {
+      void fetchHistory();
       void fetchStatuses();
       void refetchSubmissionWindow();
+    } else {
+      void fetchHistory({ silent: true });
     }
   }, [initialData, refetchSubmissionWindow]);
   // Deep-linking, view routing, and auto-scrolling with highlight
@@ -1312,6 +1314,9 @@ function FacultySubmissionPanelContent({
     return () => window.removeEventListener("popstate", handlePopState);
   }, []);
   useEffect(() => {
+    if (initialData?.requirementTemplates && initialData.requirementTemplates.length > 0) {
+      return;
+    }
     fetch("/api/staff/requirement-templates?active=true", { cache: "no-store" })
       .then((res) => res.json())
       .then((data) => {
@@ -1338,8 +1343,13 @@ function FacultySubmissionPanelContent({
         }
       })
       .catch(() => {});
-  }, []);
+  }, [initialData?.requirementTemplates]);
+  const hasHydratedInitialStatusesRef = useRef(Boolean(initialData?.requirementStatuses));
   useEffect(() => {
+    if (hasHydratedInitialStatusesRef.current) {
+      hasHydratedInitialStatusesRef.current = false;
+      return;
+    }
     if (submissionWindow?.academicYear && submissionWindow?.semester) {
       void fetchStatuses(
         submissionWindow.academicYear,

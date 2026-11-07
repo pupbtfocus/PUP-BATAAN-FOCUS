@@ -203,13 +203,42 @@ export async function getFacultyInitialData(
 ): Promise<FacultyInitialData> {
   const supabase = getServiceRoleClient();
 
-  // 1. Resolve Active Academic Term strictly (only one can be designated active)
-  const { data: dbCurrentTerm } = await supabase
-    .from("academic_terms")
-    .select("id, academic_year, semester")
-    .eq("status", "Current")
-    .maybeSingle();
+  // Wave 1: Execute all independent initial lookups in parallel
+  const [
+    currentTermRes,
+    templatesRes,
+    profileRes,
+    authUserRes,
+    extRes,
+    initialPersonalDeadline,
+  ] = await Promise.all([
+    supabase
+      .from("academic_terms")
+      .select("id, academic_year, semester")
+      .eq("status", "Current")
+      .maybeSingle(),
+    supabase
+      .from("requirement_templates")
+      .select("code, title, is_mandatory, max_size_mb, allowed_formats, is_active")
+      .eq("is_active", true)
+      .order("is_mandatory", { ascending: false })
+      .order("created_at", { ascending: true }),
+    supabase
+      .from("profiles")
+      .select("id, full_name")
+      .eq("user_id", authUserId)
+      .maybeSingle(),
+    supabase.auth.admin.getUserById(authUserId),
+    supabase
+      .from("extension_requests")
+      .select("*")
+      .eq("faculty_user_id", authUserId)
+      .eq("status", "approved")
+      .order("created_at", { ascending: false }),
+    getFacultyPersonalDeadline(supabase, authUserId),
+  ]);
 
+  const dbCurrentTerm = currentTermRes.data;
   const activeAcademicYear =
     requestedAcademicYear ||
     dbCurrentTerm?.academic_year ||
@@ -225,18 +254,95 @@ export async function getFacultyInitialData(
   const normActiveYear = activeAcademicYear ? normalizeAcademicYear(activeAcademicYear) : "";
   const normActiveSem = activeSemester ? normalizeSemester(activeSemester) : "";
 
-  // 2. Submission Window strictly scoped to the active Academic Term
-  let windowConfig = null;
-  if (activeAcademicYear && activeSemester) {
-    try {
-      windowConfig = await getSubmissionWindow(supabase, {
-        academicYear: activeAcademicYear,
-        semester: activeSemester,
-      });
-    } catch (err) {
-      logger.warn("faculty_data_submission_window_failed", { error: String(err) });
-    }
+  // Requirement Templates
+  let activeTemplates: RequirementTemplateData[] = DEFAULT_REQUIREMENTS.map((code) => ({
+    code,
+    title: (REQUIREMENT_LABEL as Record<string, string>)[code] || code,
+    is_mandatory: true,
+    max_size_mb: 10,
+    allowed_formats: ["PDF", "DOCX", "XLSX"],
+  }));
+
+  if (templatesRes.data && templatesRes.data.length > 0) {
+    activeTemplates = templatesRes.data.map((t) => ({
+      code: t.code,
+      title: t.title,
+      is_mandatory: t.is_mandatory,
+      max_size_mb: t.max_size_mb ? Number(t.max_size_mb) : 10,
+      allowed_formats:
+        Array.isArray(t.allowed_formats) && t.allowed_formats.length > 0
+          ? t.allowed_formats
+          : ["PDF", "DOCX", "XLSX", "PNG", "JPG", "ZIP"],
+    }));
   }
+
+  // Faculty Profile IDs & Avatar Metadata
+  const facultyIds = new Set<string>([authUserId]);
+  let facultyProfileId: string | null = null;
+  let avatarUrl: string | null = null;
+
+  if (profileRes.data?.id) {
+    facultyProfileId = profileRes.data.id;
+    facultyIds.add(profileRes.data.id);
+  }
+
+  const meta = (authUserRes.data?.user?.user_metadata || {}) as Record<string, unknown>;
+  const profileImagePath = (meta.profile_image_path as string) || null;
+  const profileImageBucket =
+    (meta.profile_image_bucket as string) || FACULTY_PROFILE_IMAGE_BUCKET;
+
+  if (!profileImagePath && (meta.avatar_url || meta.profile_image_url)) {
+    avatarUrl = (meta.avatar_url || meta.profile_image_url) as string;
+  }
+
+  const facultyIdList = Array.from(facultyIds);
+  let approvedExtensions: any[] = Array.isArray(extRes.data) ? extRes.data : [];
+
+  // Wave 2: Parallelize window evaluation, avatar signing, program assignments, submissions, and extension notifications fallback
+  const [
+    windowConfig,
+    signedAvatarRes,
+    assignmentsRes,
+    submissionsRes,
+    notifsRes,
+  ] = await Promise.all([
+    activeAcademicYear && activeSemester
+      ? getSubmissionWindow(supabase, {
+          academicYear: activeAcademicYear,
+          semester: activeSemester,
+        }).catch((err) => {
+          logger.warn("faculty_data_submission_window_failed", { error: String(err) });
+          return null;
+        })
+      : Promise.resolve(null),
+    profileImagePath
+      ? supabase.storage.from(profileImageBucket).createSignedUrl(profileImagePath, 60 * 60)
+      : Promise.resolve({ data: null }),
+    supabase
+      .from("faculty_program_assignments")
+      .select("id, academic_year, term, program_id, programs(id, code, name)")
+      .in("faculty_profile_id", facultyIdList)
+      .order("created_at", { ascending: false }),
+    supabase
+      .from("submissions")
+      .select("*")
+      .in("faculty_profile_id", facultyIdList)
+      .order("submitted_at", { ascending: false, nullsFirst: false }),
+    approvedExtensions.length === 0
+      ? supabase
+          .from("notifications")
+          .select("*")
+          .eq("type", "EXTENSION_REQUEST")
+          .eq("user_id", authUserId)
+          .order("created_at", { ascending: false })
+          .limit(10)
+      : Promise.resolve({ data: null }),
+  ]);
+
+  if (signedAvatarRes?.data?.signedUrl) {
+    avatarUrl = signedAvatarRes.data.signedUrl;
+  }
+
   const evaluatedWindow = evaluateSubmissionWindow(
     windowConfig,
     undefined,
@@ -257,104 +363,33 @@ export async function getFacultyInitialData(
     currentTimeLabel: format24HourTo12Hour(evaluatedWindow.currentTime),
   };
 
-  // 3. Requirement Templates
-  let activeTemplates: RequirementTemplateData[] = DEFAULT_REQUIREMENTS.map((code) => ({
-    code,
-    title: (REQUIREMENT_LABEL as Record<string, string>)[code] || code,
-    is_mandatory: true,
-    max_size_mb: 10,
-    allowed_formats: ["PDF", "DOCX", "XLSX"],
-  }));
-
-  try {
-    const { data: dbTemplates } = await supabase
-      .from("requirement_templates")
-      .select("code, title, is_mandatory, max_size_mb, allowed_formats, is_active")
-      .eq("is_active", true)
-      .order("is_mandatory", { ascending: false })
-      .order("created_at", { ascending: true });
-
-    if (dbTemplates && dbTemplates.length > 0) {
-      activeTemplates = dbTemplates.map((t) => ({
-        code: t.code,
-        title: t.title,
-        is_mandatory: t.is_mandatory,
-        max_size_mb: t.max_size_mb ? Number(t.max_size_mb) : 10,
-        allowed_formats: Array.isArray(t.allowed_formats) && t.allowed_formats.length > 0 ? t.allowed_formats : ["PDF", "DOCX", "XLSX", "PNG", "JPG", "ZIP"],
-      }));
-    }
-  } catch {}
-
-  // 4. Faculty Profile IDs & Avatar URL
-  const facultyIds = new Set<string>([authUserId]);
-  let facultyProfileId: string | null = null;
-  let avatarUrl: string | null = null;
-  try {
-    const { data: profileRow } = await supabase
-      .from("profiles")
-      .select("id, full_name")
-      .eq("user_id", authUserId)
-      .maybeSingle();
-
-    if (profileRow?.id) {
-      facultyProfileId = profileRow.id;
-      facultyIds.add(profileRow.id);
-    }
-
-    const { data: authUserResult } = await supabase.auth.admin.getUserById(authUserId);
-    const meta = (authUserResult?.user?.user_metadata || {}) as Record<string, unknown>;
-    const profileImagePath = (meta.profile_image_path as string) || null;
-    const profileImageBucket =
-      (meta.profile_image_bucket as string) || FACULTY_PROFILE_IMAGE_BUCKET;
-
-    if (profileImagePath) {
-      const { data: signed } = await supabase.storage
-        .from(profileImageBucket)
-        .createSignedUrl(profileImagePath, 60 * 60);
-      if (signed?.signedUrl) {
-        avatarUrl = signed.signedUrl;
-      }
-    } else if (meta.avatar_url || meta.profile_image_url) {
-      avatarUrl = (meta.avatar_url || meta.profile_image_url) as string;
-    }
-  } catch {}
-
-  const facultyIdList = Array.from(facultyIds);
-
-  // 5. Program Assignments
+  // Program Assignments
   let assignmentRows: Array<{ id: string; academic_year?: string; term?: string }> = [];
   let programInfo: { id: string; code: string; name: string } | null = null;
   let departmentName: string | null = null;
-  try {
-    const { data } = await supabase
-      .from("faculty_program_assignments")
-      .select("id, academic_year, term, program_id, programs(id, code, name)")
-      .in("faculty_profile_id", facultyIdList)
-      .order("created_at", { ascending: false });
 
-    if (Array.isArray(data)) {
-      assignmentRows = data;
-      for (const row of data) {
-        const p = (row as any).programs;
-        const prog = Array.isArray(p) ? p[0] : p;
-        if (prog?.code && prog?.name) {
-          const expandedName =
-            prog.code === "BSIT" && prog.name === "BS Information Technology"
-              ? "Bachelor of Science in Information Technology"
-              : prog.name.startsWith("BS ")
-              ? prog.name.replace(/^BS\s+/i, "Bachelor of Science in ")
-              : prog.name;
-          programInfo = {
-            id: prog.id,
-            code: prog.code,
-            name: expandedName,
-          };
-          departmentName = `${prog.code} — ${expandedName}`;
-          break;
-        }
+  if (Array.isArray(assignmentsRes.data)) {
+    assignmentRows = assignmentsRes.data;
+    for (const row of assignmentsRes.data) {
+      const p = (row as any).programs;
+      const prog = Array.isArray(p) ? p[0] : p;
+      if (prog?.code && prog?.name) {
+        const expandedName =
+          prog.code === "BSIT" && prog.name === "BS Information Technology"
+            ? "Bachelor of Science in Information Technology"
+            : prog.name.startsWith("BS ")
+            ? prog.name.replace(/^BS\s+/i, "Bachelor of Science in ")
+            : prog.name;
+        programInfo = {
+          id: prog.id,
+          code: prog.code,
+          name: expandedName,
+        };
+        departmentName = `${prog.code} — ${expandedName}`;
+        break;
       }
     }
-  } catch {}
+  }
 
   let currentTermAssignments = assignmentRows.filter(
     (row) =>
@@ -362,34 +397,7 @@ export async function getFacultyInitialData(
       normalizeSemester(row.term) === normActiveSem,
   );
 
-  // Onboarding check: Ensure faculty has an active assignment for the active Academic Term
-  const targetProfileId = facultyProfileId || facultyIdList[0];
-  if (activeAcademicYear && activeSemester && currentTermAssignments.length === 0 && programInfo?.id && targetProfileId) {
-    try {
-      const { data: newAssignment } = await supabase
-        .from("faculty_program_assignments")
-        .upsert(
-          {
-            faculty_profile_id: targetProfileId,
-            program_id: programInfo.id,
-            academic_year: activeAcademicYear,
-            term: activeSemester,
-          },
-          { onConflict: "faculty_profile_id,program_id,academic_year,term" },
-        )
-        .select("id, academic_year, term")
-        .single();
-
-      if (newAssignment) {
-        currentTermAssignments = [newAssignment];
-        assignmentRows.push(newAssignment);
-      }
-    } catch {}
-  }
-
-  const currentAssignmentIds = currentTermAssignments.map((row) => row.id);
-
-  // 6. Submissions
+  // Submissions
   let rawSubmissions: Array<{
     id: string;
     requirement_code?: string | null;
@@ -409,111 +417,103 @@ export async function getFacultyInitialData(
     is_archived?: boolean | null;
   }> = [];
 
-  try {
-    const { data, error } = await supabase
-      .from("submissions")
-      .select("*")
-      .in("faculty_profile_id", facultyIdList)
-      .order("submitted_at", { ascending: false, nullsFirst: false });
+  if (!submissionsRes.error && submissionsRes.data) {
+    rawSubmissions = (submissionsRes.data as any[]).filter((s) => s.is_archived !== true);
+  }
 
-    if (!error && data) {
-      rawSubmissions = (data as any[]).filter((s) => s.is_archived !== true);
+  if (approvedExtensions.length === 0 && notifsRes.data) {
+    for (const n of notifsRes.data) {
+      try {
+        const parsed = JSON.parse(n.message);
+        if (parsed.status === "approved") {
+          approvedExtensions.push(parsed);
+        }
+      } catch {}
     }
-  } catch {}
+  }
 
   const submissionIds = rawSubmissions.map((s) => s.id);
+  const targetProfileId = facultyProfileId || facultyIdList[0];
+  const needsOnboardingUpsert = Boolean(
+    activeAcademicYear &&
+      activeSemester &&
+      currentTermAssignments.length === 0 &&
+      programInfo?.id &&
+      targetProfileId,
+  );
+
+  // Wave 3: Parallelize document_versions, review_decisions, and onboarding assignment upsert
+  const [docVersionsRes, decisionsRes, newAssignmentRes] = await Promise.all([
+    submissionIds.length > 0
+      ? supabase
+          .from("document_versions")
+          .select("submission_id, storage_path, mime_type")
+          .in("submission_id", submissionIds)
+          .order("version_number", { ascending: false })
+      : Promise.resolve({ data: null }),
+    submissionIds.length > 0
+      ? supabase
+          .from("review_decisions")
+          .select("submission_id, decision, remarks, created_at")
+          .in("submission_id", submissionIds)
+          .order("created_at", { ascending: false })
+      : Promise.resolve({ data: null }),
+    needsOnboardingUpsert
+      ? supabase
+          .from("faculty_program_assignments")
+          .upsert(
+            {
+              faculty_profile_id: targetProfileId,
+              program_id: programInfo!.id,
+              academic_year: activeAcademicYear,
+              term: activeSemester,
+            },
+            { onConflict: "faculty_profile_id,program_id,academic_year,term" },
+          )
+          .select("id, academic_year, term")
+          .single()
+      : Promise.resolve({ data: null }),
+  ]);
+
+  if (newAssignmentRes.data) {
+    currentTermAssignments = [newAssignmentRes.data];
+    assignmentRows.push(newAssignmentRes.data);
+  }
+
+  const currentAssignmentIds = currentTermAssignments.map((row) => row.id);
 
   const docVersionsMap = new Map<string, { storage_path?: string; mime_type?: string }>();
-  if (submissionIds.length > 0) {
-    try {
-      const { data: docVersions } = await supabase
-        .from("document_versions")
-        .select("submission_id, storage_path, mime_type")
-        .in("submission_id", submissionIds)
-        .order("version_number", { ascending: false });
-
-      if (docVersions) {
-        for (const doc of docVersions) {
-          if (!docVersionsMap.has(doc.submission_id)) {
-            docVersionsMap.set(doc.submission_id, {
-              storage_path: doc.storage_path,
-              mime_type: doc.mime_type,
-            });
-          }
-        }
+  if (docVersionsRes.data) {
+    for (const doc of docVersionsRes.data) {
+      if (!docVersionsMap.has(doc.submission_id)) {
+        docVersionsMap.set(doc.submission_id, {
+          storage_path: doc.storage_path,
+          mime_type: doc.mime_type,
+        });
       }
-    } catch {}
-  }
-
-  // 6.1 Query approved extension requests for this faculty user
-  let approvedExtensions: any[] = [];
-  try {
-    const { data: extData } = await supabase
-      .from("extension_requests")
-      .select("*")
-      .eq("faculty_user_id", authUserId)
-      .eq("status", "approved")
-      .order("created_at", { ascending: false });
-
-    if (extData && Array.isArray(extData)) {
-      approvedExtensions = extData;
     }
-  } catch {}
-
-  if (approvedExtensions.length === 0) {
-    try {
-      const { data: notifs } = await supabase
-        .from("notifications")
-        .select("*")
-        .eq("type", "EXTENSION_REQUEST")
-        .eq("user_id", authUserId)
-        .order("created_at", { ascending: false })
-        .limit(10);
-
-      if (notifs) {
-        for (const n of notifs) {
-          try {
-            const parsed = JSON.parse(n.message);
-            if (parsed.status === "approved") {
-              approvedExtensions.push(parsed);
-            }
-          } catch {}
-        }
-      }
-    } catch {}
   }
 
-  // 7. Review Decisions
   const reviewDecisionsMap = new Map<
     string,
     Array<{ decision: "validated" | "rejected"; remarks?: string | null; created_at?: string | null }>
   >();
 
-  if (submissionIds.length > 0) {
-    try {
-      const { data: decisions } = await supabase
-        .from("review_decisions")
-        .select("submission_id, decision, remarks, created_at")
-        .in("submission_id", submissionIds)
-        .order("created_at", { ascending: false });
-
-      if (decisions) {
-        for (const d of decisions) {
-          const list = reviewDecisionsMap.get(d.submission_id) || [];
-          list.push({
-            decision: d.decision as "validated" | "rejected",
-            remarks: d.remarks,
-            created_at: d.created_at,
-          });
-          reviewDecisionsMap.set(d.submission_id, list);
-        }
-      }
-    } catch {}
+  if (decisionsRes.data) {
+    for (const d of decisionsRes.data) {
+      const list = reviewDecisionsMap.get(d.submission_id) || [];
+      list.push({
+        decision: d.decision as "validated" | "rejected",
+        remarks: d.remarks,
+        created_at: d.created_at,
+      });
+      reviewDecisionsMap.set(d.submission_id, list);
+    }
   }
 
   // 8. Map Active Term Statuses using Hard Deadline & Status Calculation rules
   const nowMs = Date.now();
-  let personalDeadline = await getFacultyPersonalDeadline(supabase, authUserId);
+  let personalDeadline = initialPersonalDeadline;
 
   if (!personalDeadline && rawSubmissions.length > 0) {
     const futurePendingSubs = rawSubmissions.filter((s) => {

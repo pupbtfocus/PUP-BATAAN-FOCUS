@@ -4,10 +4,27 @@ import { FacultySubmissionPanel } from "@/features/faculty-management/components
 import { getCurrentUser } from "@/lib/auth/session";
 import { getFacultyInitialData } from "@/features/submissions/services/faculty-data.service";
 import { SubmissionHistorySkeleton } from "@/features/submissions/components/submission-skeletons";
+import type { AuthUser } from "@/types/global";
+
+async function FacultyHistoryStream({ user }: { user: AuthUser | null }) {
+  const initialData = user ? await getFacultyInitialData(user.id) : null;
+
+  return (
+    <FacultySubmissionPanel
+      facultyName={user?.fullName ?? null}
+      facultyEmail={user?.email ?? null}
+      facultyAvatarUrl={initialData?.avatarUrl ?? null}
+      initialFirstName={user?.firstName ?? null}
+      initialMiddleName={user?.middleName ?? null}
+      initialLastName={user?.lastName ?? null}
+      initialData={initialData}
+      initialView="history"
+    />
+  );
+}
 
 export default async function FacultyHistoryPage() {
   const user = await getCurrentUser();
-  const initialData = user ? await getFacultyInitialData(user.id) : null;
 
   return (
     <AppShell title="Validation History" nav={[]} fullBleed>
@@ -18,16 +35,7 @@ export default async function FacultyHistoryPage() {
           </div>
         }
       >
-        <FacultySubmissionPanel
-          facultyName={user?.fullName ?? null}
-          facultyEmail={user?.email ?? null}
-          facultyAvatarUrl={initialData?.avatarUrl ?? null}
-          initialFirstName={user?.firstName ?? null}
-          initialMiddleName={user?.middleName ?? null}
-          initialLastName={user?.lastName ?? null}
-          initialData={initialData}
-          initialView="history"
-        />
+        <FacultyHistoryStream user={user} />
       </Suspense>
     </AppShell>
   );

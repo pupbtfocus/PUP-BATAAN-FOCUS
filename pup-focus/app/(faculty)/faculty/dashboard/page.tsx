@@ -10,6 +10,7 @@ import {
   DashboardMetricsSkeleton,
   ComplianceListSkeleton,
 } from "@/features/submissions/components/submission-skeletons";
+import type { AuthUser } from "@/types/global";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -26,10 +27,34 @@ const VALID_PANEL_VIEWS = [
   "settings",
 ] as const;
 
-export default async function FacultyDashboardPage(props: PageProps) {
-  const user = await getCurrentUser();
+async function FacultyDashboardStream({
+  user,
+  initialView,
+}: {
+  user: AuthUser | null;
+  initialView: PanelView;
+}) {
   const initialData = user ? await getFacultyInitialData(user.id) : null;
-  const searchParams = props.searchParams ? await props.searchParams : {};
+
+  return (
+    <FacultySubmissionPanel
+      facultyName={user?.fullName ?? null}
+      facultyEmail={user?.email ?? null}
+      facultyAvatarUrl={initialData?.avatarUrl ?? null}
+      initialFirstName={user?.firstName ?? null}
+      initialMiddleName={user?.middleName ?? null}
+      initialLastName={user?.lastName ?? null}
+      initialData={initialData}
+      initialView={initialView}
+    />
+  );
+}
+
+export default async function FacultyDashboardPage(props: PageProps) {
+  const [user, searchParams] = await Promise.all([
+    getCurrentUser(),
+    props.searchParams ? props.searchParams : Promise.resolve({} as Record<string, string | string[] | undefined>),
+  ]);
   const viewParam =
     typeof searchParams.view === "string" ? searchParams.view : undefined;
   const historyParam = searchParams.history === "true";
@@ -59,16 +84,7 @@ export default async function FacultyDashboardPage(props: PageProps) {
           </div>
         }
       >
-        <FacultySubmissionPanel
-          facultyName={user?.fullName ?? null}
-          facultyEmail={user?.email ?? null}
-          facultyAvatarUrl={initialData?.avatarUrl ?? null}
-          initialFirstName={user?.firstName ?? null}
-          initialMiddleName={user?.middleName ?? null}
-          initialLastName={user?.lastName ?? null}
-          initialData={initialData}
-          initialView={initialView}
-        />
+        <FacultyDashboardStream user={user} initialView={initialView} />
       </Suspense>
     </AppShell>
   );
