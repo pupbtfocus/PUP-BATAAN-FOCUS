@@ -46,13 +46,26 @@ function shouldBroadcastApiMutation(urlStr: string, method: string): boolean {
     return false;
   }
   if (
-    urlStr.includes("/api/auth/session") ||
-    urlStr.includes("/api/auth/login-lookup") ||
+    urlStr.includes("/api/auth/") ||
     urlStr.includes("/api/faculty/submissions/upload-url")
   ) {
     return false;
   }
   return true;
+}
+
+export function stopRealtimeSync() {
+  listeners.clear();
+  pendingBroadcastPayloads = [];
+  if (activeSupabaseChannel) {
+    try {
+      void activeSupabaseChannel.unsubscribe?.();
+    } catch {
+      // Ignore
+    }
+    activeSupabaseChannel = null;
+    isSupabaseSubscribed = false;
+  }
 }
 
 function installFetchMutationInterceptor() {

@@ -1,21 +1,21 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { cn } from "@/utils/cn";
-import { createClient } from "@/lib/supabase/client";
+import { createClient, clearBrowserSupabaseSession } from "@/lib/supabase/client";
 import { resetDashboardNavigationState } from "@/config/routes";
+import { stopRealtimeSync } from "@/lib/realtime";
 import { LogOut, Xmark } from "iconoir-react";
 import { AppIcon } from "@/components/ui/app-icon";
 
 export function LogoutButton({ className }: { className?: string }) {
-  const router = useRouter();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   async function handleLogout() {
     setIsLoggingOut(true);
 
+    stopRealtimeSync();
     resetDashboardNavigationState();
 
     try {
@@ -24,11 +24,15 @@ export function LogoutButton({ className }: { className?: string }) {
       // Ignore
     }
 
-    const supabase = createClient();
-    await supabase.auth.signOut();
+    try {
+      const supabase = createClient();
+      await supabase.auth.signOut();
+    } catch {
+      // Ignore
+    }
 
-    router.replace("/");
-    router.refresh();
+    clearBrowserSupabaseSession();
+    window.location.href = "/";
   }
 
   return (

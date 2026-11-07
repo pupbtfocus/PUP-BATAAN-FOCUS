@@ -549,10 +549,10 @@ export function SuperAdminDashboard({
       const supabase = createClient();
       const { data: sessionData } = await supabase.auth.getSession();
       const token = sessionData?.session?.access_token;
-      const headers: Record<string, string> = {};
-      if (token) {
-        headers["Authorization"] = `Bearer ${token}`;
-      }
+      if (!token) return;
+      const headers: Record<string, string> = {
+        Authorization: `Bearer ${token}`,
+      };
 
       const response = await fetch(`/api/staff/faculty/list?_t=${Date.now()}`, {
         cache: "no-store",

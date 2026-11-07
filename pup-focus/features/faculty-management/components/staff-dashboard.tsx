@@ -411,6 +411,10 @@ export function AdminFacultyDashboard({
 
   async function loadFacultyFromDatabase(options?: { silent?: boolean; isRetry?: boolean }) {
     try {
+      const supabase = createClient();
+      const { data: sessionData } = await supabase.auth.getSession();
+      if (!sessionData?.session) return;
+
       if (!options?.silent) {
         setIsLoading(true);
       }

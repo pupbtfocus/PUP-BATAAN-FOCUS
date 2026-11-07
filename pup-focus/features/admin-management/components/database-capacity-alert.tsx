@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { Archive, Database, HardDrive, NavArrowRight, WarningTriangle, Xmark } from "iconoir-react";
 import { AppIcon } from "@/components/ui/app-icon";
 import { useRealtimeSync } from "@/lib/realtime";
+import { createClient } from "@/lib/supabase/client";
 
 export interface DbStatusData {
   detectedTier?: "free" | "pro";
@@ -58,6 +59,10 @@ export function DatabaseCapacityAlert({
   const fetchDbStatus = useCallback(async () => {
     if (overrideStatus) return;
     try {
+      const supabase = createClient();
+      const { data: sessionData } = await supabase.auth.getSession();
+      if (!sessionData?.session) return;
+
       const res = await fetch(`/api/admin/db-status?_t=${Date.now()}`, {
         cache: "no-store",
       });
