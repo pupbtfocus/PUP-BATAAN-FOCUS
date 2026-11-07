@@ -15,12 +15,64 @@ try {
   setGlobalDispatcher(agent);
 } catch {}
 
+const cspHeader = [
+  "default-src 'self'",
+  "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://challenges.cloudflare.com",
+  "style-src 'self' 'unsafe-inline'",
+  "img-src 'self' blob: data: https://*.supabase.co",
+  "font-src 'self' data:",
+  "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://challenges.cloudflare.com",
+  "frame-src 'self' https://challenges.cloudflare.com",
+  "worker-src 'self' blob:",
+  "object-src 'none'",
+  "base-uri 'self'",
+  "form-action 'self'",
+  "frame-ancestors 'none'",
+  "upgrade-insecure-requests",
+].join("; ");
+
+const securityHeaders = [
+  {
+    key: "Content-Security-Policy",
+    value: cspHeader,
+  },
+  {
+    key: "X-Content-Type-Options",
+    value: "nosniff",
+  },
+  {
+    key: "X-Frame-Options",
+    value: "DENY",
+  },
+  {
+    key: "Referrer-Policy",
+    value: "strict-origin-when-cross-origin",
+  },
+  {
+    key: "Strict-Transport-Security",
+    value: "max-age=63072000; includeSubDomains; preload",
+  },
+  {
+    key: "Permissions-Policy",
+    value: "camera=(), microphone=(), geolocation=(), browsing-topics=()",
+  },
+];
+
 const nextConfig: NextConfig = {
+  poweredByHeader: false,
   distDir: process.env.NEXT_DIST_DIR || ".next",
   // Provide an explicit (empty) turbopack config so Next.js
   // doesn't error when a custom `webpack` function is present.
   turbopack: {},
   outputFileTracingRoot: __dirname,
+  async headers() {
+    return [
+      {
+        source: "/(.*)",
+        headers: securityHeaders,
+      },
+    ];
+  },
   images: {
     remotePatterns: [
       {
