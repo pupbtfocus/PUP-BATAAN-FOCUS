@@ -21,7 +21,7 @@ const cspHeader = [
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' blob: data: https://*.supabase.co",
   "font-src 'self' data:",
-  "connect-src 'self' data: https://*.supabase.co wss://*.supabase.co https://challenges.cloudflare.com",
+  "connect-src 'self' data: https://*.supabase.co wss://*.supabase.co https://challenges.cloudflare.com https://*.cloudflarecaptcha.com",
   "frame-src 'self' https://challenges.cloudflare.com",
   "worker-src 'self' blob:",
   "object-src 'none'",
