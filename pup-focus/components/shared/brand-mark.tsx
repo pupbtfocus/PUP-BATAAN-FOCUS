@@ -23,7 +23,6 @@ export function BrandMark({
         fill
         sizes={`${size}px`}
         className="rounded-full object-contain mx-auto transition-transform duration-300"
-        priority
       />
     </div>
   );

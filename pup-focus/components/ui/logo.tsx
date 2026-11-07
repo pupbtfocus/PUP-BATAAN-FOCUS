@@ -18,7 +18,6 @@ export function Logo({ size = 115, className = "" }: LogoProps) {
         fill
         sizes={`${size}px`}
         className="object-contain mx-auto"
-        priority
       />
     </div>
   );

@@ -175,7 +175,6 @@ export function EmailVerificationCard({
                   width={34}
                   height={34}
                   className="object-contain"
-                  priority
                 />
               </div>
             </div>
