@@ -144,15 +144,9 @@ function ensureRealtimeInitialized() {
 
         const targetTables = [
           "submissions",
-          "profiles",
-          "faculty",
-          "faculty_profiles",
           "faculty_classes",
-          "classes",
-          "submission_windows",
-          "academic_terms",
+          "review_decisions",
           "extension_requests",
-          "requirement_templates",
           "notifications",
         ];
 
@@ -179,25 +173,6 @@ function ensureRealtimeInitialized() {
         }
 
         channel
-          .on(
-            "postgres_changes",
-            { event: "*", schema: "public" },
-            (change: { table?: string; eventType?: string; new?: any; old?: any }) => {
-              const record = change?.new || change?.old || {};
-              notifyListeners({
-                source: "postgres_changes",
-                table: change?.table,
-                eventType: change?.eventType,
-                facultyId:
-                  record.faculty_profile_id ||
-                  record.profile_id ||
-                  record.id ||
-                  record.faculty_id,
-                classId: record.class_id || null,
-                timestamp: Date.now(),
-              });
-            },
-          )
           .subscribe((status: string) => {
             isSupabaseSubscribed = status === "SUBSCRIBED";
             if (isSupabaseSubscribed && pendingBroadcastPayloads.length > 0) {
@@ -299,17 +274,28 @@ export function useRealtimeSync(
       handlePayload(custom.detail || { source: "window-event", timestamp: Date.now() });
     };
 
+    let lastFocusSync = 0;
+    const FOCUS_THROTTLE_MS = 30000;
+
     const handleOnline = () => {
       handlePayload({ source: "online", timestamp: Date.now() });
     };
 
     const handleFocus = () => {
-      handlePayload({ source: "focus", timestamp: Date.now() });
+      const now = Date.now();
+      if (now - lastFocusSync >= FOCUS_THROTTLE_MS) {
+        lastFocusSync = now;
+        handlePayload({ source: "focus", timestamp: now });
+      }
     };
 
     const handleVisibilityChange = () => {
       if (document.visibilityState === "visible") {
-        handlePayload({ source: "visibility", timestamp: Date.now() });
+        const now = Date.now();
+        if (now - lastFocusSync >= FOCUS_THROTTLE_MS) {
+          lastFocusSync = now;
+          handlePayload({ source: "visibility", timestamp: now });
+        }
       }
     };
 

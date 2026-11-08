@@ -143,6 +143,8 @@ export function clearBrowserSupabaseSession() {
   }
 }
 
+let cachedBrowserClient: ReturnType<typeof createBrowserClient> | null = null;
+
 export function createClient() {
   const env = getPublicEnvSafe();
 
@@ -152,6 +154,10 @@ export function createClient() {
     return createMissingSupabaseClient() as ReturnType<
       typeof createBrowserClient
     >;
+  }
+
+  if (cachedBrowserClient) {
+    return cachedBrowserClient;
   }
 
   const client = createBrowserClient(
@@ -175,5 +181,6 @@ export function createClient() {
     return { data, error };
   };
 
+  cachedBrowserClient = client;
   return client;
 }
