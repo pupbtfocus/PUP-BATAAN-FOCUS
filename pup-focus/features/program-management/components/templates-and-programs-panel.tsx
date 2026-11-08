@@ -41,6 +41,8 @@ const DEFAULT_FALLBACK_PROGRAMS: ProgramItem[] = [
   { id: "p-domt", code: "DOMT-LOM", name: "Diploma in Office Management Technology major in Legal Office Management", is_hidden: false },
 ];
 
+let cachedPrograms: ProgramItem[] | null = null;
+
 export interface TemplatesAndProgramsPanelProps {
   initialTab?: "templates" | "programs";
   refreshTrigger?: number;
@@ -61,10 +63,25 @@ export function TemplatesAndProgramsPanel({
   }, [initialTab]);
 
   // Program Management States
-  const [programs, setPrograms] = useState<ProgramItem[]>(DEFAULT_FALLBACK_PROGRAMS);
-  const [isLoadingPrograms, setIsLoadingPrograms] = useState<boolean>(true);
+  const [programs, setPrograms] = useState<ProgramItem[]>(() => {
+    if (cachedPrograms && cachedPrograms.length > 0) return cachedPrograms;
+    if (typeof window !== "undefined") {
+      try {
+        const stored = sessionStorage.getItem("pup_focus_programs");
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            cachedPrograms = parsed;
+            return parsed;
+          }
+        }
+      } catch {}
+    }
+    return DEFAULT_FALLBACK_PROGRAMS;
+  });
+  const [isLoadingPrograms, setIsLoadingPrograms] = useState<boolean>(() => !cachedPrograms);
   const [isRefreshingPrograms, setIsRefreshingPrograms] = useState<boolean>(false);
-  const hasLoadedProgramsRef = useRef(false);
+  const hasLoadedProgramsRef = useRef(Boolean(cachedPrograms && cachedPrograms.length > 0));
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [visibilityFilter, setVisibilityFilter] = useState<"all" | "active" | "hidden">("all");
 
@@ -111,6 +128,12 @@ export function TemplatesAndProgramsPanel({
         const pData = await pRes.json();
         if (Array.isArray(pData.programs) && pData.programs.length > 0) {
           setPrograms(pData.programs);
+          cachedPrograms = pData.programs;
+          if (typeof window !== "undefined") {
+            try {
+              sessionStorage.setItem("pup_focus_programs", JSON.stringify(pData.programs));
+            } catch {}
+          }
           hasLoadedProgramsRef.current = true;
         }
       }
@@ -530,7 +553,7 @@ export function TemplatesAndProgramsPanel({
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-300 dark:divide-slate-800/60 text-xs">
-                {isLoadingPrograms ? (
+                {isLoadingPrograms && filteredPrograms.length === 0 ? (
                   <tr>
                     <td colSpan={5} className="py-10 text-center text-slate-500 dark:text-slate-400">
                       <Refresh className="h-5 w-5 animate-spin mx-auto mb-2 text-amber-500" strokeWidth={2} />

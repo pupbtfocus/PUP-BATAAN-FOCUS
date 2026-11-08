@@ -129,17 +129,62 @@ export interface SubmissionWindowPanelProps {
   onNavigateToRequirements?: () => void;
 }
 
+let cachedSubmissionWindow: SubmissionWindowResponse | null = null;
+let cachedExtensionRequests: any[] | null = null;
+let cachedPendingRequestsCount = 0;
+
+function parseWindowDates(data: SubmissionWindowResponse | null) {
+  if (!data || data.status === "Closed") {
+    return { openDt: "", closeDt: "", alwaysOpen: false };
+  }
+  const isAlwaysOpenWindow = Boolean(
+    data.endDate && (data.endDate.startsWith("2099") || new Date(data.endDate).getFullYear() >= 2099)
+  );
+  let openDt = "";
+  if (data.startDate && data.startTimeLabel) {
+    const time24 = toTimeInputValue(data.startTimeLabel);
+    openDt = time24 ? `${data.startDate}T${time24}` : `${data.startDate}T09:00`;
+  } else if (data.startDate) {
+    openDt = `${data.startDate}T09:00`;
+  }
+
+  let closeDt = "";
+  if (isAlwaysOpenWindow) {
+    closeDt = "2099-12-31T23:59";
+  } else if (data.endDate && data.endTimeLabel) {
+    const time24 = toTimeInputValue(data.endTimeLabel);
+    closeDt = time24 ? `${data.endDate}T${time24}` : `${data.endDate}T17:00`;
+  } else if (data.endDate) {
+    closeDt = `${data.endDate}T17:00`;
+  }
+  return { openDt, closeDt, alwaysOpen: isAlwaysOpenWindow };
+}
+
 export function SubmissionWindowPanel({
   onWindowChange,
   isSuperAdmin = false,
   onNavigateToRequirements,
 }: SubmissionWindowPanelProps) {
-  const [openDateTime, setOpenDateTime] = useState("");
-  const [closeDateTime, setCloseDateTime] = useState("");
-  const [isAlwaysOpen, setIsAlwaysOpen] = useState(false);
+  const [windowStatus, setWindowStatus] = useState<SubmissionWindowResponse | null>(() => {
+    if (cachedSubmissionWindow) return cachedSubmissionWindow;
+    if (typeof window !== "undefined") {
+      try {
+        const stored = sessionStorage.getItem("pup_focus_submission_window");
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          cachedSubmissionWindow = parsed;
+          return parsed;
+        }
+      } catch {}
+    }
+    return null;
+  });
 
-  const [windowStatus, setWindowStatus] = useState<SubmissionWindowResponse | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const parsedInit = parseWindowDates(windowStatus);
+  const [openDateTime, setOpenDateTime] = useState(parsedInit.openDt);
+  const [closeDateTime, setCloseDateTime] = useState(parsedInit.closeDt);
+  const [isAlwaysOpen, setIsAlwaysOpen] = useState(parsedInit.alwaysOpen);
+  const [isLoading, setIsLoading] = useState(() => !windowStatus);
   const [isSaving, setIsSaving] = useState(false);
   const [showSaveConfirmation, setShowSaveConfirmation] = useState(false);
   const [showCloseConfirmation, setShowCloseConfirmation] = useState(false);
@@ -157,8 +202,8 @@ export function SubmissionWindowPanel({
   const [isLoadingLogs, setIsLoadingLogs] = useState(false);
 
   // Extension Requests state
-  const [extensionRequests, setExtensionRequests] = useState<any[]>([]);
-  const [pendingRequestsCount, setPendingRequestsCount] = useState<number>(0);
+  const [extensionRequests, setExtensionRequests] = useState<any[]>(() => cachedExtensionRequests || []);
+  const [pendingRequestsCount, setPendingRequestsCount] = useState<number>(() => cachedPendingRequestsCount || 0);
 
   // Edit vs. Save schedule toggle (defaults to editing if no schedule exists yet)
   const [isEditingSchedule, setIsEditingSchedule] = useState(false);
@@ -198,10 +243,14 @@ export function SubmissionWindowPanel({
   }, [closeDateTime]);
 
   const isWindowOpen = Boolean(
+    windowStatus?.status !== "Closed" &&
     startDateObj && endDateObj && now >= startDateObj && now <= endDateObj
   );
 
-  const isUpcoming = Boolean(startDateObj && now < startDateObj);
+  const isUpcoming = Boolean(
+    windowStatus?.status !== "Closed" &&
+    startDateObj && now < startDateObj
+  );
 
   const isGlobalSubmissionOpen = useMemo(() => {
     if (windowStatus?.status === "Closed") return false;
@@ -212,6 +261,9 @@ export function SubmissionWindowPanel({
   }, [windowStatus?.status, isAlwaysOpen, startDateObj, endDateObj, now, isWindowOpen, isUpcoming]);
 
   const formattedCountdownTime = useMemo(() => {
+    if (windowStatus?.status === "Closed") {
+      return "Closed";
+    }
     if (isAlwaysOpen || (endDateObj && endDateObj.getFullYear() >= 2099)) {
       return "Always Open (No Deadline)";
     }
@@ -228,7 +280,7 @@ export function SubmissionWindowPanel({
       return `Expired ${formatTimeAgo(diff)}`;
     }
     return "Not Configured";
-  }, [isAlwaysOpen, isWindowOpen, isUpcoming, startDateObj, endDateObj, now]);
+  }, [windowStatus?.status, isAlwaysOpen, isWindowOpen, isUpcoming, startDateObj, endDateObj, now]);
 
   const isGlobalConfigured = Boolean(
     isAlwaysOpen || (startDateObj && endDateObj)
@@ -323,8 +375,12 @@ export function SubmissionWindowPanel({
       });
       if (res.ok) {
         const body = await res.json();
-        setExtensionRequests(body.requests || []);
-        setPendingRequestsCount(body.pendingCount || 0);
+        const requests = body.requests || [];
+        const pendingCount = body.pendingCount || 0;
+        cachedExtensionRequests = requests;
+        cachedPendingRequestsCount = pendingCount;
+        setExtensionRequests(requests);
+        setPendingRequestsCount(pendingCount);
       }
     } catch {
       // Ignore background error
@@ -372,7 +428,8 @@ export function SubmissionWindowPanel({
 
 
   async function loadWindow(options?: { silent?: boolean }) {
-    if (!options?.silent) {
+    const isSilent = options?.silent ?? Boolean(cachedSubmissionWindow);
+    if (!isSilent) {
       setIsLoading(true);
       setError(null);
     }
@@ -424,6 +481,12 @@ export function SubmissionWindowPanel({
         }
       }
 
+      cachedSubmissionWindow = data;
+      if (typeof window !== "undefined") {
+        try {
+          sessionStorage.setItem("pup_focus_submission_window", JSON.stringify(data));
+        } catch {}
+      }
       setWindowStatus(data);
 
       // Do not overwrite user-entered dates while actively editing or typing
@@ -462,7 +525,7 @@ export function SubmissionWindowPanel({
     } catch (loadError) {
       setError(loadError instanceof Error ? loadError.message : "Failed to load submission window");
     } finally {
-      if (!options?.silent) {
+      if (!isSilent) {
         setIsLoading(false);
       }
     }
@@ -656,7 +719,27 @@ export function SubmissionWindowPanel({
         return;
       }
 
-      setWindowStatus(body as SubmissionWindowResponse);
+      const closedData: SubmissionWindowResponse = {
+        ...(body as SubmissionWindowResponse),
+        status: "Closed",
+        isOpen: false,
+        isConfigured: false,
+        startDate: null,
+        endDate: null,
+        startTime: null,
+        endTime: null,
+        startTimeLabel: null,
+        endTimeLabel: null,
+      };
+
+      cachedSubmissionWindow = closedData;
+      if (typeof window !== "undefined") {
+        try {
+          sessionStorage.setItem("pup_focus_submission_window", JSON.stringify(closedData));
+        } catch {}
+      }
+
+      setWindowStatus(closedData);
       setOpenDateTime("");
       setCloseDateTime("");
       setIsAlwaysOpen(false);
@@ -716,7 +799,9 @@ export function SubmissionWindowPanel({
           <div className="inline-flex items-center justify-center sm:justify-start gap-2 bg-white text-slate-800 border border-slate-200 dark:bg-slate-900 dark:text-slate-200 dark:border-slate-800 px-3 py-1.5 text-xs font-semibold rounded-md shadow-2xs">
             <span
               className={`w-2 h-2 rounded-full shrink-0 ${
-                isAlwaysOpen || isWindowOpen
+                windowStatus?.status === "Closed"
+                  ? "bg-slate-400 dark:bg-slate-500"
+                  : isAlwaysOpen || isWindowOpen
                   ? "bg-emerald-500 animate-pulse"
                   : isUpcoming
                   ? "bg-amber-500 animate-ping"
@@ -724,7 +809,9 @@ export function SubmissionWindowPanel({
               }`}
             />
             <span>
-              {isAlwaysOpen
+              {windowStatus?.status === "Closed"
+                ? "Window Closed"
+                : isAlwaysOpen
                 ? "Always Open Window"
                 : isWindowOpen
                 ? "Live Submission Window"

@@ -309,10 +309,30 @@ function MetadataModal({
 
 // ─── Main Panel ──────────────────────────────────────────────────────
 
+let cachedTransactionLogsData: {
+  logs: TransactionLogEntry[];
+  total: number;
+  totalPages: number;
+  categoryCounts: Record<string, number>;
+} | null = null;
+
 export function TransactionLogsPanel() {
-  const [logs, setLogs] = useState<TransactionLogEntry[]>([]);
-  const [total, setTotal] = useState(0);
-  const [categoryCounts, setCategoryCounts] = useState<Record<string, number>>({
+  const [logs, setLogs] = useState<TransactionLogEntry[]>(() => {
+    if (cachedTransactionLogsData) return cachedTransactionLogsData.logs;
+    if (typeof window !== "undefined") {
+      try {
+        const stored = sessionStorage.getItem("pup_focus_tx_logs");
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          cachedTransactionLogsData = parsed;
+          return parsed.logs || [];
+        }
+      } catch {}
+    }
+    return [];
+  });
+  const [total, setTotal] = useState(() => cachedTransactionLogsData?.total || 0);
+  const [categoryCounts, setCategoryCounts] = useState<Record<string, number>>(() => cachedTransactionLogsData?.categoryCounts || {
     all: 0,
     auth: 0,
     uploads: 0,
@@ -325,10 +345,10 @@ export function TransactionLogsPanel() {
     backup: 0,
   });
   const [page, setPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
-  const [isLoading, setIsLoading] = useState(false);
+  const [totalPages, setTotalPages] = useState(() => cachedTransactionLogsData?.totalPages || 1);
+  const [isLoading, setIsLoading] = useState(() => !cachedTransactionLogsData);
   const [isRefreshing, setIsRefreshing] = useState(false);
-  const hasLoadedRef = useRef(false);
+  const hasLoadedRef = useRef(Boolean(cachedTransactionLogsData));
   const [error, setError] = useState<string | null>(null);
 
   const [search, setSearch] = useState("");
@@ -392,6 +412,17 @@ export function TransactionLogsPanel() {
       setTotalPages(data.totalPages);
       if (data.categoryCounts) {
         setCategoryCounts(data.categoryCounts);
+      }
+      cachedTransactionLogsData = {
+        logs: data.logs,
+        total: data.total,
+        totalPages: data.totalPages,
+        categoryCounts: data.categoryCounts || categoryCounts,
+      };
+      if (typeof window !== "undefined") {
+        try {
+          sessionStorage.setItem("pup_focus_tx_logs", JSON.stringify(cachedTransactionLogsData));
+        } catch {}
       }
       hasLoadedRef.current = true;
     } catch (err) {
@@ -665,7 +696,7 @@ export function TransactionLogsPanel() {
 
         {/* Result Count */}
         <p className="text-xs text-slate-600 dark:text-slate-400">
-          {isLoading
+          {isLoading && logs.length === 0
             ? "Loading transaction logs…"
             : `${total} ${total === 1 ? "record" : "records"} found`}
         </p>

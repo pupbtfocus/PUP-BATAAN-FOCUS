@@ -597,20 +597,41 @@ export async function DELETE() {
     }
 
     // Clear the active schedule in submission_window_terms while preserving the term record
-    const winAy = existingWin?.academic_year || activeTerm?.academicYear;
-    const winSem = existingWin?.semester || activeTerm?.semester;
-    if (winAy && winSem) {
+    const termsToClear: Array<{ ay: string; sem: string }> = [];
+    if (existingWin?.academic_year && existingWin?.semester) {
+      termsToClear.push({ ay: existingWin.academic_year, sem: existingWin.semester });
+    }
+    if (activeTerm?.academicYear && activeTerm?.semester) {
+      const alreadyPresent = termsToClear.some(
+        (t) => t.ay === activeTerm.academicYear && t.sem === activeTerm.semester,
+      );
+      if (!alreadyPresent) {
+        termsToClear.push({ ay: activeTerm.academicYear, sem: activeTerm.semester });
+      }
+    }
+
+    for (const term of termsToClear) {
       try {
+        await supabase
+          .from("submission_window_terms")
+          .update({
+            start_date: null,
+            end_date: null,
+            start_time: null,
+            end_time: null,
+          })
+          .eq("academic_year", term.ay)
+          .eq("semester", term.sem);
+
         await supabase.from("submission_window_terms").upsert(
           {
-            academic_year: winAy,
-            semester: winSem,
+            academic_year: term.ay,
+            semester: term.sem,
             start_date: null,
             end_date: null,
             start_time: null,
             end_time: null,
             created_by: user.id,
-            updated_at: new Date().toISOString(),
           },
           { onConflict: "academic_year,semester" },
         );
@@ -618,12 +639,14 @@ export async function DELETE() {
         await supabase
           .from("submissions")
           .update({ due_at: null, updated_at: new Date().toISOString() })
-          .eq("academic_year", winAy)
-          .eq("semester", winSem)
+          .eq("academic_year", term.ay)
+          .eq("semester", term.sem)
           .in("status", ["pending", "unsubmitted"])
           .is("submitted_at", null);
-      } catch {
-        // Best-effort update
+      } catch (clearErr) {
+        logger.warn("submission_window_terms_clear_failed", {
+          error: clearErr instanceof Error ? clearErr.message : String(clearErr),
+        });
       }
     }
 
@@ -705,6 +728,13 @@ export async function DELETE() {
 
     return NextResponse.json({
       ...status,
+      status: "Closed",
+      isOpen: false,
+      isConfigured: false,
+      startDate: null,
+      endDate: null,
+      startTime: null,
+      endTime: null,
       usedTerms,
       startTimeLabel: null,
       endTimeLabel: null,

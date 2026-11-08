@@ -26,12 +26,31 @@ interface RequirementTemplatesPanelProps {
   refreshTrigger?: number;
 }
 
+let cachedRequirementTemplates: RequirementTemplate[] | null = null;
+
 export function RequirementTemplatesPanel({
   refreshTrigger,
 }: RequirementTemplatesPanelProps) {
-  const [templates, setTemplates] = useState<RequirementTemplate[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const hasLoadedRef = useRef(false);
+  const [templates, setTemplates] = useState<RequirementTemplate[]>(() => {
+    if (cachedRequirementTemplates && cachedRequirementTemplates.length > 0) {
+      return cachedRequirementTemplates;
+    }
+    if (typeof window !== "undefined") {
+      try {
+        const stored = sessionStorage.getItem("pup_focus_req_templates");
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            cachedRequirementTemplates = parsed;
+            return parsed;
+          }
+        }
+      } catch {}
+    }
+    return [];
+  });
+  const [isLoading, setIsLoading] = useState(() => !cachedRequirementTemplates || cachedRequirementTemplates.length === 0);
+  const hasLoadedRef = useRef(Boolean(cachedRequirementTemplates && cachedRequirementTemplates.length > 0));
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
@@ -76,6 +95,12 @@ export function RequirementTemplatesPanel({
       }
 
       setTemplates(deduplicated);
+      cachedRequirementTemplates = deduplicated;
+      if (typeof window !== "undefined") {
+        try {
+          sessionStorage.setItem("pup_focus_req_templates", JSON.stringify(deduplicated));
+        } catch {}
+      }
       hasLoadedRef.current = true;
     } catch (err) {
       setError(err instanceof Error ? err.message : "Error loading requirement templates");
@@ -344,7 +369,7 @@ export function RequirementTemplatesPanel({
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-300 dark:divide-slate-800/60 text-xs">
-            {isLoading ? (
+            {isLoading && filteredTemplates.length === 0 ? (
               <tr>
                 <td colSpan={7} className="py-10 text-center text-slate-500 dark:text-slate-400">
                   <Refresh className="h-5 w-5 animate-spin mx-auto mb-2 text-amber-500" strokeWidth={2} />

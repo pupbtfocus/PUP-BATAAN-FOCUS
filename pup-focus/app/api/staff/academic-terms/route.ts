@@ -801,6 +801,17 @@ export async function PATCH(request: NextRequest) {
 
       // 2. Clear/close the previous term's schedule in submission_window_terms
       if (currentTerm?.academic_year && currentTerm?.semester) {
+        await supabase
+          .from("submission_window_terms")
+          .update({
+            start_date: null,
+            end_date: null,
+            start_time: null,
+            end_time: null,
+          })
+          .eq("academic_year", currentTerm.academic_year)
+          .eq("semester", currentTerm.semester);
+
         await supabase.from("submission_window_terms").upsert(
           {
             academic_year: currentTerm.academic_year,
@@ -810,7 +821,6 @@ export async function PATCH(request: NextRequest) {
             start_time: null,
             end_time: null,
             created_by: user.id,
-            updated_at: new Date().toISOString(),
           },
           { onConflict: "academic_year,semester" },
         );
@@ -828,6 +838,17 @@ export async function PATCH(request: NextRequest) {
         const nextStartIso = `${nextTermSchedule.start_date}T${normalizeTime24Hour(nextTermSchedule.start_time || "00:00:00")}`;
         const nextEndIso = `${nextTermSchedule.end_date}T${normalizeTime24Hour(nextTermSchedule.end_time || "23:59:59")}`;
         if (nowDateTime >= nextStartIso && nowDateTime <= nextEndIso) {
+          await supabase
+            .from("submission_window_terms")
+            .update({
+              start_date: null,
+              end_date: null,
+              start_time: null,
+              end_time: null,
+            })
+            .eq("academic_year", academicYear)
+            .eq("semester", semester);
+
           await supabase.from("submission_window_terms").upsert(
             {
               academic_year: academicYear,
@@ -837,7 +858,6 @@ export async function PATCH(request: NextRequest) {
               start_time: null,
               end_time: null,
               created_by: user.id,
-              updated_at: new Date().toISOString(),
             },
             { onConflict: "academic_year,semester" },
           );

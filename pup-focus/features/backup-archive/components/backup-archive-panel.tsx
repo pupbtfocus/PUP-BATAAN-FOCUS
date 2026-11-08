@@ -31,22 +31,44 @@ import type {
   FacultyOption,
 } from "@/features/backup-archive/types/backup-archive.types";
 
+let cachedBackupData: {
+  backups: SystemBackup[];
+  archivedTerms: ArchivedTermSummary[];
+  availableTerms: AvailableAcademicTerm[];
+  academicYears: string[];
+  facultyList: FacultyOption[];
+  stats: BackupStats;
+} | null = null;
+
 export function BackupArchivePanel() {
-  const [backups, setBackups] = useState<SystemBackup[]>([]);
-  const [archivedTerms, setArchivedTerms] = useState<ArchivedTermSummary[]>([]);
-  const [availableTerms, setAvailableTerms] = useState<AvailableAcademicTerm[]>([]);
-  const [academicYears, setAcademicYears] = useState<string[]>([]);
-  const [facultyList, setFacultyList] = useState<FacultyOption[]>([]);
-  const [stats, setStats] = useState<BackupStats>({
+  const [backups, setBackups] = useState<SystemBackup[]>(() => {
+    if (cachedBackupData) return cachedBackupData.backups;
+    if (typeof window !== "undefined") {
+      try {
+        const stored = sessionStorage.getItem("pup_focus_backup_data");
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          cachedBackupData = parsed;
+          return parsed.backups || [];
+        }
+      } catch {}
+    }
+    return [];
+  });
+  const [archivedTerms, setArchivedTerms] = useState<ArchivedTermSummary[]>(() => cachedBackupData?.archivedTerms || []);
+  const [availableTerms, setAvailableTerms] = useState<AvailableAcademicTerm[]>(() => cachedBackupData?.availableTerms || []);
+  const [academicYears, setAcademicYears] = useState<string[]>(() => cachedBackupData?.academicYears || []);
+  const [facultyList, setFacultyList] = useState<FacultyOption[]>(() => cachedBackupData?.facultyList || []);
+  const [stats, setStats] = useState<BackupStats>(() => cachedBackupData?.stats || {
     total_backups: 0,
     archived_academic_years: 0,
     last_backup_date: null,
     total_archived_documents: 0,
   });
 
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(() => !cachedBackupData);
   const [isRefreshing, setIsRefreshing] = useState(false);
-  const hasLoadedRef = useRef(false);
+  const hasLoadedRef = useRef(Boolean(cachedBackupData));
   const [isGeneratingBackup, setIsGeneratingBackup] = useState(false);
   const [exportingTermKey, setExportingTermKey] = useState<string | null>(null);
   const [exportProgress, setExportProgress] = useState<string | null>(null);
@@ -108,6 +130,19 @@ export function BackupArchivePanel() {
       }
       if (data.stats) {
         setStats(data.stats);
+      }
+      cachedBackupData = {
+        backups: data.backups || [],
+        archivedTerms: data.archivedTerms || [],
+        availableTerms: data.availableTerms || [],
+        academicYears: data.academicYears || [],
+        facultyList: data.facultyList || [],
+        stats: data.stats || stats,
+      };
+      if (typeof window !== "undefined") {
+        try {
+          sessionStorage.setItem("pup_focus_backup_data", JSON.stringify(cachedBackupData));
+        } catch {}
       }
       hasLoadedRef.current = true;
     } catch (err) {
@@ -873,7 +908,7 @@ export function BackupArchivePanel() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-200 dark:divide-slate-800/60">
-                {isLoading ? (
+                {isLoading && filteredBackups.length === 0 ? (
                   <tr>
                     <td colSpan={8} className="py-12 text-center text-slate-500">
                       <Refresh className="h-5 w-5 animate-spin mx-auto mb-2 text-amber-500" strokeWidth={2} />
