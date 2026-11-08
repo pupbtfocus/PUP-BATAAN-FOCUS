@@ -244,9 +244,9 @@ export function OnlineDocumentPreview({
     const currentExternalUrl = isGoogle ? googleViewerUrl : officeViewerUrl;
 
     return (
-      <div className={`flex flex-col h-full w-full ${borderless ? "rounded-none border-0 shadow-none" : "rounded-2xl border border-slate-800 shadow-xl"} overflow-hidden bg-slate-900 min-h-[360px] sm:min-h-[460px] lg:min-h-[560px]`}>
+      <div className={`flex flex-col h-full w-full ${borderless ? "rounded-none border-0 shadow-none min-h-0" : "rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xl min-h-[360px] sm:min-h-[460px] lg:min-h-[560px]"} overflow-hidden bg-slate-100 dark:bg-slate-950`}>
         {/* Top Control Bar */}
-        <div className="flex flex-wrap items-center justify-between gap-2 px-3 py-2 sm:px-3.5 sm:py-2.5 bg-slate-950/90 border-b border-slate-800/80 backdrop-blur-xs text-xs">
+        <div className="flex flex-wrap items-center justify-between gap-2 px-3 py-2 sm:px-3.5 sm:py-2.5 bg-slate-100 dark:bg-slate-950 border-b border-slate-200 dark:border-slate-800 text-xs">
           <div className="flex items-center gap-2">
             <button
               type="button"
@@ -256,7 +256,7 @@ export function OnlineDocumentPreview({
               <AppIcon icon={NavArrowLeft} size="sm" color="white" />
               <span>Back</span>
             </button>
-            <span className="text-slate-400 font-mono text-[11px] truncate max-w-[120px] sm:max-w-[200px] hidden sm:inline">
+            <span className="text-slate-600 dark:text-slate-400 font-mono text-[11px] truncate max-w-[120px] sm:max-w-[200px] hidden sm:inline">
               {displayName}
             </span>
           </div>
@@ -269,7 +269,7 @@ export function OnlineDocumentPreview({
                 setIframeLoading(true);
                 setViewerMode(isGoogle ? "office" : "google");
               }}
-              className="inline-flex items-center gap-1.5 px-2 sm:px-2.5 py-1 rounded-lg border border-slate-700/80 bg-slate-800/60 hover:bg-slate-750 text-slate-300 transition cursor-pointer text-[11px]"
+              className="inline-flex items-center gap-1.5 px-2 sm:px-2.5 py-1 rounded-lg border border-slate-300 dark:border-slate-700/80 bg-white dark:bg-slate-800/60 hover:bg-slate-50 dark:hover:bg-slate-750 text-slate-700 dark:text-slate-300 transition cursor-pointer text-[11px]"
               title={isGoogle ? `Switch to ${officeAppName}` : `Switch to ${googleAppName}`}
             >
               <img
@@ -286,7 +286,7 @@ export function OnlineDocumentPreview({
               href={currentExternalUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 px-2 sm:px-2.5 py-1 rounded-lg border border-slate-700 bg-slate-800/90 hover:bg-slate-750 text-slate-200 transition cursor-pointer font-medium text-[11px] shadow-2xs"
+              className="inline-flex items-center gap-1.5 px-2 sm:px-2.5 py-1 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800/90 hover:bg-slate-50 dark:hover:bg-slate-750 text-slate-700 dark:text-slate-200 transition cursor-pointer font-medium text-[11px] shadow-2xs"
             >
               <img
                 src={isGoogle ? googleAppIcon : officeAppIcon}
@@ -301,12 +301,12 @@ export function OnlineDocumentPreview({
         </div>
 
         {/* Embedded Iframe Container */}
-        <div className="relative flex-1 w-full bg-slate-950 flex flex-col">
+        <div className="relative flex-1 w-full bg-slate-100 dark:bg-slate-950 flex flex-col">
           <iframe
             key={currentEmbedSrc}
             src={currentEmbedSrc}
             title={`${displayName} Online Preview`}
-            className="w-full h-full flex-1 border-0 rounded-b-2xl bg-white"
+            className="w-full h-full flex-1 border-0 bg-white"
             onLoad={() => setIframeLoading(false)}
           />
         </div>
@@ -317,9 +317,9 @@ export function OnlineDocumentPreview({
   // Local document reader mode (for blob: URLs that cloud viewers can't fetch)
   if (viewerMode === "local_doc") {
     return (
-      <div className={`flex flex-col h-full w-full ${borderless ? "rounded-none border-0 shadow-none" : "rounded-2xl border border-slate-800 shadow-xl"} overflow-hidden bg-slate-900 min-h-[360px] sm:min-h-[460px] lg:min-h-[560px]`}>
+      <div className={`flex flex-col h-full w-full ${borderless ? "rounded-none border-0 shadow-none min-h-0" : "rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xl min-h-[360px] sm:min-h-[460px] lg:min-h-[560px]"} overflow-hidden bg-slate-100 dark:bg-slate-950`}>
         {/* Top Control Bar */}
-        <div className="flex flex-wrap items-center justify-between gap-2 px-3 py-2 sm:px-3.5 sm:py-2.5 bg-slate-950/90 border-b border-slate-800/80 backdrop-blur-xs text-xs">
+        <div className="flex flex-wrap items-center justify-between gap-2 px-3 py-2 sm:px-3.5 sm:py-2.5 bg-slate-100 dark:bg-slate-950 border-b border-slate-200 dark:border-slate-800 text-xs">
           <div className="flex items-center gap-2">
             <button
               type="button"
@@ -329,17 +329,17 @@ export function OnlineDocumentPreview({
               <AppIcon icon={NavArrowLeft} size="sm" color="white" />
               <span>Back</span>
             </button>
-            <span className="text-slate-400 font-mono text-[11px] truncate max-w-[120px] sm:max-w-[200px] hidden sm:inline">
+            <span className="text-slate-600 dark:text-slate-400 font-mono text-[11px] truncate max-w-[120px] sm:max-w-[200px] hidden sm:inline">
               {displayName}
             </span>
           </div>
-          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-amber-900/40 border border-amber-700/50 text-amber-300 text-[11px] font-semibold">
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-amber-100 dark:bg-amber-900/40 border border-amber-300 dark:border-amber-700/50 text-amber-800 dark:text-amber-300 text-[11px] font-semibold">
             <AppIcon icon={Page} size="xs" color="inherit" />
             Document Reader
           </span>
         </div>
         {/* Content */}
-        <div className="flex-1 overflow-y-auto p-5 bg-slate-950">
+        <div className="flex-1 overflow-y-auto p-5 bg-slate-50 dark:bg-slate-950">
           {isLoadingLocalContent ? (
             <div className="flex items-center justify-center h-full py-12 text-xs text-slate-400">
               Reading document content...
@@ -401,7 +401,7 @@ export function OnlineDocumentPreview({
 
   // Default: Simple, clean card matching user request with official icons
   return (
-    <div className={`flex flex-col items-center justify-center w-full max-w-lg mx-auto p-4 sm:p-6 lg:p-7 text-center ${borderless ? "bg-transparent" : "bg-white dark:bg-slate-900 rounded-2xl sm:rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm backdrop-blur-xs"} transition-all`}>
+    <div className={`flex flex-col items-center justify-center w-full max-w-lg mx-auto p-4 sm:p-6 lg:p-7 text-center ${borderless ? "bg-transparent my-auto" : "bg-white dark:bg-slate-900 rounded-2xl sm:rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm backdrop-blur-xs"} transition-all`}>
       {/* File Brand Icon Badge (Using official Microsoft / Office App Icon) */}
       <div className="relative p-2.5 sm:p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/80 mb-2.5 sm:mb-3.5 shadow-2xs border border-slate-200 dark:border-slate-700/60 flex items-center justify-center">
         <img

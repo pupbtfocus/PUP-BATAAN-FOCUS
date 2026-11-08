@@ -563,6 +563,7 @@ export function FacultyVerificationDrawer({
   } | null>(null);
   const [revisionInputText, setRevisionInputText] = useState("");
   const [isSubmittingRevision, setIsSubmittingRevision] = useState(false);
+  const [isPresetDropdownOpen, setIsPresetDropdownOpen] = useState(false);
 
   // Single Requirement Validate Modal States
   const [validateModalData, setValidateModalData] = useState<{
@@ -3742,7 +3743,6 @@ export function FacultyVerificationDrawer({
             onClick={(e) => e.stopPropagation()}
           >
             <ModalHeader
-              icon={Xmark}
               title="Request Requirement Revision"
               subtitle={`${revisionModalData.reqLabel} • ${faculty.fullName}`}
               className="-mx-6 -mt-6 mb-4 rounded-t-3xl"
@@ -3753,32 +3753,58 @@ export function FacultyVerificationDrawer({
                 <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5 block">
                   Quick Preset Reasons:
                 </label>
-                <div className="flex flex-wrap gap-1.5">
-                  {REVISION_PRESETS.map((preset) => {
-                    const isSelected = revisionInputText.includes(preset);
-                    return (
-                      <button
-                        key={preset}
-                        type="button"
-                        onClick={() => {
-                          setRevisionInputText((prev) => {
-                            if (prev.includes(preset)) return prev;
-                            const trimmed = prev.trim();
-                            return trimmed
-                              ? `${trimmed}\n• ${preset}`
-                              : `• ${preset}`;
-                          });
-                        }}
-                        className={`rounded-lg px-2.5 py-1 text-[11px] font-medium border transition cursor-pointer ${
-                          isSelected
-                            ? "border-slate-900 bg-slate-900 text-white dark:border-slate-100 dark:bg-slate-100 dark:text-slate-900 font-semibold"
-                            : "border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/60 text-slate-600 dark:text-slate-400 hover:border-slate-300 dark:hover:border-slate-700 hover:text-slate-900 dark:hover:text-slate-200"
-                        }`}
-                      >
-                        + {preset}
-                      </button>
-                    );
-                  })}
+                <div className="relative">
+                  <button
+                    type="button"
+                    onClick={() => setIsPresetDropdownOpen((prev) => !prev)}
+                    className="w-full flex items-center justify-between rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/60 px-3 py-2 text-xs text-slate-700 dark:text-slate-300 outline-none hover:border-slate-300 dark:hover:border-slate-700 transition cursor-pointer shadow-2xs"
+                  >
+                    <span className="truncate">Select a preset reason to add to notes...</span>
+                    <AppIcon
+                      icon={NavArrowDown}
+                      size="sm"
+                      color="inherit"
+                      className={`transition-transform duration-200 shrink-0 ${isPresetDropdownOpen ? "rotate-180" : ""}`}
+                    />
+                  </button>
+
+                  {isPresetDropdownOpen && (
+                    <>
+                      <div
+                        className="fixed inset-0 z-10"
+                        onClick={() => setIsPresetDropdownOpen(false)}
+                      />
+                      <div className="absolute left-0 right-0 top-full mt-1.5 z-20 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xl overflow-hidden py-1 max-h-56 overflow-y-auto">
+                        {REVISION_PRESETS.map((preset) => {
+                          const isAlreadyAdded = revisionInputText.includes(preset);
+                          return (
+                            <button
+                              key={preset}
+                              type="button"
+                              onClick={() => {
+                                setRevisionInputText((prev) => {
+                                  if (prev.includes(preset)) return prev;
+                                  const trimmed = prev.trim();
+                                  return trimmed ? `${trimmed}\n• ${preset}` : `• ${preset}`;
+                                });
+                                setIsPresetDropdownOpen(false);
+                              }}
+                              className={`w-full text-left px-3 py-2 text-xs transition flex items-center justify-between cursor-pointer ${
+                                isAlreadyAdded
+                                  ? "bg-slate-50 dark:bg-slate-800/50 text-slate-400 dark:text-slate-500 font-medium"
+                                  : "text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
+                              }`}
+                            >
+                              <span className="truncate">{preset}</span>
+                              <span className="text-[10px] text-slate-400 dark:text-slate-500 font-mono shrink-0 ml-2">
+                                {isAlreadyAdded ? "added" : "+ add"}
+                              </span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </>
+                  )}
                 </div>
               </div>
 
@@ -5395,8 +5421,8 @@ export function RequirementsPanel({
                                 />
                               </div>
 
-                              {/* Only show chips for subjects that are Done */}
-                              {classList.filter((cls) => cls.isDone).length > 0 ? (
+                              {/* Only show chips for subjects that are Done when not yet fully completed */}
+                              {doneCount < totalClasses && overallStatus !== "Completed / Validated" && classList.filter((cls) => cls.isDone).length > 0 ? (
                                 <div className="flex flex-wrap gap-1 pt-0.5">
                                   {classList
                                     .filter((cls) => cls.isDone)

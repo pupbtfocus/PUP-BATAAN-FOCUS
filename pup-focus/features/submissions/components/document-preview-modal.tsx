@@ -593,7 +593,7 @@ export function DocumentPreviewModal({
       onClick={onClose}
     >
       <div
-        className="w-full max-w-[96vw] xl:max-w-7xl h-[92vh] max-h-[94vh] flex flex-col rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xl overflow-hidden my-auto"
+        className="w-full max-w-[96vw] xl:max-w-7xl h-[88vh] max-h-[calc(100dvh-2rem)] flex flex-col rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xl overflow-hidden my-auto"
         onClick={(event) => event.stopPropagation()}
       >
         {/* Header */}
@@ -612,8 +612,6 @@ export function DocumentPreviewModal({
               : "Official Document Verification Details"
           }
           titleId="document-preview-modal-title"
-          onClose={onClose}
-          closeAriaLabel="Close preview"
         />
 
         {/* Subheader Metadata Bar */}
@@ -653,7 +651,7 @@ export function DocumentPreviewModal({
           <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs overflow-hidden flex flex-col lg:grid lg:grid-cols-[minmax(0,1fr)_270px] xl:grid-cols-[minmax(0,1fr)_290px] divide-y lg:divide-y-0 lg:divide-x divide-slate-200 dark:divide-slate-800 flex-1 min-h-0">
             {/* Main Viewer Area (Left Side - Wide) */}
             {isOfficeDoc ? (
-              <div className="w-full h-full flex flex-col items-center justify-center p-4 overflow-y-auto min-h-0 bg-white dark:bg-slate-900">
+              <div className="w-full h-full flex flex-col min-h-0 overflow-hidden bg-white dark:bg-slate-900">
                 <OnlineDocumentPreview
                   key={fileUrl}
                   fileName={effectiveFileName || documentTitle}
@@ -674,14 +672,14 @@ export function DocumentPreviewModal({
                 />
               </div>
             ) : (
-              <div className="flex-1 min-h-[320px] lg:min-h-0 overflow-hidden bg-slate-900 flex items-center justify-center relative h-full w-full">
+              <div className="flex-1 min-h-[320px] lg:min-h-0 overflow-hidden bg-slate-100 dark:bg-slate-950 flex items-center justify-center relative h-full w-full">
                 {typeInfo.isPdf && (isLoadingBlob || (!blobUrl && !resolvedInfo)) ? (
-                  <div className="flex flex-col items-center justify-center h-full w-full bg-slate-900 text-slate-400 gap-2">
+                  <div className="flex flex-col items-center justify-center h-full w-full bg-slate-100 dark:bg-slate-950 text-slate-500 dark:text-slate-400 gap-2">
                     <AppIcon icon={SystemRestart} size="md" color="inherit" className="animate-spin text-slate-400" />
                     <span className="text-xs font-medium">Loading document preview...</span>
                   </div>
                 ) : typeInfo.isImage ? (
-                  <div className="relative flex items-center justify-center w-full h-full p-2 bg-slate-950/40 overflow-hidden">
+                  <div className="relative flex items-center justify-center w-full h-full p-2 bg-slate-100/80 dark:bg-slate-950/40 overflow-hidden">
                     <img
                       src={blobUrl || displayUrl}
                       alt={documentTitle}
@@ -693,10 +691,10 @@ export function DocumentPreviewModal({
                     key={blobUrl || displayUrl}
                     title={`${documentTitle} preview`}
                     src={blobUrl || displayUrl}
-                    className="h-full w-full border-0 bg-slate-900"
+                    className="h-full w-full border-0 bg-slate-100 dark:bg-slate-950"
                   />
                 ) : (
-                  <div className="flex flex-col items-center justify-center h-full w-full bg-slate-900 text-slate-400 gap-2">
+                  <div className="flex flex-col items-center justify-center h-full w-full bg-slate-100 dark:bg-slate-950 text-slate-500 dark:text-slate-400 gap-2">
                     <AppIcon icon={SystemRestart} size="md" color="inherit" className="animate-spin text-slate-400" />
                     <span className="text-xs font-medium">Loading document preview...</span>
                   </div>
@@ -705,8 +703,9 @@ export function DocumentPreviewModal({
             )}
 
             {/* Compact Details & Actions Sidebar (Right Side) */}
-            <div className="flex flex-col justify-between bg-white dark:bg-slate-900 h-full overflow-y-auto min-h-0 text-xs">
-              <div className="divide-y divide-slate-200/80 dark:divide-slate-800/80">
+            <div className="flex flex-col bg-white dark:bg-slate-900 h-full min-h-0 text-xs overflow-hidden">
+              {/* Scrollable Details */}
+              <div className="flex-1 overflow-y-auto min-h-0 divide-y divide-slate-200/80 dark:divide-slate-800/80">
                 {/* 1. Remarks & Notes */}
                 {!isUpload && (
                   <div className="p-3 space-y-2">
@@ -851,8 +850,8 @@ export function DocumentPreviewModal({
                 </div>
               </div>
 
-              {/* Compact Action Footer */}
-              <div className="p-3 bg-slate-50/50 dark:bg-slate-900 border-t border-slate-200/80 dark:border-slate-800/80 space-y-1.5 mt-auto shrink-0">
+              {/* Compact Action Footer (Always pinned at bottom) */}
+              <div className="p-3 bg-slate-50/50 dark:bg-slate-900 border-t border-slate-200/80 dark:border-slate-800/80 space-y-1.5 shrink-0">
                 <div className="grid grid-cols-2 gap-1.5">
                   <button
                     type="button"
