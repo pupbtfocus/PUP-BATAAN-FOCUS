@@ -1995,14 +1995,9 @@ export function SuperAdminDashboard({
                   {/* Card 1: Active Admin & Staff Accounts */}
                   <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-xs space-y-3 transition-colors">
                     <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">
-                          Admin &amp; Staff
-                        </span>
-                        <span className="rounded bg-slate-100 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-slate-600 dark:bg-slate-800 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
-                          Campus
-                        </span>
-                      </div>
+                      <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+                        Admin &amp; Staff
+                      </span>
                       <Shield className="h-5 w-5 text-slate-400" strokeWidth={2} />
                     </div>
 
@@ -2040,7 +2035,7 @@ export function SuperAdminDashboard({
                       <div className="space-y-1">
                         <div className="flex items-center justify-between text-[11px]">
                           <span className="text-slate-600 dark:text-slate-400">
-                            Super Admins ({adminStats.superAdmins} admin)
+                            Admins ({adminStats.superAdmins} admin)
                           </span>
                           <span className="font-semibold text-slate-700 dark:text-slate-300">
                             {adminStats.superAdmins} / {adminStats.total} ({adminStats.total > 0 ? Math.round((adminStats.superAdmins / adminStats.total) * 100) : 0}%)
@@ -2073,20 +2068,15 @@ export function SuperAdminDashboard({
                   </div>
 
                   {/* Card 2: Faculty Members */}
-                  <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-xs space-y-3 transition-colors">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
+                  <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-xs flex flex-col justify-between space-y-3 transition-colors">
+                    <div className="space-y-2.5">
+                      <div className="flex items-center justify-between">
                         <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">
                           Faculty Members
                         </span>
-                        <span className="rounded bg-slate-100 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-slate-600 dark:bg-slate-800 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
-                          Roster
-                        </span>
+                        <Group className="h-5 w-5 text-slate-400" strokeWidth={2} />
                       </div>
-                      <Group className="h-5 w-5 text-slate-400" strokeWidth={2} />
-                    </div>
 
-                    <div className="space-y-2.5">
                       <div className="flex items-baseline justify-between gap-2">
                         <h3 className="text-xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">
                           {facultyStats.active} Active
@@ -2096,59 +2086,28 @@ export function SuperAdminDashboard({
                         </span>
                       </div>
 
-                      {/* Completed requirements row */}
-                      <div className="space-y-1">
-                        <div className="flex items-center justify-between text-[11px]">
-                          <span className="text-slate-600 dark:text-slate-400">
-                            Turned in all requirements
-                          </span>
-                          <span className="font-semibold text-slate-700 dark:text-slate-300">
-                            {facultyStats.completed} / {facultyStats.total} ({facultyStats.total > 0 ? Math.round((facultyStats.completed / facultyStats.total) * 100) : 0}%)
-                          </span>
-                        </div>
-                        <div className="h-1.5 w-full overflow-hidden rounded-full bg-slate-200 dark:bg-slate-800">
-                          <div
-                            className="h-full rounded-full bg-[#0b5336] transition-all duration-500"
-                            style={{
-                              width: `${facultyStats.total > 0 ? Math.min(100, Math.max(facultyStats.completed > 0 ? 1 : 0, (facultyStats.completed / facultyStats.total) * 100)) : 0}%`,
-                            }}
-                          />
-                        </div>
+                      <div className="h-1.5 w-full overflow-hidden rounded-full bg-slate-200 dark:bg-slate-800">
+                        <div
+                          className="h-full rounded-full bg-[#0b5336] transition-all duration-500"
+                          style={{
+                            width: `${facultyStats.total > 0 ? Math.min(100, Math.max(4, (facultyStats.active / facultyStats.total) * 100)) : 0}%`,
+                          }}
+                        />
                       </div>
+                    </div>
 
-                      {/* In progress requirements row */}
-                      <div className="space-y-1">
-                        <div className="flex items-center justify-between text-[11px]">
-                          <span className="text-slate-600 dark:text-slate-400">
-                            Still working on requirements
-                          </span>
-                          <span className="font-semibold text-slate-700 dark:text-slate-300">
-                            {facultyStats.inProgress} / {facultyStats.total} ({facultyStats.total > 0 ? Math.round((facultyStats.inProgress / facultyStats.total) * 100) : 0}%)
-                          </span>
-                        </div>
-                        <div className="h-1.5 w-full overflow-hidden rounded-full bg-slate-200 dark:bg-slate-800">
-                          <div
-                            className="h-full rounded-full bg-amber-500 transition-all duration-500"
-                            style={{
-                              width: `${facultyStats.total > 0 ? Math.min(100, Math.max(facultyStats.inProgress > 0 ? 1 : 0, (facultyStats.inProgress / facultyStats.total) * 100)) : 0}%`,
-                            }}
-                          />
-                        </div>
-                      </div>
-
-                      <div className="pt-1.5 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between gap-2">
-                        <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate">
-                          {facultyStats.completed} finished • {facultyStats.inProgress} in progress
-                        </p>
-                        <button
-                          type="button"
-                          onClick={() => handleSetActiveSection("faculty")}
-                          className="inline-flex items-center gap-1 text-xs font-bold text-[#800000] dark:text-amber-400 hover:underline cursor-pointer shrink-0"
-                        >
-                          <span>View faculty</span>
-                          <NavArrowRight className="h-3.5 w-3.5" />
-                        </button>
-                      </div>
+                    <div className="pt-1.5 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between gap-2 mt-auto">
+                      <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate">
+                        {facultyStats.completed} finished • {facultyStats.inProgress} in progress
+                      </p>
+                      <button
+                        type="button"
+                        onClick={() => handleSetActiveSection("faculty")}
+                        className="inline-flex items-center gap-1 text-xs font-bold text-[#800000] dark:text-amber-400 hover:underline cursor-pointer shrink-0"
+                      >
+                        <span>View faculty</span>
+                        <NavArrowRight className="h-3.5 w-3.5" />
+                      </button>
                     </div>
                   </div>
 

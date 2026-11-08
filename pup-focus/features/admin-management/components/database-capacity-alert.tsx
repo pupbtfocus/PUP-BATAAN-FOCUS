@@ -156,14 +156,9 @@ export function DatabaseCapacityAlert({
         }`}
       >
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">
-              Storage Space
-            </span>
-            <span className="rounded bg-slate-100 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-slate-600 dark:bg-slate-800 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
-              {isProTier ? "Pro Tier" : "Free Tier"}
-            </span>
-          </div>
+          <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+            Storage Space
+          </span>
           <HardDrive
             className={`h-5 w-5 ${
               isCritical
