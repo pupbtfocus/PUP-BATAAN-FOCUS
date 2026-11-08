@@ -91,5 +91,9 @@ scripts/*
 !scripts/ensure-deterministic-routes-manifest.mjs
 bat-scripts/
 **/bat-scripts/
+batch-scripts/
+**/batch-scripts/
 *.bat
 **/*.bat
+SETUP_AND_MIGRATION.md
+**/SETUP_AND_MIGRATION.md
