@@ -29,6 +29,7 @@ import { AppIcon } from "@/components/ui/app-icon";
 import { REQUIREMENT_LABEL, type RequirementCode } from "@/config/compliance";
 import { cn } from "@/utils/cn";
 import { useRealtimeSync } from "@/lib/realtime";
+import { createClient } from "@/lib/supabase/client";
 
 export interface AdminNotificationItem {
   id: string;
@@ -282,10 +283,15 @@ export function AdminNotificationDrawer({
 
   const fetchNotifications = useCallback(async () => {
     try {
+      const supabase = createClient();
+      const { data: sessionData } = await supabase.auth.getSession();
+      if (!sessionData?.session) return;
+
       setIsLoading(true);
       const response = await fetch(`/api/staff/notifications?_t=${Date.now()}`, {
         cache: "no-store",
       });
+      if (response.status === 401 || response.status === 403) return;
       if (!response.ok) return;
 
       const data = await response.json();

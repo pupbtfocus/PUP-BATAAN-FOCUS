@@ -47,6 +47,45 @@ function formatCapacityMb(mb: number): string {
   return `${mb} MB`;
 }
 
+let inFlightDbStatusPromise: Promise<DbStatusData | null> | null = null;
+let cachedDbStatusData: { data: DbStatusData; timestamp: number } | null = null;
+const DB_STATUS_CACHE_TTL = 15000;
+
+async function fetchSharedDbStatus(force = false): Promise<DbStatusData | null> {
+  const now = Date.now();
+  if (!force && cachedDbStatusData && now - cachedDbStatusData.timestamp < DB_STATUS_CACHE_TTL) {
+    return cachedDbStatusData.data;
+  }
+  if (inFlightDbStatusPromise) {
+    return inFlightDbStatusPromise;
+  }
+
+  inFlightDbStatusPromise = (async () => {
+    try {
+      const supabase = createClient();
+      const { data: sessionData } = await supabase.auth.getSession();
+      if (!sessionData?.session) return null;
+
+      const res = await fetch(`/api/admin/db-status?_t=${Date.now()}`, {
+        cache: "no-store",
+      });
+      if (!res.ok) return null;
+      const data = (await res.json()) as DbStatusData;
+      if (data && typeof data.usagePercent === "number") {
+        cachedDbStatusData = { data, timestamp: Date.now() };
+        return data;
+      }
+      return null;
+    } catch {
+      return null;
+    } finally {
+      inFlightDbStatusPromise = null;
+    }
+  })();
+
+  return inFlightDbStatusPromise;
+}
+
 export function DatabaseCapacityAlert({
   onManageStorage,
   showCard = false,
@@ -56,26 +95,14 @@ export function DatabaseCapacityAlert({
   const [fetchedStatus, setFetchedStatus] = useState<DbStatusData | null>(null);
   const [dismissed, setDismissed] = useState(false);
 
-  const fetchDbStatus = useCallback(async () => {
+  const fetchDbStatus = useCallback(async (force = false) => {
     if (overrideStatus) return;
-    try {
-      const supabase = createClient();
-      const { data: sessionData } = await supabase.auth.getSession();
-      if (!sessionData?.session) return;
-
-      const res = await fetch(`/api/admin/db-status?_t=${Date.now()}`, {
-        cache: "no-store",
-      });
-      if (!res.ok) return;
-      const data = (await res.json()) as DbStatusData;
-      if (data && typeof data.usagePercent === "number") {
-        setFetchedStatus(data);
-        if (data.status === "critical") {
-          setDismissed(false);
-        }
+    const data = await fetchSharedDbStatus(force);
+    if (data) {
+      setFetchedStatus(data);
+      if (data.status === "critical") {
+        setDismissed(false);
       }
-    } catch {
-      // Silently ignore network errors
     }
   }, [overrideStatus]);
 
@@ -84,16 +111,16 @@ export function DatabaseCapacityAlert({
       setDismissed(false);
       return;
     }
-    void fetchDbStatus();
+    void fetchDbStatus(refreshTrigger > 0);
     const interval = setInterval(() => {
-      void fetchDbStatus();
+      void fetchDbStatus(true);
     }, 60000);
     return () => clearInterval(interval);
   }, [fetchDbStatus, refreshTrigger, overrideStatus]);
 
   useRealtimeSync(() => {
     if (!overrideStatus) {
-      void fetchDbStatus();
+      void fetchDbStatus(true);
     }
   });
 
