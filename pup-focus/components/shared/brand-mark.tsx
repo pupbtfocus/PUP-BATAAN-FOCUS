@@ -4,12 +4,14 @@ type BrandMarkProps = {
   size?: number;
   className?: string;
   src?: string;
+  priority?: boolean;
 };
 
 export function BrandMark({
   size = 44,
   className,
   src = "/icons/pup-seal.png",
+  priority,
 }: BrandMarkProps) {
   return (
     <div
@@ -22,6 +24,7 @@ export function BrandMark({
         alt="PUP logo"
         fill
         sizes={`${size}px`}
+        priority={priority}
         className="rounded-full object-contain mx-auto transition-transform duration-300"
       />
     </div>

@@ -4,9 +4,10 @@ import Image from "next/image";
 interface LogoProps {
   size?: number;
   className?: string;
+  priority?: boolean;
 }
 
-export function Logo({ size = 115, className = "" }: LogoProps) {
+export function Logo({ size = 115, className = "", priority = true }: LogoProps) {
   return (
     <div
       className={`relative inline-flex items-center justify-center shrink-0 ${className}`}
@@ -17,6 +18,7 @@ export function Logo({ size = 115, className = "" }: LogoProps) {
         alt="PUP Logo"
         fill
         sizes={`${size}px`}
+        priority={priority}
         className="object-contain mx-auto"
       />
     </div>
