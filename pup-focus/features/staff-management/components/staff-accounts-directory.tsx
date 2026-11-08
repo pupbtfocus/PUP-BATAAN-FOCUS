@@ -2,6 +2,7 @@
 
 import React, { useState, useMemo } from "react";
 import {
+  CheckCircle,
   EditPencil,
   Eye,
   Group,
@@ -10,6 +11,7 @@ import {
   UserBadgeCheck,
   UserXmark,
   Xmark,
+  XmarkCircle,
 } from "iconoir-react";
 import { AppIcon } from "@/components/ui/app-icon";
 import { AlertPopup } from "@/components/ui/alert-popup";
@@ -128,9 +130,12 @@ export function AdminStatsCards({
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
       {/* 1. TOTAL */}
       <div className="rounded-xl bg-white text-slate-900 border border-slate-200 shadow-xs dark:bg-slate-900 dark:text-slate-100 dark:border-slate-800 p-5 transition-colors">
-        <p className="text-slate-500 dark:text-slate-400 text-xs font-medium uppercase tracking-wider">
-          Total {entityLabel}
-        </p>
+        <div className="flex items-center justify-between">
+          <p className="text-slate-500 dark:text-slate-400 text-xs font-medium uppercase tracking-wider">
+            Total {entityLabel}
+          </p>
+          <Group className="h-5 w-5 text-slate-400" strokeWidth={2} />
+        </div>
         <p className="mt-2 text-2xl font-bold text-slate-900 dark:text-slate-100">
           {isLoading ? "..." : totalCount}
         </p>
@@ -138,9 +143,12 @@ export function AdminStatsCards({
 
       {/* 2. ACTIVE */}
       <div className="rounded-xl bg-white text-slate-900 border border-slate-200 shadow-xs dark:bg-slate-900 dark:text-slate-100 dark:border-slate-800 p-5 transition-colors">
-        <p className="text-slate-500 dark:text-slate-400 text-xs font-medium uppercase tracking-wider">
-          Active {entityLabel}
-        </p>
+        <div className="flex items-center justify-between">
+          <p className="text-slate-500 dark:text-slate-400 text-xs font-medium uppercase tracking-wider">
+            Active {entityLabel}
+          </p>
+          <CheckCircle className="h-5 w-5 text-slate-400" strokeWidth={2} />
+        </div>
         <p className="mt-2 text-2xl font-bold text-slate-900 dark:text-slate-100">
           {isLoading ? "..." : activeCount}
         </p>
@@ -148,9 +156,12 @@ export function AdminStatsCards({
 
       {/* 3. INACTIVE */}
       <div className="rounded-xl bg-white text-slate-900 border border-slate-200 shadow-xs dark:bg-slate-900 dark:text-slate-100 dark:border-slate-800 p-5 transition-colors">
-        <p className="text-slate-500 dark:text-slate-400 text-xs font-medium uppercase tracking-wider">
-          Inactive {entityLabel}
-        </p>
+        <div className="flex items-center justify-between">
+          <p className="text-slate-500 dark:text-slate-400 text-xs font-medium uppercase tracking-wider">
+            Inactive {entityLabel}
+          </p>
+          <XmarkCircle className="h-5 w-5 text-slate-400" strokeWidth={2} />
+        </div>
         <p className="mt-2 text-2xl font-bold text-slate-900 dark:text-slate-100">
           {isLoading ? "..." : inactiveCount}
         </p>
