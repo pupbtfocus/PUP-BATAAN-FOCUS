@@ -156,11 +156,11 @@ export function DatabaseCapacityAlert({
         }`}
       >
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-2">
             <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">
               Storage Space
             </span>
-            <span className="rounded bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-slate-700">
+            <span className="rounded bg-slate-100 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-slate-600 dark:bg-slate-800 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
               {isProTier ? "Pro Tier" : "Free Tier"}
             </span>
           </div>
@@ -194,57 +194,57 @@ export function DatabaseCapacityAlert({
             </span>
           </div>
 
-          {/* 1. Database Limit */}
+          {/* Database tables breakdown */}
           <div className="space-y-1">
             <div className="flex items-center justify-between text-[11px]">
-              <span className="font-medium text-slate-600 dark:text-slate-300">
+              <span className="text-slate-600 dark:text-slate-400">
                 Database ({tableCount} tables)
               </span>
-              <span className="font-bold text-slate-800 dark:text-slate-200">
+              <span className="font-semibold text-slate-700 dark:text-slate-300">
                 {formatCapacityMb(dbMb)} / {formatCapacityMb(maxDbMb)} ({dbUsagePercent}%)
               </span>
             </div>
             <div className="h-1.5 w-full overflow-hidden rounded-full bg-slate-200 dark:bg-slate-800">
               <div
                 className={`h-full rounded-full transition-all duration-500 ${
-                  dbUsagePercent >= 90
+                  isCritical
                     ? "bg-red-600"
-                    : dbUsagePercent >= 80
+                    : isWarning
                     ? "bg-amber-500"
                     : "bg-[#0b5336]"
                 }`}
-                style={{ width: `${Math.min(100, Math.max(2, dbUsagePercent))}%` }}
+                style={{ width: `${Math.min(100, Math.max(1, dbUsagePercent))}%` }}
               />
             </div>
           </div>
 
-          {/* 2. File Storage Limit */}
+          {/* File Storage breakdown */}
           <div className="space-y-1">
             <div className="flex items-center justify-between text-[11px]">
-              <span className="font-medium text-slate-600 dark:text-slate-300">
+              <span className="text-slate-600 dark:text-slate-400">
                 File Storage ({bucketCount} folders)
               </span>
-              <span className="font-bold text-slate-800 dark:text-slate-200">
+              <span className="font-semibold text-slate-700 dark:text-slate-300">
                 {formatCapacityMb(bucketMb)} / {formatCapacityMb(maxBucketMb)} ({bucketUsagePercent}%)
               </span>
             </div>
             <div className="h-1.5 w-full overflow-hidden rounded-full bg-slate-200 dark:bg-slate-800">
               <div
                 className={`h-full rounded-full transition-all duration-500 ${
-                  bucketUsagePercent >= 90
+                  isCritical
                     ? "bg-red-600"
-                    : bucketUsagePercent >= 80
+                    : isWarning
                     ? "bg-amber-500"
                     : "bg-[#0b5336]"
                 }`}
-                style={{ width: `${Math.min(100, Math.max(2, bucketUsagePercent))}%` }}
+                style={{ width: `${Math.min(100, Math.max(1, bucketUsagePercent))}%` }}
               />
             </div>
           </div>
 
           <div className="pt-1.5 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between gap-2">
-            <p className="text-[11px] text-slate-500 dark:text-slate-400">
-              {formatCapacityMb(maxDbMb)} database + {formatCapacityMb(maxBucketMb)} files (max {formatCapacityMb(maxUploadFileMb)} per file)
+            <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate">
+              {formatCapacityMb(maxDbMb)} database + {formatCapacityMb(maxBucketMb)} files (max {maxUploadFileMb} MB per file)
             </p>
             {onManageStorage && (
               <button

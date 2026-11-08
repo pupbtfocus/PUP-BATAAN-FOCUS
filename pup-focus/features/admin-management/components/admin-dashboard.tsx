@@ -28,6 +28,7 @@ import { SuperAdminSettings } from "@/features/admin-management/components/admin
 import { DatabaseCapacityAlert } from "@/features/admin-management/components/database-capacity-alert";
 import { SuperAdminComplianceAnalytics } from "@/features/admin-management/components/super-admin-compliance-analytics";
 import { HighlightedSystemTitle } from "@/components/shared/highlighted-system-title";
+import { DEFAULT_REQUIREMENTS } from "@/config/compliance";
 import {
   recordActiveSessionLogin,
   pauseSessionVerification,
@@ -446,6 +447,55 @@ export function SuperAdminDashboard({
 
   // Faculty Management State
   const [facultyAccounts, setFacultyAccounts] = useState<FacultyAccount[]>([]);
+
+  // Dashboard Stat Calculations (No duplicates, casual English)
+  const adminStats = useMemo(() => {
+    const total = adminAccounts.length;
+    const active = adminAccounts.filter((a) => a.is_active).length;
+    const inactive = total - active;
+    const activePct = total > 0 ? Math.round((active / total) * 100) : 0;
+    const superAdmins = adminAccounts.filter(
+      (a) => a.role === "super_admin" || a.role === ROLE.SUPER_ADMIN
+    ).length;
+    const staff = total - superAdmins;
+    const loggedIn = adminAccounts.filter(
+      (a) => Boolean(a.last_sign_in_at || a.lastLoginAt)
+    ).length;
+    const notLoggedIn = total - loggedIn;
+
+    return { total, active, inactive, activePct, superAdmins, staff, loggedIn, notLoggedIn };
+  }, [adminAccounts]);
+
+  const facultyStats = useMemo(() => {
+    const total = facultyAccounts.length;
+    const active = facultyAccounts.filter((f) => f.is_active).length;
+    const inactive = total - active;
+    const activePct = total > 0 ? Math.round((active / total) * 100) : 0;
+
+    let completed = 0;
+    let started = 0;
+    let notStarted = 0;
+
+    for (const f of facultyAccounts) {
+      if (!f.is_active) continue;
+      const statusMap = f.requirementStatus || {};
+      let turnedIn = 0;
+      for (const code of DEFAULT_REQUIREMENTS) {
+        const s = statusMap[code];
+        if (s === "validated" || s === "uploaded") turnedIn += 1;
+      }
+      if (turnedIn === DEFAULT_REQUIREMENTS.length && DEFAULT_REQUIREMENTS.length > 0) {
+        completed += 1;
+      } else if (turnedIn > 0) {
+        started += 1;
+      } else {
+        notStarted += 1;
+      }
+    }
+    const inProgress = active - completed;
+
+    return { total, active, inactive, activePct, completed, inProgress, started, notStarted };
+  }, [facultyAccounts]);
   const [selectedFacultyId, setSelectedFacultyId] = useState<string | null>(() => {
     if (typeof window !== "undefined") {
       const urlParams = new URLSearchParams(window.location.search);
@@ -1938,52 +1988,73 @@ export function SuperAdminDashboard({
 
                 {/* TIER 2: Stat Grid */}
                 <section className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-                  {/* Card 1: Active Admin Accounts */}
-                  <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-xs flex flex-col justify-between space-y-3 transition-colors">
+                  {/* Card 1: Active Admin & Staff Accounts */}
+                  <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-xs space-y-3 transition-colors">
                     <div className="flex items-center justify-between">
-                      <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">
-                        Admin Accounts
-                      </span>
+                      <div className="flex items-center gap-2">
+                        <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+                          Admin &amp; Staff
+                        </span>
+                        <span className="rounded bg-slate-100 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-slate-600 dark:bg-slate-800 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
+                          Campus
+                        </span>
+                      </div>
                       <Shield className="h-5 w-5 text-slate-400" strokeWidth={2} />
                     </div>
+
                     <div className="space-y-2.5">
                       <div className="flex items-baseline justify-between gap-2">
                         <h3 className="text-xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">
-                          {adminAccounts.filter((a) => a.is_active).length} Active
+                          {adminStats.active} Active
                         </h3>
                         <span className="inline-flex items-center rounded-full bg-[#0b5336] text-white border border-[#08412a] px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider">
-                          {adminAccounts.length > 0
-                            ? `${Math.round(
-                                (adminAccounts.filter((a) => a.is_active).length /
-                                  adminAccounts.length) *
-                                  100
-                              )}% Active`
-                            : "0%"}
+                          {adminStats.activePct}% Active
                         </span>
                       </div>
-                      <div className="h-1.5 w-full overflow-hidden rounded-full bg-slate-200 dark:bg-slate-800">
-                        <div
-                          className="h-full rounded-full bg-[#0b5336] transition-all duration-500"
-                          style={{
-                            width: `${
-                              adminAccounts.length > 0
-                                ? Math.min(
-                                    100,
-                                    Math.max(
-                                      4,
-                                      (adminAccounts.filter((a) => a.is_active).length /
-                                        adminAccounts.length) *
-                                        100
-                                    )
-                                  )
-                                : 0
-                            }%`,
-                          }}
-                        />
+
+                      {/* Staff accounts row */}
+                      <div className="space-y-1">
+                        <div className="flex items-center justify-between text-[11px]">
+                          <span className="text-slate-600 dark:text-slate-400">
+                            Staff Members ({adminStats.staff} staff)
+                          </span>
+                          <span className="font-semibold text-slate-700 dark:text-slate-300">
+                            {adminStats.staff} / {adminStats.total} ({adminStats.total > 0 ? Math.round((adminStats.staff / adminStats.total) * 100) : 0}%)
+                          </span>
+                        </div>
+                        <div className="h-1.5 w-full overflow-hidden rounded-full bg-slate-200 dark:bg-slate-800">
+                          <div
+                            className="h-full rounded-full bg-[#0b5336] transition-all duration-500"
+                            style={{
+                              width: `${adminStats.total > 0 ? Math.min(100, Math.max(1, (adminStats.staff / adminStats.total) * 100)) : 0}%`,
+                            }}
+                          />
+                        </div>
                       </div>
+
+                      {/* Admin accounts row */}
+                      <div className="space-y-1">
+                        <div className="flex items-center justify-between text-[11px]">
+                          <span className="text-slate-600 dark:text-slate-400">
+                            Super Admins ({adminStats.superAdmins} admin)
+                          </span>
+                          <span className="font-semibold text-slate-700 dark:text-slate-300">
+                            {adminStats.superAdmins} / {adminStats.total} ({adminStats.total > 0 ? Math.round((adminStats.superAdmins / adminStats.total) * 100) : 0}%)
+                          </span>
+                        </div>
+                        <div className="h-1.5 w-full overflow-hidden rounded-full bg-slate-200 dark:bg-slate-800">
+                          <div
+                            className="h-full rounded-full bg-[#780000] transition-all duration-500"
+                            style={{
+                              width: `${adminStats.total > 0 ? Math.min(100, Math.max(1, (adminStats.superAdmins / adminStats.total) * 100)) : 0}%`,
+                            }}
+                          />
+                        </div>
+                      </div>
+
                       <div className="pt-1.5 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between gap-2">
-                        <p className="text-xs text-slate-500 dark:text-slate-400">
-                          {adminAccounts.length} total staff accounts
+                        <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate">
+                          {adminStats.superAdmins} admin + {adminStats.staff} staff accounts
                         </p>
                         <button
                           type="button"
@@ -1997,52 +2068,73 @@ export function SuperAdminDashboard({
                     </div>
                   </div>
 
-                  {/* Card 2: Faculty Accounts */}
-                  <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-xs flex flex-col justify-between space-y-3 transition-colors">
+                  {/* Card 2: Faculty Members */}
+                  <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-xs space-y-3 transition-colors">
                     <div className="flex items-center justify-between">
-                      <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">
-                        Faculty Accounts
-                      </span>
+                      <div className="flex items-center gap-2">
+                        <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+                          Faculty Members
+                        </span>
+                        <span className="rounded bg-slate-100 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-slate-600 dark:bg-slate-800 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
+                          Roster
+                        </span>
+                      </div>
                       <Group className="h-5 w-5 text-slate-400" strokeWidth={2} />
                     </div>
+
                     <div className="space-y-2.5">
                       <div className="flex items-baseline justify-between gap-2">
                         <h3 className="text-xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">
-                          {facultyAccounts.filter((f) => f.is_active).length} Active
+                          {facultyStats.active} Active
                         </h3>
                         <span className="inline-flex items-center rounded-full bg-[#0b5336] text-white border border-[#08412a] px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider">
-                          {facultyAccounts.length > 0
-                            ? `${Math.round(
-                                (facultyAccounts.filter((f) => f.is_active).length /
-                                  facultyAccounts.length) *
-                                  100
-                              )}% Active`
-                            : "0%"}
+                          {facultyStats.activePct}% Active
                         </span>
                       </div>
-                      <div className="h-1.5 w-full overflow-hidden rounded-full bg-slate-200 dark:bg-slate-800">
-                        <div
-                          className="h-full rounded-full bg-[#0b5336] transition-all duration-500"
-                          style={{
-                            width: `${
-                              facultyAccounts.length > 0
-                                ? Math.min(
-                                    100,
-                                    Math.max(
-                                      4,
-                                      (facultyAccounts.filter((f) => f.is_active).length /
-                                        facultyAccounts.length) *
-                                        100
-                                    )
-                                  )
-                                : 0
-                            }%`,
-                          }}
-                        />
+
+                      {/* Completed requirements row */}
+                      <div className="space-y-1">
+                        <div className="flex items-center justify-between text-[11px]">
+                          <span className="text-slate-600 dark:text-slate-400">
+                            Turned in all requirements
+                          </span>
+                          <span className="font-semibold text-slate-700 dark:text-slate-300">
+                            {facultyStats.completed} / {facultyStats.total} ({facultyStats.total > 0 ? Math.round((facultyStats.completed / facultyStats.total) * 100) : 0}%)
+                          </span>
+                        </div>
+                        <div className="h-1.5 w-full overflow-hidden rounded-full bg-slate-200 dark:bg-slate-800">
+                          <div
+                            className="h-full rounded-full bg-[#0b5336] transition-all duration-500"
+                            style={{
+                              width: `${facultyStats.total > 0 ? Math.min(100, Math.max(facultyStats.completed > 0 ? 1 : 0, (facultyStats.completed / facultyStats.total) * 100)) : 0}%`,
+                            }}
+                          />
+                        </div>
                       </div>
+
+                      {/* In progress requirements row */}
+                      <div className="space-y-1">
+                        <div className="flex items-center justify-between text-[11px]">
+                          <span className="text-slate-600 dark:text-slate-400">
+                            Still working on requirements
+                          </span>
+                          <span className="font-semibold text-slate-700 dark:text-slate-300">
+                            {facultyStats.inProgress} / {facultyStats.total} ({facultyStats.total > 0 ? Math.round((facultyStats.inProgress / facultyStats.total) * 100) : 0}%)
+                          </span>
+                        </div>
+                        <div className="h-1.5 w-full overflow-hidden rounded-full bg-slate-200 dark:bg-slate-800">
+                          <div
+                            className="h-full rounded-full bg-amber-500 transition-all duration-500"
+                            style={{
+                              width: `${facultyStats.total > 0 ? Math.min(100, Math.max(facultyStats.inProgress > 0 ? 1 : 0, (facultyStats.inProgress / facultyStats.total) * 100)) : 0}%`,
+                            }}
+                          />
+                        </div>
+                      </div>
+
                       <div className="pt-1.5 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between gap-2">
-                        <p className="text-xs text-slate-500 dark:text-slate-400">
-                          {facultyAccounts.length} total faculty members
+                        <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate">
+                          {facultyStats.completed} finished • {facultyStats.inProgress} in progress
                         </p>
                         <button
                           type="button"

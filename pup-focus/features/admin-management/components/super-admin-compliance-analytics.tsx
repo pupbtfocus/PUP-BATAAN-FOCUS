@@ -469,12 +469,9 @@ export function SuperAdminComplianceAnalytics({
                   className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 shadow-xs flex flex-col justify-between space-y-3 transition-colors"
                 >
                   <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-1.5 min-w-0">
-                      <span className={`h-2 w-2 rounded-full ${cat.solidBg} shrink-0`} />
-                      <span className="font-extrabold text-xs sm:text-sm text-slate-800 dark:text-slate-100 truncate">
-                        {cat.label}
-                      </span>
-                    </div>
+                    <span className="font-extrabold text-xs sm:text-sm text-slate-800 dark:text-slate-100 truncate">
+                      {cat.label}
+                    </span>
                     {cat.id === "completed" && (
                       <CheckCircle className="h-4.5 w-4.5 text-slate-400" strokeWidth={2} />
                     )}
@@ -500,7 +497,11 @@ export function SuperAdminComplianceAnalytics({
                         />
                       </div>
                       <span
-                        className={`inline-flex items-center px-2 py-0.5 rounded-md text-[10px] sm:text-xs font-black shadow-2xs whitespace-nowrap shrink-0 ${cat.badgePill}`}
+                        className={`inline-flex items-center px-2 py-0.5 rounded-md text-[10px] sm:text-xs font-black shadow-2xs whitespace-nowrap shrink-0 ${
+                          cat.count > 0
+                            ? cat.badgePill
+                            : "bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500 border border-slate-200 dark:border-slate-700"
+                        }`}
                       >
                         <span className="font-bold mr-1">{cat.count} •</span>
                         <span>{cat.pct}%</span>
@@ -593,7 +594,13 @@ export function SuperAdminComplianceAnalytics({
                           <div key={cat.id} className="h-full flex flex-col justify-end items-center group relative">
                             {/* Value badge floating above bar */}
                             <div className="mb-1.5 flex flex-col items-center">
-                              <span className={`inline-flex items-center px-1.5 sm:px-2 py-0.5 rounded-md text-[10px] sm:text-xs font-black shadow-2xs whitespace-nowrap transition-transform group-hover:scale-105 ${cat.badgePill}`}>
+                              <span
+                                className={`inline-flex items-center px-1.5 sm:px-2 py-0.5 rounded-md text-[10px] sm:text-xs font-black shadow-2xs whitespace-nowrap transition-transform group-hover:scale-105 ${
+                                  cat.count > 0
+                                    ? cat.badgePill
+                                    : "bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500 border border-slate-200 dark:border-slate-700"
+                                }`}
+                              >
                                 <span className="hidden sm:inline mr-1 font-bold">{cat.count} •</span>
                                 <span>{cat.pct}%</span>
                               </span>
@@ -617,13 +624,10 @@ export function SuperAdminComplianceAnalytics({
                 <div className="grid grid-cols-4 gap-2 sm:gap-6 pl-9 sm:pl-12 pr-2 sm:pr-6 pt-3">
                   {categories.map((cat) => (
                     <div key={cat.id} className="flex flex-col items-center text-center">
-                      <div className="flex items-center gap-1.5">
-                        <span className={`h-2 w-2 rounded-full ${cat.solidBg} shrink-0`} />
-                        <span className="font-extrabold text-[11px] sm:text-xs text-slate-800 dark:text-slate-100 truncate">
-                          <span className="sm:hidden">{cat.shortLabel}</span>
-                          <span className="hidden sm:inline">{cat.label}</span>
-                        </span>
-                      </div>
+                      <span className="font-extrabold text-[11px] sm:text-xs text-slate-800 dark:text-slate-100 truncate">
+                        <span className="sm:hidden">{cat.shortLabel}</span>
+                        <span className="hidden sm:inline">{cat.label}</span>
+                      </span>
                       <span className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5 font-medium hidden sm:block truncate max-w-full">
                         {cat.detail}
                       </span>
@@ -652,15 +656,12 @@ export function SuperAdminComplianceAnalytics({
                       key={cat.id}
                       className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 group"
                     >
-                      {/* Left: Dot, Label, Subtitle */}
+                      {/* Left: Label & Subtitle */}
                       <div className="w-full sm:w-48 shrink-0">
-                        <div className="flex items-center gap-1.5">
-                          <span className={`h-2 w-2 rounded-full ${cat.solidBg} shrink-0`} />
-                          <span className="font-extrabold text-xs sm:text-sm text-slate-800 dark:text-slate-100 truncate">
-                            {cat.label}
-                          </span>
-                        </div>
-                        <p className="text-[10px] sm:text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 truncate pl-3.5">
+                        <span className="font-extrabold text-xs sm:text-sm text-slate-800 dark:text-slate-100 truncate block">
+                          {cat.label}
+                        </span>
+                        <p className="text-[10px] sm:text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 truncate">
                           {cat.detail}
                         </p>
                       </div>
@@ -678,7 +679,11 @@ export function SuperAdminComplianceAnalytics({
 
                         {/* Floating Badge matching Columns view */}
                         <span
-                          className={`inline-flex items-center px-2 py-1 rounded-md text-[10px] sm:text-xs font-black shadow-2xs whitespace-nowrap shrink-0 transition-transform group-hover:scale-105 ${cat.badgePill}`}
+                          className={`inline-flex items-center px-2 py-1 rounded-md text-[10px] sm:text-xs font-black shadow-2xs whitespace-nowrap shrink-0 transition-transform group-hover:scale-105 ${
+                            cat.count > 0
+                              ? cat.badgePill
+                              : "bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500 border border-slate-200 dark:border-slate-700"
+                          }`}
                         >
                           <span className="font-bold mr-1">{cat.count} •</span>
                           <span>{cat.pct}%</span>
