@@ -97,3 +97,13 @@ batch-scripts/
 **/*.bat
 SETUP_AND_MIGRATION.md
 **/SETUP_AND_MIGRATION.md
+
+# Google Drive Temporary Sync Files
+.tmp.driveupload*
+.tmp.drivedownload*
+*.tmp.driveupload*
+*.tmp.drivedownload*
+**/.tmp.driveupload*
+**/.tmp.drivedownload*
+**/*.tmp.driveupload*
+**/*.tmp.drivedownload*
