@@ -4,7 +4,7 @@ import { useEffect, useRef, useState, type FormEvent } from "react";
 import { Turnstile, type TurnstileInstance } from "@/components/auth/turnstile";
 import { LazyLottie } from "@/components/ui/lazy-lottie";
 import { Button } from "@/components/ui/button";
-import loadingAnimation from "@/assets/icons animations/lottieflow-loading-08-000000-easey.json";
+import loadingAnimation from "@/assets/icons-animations/lottieflow-loading-08-000000-easey.json";
 import { Check, CheckCircle, Eye, EyeClosed, Hourglass, Lock, Mail, WarningCircle, WarningTriangle } from "iconoir-react";
 import { AppIcon } from "@/components/ui/app-icon";
 

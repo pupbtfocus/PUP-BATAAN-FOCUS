@@ -38,9 +38,9 @@ import {
   AuthFeedbackModal,
   type AuthModalState,
 } from "@/components/auth/auth-feedback-modal";
-import successfullyIcon from "@/assets/icons animations/successfully.svg";
-import failedIcon from "@/assets/icons animations/fail.svg";
-import loadingIcon from "@/assets/icons animations/loading.svg";
+import successfullyIcon from "@/assets/icons-animations/successfully.svg";
+import failedIcon from "@/assets/icons-animations/fail.svg";
+import loadingIcon from "@/assets/icons-animations/loading.svg";
 import { SystemLoadingScreen } from "@/components/shared/system-loading-screen";
 import { ForgotPasswordModal } from "@/components/auth/forgot-password-modal";
 import { CancelledInviteModal } from "@/components/auth/cancelled-invite-modal";
