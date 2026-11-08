@@ -18,7 +18,7 @@ import {
 } from "iconoir-react";
 import { AppIcon } from "@/components/ui/app-icon";
 import { ModalHeader } from "@/components/ui/modal-header";
-import { HistoricalSubmissionsModal } from "./historical-submissions-modal";
+import { HistoricalSubmissionsModal, prefetchHistoricalSubmissions } from "./historical-submissions-modal";
 
 type AcademicTermStatus = "Current" | "Upcoming" | "Archived" | "Completed";
 
@@ -29,6 +29,9 @@ type AcademicTermItem = {
   canDelete: boolean;
   deleteReason?: string;
 };
+
+let cachedAcademicTerms: AcademicTermItem[] | null = null;
+let cachedNextAcademicYear: string | null = null;
 
 function getTermScore(academicYear: string, semester: string): number {
   const startYear = parseInt(academicYear.split("-")[0], 10) || 0;
@@ -50,7 +53,22 @@ export function AdminAcademicTerms({
   onNavigateToRequirements?: () => void;
   onNavigateToBackups?: () => void;
 }) {
-  const [terms, setTerms] = useState<AcademicTermItem[]>([]);
+  const [terms, setTerms] = useState<AcademicTermItem[]>(() => {
+    if (cachedAcademicTerms && cachedAcademicTerms.length > 0) return cachedAcademicTerms;
+    if (typeof window !== "undefined") {
+      try {
+        const stored = sessionStorage.getItem("pup_focus_academic_terms");
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            cachedAcademicTerms = parsed;
+            return parsed;
+          }
+        }
+      } catch {}
+    }
+    return [];
+  });
   const [warningModalData, setWarningModalData] = useState<{
     isOpen: boolean;
     title: string;
@@ -59,8 +77,19 @@ export function AdminAcademicTerms({
     hasPendingReviews?: boolean;
     pendingCount?: number;
   }>({ isOpen: false, title: "", description: "" });
-  const [nextAcademicYear, setNextAcademicYear] = useState("2026-2027");
-  const [isLoading, setIsLoading] = useState(true);
+  const [nextAcademicYear, setNextAcademicYear] = useState(() => {
+    if (cachedNextAcademicYear) return cachedNextAcademicYear;
+    if (typeof window !== "undefined") {
+      try {
+        const stored = sessionStorage.getItem("pup_focus_next_academic_year");
+        if (stored) return stored;
+      } catch {}
+    }
+    return "2026-2027";
+  });
+  const [isLoading, setIsLoading] = useState(() => {
+    return !cachedAcademicTerms || cachedAcademicTerms.length === 0;
+  });
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
@@ -83,6 +112,7 @@ export function AdminAcademicTerms({
 
   useEffect(() => {
     void loadTerms();
+    void prefetchHistoricalSubmissions();
   }, []);
 
   useRealtimeSync(() => {
@@ -197,7 +227,8 @@ export function AdminAcademicTerms({
   }, [terms, currentScore]);
 
   async function loadTerms(options?: { silent?: boolean }) {
-    if (!options?.silent) {
+    const isSilent = options?.silent ?? (cachedAcademicTerms !== null && cachedAcademicTerms.length > 0);
+    if (!isSilent) {
       setIsLoading(true);
       setError(null);
       setSuccess(null);
@@ -220,12 +251,23 @@ export function AdminAcademicTerms({
         return;
       }
 
-      setTerms(Array.isArray(data.terms) ? data.terms : []);
-      setNextAcademicYear(
+      const nextTerms = Array.isArray(data.terms) ? data.terms : [];
+      const nextYear =
         typeof data.nextAcademicYear === "string"
           ? data.nextAcademicYear
-          : "2026-2027",
-      );
+          : "2026-2027";
+
+      cachedAcademicTerms = nextTerms;
+      cachedNextAcademicYear = nextYear;
+      if (typeof window !== "undefined") {
+        try {
+          sessionStorage.setItem("pup_focus_academic_terms", JSON.stringify(nextTerms));
+          sessionStorage.setItem("pup_focus_next_academic_year", nextYear);
+        } catch {}
+      }
+
+      setTerms(nextTerms);
+      setNextAcademicYear(nextYear);
     } catch (loadError) {
       setError(
         loadError instanceof Error
@@ -233,7 +275,7 @@ export function AdminAcademicTerms({
           : "Failed to load academic terms",
       );
     } finally {
-      if (!options?.silent) {
+      if (!isSilent) {
         setIsLoading(false);
       }
     }
@@ -649,7 +691,7 @@ export function AdminAcademicTerms({
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-300 dark:divide-slate-800/60">
-              {isLoading ? (
+              {isLoading && activeAndUpcomingTerms.length === 0 ? (
                 <tr className="bg-white dark:bg-slate-900/40 py-2.5 px-4 text-xs">
                   <td colSpan={4} className="py-6 text-center text-slate-500 dark:text-slate-400">
                     Loading academic terms...
@@ -763,7 +805,7 @@ export function AdminAcademicTerms({
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-200 dark:divide-slate-800/60">
-              {isLoading ? (
+              {isLoading && archivedTerms.length === 0 ? (
                 <tr className="bg-white dark:bg-slate-900/40 py-2.5 px-4 text-xs">
                   <td colSpan={4} className="py-6 text-center text-slate-500 dark:text-slate-400">
                     Loading archived terms...

@@ -540,14 +540,10 @@ export function FacultyVerificationDrawer({
   }, [requirementTemplatesProp]);
 
   // History Tab States
-  const [historySubmissions, setHistorySubmissions] = useState<FacultyRequirementSubmission[]>([]);
-  const [historyClasses, setHistoryClasses] = useState<any[]>([]);
-  const [selectedHistoryClassId, setSelectedHistoryClassId] = useState<string | null>(null);
-  const [isLoadingHistory, setIsLoadingHistory] = useState(false);
   const [historyAcademicYears, setHistoryAcademicYears] = useState<string[]>(() =>
     initialAvailableAcademicYears && initialAvailableAcademicYears.length > 0
       ? Array.from(new Set([...initialAvailableAcademicYears, activeAy].filter(Boolean))).sort().reverse()
-      : [],
+      : activeAy ? [activeAy] : [],
   );
   const [selectedHistoryAy, setSelectedHistoryAy] = useState<string>(() => {
     if (initialTab === "history" && activeAy) return activeAy;
@@ -556,11 +552,55 @@ export function FacultyVerificationDrawer({
         ? activeAy
         : initialAvailableAcademicYears[0] || "";
     }
-    return "";
+    return activeAy || "";
   });
   const [selectedHistorySem, setSelectedHistorySem] = useState<SemesterOption>(
-    initialTab === "history" ? activeSem : "1st Semester"
+    initialTab === "history" && activeSem ? activeSem : (activeSem || "1st Semester")
   );
+
+  const historyCacheRef = useRef<Record<string, { submissions: FacultyRequirementSubmission[]; classes: any[] }>>({
+    ...(activeAy && activeSem
+      ? {
+          [`${activeAy}::${activeSem}`]: {
+            submissions: initialSubmissions ?? [],
+            classes: (initialClasses ?? []).map((c) => ({
+              id: c.id,
+              subject_code: c.subject_code,
+              description: c.description,
+              units: Number(c.units ?? 0),
+              section_code: c.section_code,
+            })),
+          },
+        }
+      : {}),
+  });
+
+  const [historySubmissions, setHistorySubmissions] = useState<FacultyRequirementSubmission[]>(() => {
+    const isMatchingActive =
+      Boolean(activeAy && activeSem) &&
+      (initialTab === "history" || (activeAy && activeSem));
+    if (isMatchingActive && initialSubmissions && initialSubmissions.length > 0) {
+      return initialSubmissions;
+    }
+    return [];
+  });
+  const [historyClasses, setHistoryClasses] = useState<any[]>(() => {
+    const isMatchingActive =
+      Boolean(activeAy && activeSem) &&
+      (initialTab === "history" || (activeAy && activeSem));
+    if (isMatchingActive && initialClasses && initialClasses.length > 0) {
+      return initialClasses.map((c) => ({
+        id: c.id,
+        subject_code: c.subject_code,
+        description: c.description,
+        units: Number(c.units ?? 0),
+        section_code: c.section_code,
+      }));
+    }
+    return [];
+  });
+  const [selectedHistoryClassId, setSelectedHistoryClassId] = useState<string | null>(null);
+  const [isLoadingHistory, setIsLoadingHistory] = useState(false);
   const [isDownloadingHistoryZip, setIsDownloadingHistoryZip] = useState(false);
 
   // Revision Request Modal States
@@ -1306,10 +1346,63 @@ export function FacultyVerificationDrawer({
     };
   }, [faculty.id, activeAy, activeSem, initialAvailableAcademicYears]);
 
+  // Keep cache synced with current submissions and active term
+  useEffect(() => {
+    if (activeAy && activeSem) {
+      const termKey = `${activeAy}::${activeSem}`;
+      historyCacheRef.current[termKey] = {
+        submissions,
+        classes: facultyClasses,
+      };
+      if (selectedHistoryAy === activeAy && selectedHistorySem === activeSem) {
+        setHistorySubmissions(submissions);
+        setHistoryClasses(facultyClasses);
+      }
+    }
+  }, [activeAy, activeSem, submissions, facultyClasses, selectedHistoryAy, selectedHistorySem]);
+
+  // Background prefetch all available history academic terms so switching is instant
+  useEffect(() => {
+    if (!faculty.id || historyAcademicYears.length === 0) return;
+    const sems: SemesterOption[] = ["1st Semester", "2nd Semester", "Summer Semester"];
+    historyAcademicYears.forEach((ay) => {
+      sems.forEach((sem) => {
+        const termKey = `${ay}::${sem}`;
+        if (historyCacheRef.current[termKey]) return;
+        fetch(
+          `/api/staff/faculty/submissions?facultyId=${encodeURIComponent(faculty.id)}&academicYear=${encodeURIComponent(ay)}&semester=${encodeURIComponent(sem)}`,
+          { credentials: "include" }
+        )
+          .then((res) => (res.ok ? res.json() : null))
+          .then((data) => {
+            if (data) {
+              const subs = data.submissions || [];
+              const cls = Array.isArray(data.classes) ? data.classes : [];
+              historyCacheRef.current[termKey] = {
+                submissions: subs,
+                classes: cls,
+              };
+              if (selectedHistoryAy === ay && selectedHistorySem === sem) {
+                setHistorySubmissions(subs);
+                setHistoryClasses(cls);
+              }
+            }
+          })
+          .catch(() => {});
+      });
+    });
+  }, [faculty.id, historyAcademicYears, selectedHistoryAy, selectedHistorySem]);
+
   const refreshHistorySubmissions = useCallback(
     async (options?: { silent?: boolean }) => {
       if (activeTab !== "history" || !faculty.id || !selectedHistoryAy || !selectedHistorySem) return;
-      const isSilent = options?.silent ?? hasLoadedHistoryRef.current;
+      const termKey = `${selectedHistoryAy}::${selectedHistorySem}`;
+      const cached = historyCacheRef.current[termKey];
+      if (cached) {
+        setHistorySubmissions(cached.submissions);
+        setHistoryClasses(cached.classes);
+      }
+      const isSilent = options?.silent ?? (Boolean(cached) || hasLoadedHistoryRef.current);
       if (!isSilent) {
         setIsLoadingHistory(true);
       }
@@ -1320,9 +1413,15 @@ export function FacultyVerificationDrawer({
         );
         if (res.ok) {
           const data = await res.json();
-          setHistorySubmissions(data.submissions || []);
+          const subs = data.submissions || [];
+          const cls = Array.isArray(data.classes) ? data.classes : [];
+          historyCacheRef.current[termKey] = {
+            submissions: subs,
+            classes: cls,
+          };
+          setHistorySubmissions(subs);
           if (Array.isArray(data.classes)) {
-            setHistoryClasses(data.classes);
+            setHistoryClasses(cls);
           }
           hasLoadedHistoryRef.current = true;
         }
@@ -3166,7 +3265,15 @@ export function FacultyVerificationDrawer({
                   <select
                     value={selectedHistoryAy}
                     onChange={(e) => {
-                      setSelectedHistoryAy(e.target.value);
+                      const newAy = e.target.value;
+                      setSelectedHistoryAy(newAy);
+                      setSelectedHistoryClassId(null);
+                      const key = `${newAy}::${selectedHistorySem}`;
+                      if (historyCacheRef.current[key]) {
+                        setHistorySubmissions(historyCacheRef.current[key].submissions);
+                        setHistoryClasses(historyCacheRef.current[key].classes);
+                        setIsLoadingHistory(false);
+                      }
                     }}
                     className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 px-3 py-1.5 text-xs text-slate-900 dark:text-slate-100 outline-none transition focus:border-amber-500"
                   >
@@ -3180,7 +3287,15 @@ export function FacultyVerificationDrawer({
                   <select
                     value={selectedHistorySem}
                     onChange={(e) => {
-                      setSelectedHistorySem(e.target.value as SemesterOption);
+                      const newSem = e.target.value as SemesterOption;
+                      setSelectedHistorySem(newSem);
+                      setSelectedHistoryClassId(null);
+                      const key = `${selectedHistoryAy}::${newSem}`;
+                      if (historyCacheRef.current[key]) {
+                        setHistorySubmissions(historyCacheRef.current[key].submissions);
+                        setHistoryClasses(historyCacheRef.current[key].classes);
+                        setIsLoadingHistory(false);
+                      }
                     }}
                     className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 px-3 py-1.5 text-xs text-slate-900 dark:text-slate-100 outline-none transition focus:border-amber-500"
                   >
@@ -3215,7 +3330,7 @@ export function FacultyVerificationDrawer({
 
 
               {/* Past Submissions Per Card Subjects or Detail View */}
-              {isLoadingHistory || !selectedHistoryAy ? (
+              {(isLoadingHistory && historySubmissions.length === 0 && historyClasses.length === 0) || !selectedHistoryAy ? (
                 <div className="space-y-3 pt-2">
                   <div className="overflow-hidden rounded-2xl border-2 border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 animate-pulse space-y-4">
                     <div className="h-5 bg-slate-200 dark:bg-slate-800 rounded w-1/4" />
@@ -4470,6 +4585,16 @@ export function RequirementsPanel({
     Record<string, FacultySubjectProgress>
   >({});
   const [isLoadingStatuses, setIsLoadingStatuses] = useState(false);
+  const statusesByTermRef = useRef<
+    Record<
+      string,
+      {
+        statusMap: Record<string, Record<string, RequirementStatus>>;
+        classProgressMap: Record<string, FacultyClassProgress[]>;
+        subjectProgressMap: Record<string, FacultySubjectProgress>;
+      }
+    >
+  >({});
 
   const [submissionsCache, setSubmissionsCache] = useState<
     Record<string, { submissions: FacultyRequirementSubmission[]; classes: any[] }>
@@ -4736,6 +4861,16 @@ export function RequirementsPanel({
           }
         }
 
+        const effectiveAy = ay || (options?.syncActiveTerm ? data.currentAcademicYear : "") || academicYear || activeTermAy || "";
+        const effectiveSem = sem || (options?.syncActiveTerm ? data.currentSemester : "") || semester || activeTermSem || "1st Semester";
+        if (effectiveAy) {
+          statusesByTermRef.current[`${effectiveAy}::${effectiveSem}`] = {
+            statusMap,
+            classProgressMap,
+            subjectProgressMap,
+          };
+        }
+
         setFacultyStatuses(statusMap);
         setFacultyClassProgress(classProgressMap);
         setFacultySubjectProgress(subjectProgressMap);
@@ -4748,6 +4883,19 @@ export function RequirementsPanel({
       }
     }
   }
+
+  // Background prefetch known past terms so switching is instant
+  useEffect(() => {
+    if (facultyAccounts.length === 0 || allKnownYears.length === 0) return;
+    const sems: SemesterOption[] = ["1st Semester", "2nd Semester"];
+    allKnownYears.slice(0, 3).forEach((y) => {
+      sems.forEach((s) => {
+        const termKey = `${y}::${s}`;
+        if (statusesByTermRef.current[termKey]) return;
+        void fetchAllStatuses(y, s, { silent: true });
+      });
+    });
+  }, [facultyAccounts.length, allKnownYears]);
 
   // Load active term, templates, and all faculty statuses in a single batched request on mount
   useEffect(() => {
@@ -5116,8 +5264,15 @@ export function RequirementsPanel({
                   setActivePanelTab("current");
                   setAcademicYear(activeTermAy);
                   setSemester(activeTermSem);
+                  const termKey = `${activeTermAy}::${activeTermSem}`;
+                  const cached = statusesByTermRef.current[termKey];
+                  if (cached) {
+                    setFacultyStatuses(cached.statusMap);
+                    setFacultyClassProgress(cached.classProgressMap);
+                    setFacultySubjectProgress(cached.subjectProgressMap);
+                  }
                   void fetchAllStatuses(activeTermAy, activeTermSem, {
-                    silent: Object.keys(facultyStatuses).length > 0,
+                    silent: Boolean(cached) || Object.keys(facultyStatuses).length > 0,
                   });
                 }}
                 className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer ${
@@ -5149,8 +5304,17 @@ export function RequirementsPanel({
                   setHistorySem(validSem);
                   setAcademicYear(validAy);
                   setSemester(validSem);
+
+                  const termKey = `${validAy}::${validSem}`;
+                  const cached = statusesByTermRef.current[termKey];
+                  if (cached) {
+                    setFacultyStatuses(cached.statusMap);
+                    setFacultyClassProgress(cached.classProgressMap);
+                    setFacultySubjectProgress(cached.subjectProgressMap);
+                  }
+
                   void fetchAllStatuses(validAy, validSem, {
-                    silent: Object.keys(facultyStatuses).length > 0,
+                    silent: Boolean(cached) || Object.keys(facultyStatuses).length > 0,
                   });
                 }}
                 className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer ${
@@ -5196,8 +5360,17 @@ export function RequirementsPanel({
                       : (validSems.includes(historySem) ? historySem : validSems[0]);
                     setHistorySem(nextSem);
                     setSemester(nextSem);
+
+                    const termKey = `${newAy}::${nextSem}`;
+                    const cached = statusesByTermRef.current[termKey];
+                    if (cached) {
+                      setFacultyStatuses(cached.statusMap);
+                      setFacultyClassProgress(cached.classProgressMap);
+                      setFacultySubjectProgress(cached.subjectProgressMap);
+                    }
+
                     void fetchAllStatuses(newAy, nextSem, {
-                      silent: Object.keys(facultyStatuses).length > 0,
+                      silent: Boolean(cached) || Object.keys(facultyStatuses).length > 0,
                     });
                   }}
                   className="rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-1.5 text-xs text-slate-900 dark:text-slate-100 font-bold outline-none focus:border-amber-500 cursor-pointer shadow-2xs"
@@ -5215,8 +5388,17 @@ export function RequirementsPanel({
                     const newSem = e.target.value as SemesterOption;
                     setHistorySem(newSem);
                     setSemester(newSem);
+
+                    const termKey = `${historyAy}::${newSem}`;
+                    const cached = statusesByTermRef.current[termKey];
+                    if (cached) {
+                      setFacultyStatuses(cached.statusMap);
+                      setFacultyClassProgress(cached.classProgressMap);
+                      setFacultySubjectProgress(cached.subjectProgressMap);
+                    }
+
                     void fetchAllStatuses(historyAy, newSem, {
-                      silent: Object.keys(facultyStatuses).length > 0,
+                      silent: Boolean(cached) || Object.keys(facultyStatuses).length > 0,
                     });
                   }}
                   className="rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-1.5 text-xs text-slate-900 dark:text-slate-100 font-bold outline-none focus:border-amber-500 cursor-pointer shadow-2xs"

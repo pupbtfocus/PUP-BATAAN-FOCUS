@@ -14,6 +14,33 @@ import { ModalHeader } from "@/components/ui/modal-header";
 import { SubmissionStatusBadge } from "@/features/submissions/components/submission-status-badge";
 import type { HistoricalSubmissionItem } from "@/app/api/staff/academic-terms/submissions/route";
 
+const historicalSubmissionsCache: Record<string, HistoricalSubmissionItem[]> = {};
+
+export async function prefetchHistoricalSubmissions(termKey = "all", status = "all") {
+  const cacheKey = `${termKey}::${status}`;
+  if (historicalSubmissionsCache[cacheKey]) return;
+  try {
+    const params = new URLSearchParams();
+    if (termKey !== "all") {
+      const [ay, sem] = termKey.split("|");
+      if (ay) params.set("academicYear", ay);
+      if (sem) params.set("semester", sem);
+    }
+    if (status !== "all") {
+      params.set("status", status);
+    }
+    const res = await fetch(`/api/staff/academic-terms/submissions?${params.toString()}`, {
+      credentials: "include",
+    });
+    if (res.ok) {
+      const data = await res.json();
+      if (Array.isArray(data.submissions)) {
+        historicalSubmissionsCache[cacheKey] = data.submissions;
+      }
+    }
+  } catch {}
+}
+
 interface HistoricalSubmissionsModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -29,22 +56,34 @@ export function HistoricalSubmissionsModal({
   initialSemester,
   allTerms,
 }: HistoricalSubmissionsModalProps) {
-  const [selectedTermKey, setSelectedTermKey] = useState<string>(
+  const initialKey =
     initialAcademicYear && initialSemester
       ? `${initialAcademicYear}|${initialSemester}`
-      : "all",
-  );
+      : "all";
+  const [selectedTermKey, setSelectedTermKey] = useState<string>(initialKey);
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState<string>("");
-  const [submissions, setSubmissions] = useState<HistoricalSubmissionItem[]>([]);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
+
+  const currentCacheKey = `${selectedTermKey}::${statusFilter}`;
+  const [submissions, setSubmissions] = useState<HistoricalSubmissionItem[]>(() => {
+    return historicalSubmissionsCache[currentCacheKey] || [];
+  });
+  const [isLoading, setIsLoading] = useState<boolean>(() => {
+    return !historicalSubmissionsCache[currentCacheKey];
+  });
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (initialAcademicYear && initialSemester) {
-      setSelectedTermKey(`${initialAcademicYear}|${initialSemester}`);
+      const nextKey = `${initialAcademicYear}|${initialSemester}`;
+      setSelectedTermKey(nextKey);
+      const nextCacheKey = `${nextKey}::${statusFilter}`;
+      if (historicalSubmissionsCache[nextCacheKey]) {
+        setSubmissions(historicalSubmissionsCache[nextCacheKey]);
+        setIsLoading(false);
+      }
     }
-  }, [initialAcademicYear, initialSemester]);
+  }, [initialAcademicYear, initialSemester, statusFilter]);
 
   useEffect(() => {
     if (isOpen) {
@@ -52,8 +91,16 @@ export function HistoricalSubmissionsModal({
     }
   }, [isOpen, selectedTermKey, statusFilter]);
 
-  async function fetchSubmissions() {
-    setIsLoading(true);
+  async function fetchSubmissions(options?: { silent?: boolean }) {
+    const key = `${selectedTermKey}::${statusFilter}`;
+    const cached = historicalSubmissionsCache[key];
+    if (cached) {
+      setSubmissions(cached);
+    }
+    const isSilent = options?.silent ?? Boolean(cached);
+    if (!isSilent) {
+      setIsLoading(true);
+    }
     setError(null);
 
     try {
@@ -78,11 +125,15 @@ export function HistoricalSubmissionsModal({
         throw new Error(data?.error || "Failed to load historical submissions.");
       }
 
-      setSubmissions(Array.isArray(data.submissions) ? data.submissions : []);
+      const nextSubs = Array.isArray(data.submissions) ? data.submissions : [];
+      historicalSubmissionsCache[key] = nextSubs;
+      setSubmissions(nextSubs);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load submissions.");
     } finally {
-      setIsLoading(false);
+      if (!isSilent) {
+        setIsLoading(false);
+      }
     }
   }
 
@@ -144,7 +195,15 @@ export function HistoricalSubmissionsModal({
               <select
                 id="historicalTermSelect"
                 value={selectedTermKey}
-                onChange={(e) => setSelectedTermKey(e.target.value)}
+                onChange={(e) => {
+                  const newTerm = e.target.value;
+                  setSelectedTermKey(newTerm);
+                  const cacheKey = `${newTerm}::${statusFilter}`;
+                  if (historicalSubmissionsCache[cacheKey]) {
+                    setSubmissions(historicalSubmissionsCache[cacheKey]);
+                    setIsLoading(false);
+                  }
+                }}
                 className="h-8 rounded-lg border border-slate-300 bg-white px-3 text-xs font-semibold text-slate-800 outline-none focus:border-amber-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
               >
                 <option value="all">All Terms (Archive & Current)</option>
@@ -170,7 +229,15 @@ export function HistoricalSubmissionsModal({
               <select
                 id="historicalStatusSelect"
                 value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value)}
+                onChange={(e) => {
+                  const newStatus = e.target.value;
+                  setStatusFilter(newStatus);
+                  const cacheKey = `${selectedTermKey}::${newStatus}`;
+                  if (historicalSubmissionsCache[cacheKey]) {
+                    setSubmissions(historicalSubmissionsCache[cacheKey]);
+                    setIsLoading(false);
+                  }
+                }}
                 className="h-8 rounded-lg border border-slate-300 bg-white px-3 text-xs font-semibold text-slate-800 outline-none focus:border-amber-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
               >
                 <option value="all">All Statuses</option>
@@ -250,7 +317,7 @@ export function HistoricalSubmissionsModal({
 
         {/* Content Area */}
         <div className="flex-1 overflow-y-auto p-4 sm:p-6 bg-white dark:bg-slate-900">
-          {isLoading ? (
+          {isLoading && filteredSubmissions.length === 0 ? (
             <div className="flex h-64 items-center justify-center text-slate-500 dark:text-slate-400">
               <AppIcon icon={SystemRestart} size="lg" color="inherit" className="animate-spin mr-2" />
               <span className="text-sm font-semibold">Loading submissions...</span>
