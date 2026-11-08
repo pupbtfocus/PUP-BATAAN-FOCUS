@@ -2870,7 +2870,7 @@ export function FacultyVerificationDrawer({
                                           <div className="flex items-center gap-1.5 text-[10px] text-slate-500 dark:text-slate-400 font-mono">
                                             {fileSize ? <span>{fileSize}</span> : null}
                                             {isRevisionUploaded ? (
-                                              <span className="font-sans font-bold text-amber-600 dark:text-amber-400">
+                                              <span className="font-sans font-bold text-slate-600 dark:text-slate-400">
                                                 • (Revised)
                                               </span>
                                             ) : null}

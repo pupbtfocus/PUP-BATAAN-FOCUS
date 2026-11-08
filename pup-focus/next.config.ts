@@ -22,12 +22,12 @@ const cspHeader = [
   "img-src 'self' blob: data: https://*.supabase.co",
   "font-src 'self' data:",
   "connect-src 'self' data: https://*.supabase.co wss://*.supabase.co https://challenges.cloudflare.com https://*.cloudflarecaptcha.com",
-  "frame-src 'self' https://challenges.cloudflare.com",
+  "frame-src 'self' blob: data: https://challenges.cloudflare.com https://docs.google.com https://view.officeapps.live.com",
   "worker-src 'self' blob:",
   "object-src 'none'",
   "base-uri 'self'",
   "form-action 'self'",
-  "frame-ancestors 'none'",
+  "frame-ancestors 'self'",
   "upgrade-insecure-requests",
 ].join("; ");
 
@@ -42,7 +42,7 @@ const securityHeaders = [
   },
   {
     key: "X-Frame-Options",
-    value: "DENY",
+    value: "SAMEORIGIN",
   },
   {
     key: "Referrer-Policy",

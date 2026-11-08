@@ -11,6 +11,7 @@ import {
   Notes,
   OpenNewWindow,
   Page,
+  SystemRestart,
   Upload,
   WarningCircle,
   Xmark,
@@ -354,6 +355,8 @@ export function DocumentPreviewModal({
   isAdminView = false,
 }: DocumentPreviewModalProps) {
   const [resolvedInfo, setResolvedInfo] = useState<ResolvedDirectFileResult | null>(null);
+  const [blobUrl, setBlobUrl] = useState<string | null>(null);
+  const [isLoadingBlob, setIsLoadingBlob] = useState(false);
 
   const isReviewerView = Boolean(isAdminView || submission?.isAdminView);
 
@@ -362,6 +365,27 @@ export function DocumentPreviewModal({
     (submission?.latestSubmissionId
       ? getPreviewUrl(submission.latestSubmissionId)
       : "");
+
+  const effectiveFileName = resolvedInfo?.fileName || submission?.fileName;
+  const effectiveStoragePath = resolvedInfo?.storagePath || submission?.storagePath;
+  const effectiveMimeType = resolvedInfo?.mimeType;
+
+  const typeInfo = getDocumentTypeDetails(
+    effectiveFileName,
+    effectiveStoragePath,
+    effectiveMimeType,
+    false
+  );
+
+  const proxyUrl = effectiveStoragePath
+    ? `/api/storage/download?path=${encodeURIComponent(effectiveStoragePath)}`
+    : null;
+
+  const displayUrl =
+    resolvedInfo?.url ||
+    (typeInfo.isPdf || typeInfo.isImage
+      ? proxyUrl || fileUrl
+      : fileUrl);
 
   useEffect(() => {
     setResolvedInfo(null);
@@ -392,6 +416,64 @@ export function DocumentPreviewModal({
     };
   }, [isOpen, submission, fileUrl]);
 
+  useEffect(() => {
+    if (blobUrl) {
+      URL.revokeObjectURL(blobUrl);
+      setBlobUrl(null);
+    }
+
+    if (!isOpen || !submission || !typeInfo.isPdf) {
+      return;
+    }
+
+    let isMounted = true;
+    setIsLoadingBlob(true);
+
+    const sourceUrl =
+      resolvedInfo?.url ||
+      (fileUrl && !fileUrl.includes("/api/storage/download") ? fileUrl : null) ||
+      proxyUrl ||
+      fileUrl;
+
+    if (!sourceUrl) {
+      setIsLoadingBlob(false);
+      return;
+    }
+
+    fetch(sourceUrl)
+      .then((res) => {
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        return res.blob();
+      })
+      .then((blob) => {
+        if (isMounted) {
+          const url = URL.createObjectURL(
+            new Blob([blob], { type: "application/pdf" })
+          );
+          setBlobUrl(url);
+          setIsLoadingBlob(false);
+        }
+      })
+      .catch((err) => {
+        if (isMounted) {
+          console.warn("Failed to load PDF as blob, falling back to direct URL:", err);
+          setIsLoadingBlob(false);
+        }
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [isOpen, submission, proxyUrl, resolvedInfo?.url, fileUrl, typeInfo.isPdf]);
+
+  useEffect(() => {
+    return () => {
+      if (blobUrl) {
+        URL.revokeObjectURL(blobUrl);
+      }
+    };
+  }, [blobUrl]);
+
   if (!isOpen || !submission) {
     return null;
   }
@@ -403,23 +485,10 @@ export function DocumentPreviewModal({
       : null) ||
     "Document";
 
-  const effectiveFileName = resolvedInfo?.fileName || submission.fileName;
-  const effectiveStoragePath = resolvedInfo?.storagePath || submission.storagePath;
-  const effectiveMimeType = resolvedInfo?.mimeType;
-
-  const typeInfo = getDocumentTypeDetails(
-    effectiveFileName,
-    effectiveStoragePath,
-    effectiveMimeType,
-    false
-  );
-
   const rawFileName = effectiveFileName;
   const cleanBaseName = rawFileName && !rawFileName.startsWith("faculty-submissions/") && !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}/i.test(rawFileName)
     ? (rawFileName.includes("/") ? rawFileName.split("/").pop() : rawFileName)
     : undefined;
-
-  const displayUrl = resolvedInfo?.url || fileUrl;
 
   const adminFeedback =
     submission.adminRemarks ||
@@ -486,9 +555,12 @@ export function DocumentPreviewModal({
       onDownload(submission);
       return;
     }
-    const downloadUrl = fileUrl.startsWith("blob:") || fileUrl.startsWith("data:")
-      ? fileUrl
-      : `${fileUrl}&download=true`;
+    const downloadUrl =
+      blobUrl ||
+      resolvedInfo?.url ||
+      (fileUrl.startsWith("blob:") || fileUrl.startsWith("data:")
+        ? fileUrl
+        : `${fileUrl}&download=true`);
     const link = document.createElement("a");
     link.href = downloadUrl;
     link.download = effectiveFileName || `${documentTitle}.${typeInfo.ext ? typeInfo.ext.toLowerCase() : "pdf"}`;
@@ -498,8 +570,9 @@ export function DocumentPreviewModal({
   }
 
   function handleOpenFullView() {
+    const targetUrl = blobUrl || resolvedInfo?.url || displayUrl || effectiveUrl;
     if (typeInfo.isImage || typeInfo.isPdf || isLocalBlob) {
-      window.open(displayUrl || effectiveUrl, "_blank", "noopener,noreferrer");
+      window.open(targetUrl, "_blank", "noopener,noreferrer");
       return;
     }
 
@@ -508,7 +581,7 @@ export function DocumentPreviewModal({
       return;
     }
 
-    window.open(effectiveUrl, "_blank", "noopener,noreferrer");
+    window.open(targetUrl, "_blank", "noopener,noreferrer");
   }
 
   return (
@@ -539,33 +612,29 @@ export function DocumentPreviewModal({
               : "Official Document Verification Details"
           }
           titleId="document-preview-modal-title"
+          onClose={onClose}
+          closeAriaLabel="Close preview"
         />
 
         {/* Subheader Metadata Bar */}
-        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-950/60 px-4 sm:px-5 py-2 shrink-0">
+        <div className="flex flex-wrap items-center justify-between gap-2.5 border-b border-slate-200 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-950/60 px-4 sm:px-5 py-2 shrink-0">
           <div className="flex flex-wrap items-center gap-2">
             {isUpload ? (
               <>
-                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-lg text-xs font-semibold bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
-                  <AppIcon icon={Upload} size="xs" color="success" />
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 shadow-2xs">
+                  <AppIcon icon={Upload} size="xs" color="inherit" />
                   Ready to Submit
                 </span>
                 {submission.fileSize ? (
-                  <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-lg text-xs font-medium bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
+                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 shadow-2xs">
                     {formatBytes(submission.fileSize)}
                   </span>
                 ) : null}
               </>
             ) : (
               <>
-                {submission.facultyName ? (
-                  <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-lg text-xs font-semibold bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 border border-slate-200 dark:border-slate-700">
-                    <span className="text-slate-400 dark:text-slate-500 font-normal">Faculty:</span>
-                    <span>{submission.facultyName}</span>
-                  </span>
-                ) : null}
                 {(submission.semester || submission.academicYear) && (
-                  <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-lg text-xs font-semibold bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
+                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 shadow-2xs">
                     {submission.semester ? `${submission.semester} • ` : ""}
                     S.Y. {submission.academicYear || "Current Term"}
                   </span>
@@ -577,9 +646,6 @@ export function DocumentPreviewModal({
               </>
             )}
           </div>
-          <span className="text-xs font-semibold text-slate-600 dark:text-slate-300 truncate max-w-md hidden sm:inline">
-            {documentTitle}
-          </span>
         </div>
 
         {/* Content Body: Wide Viewer + Compact Details Sidebar */}
@@ -609,20 +675,31 @@ export function DocumentPreviewModal({
               </div>
             ) : (
               <div className="flex-1 min-h-[320px] lg:min-h-0 overflow-hidden bg-slate-900 flex items-center justify-center relative h-full w-full">
-                {typeInfo.isImage ? (
+                {typeInfo.isPdf && (isLoadingBlob || (!blobUrl && !resolvedInfo)) ? (
+                  <div className="flex flex-col items-center justify-center h-full w-full bg-slate-900 text-slate-400 gap-2">
+                    <AppIcon icon={SystemRestart} size="md" color="inherit" className="animate-spin text-slate-400" />
+                    <span className="text-xs font-medium">Loading document preview...</span>
+                  </div>
+                ) : typeInfo.isImage ? (
                   <div className="relative flex items-center justify-center w-full h-full p-2 bg-slate-950/40 overflow-hidden">
                     <img
-                      src={displayUrl}
+                      src={blobUrl || displayUrl}
                       alt={documentTitle}
                       className="max-h-full max-w-full rounded-lg object-contain shadow-md"
                     />
                   </div>
-                ) : (
+                ) : blobUrl || displayUrl ? (
                   <iframe
+                    key={blobUrl || displayUrl}
                     title={`${documentTitle} preview`}
-                    src={displayUrl}
+                    src={blobUrl || displayUrl}
                     className="h-full w-full border-0 bg-slate-900"
                   />
+                ) : (
+                  <div className="flex flex-col items-center justify-center h-full w-full bg-slate-900 text-slate-400 gap-2">
+                    <AppIcon icon={SystemRestart} size="md" color="inherit" className="animate-spin text-slate-400" />
+                    <span className="text-xs font-medium">Loading document preview...</span>
+                  </div>
                 )}
               </div>
             )}
@@ -694,7 +771,7 @@ export function DocumentPreviewModal({
                 )}
 
                 {/* 2. Compact Submission / File Details */}
-                <div className="p-3 space-y-2">
+                <div className="p-3 space-y-2.5">
                   <div className="flex items-center gap-1.5">
                     <span className="flex items-center justify-center h-5 w-5 rounded-md bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 shrink-0">
                       <AppIcon icon={isUpload ? Page : Calendar} size="xs" />
@@ -704,89 +781,69 @@ export function DocumentPreviewModal({
                     </span>
                   </div>
 
-                  <div className="space-y-1.5 text-[11px]">
-                    <div>
+                  <div className="space-y-2 text-[11px]">
+                    <div className="space-y-1">
                       <span className="text-[10px] font-medium text-slate-400 dark:text-slate-500 block">
                         Document Name
                       </span>
                       <div
-                        className="flex items-start gap-1.5 font-semibold text-slate-900 dark:text-slate-100 break-words mt-0.5"
+                        className="flex items-start gap-2 font-semibold text-slate-900 dark:text-slate-100 break-words"
                         title={documentTitle}
                       >
                         <div className="shrink-0 mt-0.5">
-                          {typeInfo.icon("h-3.5 w-3.5")}
+                          {typeInfo.icon("h-4 w-4")}
                         </div>
-                        <span className="leading-snug line-clamp-2">{documentTitle}</span>
+                        <div className="min-w-0 flex-1">
+                          <span className="leading-snug line-clamp-2 block text-xs">{documentTitle}</span>
+                        </div>
                       </div>
-                      {cleanBaseName && cleanBaseName !== documentTitle && (
-                        <div
-                          className="text-[10px] text-slate-500 dark:text-slate-400 pl-5 truncate mt-0.5"
-                          title={cleanBaseName}
-                        >
-                          {cleanBaseName}
-                        </div>
-                      )}
                     </div>
 
                     {!isUpload && submission.submittedAt && (
-                      <div className="flex items-center justify-between pt-1.5 border-t border-slate-100 dark:border-slate-800/70">
-                        <span className="text-slate-500 dark:text-slate-400">Submitted</span>
-                        <span className="font-semibold text-slate-800 dark:text-slate-200">
+                      <div className="flex items-center justify-between gap-2 pt-2 border-t border-slate-100 dark:border-slate-800/70">
+                        <span className="text-slate-500 dark:text-slate-400 shrink-0">Submitted</span>
+                        <span className="font-semibold text-slate-800 dark:text-slate-200 text-right">
                           {formatSubmittedDateTime(submission.submittedAt) ?? submission.submittedAt}
                         </span>
                       </div>
                     )}
 
                     {!isUpload && submission.facultyName && (
-                      <div className="flex items-center justify-between pt-1.5 border-t border-slate-100 dark:border-slate-800/70">
-                        <span className="text-slate-500 dark:text-slate-400">Faculty</span>
-                        <span className="font-semibold text-slate-800 dark:text-slate-200 truncate max-w-[150px]" title={submission.facultyName}>
+                      <div className="flex items-center justify-between gap-2 pt-2 border-t border-slate-100 dark:border-slate-800/70">
+                        <span className="text-slate-500 dark:text-slate-400 shrink-0">Faculty</span>
+                        <span className="font-semibold text-slate-800 dark:text-slate-200 truncate max-w-[170px] text-right" title={submission.facultyName}>
                           {submission.facultyName}
                         </span>
                       </div>
                     )}
 
                     {!isUpload && (
-                      submission.reviewedAt || normalizedStatus === "Validated" ? (
-                        <div className="flex items-center justify-between pt-1.5 border-t border-slate-100 dark:border-slate-800/70">
-                          <span className="text-slate-500 dark:text-slate-400 flex items-center gap-1">
-                            <AppIcon icon={CheckCircle} size="xs" color="success" />
-                            <span>Validated</span>
-                          </span>
-                          <span className="font-semibold text-slate-800 dark:text-slate-200">
-                            {formatSubmittedDateTime(submission.reviewedAt) ??
-                              submission.reviewedAt ??
-                              "Validated"}
-                          </span>
-                        </div>
-                      ) : (
-                        <div className="flex items-center justify-between pt-1.5 border-t border-slate-100 dark:border-slate-800/70">
-                          <span className="text-slate-500 dark:text-slate-400 flex items-center gap-1">
-                            <AppIcon icon={Hourglass} size="xs" color="active" />
-                            <span>Status</span>
-                          </span>
-                          <span className="font-semibold text-amber-700 dark:text-amber-400">
-                            {normalizedStatus}
-                          </span>
-                        </div>
-                      )
+                      <div className="flex items-center justify-between gap-2 pt-2 border-t border-slate-100 dark:border-slate-800/70">
+                        <span className="text-slate-500 dark:text-slate-400 shrink-0">Status</span>
+                        <SubmissionStatusBadge
+                          status={normalizedStatus}
+                          size="sm"
+                          showBadgeIcon={false}
+                          className="shrink-0"
+                        />
+                      </div>
                     )}
 
                     {submission.fileSize ? (
-                      <div className="flex items-center justify-between pt-1.5 border-t border-slate-100 dark:border-slate-800/70">
-                        <span className="text-slate-500 dark:text-slate-400">File Size</span>
-                        <span className="font-semibold text-slate-800 dark:text-slate-200">
+                      <div className="flex items-center justify-between gap-2 pt-2 border-t border-slate-100 dark:border-slate-800/70">
+                        <span className="text-slate-500 dark:text-slate-400 shrink-0">File Size</span>
+                        <span className="font-semibold text-slate-800 dark:text-slate-200 text-right">
                           {formatBytes(submission.fileSize)}
                         </span>
                       </div>
                     ) : null}
 
-                    <div className="flex items-center justify-between pt-1.5 border-t border-slate-100 dark:border-slate-800/70">
-                      <span className="text-slate-500 dark:text-slate-400">Format</span>
-                      <span className="inline-flex items-center gap-1 font-semibold text-slate-800 dark:text-slate-200">
+                    <div className="flex items-center justify-between gap-2 pt-2 border-t border-slate-100 dark:border-slate-800/70">
+                      <span className="text-slate-500 dark:text-slate-400 shrink-0">Format</span>
+                      <span className="inline-flex items-center justify-end gap-1.5 font-semibold text-slate-800 dark:text-slate-200 text-right">
                         {typeInfo.icon("h-3.5 w-3.5 shrink-0")}
-                        <span className="truncate max-w-[140px]">
-                          {typeInfo.ext ? `${typeInfo.ext} Document` : typeInfo.type}
+                        <span className="truncate max-w-[150px]">
+                          {typeInfo.ext ? `${typeInfo.ext.toUpperCase()} Document` : typeInfo.type}
                         </span>
                       </span>
                     </div>
