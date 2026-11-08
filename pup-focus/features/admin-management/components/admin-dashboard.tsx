@@ -45,8 +45,10 @@ import {
 import { StaffDetailsModal } from "@/features/staff-management/components/staff-modals/staff-details-modal";
 import { EditStaffModal } from "@/features/staff-management/components/staff-modals/edit-staff-modal";
 import { InviteStatusModal } from "@/features/faculty-management/components/faculty-modals/invite-status-modal";
-import { UserRegistrationLogsModal } from "@/features/admin-management/components/user-registration-logs-modal";
-import { SubmissionScheduleLogsModal } from "@/features/faculty-management/components/submission-schedule-logs-modal";
+import {
+  UserRegistrationLogsModal,
+  prefetchUserRegistrationLogs,
+} from "@/features/admin-management/components/user-registration-logs-modal";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
@@ -567,7 +569,6 @@ export function SuperAdminDashboard({
   // User Registration Logs Modal State
   const [registrationLogsModalOpen, setRegistrationLogsModalOpen] = useState(false);
   const [registrationLogsInitialRole, setRegistrationLogsInitialRole] = useState<"all" | "faculty" | "admin">("all");
-  const [submissionScheduleLogsModalOpen, setSubmissionScheduleLogsModalOpen] = useState(false);
 
   const facultyForm = useForm<FacultyAccountFormInput>({
     resolver: zodResolver(facultyAccountSchema),
@@ -1121,6 +1122,9 @@ export function SuperAdminDashboard({
   useEffect(() => {
     void loadAdminAccounts();
     void loadFacultyFromDatabase();
+    prefetchUserRegistrationLogs("all");
+    prefetchUserRegistrationLogs("admin");
+    prefetchUserRegistrationLogs("faculty");
   }, []);
 
   useEffect(() => {
@@ -2277,14 +2281,6 @@ export function SuperAdminDashboard({
                     </button>
                     <button
                       type="button"
-                      onClick={() => setSubmissionScheduleLogsModalOpen(true)}
-                      className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white hover:bg-slate-50 dark:bg-slate-800 dark:hover:bg-slate-750 text-slate-800 dark:text-slate-100 px-3.5 py-2 sm:py-1.5 text-xs font-semibold transition cursor-pointer shadow-xs active:scale-[0.98]"
-                    >
-                      <ClockRotateRight className="h-3.5 w-3.5 text-slate-700 dark:text-slate-300" />
-                      <span>Submission Schedule Logs</span>
-                    </button>
-                    <button
-                      type="button"
                       onClick={() => void refreshCurrentPanel()}
                       disabled={isRefreshing}
                       className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white hover:bg-slate-50 dark:bg-slate-800 dark:hover:bg-slate-750 text-slate-700 dark:text-slate-200 px-3.5 py-2 sm:py-1.5 text-xs font-semibold transition-all disabled:opacity-50 cursor-pointer shadow-xs active:scale-[0.98]"
@@ -2674,22 +2670,24 @@ export function SuperAdminDashboard({
                     onClose={() => setError(null)}
                   />
 
-                  {/* Action Button - Exact same styling and logic as Add Faculty */}
-                  <button
-                    className={`py-2.5 px-6 rounded-xl transition-all shadow-md text-xs tracking-wide font-bold ${
-                      !canSubmitStaff || isSubmitting
-                        ? "bg-slate-200 dark:bg-slate-800 text-slate-400 dark:text-slate-500 cursor-not-allowed border border-slate-300 dark:border-slate-700"
-                        : "bg-amber-500 hover:bg-amber-400 text-slate-950 cursor-pointer active:scale-[0.99]"
-                    }`}
-                    type="submit"
-                    disabled={!canSubmitStaff || isSubmitting}
-                  >
-                    {isSubmitting
-                      ? "Creating Staff Account..."
-                      : !areAllRequiredStaffFieldsFilled
-                      ? "Fill All Required Fields"
-                      : "Create Staff Account"}
-                  </button>
+                  {/* Action Button - Centered */}
+                  <div className="flex items-center justify-center pt-2">
+                    <button
+                      className={`py-2.5 px-6 rounded-xl transition-all shadow-md text-xs tracking-wide font-bold ${
+                        !canSubmitStaff || isSubmitting
+                          ? "bg-slate-200 dark:bg-slate-800 text-slate-400 dark:text-slate-500 cursor-not-allowed border border-slate-300 dark:border-slate-700"
+                          : "bg-amber-500 hover:bg-amber-400 text-slate-950 cursor-pointer active:scale-[0.99]"
+                      }`}
+                      type="submit"
+                      disabled={!canSubmitStaff || isSubmitting}
+                    >
+                      {isSubmitting
+                        ? "Creating Staff Account..."
+                        : !areAllRequiredStaffFieldsFilled
+                        ? "Fill All Required Fields"
+                        : "Create Staff Account"}
+                    </button>
+                  </div>
                 </div>
               </form>
             </div>
@@ -2840,11 +2838,6 @@ export function SuperAdminDashboard({
           void loadAdminAccounts(true);
           void loadFacultyFromDatabase(true);
         }}
-      />
-
-      <SubmissionScheduleLogsModal
-        isOpen={submissionScheduleLogsModalOpen}
-        onClose={() => setSubmissionScheduleLogsModalOpen(false)}
       />
     </div>
   );

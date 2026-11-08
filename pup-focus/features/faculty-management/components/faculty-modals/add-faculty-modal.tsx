@@ -677,21 +677,23 @@ export function AddFacultyPanel({
             <FieldError message={form.formState.errors.email?.message} />
           </div>
 
-            <button
-              className={`py-2.5 px-6 rounded-xl transition-all shadow-md text-xs tracking-wide font-bold ${
-                !canSubmit || isCreating || isLoadingPrograms
-                  ? "bg-slate-200 dark:bg-slate-800 text-slate-400 dark:text-slate-500 cursor-not-allowed border border-slate-300 dark:border-slate-700"
-                  : "bg-amber-500 hover:bg-amber-400 text-slate-950 cursor-pointer active:scale-[0.99]"
-              }`}
-              type="submit"
-              disabled={!canSubmit || isCreating || isLoadingPrograms}
-            >
-              {isCreating
-                ? "Creating Faculty Account..."
-                : !areAllRequiredFieldsFilled
-                ? "Fill All Required Fields"
-                : "Create Faculty Account"}
-            </button>
+            <div className="flex items-center justify-center pt-2">
+              <button
+                className={`py-2.5 px-6 rounded-xl transition-all shadow-md text-xs tracking-wide font-bold ${
+                  !canSubmit || isCreating || isLoadingPrograms
+                    ? "bg-slate-200 dark:bg-slate-800 text-slate-400 dark:text-slate-500 cursor-not-allowed border border-slate-300 dark:border-slate-700"
+                    : "bg-amber-500 hover:bg-amber-400 text-slate-950 cursor-pointer active:scale-[0.99]"
+                }`}
+                type="submit"
+                disabled={!canSubmit || isCreating || isLoadingPrograms}
+              >
+                {isCreating
+                  ? "Creating Faculty Account..."
+                  : !areAllRequiredFieldsFilled
+                  ? "Fill All Required Fields"
+                  : "Create Faculty Account"}
+              </button>
+            </div>
           </div>
         </form>
     </div>

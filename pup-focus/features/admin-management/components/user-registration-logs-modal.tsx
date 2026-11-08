@@ -162,14 +162,62 @@ function UserLogAvatar({
 
 const PAGE_SIZE = 10;
 
+const cachedLogsByRole: Record<
+  string,
+  {
+    logs: RegistrationLogItem[];
+    stats: { total: number; accepted: number; pending: number };
+    timestamp: number;
+  }
+> = {};
+
+export function prefetchUserRegistrationLogs(role: "all" | "faculty" | "admin" = "all") {
+  if (typeof window === "undefined") return;
+  const roleParam = role !== "all" ? `&role=${role}` : "";
+  void fetch(`/api/staff/user-registration-logs?_t=${Date.now()}${roleParam}`, { cache: "no-store" })
+    .then((res) => (res.ok ? res.json() : null))
+    .then((data) => {
+      if (!data) return;
+      const rawLogs: RegistrationLogItem[] = data.logs || [];
+      const acceptedNames = new Set<string>();
+      for (const item of rawLogs) {
+        if (item.status === "Accepted") {
+          const norm = (item.fullName || "").toLowerCase().replace(/[^a-z0-9]/g, "");
+          if (norm) acceptedNames.add(norm);
+        }
+      }
+      const sanitizedLogs = rawLogs.filter((item) => {
+        if (item.status === "Pending") {
+          const norm = (item.fullName || "").toLowerCase().replace(/[^a-z0-9]/g, "");
+          if (norm && acceptedNames.has(norm)) return false;
+        }
+        return true;
+      });
+      cachedLogsByRole[role] = {
+        logs: sanitizedLogs,
+        stats: {
+          total: sanitizedLogs.length,
+          accepted: sanitizedLogs.filter((i) => i.status === "Accepted").length,
+          pending: sanitizedLogs.filter((i) => i.status === "Pending").length,
+        },
+        timestamp: Date.now(),
+      };
+    })
+    .catch(() => {});
+}
+
 export function UserRegistrationLogsModal({
   isOpen,
   onClose,
   targetRole = "all",
   onInviteCancelled,
 }: UserRegistrationLogsModalProps) {
-  const [logs, setLogs] = useState<RegistrationLogItem[]>([]);
-  const [stats, setStats] = useState({ total: 0, accepted: 0, pending: 0 });
+  const [logs, setLogs] = useState<RegistrationLogItem[]>(
+    () => cachedLogsByRole[targetRole]?.logs || []
+  );
+  const [stats, setStats] = useState(
+    () => cachedLogsByRole[targetRole]?.stats || { total: 0, accepted: 0, pending: 0 }
+  );
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -304,8 +352,10 @@ export function UserRegistrationLogsModal({
     }
   };
 
-  const fetchLogs = useCallback(async () => {
-    setIsLoading(true);
+  const fetchLogs = useCallback(async (isManualRefresh = false) => {
+    if (isManualRefresh || logs.length === 0) {
+      setIsLoading(true);
+    }
     setError(null);
     try {
       const roleParam = targetRole !== "all" ? `&role=${targetRole}` : "";
@@ -332,23 +382,31 @@ export function UserRegistrationLogsModal({
         }
         return true;
       });
+      const newStats = {
+        total: sanitizedLogs.length,
+        accepted: sanitizedLogs.filter((i) => i.status === "Accepted").length,
+        pending: sanitizedLogs.filter((i) => i.status === "Pending").length,
+      };
       setLogs(sanitizedLogs);
-      if (data.stats) {
-        setStats({
-          total: sanitizedLogs.length,
-          accepted: sanitizedLogs.filter((i) => i.status === "Accepted").length,
-          pending: sanitizedLogs.filter((i) => i.status === "Pending").length,
-        });
-      }
+      setStats(newStats);
+      cachedLogsByRole[targetRole] = {
+        logs: sanitizedLogs,
+        stats: newStats,
+        timestamp: Date.now(),
+      };
     } catch (err: any) {
       setError(err?.message || "Failed to load registration logs");
     } finally {
       setIsLoading(false);
     }
-  }, [targetRole]);
+  }, [targetRole, logs.length]);
 
   useEffect(() => {
     if (isOpen) {
+      if (cachedLogsByRole[targetRole]) {
+        setLogs(cachedLogsByRole[targetRole].logs);
+        setStats(cachedLogsByRole[targetRole].stats);
+      }
       setStatusFilter("all");
       setAdminRoleFilter("all");
       setSearchTerm("");
@@ -359,7 +417,7 @@ export function UserRegistrationLogsModal({
       setCancelError(null);
       setPendingResendLog(null);
       setResendError(null);
-      void fetchLogs();
+      void fetchLogs(false);
     } else {
       setSelectedLogForDetails(null);
       setPendingCancelLog(null);
@@ -367,7 +425,7 @@ export function UserRegistrationLogsModal({
       setPendingResendLog(null);
       setResendError(null);
     }
-  }, [isOpen, fetchLogs]);
+  }, [isOpen, targetRole, fetchLogs]);
 
   // Reset page when filters change
   useEffect(() => {
@@ -578,9 +636,7 @@ export function UserRegistrationLogsModal({
             <div className="grid grid-cols-3 gap-2 sm:gap-3 mt-3">
               <div className="rounded-xl bg-slate-100/70 dark:bg-slate-800/50 p-2.5 sm:p-3 text-center sm:text-left shadow-2xs transition-colors">
                 <span className="text-[10px] sm:text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider flex items-center justify-center sm:justify-start gap-1.5">
-                  <span className="w-5 h-5 rounded-md bg-slate-700 dark:bg-slate-600 text-white shrink-0 flex items-center justify-center shadow-2xs">
-                    <User className="h-3 w-3 text-white" />
-                  </span>
+                  <User className="h-3.5 w-3.5 text-slate-400 dark:text-slate-500 shrink-0" strokeWidth={2} />
                   <span>Total</span>
                 </span>
                 <p className="text-lg sm:text-xl font-bold text-slate-900 dark:text-slate-100 mt-1">
@@ -589,9 +645,7 @@ export function UserRegistrationLogsModal({
               </div>
               <div className="rounded-xl bg-slate-100/70 dark:bg-slate-800/50 p-2.5 sm:p-3 text-center sm:text-left shadow-2xs transition-colors">
                 <span className="text-[10px] sm:text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider flex items-center justify-center sm:justify-start gap-1.5">
-                  <span className="w-5 h-5 rounded-md bg-[#0b5336] text-white shrink-0 flex items-center justify-center shadow-2xs">
-                    <Check className="h-3 w-3 text-white" />
-                  </span>
+                  <Check className="h-3.5 w-3.5 text-slate-400 dark:text-slate-500 shrink-0" strokeWidth={2} />
                   <span>Accepted</span>
                 </span>
                 <p className="text-lg sm:text-xl font-bold text-slate-900 dark:text-slate-100 mt-1">
@@ -600,9 +654,7 @@ export function UserRegistrationLogsModal({
               </div>
               <div className="rounded-xl bg-slate-100/70 dark:bg-slate-800/50 p-2.5 sm:p-3 text-center sm:text-left shadow-2xs transition-colors">
                 <span className="text-[10px] sm:text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider flex items-center justify-center sm:justify-start gap-1.5">
-                  <span className="w-5 h-5 rounded-md bg-amber-500 text-slate-950 shrink-0 flex items-center justify-center shadow-2xs">
-                    <Clock className="h-3 w-3 text-slate-950" />
-                  </span>
+                  <Clock className="h-3.5 w-3.5 text-slate-400 dark:text-slate-500 shrink-0" strokeWidth={2} />
                   <span>Pending</span>
                 </span>
                 <p className="text-lg sm:text-xl font-bold text-slate-900 dark:text-slate-100 mt-1">
@@ -633,7 +685,7 @@ export function UserRegistrationLogsModal({
 
                 <button
                   type="button"
-                  onClick={() => void fetchLogs()}
+                  onClick={() => void fetchLogs(true)}
                   disabled={isLoading}
                   title="Refresh logs"
                   className="h-9 inline-flex items-center justify-center gap-1.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 hover:bg-slate-100 dark:hover:bg-slate-850 px-3 text-xs font-semibold text-slate-700 dark:text-slate-300 transition cursor-pointer disabled:opacity-50 shrink-0 shadow-2xs"
@@ -685,19 +737,14 @@ export function UserRegistrationLogsModal({
 
           {/* Main Log Content Area */}
           <div className="flex-1 overflow-y-auto min-h-[250px] p-3 sm:p-6 pt-3">
-            {isLoading ? (
-              <div className="py-16 text-center text-xs text-slate-500 dark:text-slate-400 flex flex-col items-center justify-center gap-2">
-                <Refresh className="h-5 w-5 animate-spin text-[#780000]" />
-                <span>Loading registration logs...</span>
-              </div>
-            ) : error ? (
+            {error && logs.length === 0 ? (
               <div className="py-16 text-center text-xs text-red-500 flex flex-col items-center justify-center gap-2">
                 <AppIcon icon={WarningTriangle} size="md" color="inherit" />
                 <span>{error}</span>
               </div>
             ) : filteredLogs.length === 0 ? (
               <div className="py-16 text-center text-xs text-slate-500 dark:text-slate-400">
-                No registration logs found matching the filter criteria.
+                {isLoading ? "Checking registration logs..." : "No registration logs found matching the filter criteria."}
               </div>
             ) : (
               <>
