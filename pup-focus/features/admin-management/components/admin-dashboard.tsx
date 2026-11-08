@@ -552,6 +552,8 @@ export function SuperAdminDashboard({
   const [facultyActionError, setFacultyActionError] = useState<string | null>(null);
   const [verificationResetTrigger, setVerificationResetTrigger] = useState(0);
   const [templatesRefreshTrigger, setTemplatesRefreshTrigger] = useState(0);
+  const [currentAcademicYear, setCurrentAcademicYear] = useState<string>("");
+  const [currentSemester, setCurrentSemester] = useState<"1st Semester" | "2nd Semester" | "Summer Semester">("1st Semester");
 
   // Add Faculty Modal State
   const [addFacultyModalOpen, setAddFacultyModalOpen] = useState(false);
@@ -1125,6 +1127,26 @@ export function SuperAdminDashboard({
     prefetchUserRegistrationLogs("all");
     prefetchUserRegistrationLogs("admin");
     prefetchUserRegistrationLogs("faculty");
+
+    async function loadCurrentTerm() {
+      try {
+        const res = await fetch(`/api/staff/academic-terms?_t=${Date.now()}`, {
+          credentials: "include",
+          cache: "no-store",
+        });
+        if (res.ok) {
+          const data = await res.json();
+          const current = data.terms?.find((t: any) => t.status === "Current");
+          if (current?.academicYear) {
+            setCurrentAcademicYear(current.academicYear);
+            if (current.semester) {
+              setCurrentSemester(current.semester);
+            }
+          }
+        }
+      } catch {}
+    }
+    void loadCurrentTerm();
   }, []);
 
   useEffect(() => {
@@ -2313,6 +2335,8 @@ export function SuperAdminDashboard({
                   resetTrigger={verificationResetTrigger}
                   initialReviewFacultyId={searchParams?.get("facultyId") || null}
                   initialRequirementCode={searchParams?.get("reqCode") || null}
+                  initialAcademicYear={currentAcademicYear}
+                  initialSemester={currentSemester}
                 />
               </article>
             ) : null}

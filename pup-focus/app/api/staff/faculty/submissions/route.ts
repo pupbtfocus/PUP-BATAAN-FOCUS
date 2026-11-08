@@ -1,7 +1,13 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { getServiceRoleClient } from "@/lib/supabase/service-role";
-import { ROLE } from "@/config/roles";
+import {
+  ROLE,
+  isOriginalAdmin,
+  isOriginalSuperAdmin,
+  isQaAdmin,
+  isQaStaff,
+} from "@/config/roles";
 
 type ReviewDecision = {
   decision: "validated" | "rejected";
@@ -46,19 +52,50 @@ function isMissingRemarksColumnError(
 export async function GET(request: NextRequest) {
   try {
     // Verify admin role
+    let user: any = null;
     const sessionClient = await createServerSupabaseClient();
     const {
-      data: { user },
+      data: { user: sessionUser },
     } = await sessionClient.auth.getUser();
+    user = sessionUser;
+
+    // Fallback: check Authorization: Bearer <token>
+    if (!user) {
+      const authHeader =
+        request.headers.get("authorization") ||
+        request.headers.get("Authorization");
+      if (authHeader?.startsWith("Bearer ")) {
+        const token = authHeader.substring(7).trim();
+        const adminSupabase = getServiceRoleClient();
+        const { data: tokenData } = await adminSupabase.auth.getUser(token);
+        user = tokenData?.user ?? null;
+      }
+    }
+
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
 
     const requesterRole =
       (user?.user_metadata?.role as string | undefined) ??
       (user?.app_metadata?.role as string | undefined);
+    const normalizedRequesterRole = (requesterRole ?? "").toLowerCase().trim();
 
-    if (
-      !user ||
-      (requesterRole !== ROLE.STAFF && requesterRole !== ROLE.ADMIN && requesterRole !== ROLE.SUPER_ADMIN && requesterRole !== "staff")
-    ) {
+    const isAuthorized =
+      normalizedRequesterRole === ROLE.STAFF ||
+      normalizedRequesterRole === ROLE.ADMIN ||
+      normalizedRequesterRole === ROLE.SUPER_ADMIN ||
+      normalizedRequesterRole === "super_admin" ||
+      normalizedRequesterRole === "superadmin" ||
+      normalizedRequesterRole.includes("staff") ||
+      normalizedRequesterRole.includes("admin") ||
+      normalizedRequesterRole.includes("super") ||
+      isOriginalAdmin(user.email) ||
+      isOriginalSuperAdmin(user.email) ||
+      isQaAdmin(user.email) ||
+      isQaStaff(user.email);
+
+    if (!isAuthorized) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 

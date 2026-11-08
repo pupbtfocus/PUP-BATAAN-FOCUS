@@ -3,6 +3,7 @@
 import { useEffect, useState, useMemo, useRef, useCallback } from "react";
 import Image from "next/image";
 import JSZip from "jszip";
+import { createClient } from "@/lib/supabase/client";
 import { emitRealtimeSync, useRealtimeSync } from "@/lib/realtime";
 import {
   Archive,
@@ -4290,9 +4291,17 @@ export function RequirementsPanel({
       if (inflightPrefetchRef.current.has(cacheKey)) return;
       inflightPrefetchRef.current.add(cacheKey);
       try {
+        const headers: Record<string, string> = {};
+        try {
+          const supabase = createClient();
+          const { data: sessionData } = await supabase.auth.getSession();
+          const token = sessionData?.session?.access_token;
+          if (token) headers["Authorization"] = `Bearer ${token}`;
+        } catch {}
+
         const res = await fetch(
           `/api/staff/faculty/submissions?facultyId=${encodeURIComponent(targetFacultyId)}&academicYear=${encodeURIComponent(targetAy)}&semester=${encodeURIComponent(targetSem)}`,
-          { credentials: "include", cache: "no-store" },
+          { credentials: "include", cache: "no-store", headers },
         );
         if (res.ok) {
           const data = await res.json();
@@ -4431,9 +4440,19 @@ export function RequirementsPanel({
       if (sem) params.set("semester", sem);
       params.set("_t", String(Date.now()));
 
+      const headers: Record<string, string> = {};
+      try {
+        const supabase = createClient();
+        const { data: sessionData } = await supabase.auth.getSession();
+        const token = sessionData?.session?.access_token;
+        if (token) {
+          headers["Authorization"] = `Bearer ${token}`;
+        }
+      } catch {}
+
       const res = await fetch(
         `/api/staff/faculty/requirements/verification?${params.toString()}`,
-        { credentials: "include", cache: "no-store" },
+        { credentials: "include", cache: "no-store", headers },
       );
 
       if (!res.ok) return;
@@ -4523,15 +4542,13 @@ export function RequirementsPanel({
       return;
     }
     const isManualTrigger = (resetTrigger ?? 0) > 0;
-    const hasSeededStatuses =
-      Object.keys(facultyStatuses).length > 0 ||
-      facultyAccounts.some((f) => Boolean(f.requirementStatus));
+    const hasClassProgress = Object.keys(facultyClassProgress).length > 0;
 
     const targetAy = activePanelTab === "history" ? historyAy : (academicYear || undefined);
     const targetSem = activePanelTab === "history" ? historySem : (academicYear ? semester : undefined);
 
     void fetchAllStatuses(targetAy, targetSem, {
-      silent: !isManualTrigger && hasSeededStatuses,
+      silent: !isManualTrigger && hasClassProgress,
       syncActiveTerm: true,
     });
   }, [facultyAccounts, resetTrigger]);
@@ -5277,7 +5294,7 @@ export function RequirementsPanel({
                         </span>
                       </td>
                       <td className="px-4 py-3 text-slate-700 dark:text-slate-300">
-                        {isLoadingStatuses && !statusRecord ? (
+                        {isLoadingStatuses && !facultySubjectProgress[faculty.id] && (!facultyClassProgress[faculty.id] || facultyClassProgress[faculty.id].length === 0) ? (
                           <div className="space-y-1.5 py-1">
                             <div className="h-4 w-28 bg-slate-200 dark:bg-slate-800 rounded animate-pulse" />
                             <div className="h-2 w-36 bg-slate-100 dark:bg-slate-800/60 rounded animate-pulse" />
