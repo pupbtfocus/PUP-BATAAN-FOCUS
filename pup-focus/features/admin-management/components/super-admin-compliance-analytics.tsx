@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { NavArrowRight } from "iconoir-react";
+import { CheckCircle, ClockRotateRight, EditPencil, Group, NavArrowRight } from "iconoir-react";
 import {
   DEFAULT_REQUIREMENTS,
   type RequirementCode,
@@ -168,20 +168,12 @@ export function SuperAdminComplianceAnalytics({
     };
   }, [activeFaculty]);
 
-  // Donut/Pie Arc Calculations
-  const radius = 54;
-  const circumference = 2 * Math.PI * radius;
-  const total = summary.totalActive || 1;
+  const total = summary.totalActive || 0;
 
-  const completedPct = Math.round((summary.completedFaculty / total) * 100);
-  const inProgressPct = Math.round((summary.inProgressFaculty / total) * 100);
-  const revisionPct = Math.round((summary.needsRevisionFaculty / total) * 100);
-  const notStartedPct = Math.round((summary.notStartedFaculty / total) * 100);
-
-  const completedArc = (summary.completedFaculty / total) * circumference;
-  const inProgressArc = (summary.inProgressFaculty / total) * circumference;
-  const revisionArc = (summary.needsRevisionFaculty / total) * circumference;
-  const notStartedArc = (summary.notStartedFaculty / total) * circumference;
+  const completedPct = total > 0 ? Math.round((summary.completedFaculty / total) * 100) : 0;
+  const inProgressPct = total > 0 ? Math.round((summary.inProgressFaculty / total) * 100) : 0;
+  const revisionPct = total > 0 ? Math.round((summary.needsRevisionFaculty / total) * 100) : 0;
+  const notStartedPct = total > 0 ? Math.round((summary.notStartedFaculty / total) * 100) : 0;
 
   const termLabel =
     windowInfo?.academicYear && windowInfo?.semester
@@ -256,13 +248,13 @@ export function SuperAdminComplianceAnalytics({
       detail: "No files uploaded yet",
       count: summary.notStartedFaculty,
       pct: notStartedPct,
-      color: "#475569",
-      solidBg: "bg-slate-700",
-      gradient: "from-slate-700 to-slate-700",
+      color: "#64748b",
+      solidBg: "bg-slate-600",
+      gradient: "from-slate-600 to-slate-600",
       accentBg: "bg-white",
       accentText: "text-slate-600 dark:text-slate-400",
-      badgePill: "bg-slate-700 text-white border border-slate-800",
-      cardClass: "bg-slate-700 text-white border border-slate-600 dark:bg-slate-800 dark:border-slate-700 shadow-xs",
+      badgePill: "bg-slate-600 text-white border border-slate-700",
+      cardClass: "bg-slate-600 text-white border border-slate-500 dark:bg-slate-800 dark:border-slate-700 shadow-xs",
       titleClass: "text-white font-extrabold",
       detailClass: "text-slate-300",
       countPill: "bg-white/20 text-white border border-white/20 font-bold",
@@ -271,9 +263,64 @@ export function SuperAdminComplianceAnalytics({
     },
   ];
 
+  const pieSlices = useMemo(() => {
+    if (total === 0) return [];
+    const activeCategories = categories.filter((c) => c.count > 0);
+    if (activeCategories.length === 0) return [];
+
+    const cx = 90;
+    const cy = 90;
+    const r = 80;
+
+    if (activeCategories.length === 1) {
+      return [
+        {
+          ...activeCategories[0],
+          isFull: true,
+          d: "",
+          labelX: cx,
+          labelY: cy,
+          showLabel: true,
+        },
+      ];
+    }
+
+    let currentAngle = -Math.PI / 2; // Start at 12 o'clock
+
+    return activeCategories.map((cat) => {
+      const sliceAngle = (cat.count / total) * 2 * Math.PI;
+      const startAngle = currentAngle;
+      const endAngle = currentAngle + sliceAngle;
+      currentAngle = endAngle;
+
+      const x1 = cx + r * Math.cos(startAngle);
+      const y1 = cy + r * Math.sin(startAngle);
+      const x2 = cx + r * Math.cos(endAngle);
+      const y2 = cy + r * Math.sin(endAngle);
+      const largeArcFlag = sliceAngle > Math.PI ? 1 : 0;
+
+      const d = `M ${cx} ${cy} L ${x1.toFixed(3)} ${y1.toFixed(3)} A ${r} ${r} 0 ${largeArcFlag} 1 ${x2.toFixed(3)} ${y2.toFixed(3)} Z`;
+
+      const midAngle = startAngle + sliceAngle / 2;
+      const labelRadius = r * 0.65;
+      const labelX = cx + labelRadius * Math.cos(midAngle);
+      const labelY = cy + labelRadius * Math.sin(midAngle);
+      const showLabel = cat.pct >= 7;
+
+      return {
+        ...cat,
+        isFull: false,
+        d,
+        labelX,
+        labelY,
+        showLabel,
+      };
+    });
+  }, [categories, total]);
+
   return (
     <section className="mb-6">
-      <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 sm:p-6 shadow-xs space-y-5 transition-colors">
+      <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 sm:p-5 shadow-xs space-y-4 transition-colors">
         {/* Header with casual title & chart toggle */}
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
@@ -281,7 +328,7 @@ export function SuperAdminComplianceAnalytics({
               Faculty Progress Overview
             </h2>
             <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-              {summary.completedFaculty} of {summary.totalActive} teachers are all done ({termLabel})
+              {summary.completedFaculty} of {summary.totalActive} faculty are all done ({termLabel})
             </p>
           </div>
 
@@ -338,119 +385,131 @@ export function SuperAdminComplianceAnalytics({
 
         {/* Visual Analytics: Pie Chart or Bar Graph */}
         {chartView === "pie" ? (
-          <div className="flex flex-col md:flex-row items-center gap-6 pt-1">
-            {/* Pie / Donut Chart */}
-            <div className="relative flex items-center justify-center shrink-0">
-              <svg className="w-40 h-40 -rotate-90" viewBox="0 0 140 140">
-                <circle
-                  cx="70"
-                  cy="70"
-                  r={radius}
-                  fill="transparent"
-                  stroke="currentColor"
-                  strokeWidth="20"
-                  className="text-slate-100 dark:text-slate-800"
-                />
-                {summary.totalActive === 0 ? (
+          <div className="flex flex-col lg:flex-row items-center gap-6 pt-1">
+            {/* Left: Solid Pie Chart with in-slice percentage labels */}
+            <div className="flex flex-col items-center justify-center shrink-0">
+              <svg className="w-48 h-48 sm:w-56 sm:h-56 drop-shadow-md" viewBox="0 0 180 180">
+                {total === 0 || pieSlices.length === 0 ? (
                   <circle
-                    cx="70"
-                    cy="70"
-                    r={radius}
-                    fill="transparent"
-                    stroke="#cbd5e1"
-                    strokeWidth="20"
-                    className="dark:stroke-slate-700"
+                    cx="90"
+                    cy="90"
+                    r="80"
+                    fill="#e2e8f0"
+                    className="dark:fill-slate-800"
                   />
                 ) : (
-                  <>
-                    {completedArc > 0 && (
-                      <circle
-                        cx="70"
-                        cy="70"
-                        r={radius}
-                        fill="transparent"
-                        stroke="#0b5336"
-                        strokeWidth="20"
-                        strokeDasharray={`${completedArc} ${circumference}`}
-                        strokeDashoffset={0}
-                        className="transition-all duration-700 ease-out"
-                      />
-                    )}
-                    {inProgressArc > 0 && (
-                      <circle
-                        cx="70"
-                        cy="70"
-                        r={radius}
-                        fill="transparent"
-                        stroke="#f59e0b"
-                        strokeWidth="20"
-                        strokeDasharray={`${inProgressArc} ${circumference}`}
-                        strokeDashoffset={-completedArc}
-                        className="transition-all duration-700 ease-out"
-                      />
-                    )}
-                    {revisionArc > 0 && (
-                      <circle
-                        cx="70"
-                        cy="70"
-                        r={radius}
-                        fill="transparent"
-                        stroke="#780000"
-                        strokeWidth="20"
-                        strokeDasharray={`${revisionArc} ${circumference}`}
-                        strokeDashoffset={-(completedArc + inProgressArc)}
-                        className="transition-all duration-700 ease-out"
-                      />
-                    )}
-                    {notStartedArc > 0 && (
-                      <circle
-                        cx="70"
-                        cy="70"
-                        r={radius}
-                        fill="transparent"
-                        stroke="#475569"
-                        strokeWidth="20"
-                        strokeDasharray={`${notStartedArc} ${circumference}`}
-                        strokeDashoffset={-(completedArc + inProgressArc + revisionArc)}
-                        className="transition-all duration-700 ease-out"
-                      />
-                    )}
-                  </>
+                  pieSlices.map((slice) =>
+                    slice.isFull ? (
+                      <g key={slice.id}>
+                        <circle
+                          cx="90"
+                          cy="90"
+                          r="80"
+                          fill={slice.color}
+                          stroke="#ffffff"
+                          strokeWidth="2.5"
+                          className="dark:stroke-slate-900"
+                        />
+                        <text
+                          x={slice.labelX}
+                          y={slice.labelY}
+                          textAnchor="middle"
+                          dominantBaseline="central"
+                          fill="#ffffff"
+                          className="text-sm sm:text-base font-black select-none pointer-events-none"
+                          style={{ filter: "drop-shadow(0px 1px 2px rgba(0,0,0,0.7))" }}
+                        >
+                          100%
+                        </text>
+                      </g>
+                    ) : (
+                      <g key={slice.id}>
+                        <path
+                          d={slice.d}
+                          fill={slice.color}
+                          stroke="#ffffff"
+                          strokeWidth="2.5"
+                          className="dark:stroke-slate-900 transition-all duration-300 hover:opacity-90 cursor-pointer"
+                        >
+                          <title>{slice.label}: {slice.count} ({slice.pct}%)</title>
+                        </path>
+                        {slice.showLabel && (
+                          <text
+                            x={slice.labelX}
+                            y={slice.labelY}
+                            textAnchor="middle"
+                            dominantBaseline="central"
+                            fill="#ffffff"
+                            className="text-xs sm:text-[13px] font-black select-none pointer-events-none"
+                            style={{ filter: "drop-shadow(0px 1px 2px rgba(0,0,0,0.7))" }}
+                          >
+                            {slice.pct}%
+                          </text>
+                        )}
+                      </g>
+                    )
+                  )
                 )}
               </svg>
-              <div className="absolute inset-0 flex flex-col items-center justify-center text-center pointer-events-none">
-                <span className="text-2xl font-black text-slate-900 dark:text-slate-100 leading-none">
+              <div className="mt-2.5 inline-flex items-center gap-1.5 rounded-full bg-slate-100 dark:bg-slate-800/80 px-2.5 py-0.5 border border-slate-200/80 dark:border-slate-700/60 shadow-2xs">
+                <span className="text-xs font-black text-slate-900 dark:text-slate-100">
                   {summary.overallSubmissionRate}%
                 </span>
-                <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 mt-1">
+                <span className="text-[10px] font-semibold text-slate-500 dark:text-slate-400">
                   Turned In
                 </span>
               </div>
             </div>
 
-            {/* Status Cards (2x2 Grid) */}
+            {/* Right: Category Cards (2x2 Grid) matching Columns chart style */}
             <div className="flex-1 w-full grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
               {categories.map((cat) => (
                 <div
                   key={cat.id}
-                  className={`flex flex-col justify-between p-3.5 rounded-xl border shadow-xs transition ${cat.cardClass}`}
+                  className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 shadow-xs flex flex-col justify-between space-y-3 transition-colors"
                 >
-                  <div className="flex items-center justify-between gap-2">
-                    <div className="flex items-center gap-2 min-w-0">
-                      <span className={`h-2.5 w-2.5 rounded-full ${cat.accentBg} shrink-0 ring-2 ring-white/30`} />
-                      <span className={`font-extrabold text-sm truncate ${cat.titleClass}`}>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-1.5 min-w-0">
+                      <span className={`h-2 w-2 rounded-full ${cat.solidBg} shrink-0`} />
+                      <span className="font-extrabold text-xs sm:text-sm text-slate-800 dark:text-slate-100 truncate">
                         {cat.label}
                       </span>
                     </div>
-                    <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold shrink-0 ${cat.countPill}`}>
-                      {cat.count} {cat.count === 1 ? "teacher" : "teachers"}
-                    </span>
+                    {cat.id === "completed" && (
+                      <CheckCircle className="h-4.5 w-4.5 text-slate-400" strokeWidth={2} />
+                    )}
+                    {cat.id === "in_progress" && (
+                      <ClockRotateRight className="h-4.5 w-4.5 text-slate-400" strokeWidth={2} />
+                    )}
+                    {cat.id === "needs_revision" && (
+                      <EditPencil className="h-4.5 w-4.5 text-slate-400" strokeWidth={2} />
+                    )}
+                    {cat.id === "not_started" && (
+                      <Group className="h-4.5 w-4.5 text-slate-400" strokeWidth={2} />
+                    )}
                   </div>
-                  <div className={`flex items-center justify-between mt-2 pt-1.5 border-t text-[11px] ${cat.divideClass} ${cat.detailClass}`}>
-                    <span className="truncate pr-1">{cat.detail}</span>
-                    <span className={`font-black shrink-0 ${cat.pctClass}`}>
-                      {summary.totalActive > 0 ? `${cat.pct}%` : "0%"}
-                    </span>
+
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex-1 h-6 bg-slate-200/50 dark:bg-slate-800/50 rounded-lg p-0.5 flex items-center overflow-hidden">
+                        <div
+                          className={`h-full rounded-md ${cat.solidBg} transition-all duration-700 ease-out shadow-xs`}
+                          style={{
+                            width: `${summary.totalActive > 0 ? (cat.count > 0 ? Math.max(cat.pct, 6) : 0) : 0}%`,
+                          }}
+                        />
+                      </div>
+                      <span
+                        className={`inline-flex items-center px-2 py-0.5 rounded-md text-[10px] sm:text-xs font-black shadow-2xs whitespace-nowrap shrink-0 ${cat.badgePill}`}
+                      >
+                        <span className="font-bold mr-1">{cat.count} •</span>
+                        <span>{cat.pct}%</span>
+                      </span>
+                    </div>
+
+                    <p className="text-[11px] text-slate-500 dark:text-slate-400 pt-1 border-t border-slate-100 dark:border-slate-800 truncate">
+                      {cat.detail}
+                    </p>
                   </div>
                 </div>
               ))}
@@ -462,7 +521,7 @@ export function SuperAdminComplianceAnalytics({
             {/* Sub-header with orientation switch */}
             <div className="flex items-center justify-between pb-1 text-xs">
               <span className="font-bold text-slate-600 dark:text-slate-400">
-                Where Everyone Stands ({summary.totalActive} Total Teachers)
+                Where Everyone Stands ({summary.totalActive} Total Faculty)
               </span>
               <div className="inline-flex items-center rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-100/80 dark:bg-slate-950 p-0.5">
                 <button
@@ -569,17 +628,17 @@ export function SuperAdminComplianceAnalytics({
                         {cat.detail}
                       </span>
                       <span className={`text-[10px] font-extrabold mt-0.5 sm:hidden ${cat.accentText}`}>
-                        {cat.count} {cat.count === 1 ? "teacher" : "teachers"}
+                        {cat.count} faculty
                       </span>
                     </div>
                   ))}
                 </div>
               </div>
             ) : (
-              /* Sleek Horizontal Bar Graph */
-              <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-950/40 p-4 sm:p-5 space-y-3.5">
+              /* Sleek Horizontal Bar Graph - Matching Columns View */
+              <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-950/40 p-4 sm:p-5 space-y-4">
                 {/* Horizontal scale indicators */}
-                <div className="flex items-center justify-between text-[10px] font-bold text-slate-400 dark:text-slate-500 px-1 border-b border-slate-200 dark:border-slate-800 pb-2">
+                <div className="flex items-center justify-between text-[10px] font-bold text-slate-400 dark:text-slate-500 sm:pl-52 pr-16 border-b border-dashed border-slate-200 dark:border-slate-800 pb-2">
                   <span>0%</span>
                   <span>25%</span>
                   <span>50%</span>
@@ -587,39 +646,43 @@ export function SuperAdminComplianceAnalytics({
                   <span>100%</span>
                 </div>
 
-                <div className="space-y-3">
+                <div className="space-y-3.5">
                   {categories.map((cat) => (
                     <div
                       key={cat.id}
-                      className="p-3.5 sm:p-4 rounded-xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-2xs hover:border-slate-300 dark:hover:border-slate-700 transition space-y-2.5"
+                      className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 group"
                     >
-                      <div className="flex items-center justify-between gap-2 text-xs">
-                        <div className="flex items-center gap-2 min-w-0">
-                          <span className={`h-2.5 w-2.5 rounded-full ${cat.solidBg} shrink-0 ring-2 ring-slate-100 dark:ring-slate-800`} />
-                          <span className="font-extrabold text-sm text-slate-900 dark:text-slate-100">
+                      {/* Left: Dot, Label, Subtitle */}
+                      <div className="w-full sm:w-48 shrink-0">
+                        <div className="flex items-center gap-1.5">
+                          <span className={`h-2 w-2 rounded-full ${cat.solidBg} shrink-0`} />
+                          <span className="font-extrabold text-xs sm:text-sm text-slate-800 dark:text-slate-100 truncate">
                             {cat.label}
                           </span>
-                          <span className="text-[11px] text-slate-500 dark:text-slate-400 hidden sm:inline truncate">
-                            • {cat.detail}
-                          </span>
                         </div>
-                        <div className="flex items-center gap-2 shrink-0">
-                          <span className="text-xs font-semibold text-slate-600 dark:text-slate-400">
-                            {cat.count} {cat.count === 1 ? "teacher" : "teachers"}
-                          </span>
-                          <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-black ${cat.badgePill}`}>
-                            {summary.totalActive > 0 ? `${cat.pct}%` : "0%"}
-                          </span>
-                        </div>
+                        <p className="text-[10px] sm:text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 truncate pl-3.5">
+                          {cat.detail}
+                        </p>
                       </div>
 
-                      <div className="h-3.5 w-full rounded-full bg-slate-100 dark:bg-slate-800 border border-slate-200/60 dark:border-slate-700/60 overflow-hidden p-0.5 shadow-inner">
-                        <div
-                          className={`h-full rounded-full ${cat.solidBg} transition-all duration-700 ease-out`}
-                          style={{
-                            width: `${summary.totalActive > 0 ? (cat.count > 0 ? Math.max(cat.pct, 3) : 0) : 0}%`,
-                          }}
-                        />
+                      {/* Right: Track + Bar + Badge */}
+                      <div className="flex-1 flex items-center gap-2 sm:gap-3 min-w-0">
+                        <div className="flex-1 h-8 sm:h-9 bg-slate-200/50 dark:bg-slate-800/50 rounded-xl p-1 flex items-center overflow-hidden">
+                          <div
+                            className={`h-full rounded-lg ${cat.solidBg} transition-all duration-700 ease-out shadow-xs`}
+                            style={{
+                              width: `${summary.totalActive > 0 ? (cat.count > 0 ? Math.max(cat.pct, 5) : 0) : 0}%`,
+                            }}
+                          />
+                        </div>
+
+                        {/* Floating Badge matching Columns view */}
+                        <span
+                          className={`inline-flex items-center px-2 py-1 rounded-md text-[10px] sm:text-xs font-black shadow-2xs whitespace-nowrap shrink-0 transition-transform group-hover:scale-105 ${cat.badgePill}`}
+                        >
+                          <span className="font-bold mr-1">{cat.count} •</span>
+                          <span>{cat.pct}%</span>
+                        </span>
                       </div>
                     </div>
                   ))}
@@ -628,54 +691,6 @@ export function SuperAdminComplianceAnalytics({
             )}
           </div>
         )}
-
-        {/* Casual Progress Bar */}
-        <div className="space-y-2 pt-3 border-t border-slate-200 dark:border-slate-800">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 text-xs">
-            <span className="font-bold text-slate-800 dark:text-slate-200">
-              Campus Progress: {summary.overallSubmissionRate}% turned in • {summary.overallValidationRate}% approved
-            </span>
-            <span className="text-slate-500 dark:text-slate-400 text-[11px]">
-              {summary.completedFaculty} of {summary.totalActive} finished all requirements
-            </span>
-          </div>
-
-          <div className="relative h-3 w-full rounded-full bg-slate-200 dark:bg-slate-800 overflow-hidden flex shadow-inner">
-            {summary.totalPossibleDocs > 0 && (
-              <>
-                <div
-                  className="h-full bg-[#0b5336] transition-all duration-500"
-                  style={{
-                    width: `${(summary.totalValidatedDocs / summary.totalPossibleDocs) * 100}%`,
-                  }}
-                  title={`Approved: ${summary.totalValidatedDocs} file(s)`}
-                />
-                <div
-                  className="h-full bg-amber-500 transition-all duration-500"
-                  style={{
-                    width: `${(summary.totalPendingReviewDocs / summary.totalPossibleDocs) * 100}%`,
-                  }}
-                  title={`Waiting for Review: ${summary.totalPendingReviewDocs} file(s)`}
-                />
-                <div
-                  className="h-full bg-rose-600 transition-all duration-500"
-                  style={{
-                    width: `${(summary.totalRevisionDocs / summary.totalPossibleDocs) * 100}%`,
-                  }}
-                  title={`Needs Changes: ${summary.totalRevisionDocs} file(s)`}
-                />
-              </>
-            )}
-          </div>
-
-          <div className="flex items-center justify-between text-[10px] font-bold text-slate-400 dark:text-slate-500">
-            <span>0% (Just starting)</span>
-            <span>25%</span>
-            <span>50% (Halfway)</span>
-            <span>75%</span>
-            <span>100% (All done!)</span>
-          </div>
-        </div>
       </div>
     </section>
   );
