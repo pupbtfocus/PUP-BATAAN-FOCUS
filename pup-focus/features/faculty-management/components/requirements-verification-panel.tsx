@@ -1181,9 +1181,19 @@ export function FacultyVerificationDrawer({
     Boolean(initialSubmissions !== undefined || initialClasses !== undefined),
   );
   const hasLoadedHistoryRef = useRef(false);
+  const lastFetchedCurrentKeyRef = useRef<string | null>(null);
+
+  const onSubmissionsLoadedRef = useRef(onSubmissionsLoaded);
+  useEffect(() => {
+    onSubmissionsLoadedRef.current = onSubmissionsLoaded;
+  }, [onSubmissionsLoaded]);
 
   const refreshCurrentSubmissions = useCallback(
-    async (options?: { silent?: boolean }) => {
+    async (options?: { silent?: boolean; force?: boolean }) => {
+      const fetchKey = `${faculty.id}::${activeAy}::${activeSem}`;
+      if (!options?.force && lastFetchedCurrentKeyRef.current === fetchKey && hasLoadedCurrentRef.current) {
+        return;
+      }
       const isSilent = options?.silent ?? hasLoadedCurrentRef.current;
       if (!faculty.id) {
         if (!isSilent) setIsLoading(false);
@@ -1192,6 +1202,7 @@ export function FacultyVerificationDrawer({
       if (!isSilent) {
         setIsLoading(true);
       }
+      lastFetchedCurrentKeyRef.current = fetchKey;
       try {
         const subRes = await fetch(
           `/api/staff/faculty/submissions?facultyId=${encodeURIComponent(faculty.id)}&academicYear=${encodeURIComponent(activeAy)}&semester=${encodeURIComponent(activeSem)}&_t=${Date.now()}`,
@@ -1206,7 +1217,7 @@ export function FacultyVerificationDrawer({
           if (Array.isArray(subData.classes)) {
             setFacultyClasses(nextClasses);
           }
-          onSubmissionsLoaded?.(faculty.id, {
+          onSubmissionsLoadedRef.current?.(faculty.id, {
             submissions: nextSubs,
             classes: nextClasses,
           });
@@ -1218,7 +1229,7 @@ export function FacultyVerificationDrawer({
         setIsLoading(false);
       }
     },
-    [faculty.id, activeAy, activeSem, onSubmissionsLoaded]
+    [faculty.id, activeAy, activeSem]
   );
 
   // 1. Fetch current term submissions (only on faculty/term change, without retriggering on history state updates)
@@ -1315,7 +1326,7 @@ export function FacultyVerificationDrawer({
 
   // 4. Realtime synchronization for subjects (faculty_classes) & requirement uploads (submissions)
   useRealtimeSync(() => {
-    void refreshCurrentSubmissions({ silent: true });
+    void refreshCurrentSubmissions({ silent: true, force: true });
     if (activeTab === "history") {
       void refreshHistorySubmissions({ silent: true });
     }
@@ -4282,6 +4293,26 @@ export function RequirementsPanel({
   >({});
   const inflightPrefetchRef = useRef<Set<string>>(new Set());
 
+  const handleSubmissionsLoaded = useCallback(
+    (fId: string, payload: { submissions: FacultyRequirementSubmission[]; classes: any[] }) => {
+      setSubmissionsCache((prev) => {
+        const existing = prev[fId];
+        if (
+          existing &&
+          existing.submissions.length === payload.submissions.length &&
+          existing.classes.length === payload.classes.length
+        ) {
+          return prev;
+        }
+        return {
+          ...prev,
+          [fId]: payload,
+        };
+      });
+    },
+    [],
+  );
+
   const prefetchFacultySubmissions = useCallback(
     async (targetFacultyId: string, ayOverride?: string, semOverride?: string) => {
       if (!targetFacultyId) return;
@@ -4874,12 +4905,7 @@ export function RequirementsPanel({
           }
           initialSubmissions={submissionsCache[reviewingFaculty.id]?.submissions}
           initialAvailableAcademicYears={availableAcademicYears}
-          onSubmissionsLoaded={(fId, payload) => {
-            setSubmissionsCache((prev) => ({
-              ...prev,
-              [fId]: payload,
-            }));
-          }}
+          onSubmissionsLoaded={handleSubmissionsLoaded}
           onBack={() => {
             initialOpenedRef.current = "__closed__";
             setReviewingFaculty(null);
