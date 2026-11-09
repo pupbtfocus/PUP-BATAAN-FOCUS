@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
-import { CheckCircle, Refresh, SystemRestart, WarningCircle, Xmark } from "iconoir-react";
+import { CheckCircle, Refresh, SystemRestart, WarningCircle } from "iconoir-react";
 import { AppIcon } from "@/components/ui/app-icon";
 import { Check as LucideCheck, X as LucideX } from "lucide-react";
 
@@ -53,18 +53,6 @@ export function AuthFeedbackModal({ modal, onClose }: AuthFeedbackModalProps) {
         className="relative w-full max-w-[360px] overflow-hidden rounded-2xl border-2 border-amber-400 bg-[#800000] p-6 sm:p-7 text-white shadow-2xl transition-all duration-300 animate-in zoom-in-95 cursor-default text-center"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Top-Right Dismiss 'X' Button (hidden on success) */}
-        {!isSuccess && (
-          <button
-            type="button"
-            onClick={onClose}
-            className="absolute top-3.5 right-3.5 p-1.5 rounded-lg border border-[#5e0000] bg-[#780000] hover:bg-[#5e0000] text-white transition-colors cursor-pointer"
-            aria-label="Close modal"
-          >
-            <AppIcon icon={Xmark} size="md" color="inherit" />
-          </button>
-        )}
-
         <div className="flex flex-col items-center justify-center text-center">
           {/* Circular Icon */}
           {isLoading ? (
@@ -81,9 +69,9 @@ export function AuthFeedbackModal({ modal, onClose }: AuthFeedbackModalProps) {
             </div>
           ) : isSuccess ? (
             <div className="relative w-16 h-16 flex items-center justify-center my-2">
-              <div className="absolute inset-0 rounded-full border-[3px] border-emerald-300 dark:border-emerald-700 bg-emerald-100/70 dark:bg-emerald-950/50 animate-auth-ring" />
-              <div className="relative z-10 w-11 h-11 rounded-full bg-emerald-600 dark:bg-emerald-500 text-white flex items-center justify-center shadow-md animate-auth-success">
-                <LucideCheck className="w-7 h-7 stroke-[3.5] animate-auth-check" />
+              <div className="absolute inset-0 rounded-full border-2 border-emerald-400/30 bg-emerald-500/10" />
+              <div className="relative z-10 w-11 h-11 rounded-full bg-emerald-600 text-white flex items-center justify-center shadow-[0_0_16px_rgba(16,185,129,0.35)]">
+                <LucideCheck className="w-6 h-6 stroke-[3]" />
               </div>
             </div>
           ) : isDeactivated ? (
@@ -130,8 +118,8 @@ export function AuthFeedbackModal({ modal, onClose }: AuthFeedbackModalProps) {
           )}
 
           {isSuccess && (
-            <div className="mt-4 inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-950/80 border border-emerald-400/60 text-[11px] font-medium text-emerald-200">
-              <AppIcon icon={SystemRestart} size="xs" color="inherit" className="animate-spin" />
+            <div className="mt-4 inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#660000] border border-amber-400/40 text-[11px] font-medium text-amber-200">
+              <AppIcon icon={SystemRestart} size="xs" color="inherit" className="animate-spin text-amber-400" />
               <span>Redirecting to your portal...</span>
             </div>
           )}
