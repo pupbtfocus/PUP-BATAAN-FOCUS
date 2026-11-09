@@ -7,7 +7,7 @@ import { createClient } from "@/lib/supabase/client";
 import { isValidEmailAddress } from "@/lib/validation/email";
 import { AppIcon } from "@/components/ui/app-icon";
 import { AlertPopup } from "@/components/ui/alert-popup";
-import { Lock, Mail, NavArrowRight, SystemRestart, Xmark } from "iconoir-react";
+import { Lock, Mail, NavArrowRight, SystemRestart } from "iconoir-react";
 
 interface ForgotPasswordModalProps {
   isOpen: boolean;
@@ -217,38 +217,29 @@ export function ForgotPasswordModal({
       )}
 
       {/* Modal Backdrop */}
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-3 sm:p-4 backdrop-blur-md animate-in fade-in duration-200">
-        <div className="relative w-full max-w-[400px] sm:max-w-[430px] mx-auto drop-shadow-[0_25px_35px_rgba(0,0,0,0.85)] animate-in zoom-in-95 duration-200">
+      <div
+        className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-3 sm:p-4 backdrop-blur-sm animate-in fade-in duration-200"
+        onClick={(e) => {
+          if (e.target === e.currentTarget) onClose();
+        }}
+      >
+        <div className="relative w-full max-w-[400px] sm:max-w-[420px] mx-auto animate-in zoom-in-95 duration-200">
           {/* Main Card Container */}
-          <section className="relative rounded-3xl border-2 border-amber-400 bg-gradient-to-b from-[#8a0000] via-[#800000] to-[#5a0000] p-6 pt-7 sm:p-8 sm:pt-8 backdrop-blur-xl text-[#fff8e7] shadow-2xl overflow-hidden">
-            {/* Top ambient gold glow */}
-            <div className="pointer-events-none absolute -top-12 left-1/2 -translate-x-1/2 w-48 h-24 bg-amber-400/20 blur-2xl rounded-full" />
-
-            {/* Dismiss 'X' Button - High contrast, matching theme */}
-            <button
-              type="button"
-              onClick={onClose}
-              className="absolute top-4 right-4 rounded-xl border-2 border-amber-400/80 bg-amber-400/15 hover:bg-amber-400 text-amber-300 hover:text-[#5a0000] p-2 transition-all duration-200 cursor-pointer z-30 shadow-md hover:scale-105 active:scale-95 group"
-              aria-label="Close modal"
-            >
-              <AppIcon icon={Xmark} size="sm" color="inherit" strokeWidth={2.5} />
-            </button>
-
+          <section className="relative rounded-2xl border border-amber-400/40 bg-[#800000] p-6 sm:p-7 text-[#fff8e7] shadow-2xl">
             {/* Header with Centered Lock Badge */}
-            <div className="mb-5 sm:mb-6 text-center">
-              <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-2xl border-2 border-amber-400/70 bg-amber-400/15 shadow-[0_0_16px_rgba(251,191,36,0.3)]">
-                <AppIcon icon={Lock} size="lg" color="inherit" className="!text-amber-300 drop-shadow-[0_0_8px_rgba(251,191,36,0.6)]" />
+            <div className="mb-5 text-center">
+              <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-xl bg-amber-400/15 border border-amber-400/40 text-amber-300">
+                <AppIcon icon={Lock} size="md" color="inherit" />
               </div>
-              <h2 className="text-2xl sm:text-3xl font-black tracking-wider text-amber-300 uppercase mb-1 drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">
+              <h2 className="text-xl sm:text-2xl font-black tracking-wider text-amber-300 uppercase mb-1">
                 Reset Password
               </h2>
-              <div className="mx-auto my-2.5 h-0.5 w-16 rounded-full bg-gradient-to-r from-transparent via-amber-400 to-transparent shadow-[0_0_8px_rgba(251,191,36,0.6)]" />
-              <p className="text-amber-100/90 text-xs sm:text-sm font-medium tracking-wide leading-relaxed max-w-[320px] mx-auto">
+              <p className="text-amber-100/85 text-xs sm:text-sm font-medium leading-relaxed max-w-[320px] mx-auto mt-2">
                 Enter your institutional email address to receive a secure password recovery link.
               </p>
             </div>
 
-            <form className="space-y-5" onSubmit={handleSendResetLink}>
+            <form className="space-y-4" onSubmit={handleSendResetLink}>
               <div className="space-y-1.5 text-left">
                 <label
                   htmlFor="reset-email"
@@ -267,14 +258,14 @@ export function ForgotPasswordModal({
                     onChange={(e) => setResetEmail(e.target.value)}
                     required
                     placeholder="e.g. faculty@pup.edu.ph"
-                    className="pup-login-input w-full rounded-xl border-2 !border-amber-400/60 !bg-[#500000] px-4 py-3 text-xs sm:text-sm !text-amber-50 shadow-[inset_0_2px_4px_rgba(0,0,0,0.6),0_1px_0_rgba(255,215,0,0.15)] outline-none transition-all duration-200 placeholder:!text-amber-200/50 hover:!border-amber-400 focus:!border-amber-400 focus:!ring-1 focus:!ring-amber-400/50"
+                    className="pup-login-input w-full rounded-xl border border-amber-400/50 bg-[#630000] px-4 py-2.5 text-xs sm:text-sm text-amber-50 outline-none transition placeholder:text-amber-200/50 focus:border-amber-400 focus:ring-1 focus:ring-amber-400/50"
                   />
                 </div>
               </div>
 
               {/* Turnstile Widget */}
               {process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY && (
-                <div className="flex justify-center my-2.5 min-h-[65px] items-center">
+                <div className="flex justify-center my-2 min-h-[65px] items-center">
                   <input
                     type="hidden"
                     name="cf-turnstile-response"
@@ -300,14 +291,14 @@ export function ForgotPasswordModal({
                 <Button
                   type="button"
                   onClick={onClose}
-                  className="h-11 sm:h-12 flex-1 rounded-2xl border-2 border-amber-400/60 bg-[#5e0000] hover:bg-amber-400 hover:text-[#500000] text-amber-200 font-extrabold uppercase text-xs tracking-wider transition-all cursor-pointer shadow-md active:scale-95"
+                  className="h-11 flex-1 rounded-xl border border-amber-400/50 bg-[#630000] hover:bg-amber-400 hover:text-[#500000] text-amber-200 font-bold uppercase text-xs tracking-wider transition-all cursor-pointer shadow-sm active:scale-95"
                 >
                   Cancel
                 </Button>
                 <Button
                   type="submit"
                   disabled={isSendingReset || (Boolean(process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY) && !captchaToken)}
-                  className="h-11 sm:h-12 flex-1 rounded-2xl bg-gradient-to-r from-amber-400 to-amber-500 font-extrabold text-[#3d0000] tracking-widest uppercase text-xs transition-all duration-300 hover:from-amber-300 hover:to-amber-400 active:scale-95 cursor-pointer shadow-md shadow-black/30 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="h-11 flex-1 rounded-xl bg-amber-400 hover:bg-amber-300 font-extrabold text-[#3d0000] tracking-wider uppercase text-xs transition-all active:scale-95 cursor-pointer shadow-sm flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {isSendingReset ? (
                     <>

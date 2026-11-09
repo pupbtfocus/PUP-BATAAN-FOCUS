@@ -932,29 +932,13 @@ export default function Home() {
                 </div>
 
                 {/* Centered Typography: FOCUS & Faculty Online Compliance and Uploading System */}
-                <div className="relative z-10 w-full max-w-md mx-auto flex flex-col items-center justify-center text-center px-3">
-                  {/* Title */}
-                  <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black tracking-[0.2em] pl-[0.2em] bg-gradient-to-b from-[#fff3c4] via-amber-300 to-amber-500 bg-clip-text text-transparent uppercase drop-shadow-[0_4px_12px_rgba(0,0,0,0.9)]">
+                <div className="relative z-10 w-full max-w-md mx-auto flex flex-col items-center justify-center text-center px-4">
+                  <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black tracking-widest text-amber-300 uppercase drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)]">
                     FOCUS
                   </h1>
-
-                  {/* Sleek Golden Divider with Center Diamond */}
-                  <div className="flex items-center justify-center gap-2 my-1.5 sm:my-2.5 w-36 sm:w-44">
-                    <div className="h-[1px] flex-1 bg-gradient-to-r from-transparent to-amber-400/90" />
-                    <div className="h-1.5 w-1.5 rotate-45 bg-amber-300 shadow-[0_0_8px_rgba(251,191,36,0.9)]" />
-                    <div className="h-[1px] flex-1 bg-gradient-to-l from-transparent to-amber-400/90" />
-                  </div>
-
-                  {/* Clean Institutional System Label Pill */}
-                  <div className="inline-flex items-center justify-center rounded-full bg-[#3b0000]/65 backdrop-blur-[3px] border border-amber-400/35 px-3.5 sm:px-4 py-1 sm:py-1.5 shadow-[0_4px_14px_rgba(0,0,0,0.55)]">
-                    <p className="text-[10.5px] sm:text-xs lg:text-[13px] font-semibold tracking-wide text-amber-50/95 leading-snug">
-                      <span className="text-amber-300 font-extrabold">F</span>aculty{" "}
-                      <span className="text-amber-300 font-extrabold">O</span>nline{" "}
-                      <span className="text-amber-300 font-extrabold">C</span>ompliance &{" "}
-                      <span className="text-amber-300 font-extrabold">U</span>ploading{" "}
-                      <span className="text-amber-300 font-extrabold">S</span>ystem
-                    </p>
-                  </div>
+                  <p className="mt-2 text-xs sm:text-sm font-medium tracking-wide text-amber-100/90 drop-shadow-[0_1px_4px_rgba(0,0,0,0.8)]">
+                    Faculty Online Compliance & Uploading System
+                  </p>
                 </div>
               </div>
             </div>
