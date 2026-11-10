@@ -911,8 +911,8 @@ export function NotificationDrawer() {
                               <AppIcon icon={NavArrowRight} size="sm" color="inherit" />
                             </button>
 
-                            {/* Secondary Actions: Clean White Mark Read / Solid PUP Maroon Back */}
-                            <div className="flex items-center gap-2 pt-1">
+                            {/* Secondary Action: Mark Read / Unread */}
+                            <div className="pt-1">
                               <button
                                 type="button"
                                 onClick={() =>
@@ -921,7 +921,7 @@ export function NotificationDrawer() {
                                     selectedNotification.isRead
                                   )
                                 }
-                                className="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl text-xs font-bold bg-[#800000] hover:bg-[#5e0000] text-white transition cursor-pointer shadow-xs active:scale-95"
+                                className="w-full inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl text-xs font-bold bg-[#800000] hover:bg-[#5e0000] text-white transition cursor-pointer shadow-xs active:scale-95"
                               >
                                 <AppIcon icon={DoubleCheck} size="xs" color="inherit" />
                                 <span>
@@ -929,15 +929,6 @@ export function NotificationDrawer() {
                                     ? "Mark as unread"
                                     : "Mark as read"}
                                 </span>
-                              </button>
-
-                              <button
-                                type="button"
-                                onClick={() => setSelectedNotification(null)}
-                                className="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl text-xs font-bold bg-[#800000] hover:bg-[#5e0000] text-white transition cursor-pointer shadow-xs active:scale-95"
-                              >
-                                <AppIcon icon={NavArrowLeft} size="xs" color="inherit" />
-                                <span>Back to list</span>
                               </button>
                             </div>
                           </div>
