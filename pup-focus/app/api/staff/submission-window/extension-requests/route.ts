@@ -576,3 +576,69 @@ export async function PATCH(request: NextRequest) {
     );
   }
 }
+
+export async function DELETE(request: NextRequest) {
+  try {
+    const sessionClient = await createServerSupabaseClient();
+    const {
+      data: { user },
+    } = await sessionClient.auth.getUser();
+
+    const requesterRole =
+      (user?.user_metadata?.role as string | undefined) ??
+      (user?.app_metadata?.role as string | undefined);
+
+    let hasAccess = isApproverRole(requesterRole);
+    if (!hasAccess && user) {
+      const supabaseCheck = getServiceRoleClient();
+      const { data: prof } = await supabaseCheck
+        .from("profiles")
+        .select("role")
+        .eq("user_id", user.id)
+        .maybeSingle();
+      if (prof?.role && isApproverRole(prof.role)) {
+        hasAccess = true;
+      }
+    }
+
+    if (!user || !hasAccess) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+
+    const supabase = getServiceRoleClient();
+
+    // 1. Delete from extension_requests
+    try {
+      await supabase
+        .from("extension_requests")
+        .delete()
+        .neq("id", "00000000-0000-0000-0000-000000000000");
+    } catch {}
+
+    // 2. Delete from notifications
+    try {
+      await supabase
+        .from("notifications")
+        .delete()
+        .eq("type", "EXTENSION_REQUEST");
+    } catch {}
+
+    await logAuditEvent({
+      actorId: user.id,
+      action: "submission_window.extension_clear_all",
+      entityType: "extension_request",
+      entityId: "all",
+      metadata: { cleared_by: user.id },
+    });
+
+    return NextResponse.json({ success: true, message: "All extension requests cleared." });
+  } catch (error) {
+    logger.error("admin_clear_all_extension_requests_failed", {
+      error: error instanceof Error ? error.message : String(error),
+    });
+    return NextResponse.json(
+      { error: "Failed to clear extension requests", details: String(error) },
+      { status: 500 },
+    );
+  }
+}

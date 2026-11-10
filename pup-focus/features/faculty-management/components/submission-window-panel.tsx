@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState, useCallback, useRef, useMemo } from "react";
-import { Calendar, CheckCircle, ClockRotateRight, EditPencil, FloppyDisk, Hourglass, Page, Search, ShieldAlert, SystemRestart, WarningTriangle, Xmark } from "iconoir-react";
+import { Calendar, CheckCircle, ClockRotateRight, EditPencil, FloppyDisk, Hourglass, Page, Search, ShieldAlert, SystemRestart, Trash, WarningTriangle, Xmark } from "iconoir-react";
 import { AppIcon } from "@/components/ui/app-icon";
 import { ModalHeader } from "@/components/ui/modal-header";
 import type {
@@ -188,6 +188,7 @@ export function SubmissionWindowPanel({
   const [isSaving, setIsSaving] = useState(false);
   const [showSaveConfirmation, setShowSaveConfirmation] = useState(false);
   const [showCloseConfirmation, setShowCloseConfirmation] = useState(false);
+  const [showClearRequestsConfirmation, setShowClearRequestsConfirmation] = useState(false);
   const [warningModalData, setWarningModalData] = useState<{
     isOpen: boolean;
     title: string;
@@ -418,6 +419,28 @@ export function SubmissionWindowPanel({
         headers: { "Content-Type": "application/json" },
         credentials: "include",
         body: JSON.stringify({ action: "mark_all_read" }),
+      });
+      emitRealtimeSync();
+    } catch {
+      void fetchExtensionRequests();
+    }
+  }, [fetchExtensionRequests]);
+
+  const handleClearAllRequests = useCallback(() => {
+    setShowClearRequestsConfirmation(true);
+  }, []);
+
+  const confirmClearAllRequests = useCallback(async () => {
+    setShowClearRequestsConfirmation(false);
+    setExtensionRequests([]);
+    setPendingRequestsCount(0);
+    cachedExtensionRequests = [];
+    cachedPendingRequestsCount = 0;
+
+    try {
+      await fetch("/api/staff/submission-window/extension-requests", {
+        method: "DELETE",
+        credentials: "include",
       });
       emitRealtimeSync();
     } catch {
@@ -793,7 +816,7 @@ export function SubmissionWindowPanel({
   return (
     <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 sm:p-6 shadow-xs dark:shadow-none space-y-5 sm:space-y-6 transition-colors">
       {/* Real-time Status Banner */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 sm:p-4 rounded-xl bg-slate-50 border border-slate-200/80 dark:bg-slate-950/50 dark:border-slate-800 transition-colors">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 sm:p-4 rounded-xl bg-slate-50 border border-slate-200/80 dark:bg-slate-900/50 dark:border-slate-800 transition-colors">
         <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 w-full sm:w-auto">
           {/* Status Badge */}
           <div className="inline-flex items-center justify-center sm:justify-start gap-2 bg-white text-slate-800 border border-slate-200 dark:bg-slate-900 dark:text-slate-200 dark:border-slate-800 px-3 py-1.5 text-xs font-semibold rounded-md shadow-2xs">
@@ -862,13 +885,13 @@ export function SubmissionWindowPanel({
 
       {/* 2-Option Schedule Switcher: Global Schedule & Extension Requests */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-200 dark:border-slate-800 pb-3">
-        <div className="inline-flex items-center p-1 rounded-xl bg-slate-100 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 w-full sm:w-auto shadow-2xs">
+        <div className="inline-flex items-center p-1 rounded-xl bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 w-full sm:w-auto shadow-2xs">
           <button
             type="button"
             onClick={() => setActiveTab("global")}
             className={`flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${
               activeTab === "global"
-                ? "bg-amber-500 text-slate-950 shadow-xs border border-amber-600 font-extrabold"
+                ? "bg-amber-500 text-slate-900 shadow-xs border border-amber-600 font-extrabold"
                 : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-200/60 dark:hover:bg-slate-900"
             }`}
           >
@@ -881,7 +904,7 @@ export function SubmissionWindowPanel({
             onClick={() => setActiveTab("requests")}
             className={`flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${
               activeTab === "requests"
-                ? "bg-amber-500 text-slate-950 shadow-xs border border-amber-600 font-extrabold"
+                ? "bg-amber-500 text-slate-900 shadow-xs border border-amber-600 font-extrabold"
                 : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-200/60 dark:hover:bg-slate-900"
             }`}
           >
@@ -890,8 +913,8 @@ export function SubmissionWindowPanel({
             {pendingRequestsCount > 0 ? (
               <span className={`px-2 py-0.5 text-[10px] font-bold rounded-full transition-colors ${
                 activeTab === "requests"
-                  ? "bg-white text-amber-950 shadow-2xs border border-amber-600/30"
-                  : "bg-amber-500 text-slate-950"
+                  ? "bg-white text-slate-900 shadow-2xs border border-amber-600/30"
+                  : "bg-amber-500 text-slate-900"
               }`}>
                 {pendingRequestsCount}
               </span>
@@ -912,17 +935,17 @@ export function SubmissionWindowPanel({
           <form onSubmit={handleSave} className="space-y-6">
         {/* Pending Extension Requests Alert Banner in Global Schedule View */}
         {pendingRequestsCount > 0 ? (
-          <div className="flex items-center justify-between gap-3 px-4 py-2.5 rounded-xl bg-amber-50/70 border border-amber-200/80 dark:bg-amber-950/20 dark:border-amber-800/40 text-xs">
-            <div className="flex items-center gap-2.5 text-amber-900 dark:text-amber-200">
+          <div className="flex items-center justify-between gap-3 px-4 py-2.5 rounded-xl bg-amber-500 border border-amber-600 text-slate-900 shadow-xs text-xs">
+            <div className="flex items-center gap-2.5 text-slate-900">
               <AppIcon icon={Hourglass} size="md" color="inherit" />
               <span>
-                <strong>{pendingRequestsCount} Pending Extension Request{pendingRequestsCount !== 1 ? "s" : ""}:</strong> Faculty have requested submission extensions due to closed or past due deadlines.
+                <strong className="font-bold">{pendingRequestsCount} Pending Extension Request{pendingRequestsCount !== 1 ? "s" : ""}:</strong> Faculty have requested submission extensions due to closed or past due deadlines.
               </span>
             </div>
             <button
               type="button"
               onClick={() => setActiveTab("requests")}
-              className="shrink-0 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 hover:bg-slate-50 border border-amber-300 dark:border-amber-700/60 font-semibold text-xs px-3 py-1.5 rounded-lg transition shadow-2xs cursor-pointer"
+              className="shrink-0 bg-white hover:bg-slate-50 text-slate-800 font-bold text-xs px-3.5 py-1.5 rounded-lg border border-amber-600/30 transition shadow-xs cursor-pointer active:scale-95"
             >
               Review Requests ({pendingRequestsCount})
             </button>
@@ -943,7 +966,7 @@ export function SubmissionWindowPanel({
           <div className={`p-3.5 sm:p-4 rounded-xl flex flex-col justify-between transition-all duration-200 ${
             isEditingSchedule
               ? "bg-white border-2 border-slate-300 dark:bg-slate-900 dark:border-slate-700 shadow-xs"
-              : "bg-slate-50 border border-slate-200/80 dark:bg-slate-950/50 dark:border-slate-800"
+              : "bg-slate-50 border border-slate-200/80 dark:bg-slate-900/50 dark:border-slate-800"
           }`}>
             <div>
               <label htmlFor="opening-schedule" className="block text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-400 mb-1">
@@ -986,7 +1009,7 @@ export function SubmissionWindowPanel({
           <div className={`p-3.5 sm:p-4 rounded-xl flex flex-col justify-between transition-all duration-200 ${
             isEditingSchedule
               ? "bg-white border-2 border-slate-300 dark:bg-slate-900 dark:border-slate-700 shadow-xs"
-              : "bg-slate-50 border border-slate-200/80 dark:bg-slate-950/50 dark:border-slate-800"
+              : "bg-slate-50 border border-slate-200/80 dark:bg-slate-900/50 dark:border-slate-800"
           }`}>
             <div>
               <div className="flex items-center justify-between gap-2 mb-1">
@@ -997,7 +1020,7 @@ export function SubmissionWindowPanel({
                   <label
                     className={`flex items-center gap-1.5 text-xs font-semibold cursor-pointer select-none px-2.5 py-0.5 rounded-md transition ${
                       isAlwaysOpen
-                        ? "bg-amber-500 text-slate-950 border border-amber-600 font-bold shadow-2xs"
+                        ? "bg-amber-500 text-slate-900 border border-amber-600 font-bold shadow-2xs"
                         : "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-300 dark:border-slate-700 hover:bg-slate-200 dark:hover:bg-slate-750"
                     }`}
                   >
@@ -1102,7 +1125,7 @@ export function SubmissionWindowPanel({
                         }}
                         className={`inline-flex items-center gap-1 text-xs px-2.5 py-1 rounded-md transition cursor-pointer ${
                           activePreset === "today"
-                            ? "bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold border border-amber-500 shadow-2xs"
+                            ? "bg-amber-500 hover:bg-amber-400 text-slate-900 font-bold border border-amber-500 shadow-2xs"
                             : "font-medium bg-white hover:bg-slate-100 dark:bg-slate-900 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700"
                         }`}
                       >
@@ -1119,7 +1142,7 @@ export function SubmissionWindowPanel({
                         }}
                         className={`inline-flex items-center gap-1 text-xs px-2.5 py-1 rounded-md transition cursor-pointer ${
                           activePreset === "+3d"
-                            ? "bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold border border-amber-500 shadow-2xs"
+                            ? "bg-amber-500 hover:bg-amber-400 text-slate-900 font-bold border border-amber-500 shadow-2xs"
                             : "font-medium bg-white hover:bg-slate-100 dark:bg-slate-900 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700"
                         }`}
                       >
@@ -1136,7 +1159,7 @@ export function SubmissionWindowPanel({
                         }}
                         className={`inline-flex items-center gap-1 text-xs px-2.5 py-1 rounded-md transition cursor-pointer ${
                           activePreset === "+1w"
-                            ? "bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold border border-amber-500 shadow-2xs"
+                            ? "bg-amber-500 hover:bg-amber-400 text-slate-900 font-bold border border-amber-500 shadow-2xs"
                             : "font-medium bg-white hover:bg-slate-100 dark:bg-slate-900 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700"
                         }`}
                       >
@@ -1153,7 +1176,7 @@ export function SubmissionWindowPanel({
                         }}
                         className={`inline-flex items-center gap-1 text-xs px-2.5 py-1 rounded-md transition cursor-pointer ${
                           activePreset === "+2w"
-                            ? "bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold border border-amber-500 shadow-2xs"
+                            ? "bg-amber-500 hover:bg-amber-400 text-slate-900 font-bold border border-amber-500 shadow-2xs"
                             : "font-medium bg-white hover:bg-slate-100 dark:bg-slate-900 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700"
                         }`}
                       >
@@ -1167,7 +1190,7 @@ export function SubmissionWindowPanel({
                         }}
                         className={`inline-flex items-center gap-1 text-xs px-2.5 py-1 rounded-md transition cursor-pointer ${
                           activePreset === "always"
-                            ? "bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold border border-amber-500 shadow-2xs"
+                            ? "bg-amber-500 hover:bg-amber-400 text-slate-900 font-bold border border-amber-500 shadow-2xs"
                             : "font-medium bg-white hover:bg-slate-100 dark:bg-slate-900 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700"
                         }`}
                       >
@@ -1230,12 +1253,12 @@ export function SubmissionWindowPanel({
                 <button
                   type="submit"
                   disabled={isLoading || isSaving}
-                  className="flex items-center justify-center gap-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold px-4 py-2.5 sm:py-2 text-sm rounded-xl transition-colors shadow-xs disabled:opacity-50 cursor-pointer border border-amber-600"
+                  className="flex items-center justify-center gap-1.5 bg-amber-500 hover:bg-amber-400 text-slate-900 font-bold px-4 py-2.5 sm:py-2 text-sm rounded-xl transition-colors shadow-xs disabled:opacity-50 cursor-pointer border border-amber-600"
                 >
                   {isSaving ? (
-                    <AppIcon icon={SystemRestart} size="sm" color="inherit" className="animate-spin text-slate-950" />
+                    <AppIcon icon={SystemRestart} size="sm" color="inherit" className="animate-spin text-slate-900" />
                   ) : (
-                    <AppIcon icon={FloppyDisk} size="sm" color="inherit" className="text-slate-950" />
+                    <AppIcon icon={FloppyDisk} size="sm" color="inherit" className="text-slate-900" />
                   )}
                   <span>{isSaving ? "Saving..." : "Save Schedule"}</span>
                 </button>
@@ -1254,9 +1277,9 @@ export function SubmissionWindowPanel({
                     }, 50);
                   }}
                   disabled={isLoading || isSaving}
-                  className="flex items-center justify-center gap-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold px-3.5 py-2.5 sm:py-2 text-sm rounded-xl transition-colors disabled:opacity-50 cursor-pointer shadow-xs active:scale-[0.98]"
+                  className="flex items-center justify-center gap-1.5 bg-amber-500 hover:bg-amber-400 text-slate-900 font-semibold px-3.5 py-2.5 sm:py-2 text-sm rounded-xl transition-colors disabled:opacity-50 cursor-pointer shadow-xs active:scale-[0.98]"
                 >
-                  <AppIcon icon={EditPencil} size="sm" color="inherit" className="text-slate-950" />
+                  <AppIcon icon={EditPencil} size="sm" color="inherit" className="text-slate-900" />
                   <span>Edit Schedule</span>
                 </button>
 
@@ -1272,7 +1295,7 @@ export function SubmissionWindowPanel({
           {/* Header Informational Banner with Quick Global Schedule Button */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-xl bg-slate-100 border border-slate-200/90 dark:bg-slate-800/50 dark:border-slate-700 text-xs">
             <div className="flex items-start gap-3">
-              <div className="w-8 h-8 rounded-full bg-amber-500 text-slate-950 flex items-center justify-center shrink-0 shadow-xs">
+              <div className="w-8 h-8 rounded-full bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 flex items-center justify-center shrink-0 border border-slate-300/50 dark:border-slate-600/50 shadow-xs">
                 <AppIcon icon={Hourglass} size="xs" color="inherit" />
               </div>
               <div>
@@ -1285,20 +1308,10 @@ export function SubmissionWindowPanel({
               </div>
             </div>
             <div className="flex items-center gap-2 shrink-0">
-              {pendingRequestsCount > 0 && (
-                <button
-                  type="button"
-                  onClick={() => void handleMarkAllAsRead()}
-                  className="shrink-0 inline-flex items-center justify-center gap-1.5 px-3.5 py-2 text-xs font-bold rounded-xl bg-white hover:bg-slate-50 dark:bg-slate-900 dark:hover:bg-slate-800 text-slate-800 dark:text-slate-200 transition cursor-pointer shadow-xs border border-slate-300 dark:border-slate-700 active:scale-95"
-                >
-                  <AppIcon icon={CheckCircle} size="xs" color="inherit" />
-                  <span>Read All</span>
-                </button>
-              )}
               <button
                 type="button"
                 onClick={handleSwitchToGlobalSchedule}
-                className="shrink-0 inline-flex items-center justify-center gap-1.5 px-4 py-2 text-xs font-bold rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 transition cursor-pointer shadow-xs border border-amber-600 active:scale-95"
+                className="shrink-0 inline-flex items-center justify-center gap-1.5 px-4 py-2 text-xs font-bold rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-900 transition cursor-pointer shadow-xs border border-amber-600 active:scale-95"
               >
                 <AppIcon icon={Calendar} size="sm" color="inherit" />
                 <span>Set Global Schedule for All</span>
@@ -1308,8 +1321,8 @@ export function SubmissionWindowPanel({
 
           {/* Requests Content: Notification List / Empty */}
           {extensionRequests.length === 0 ? (
-            <div className="py-12 px-4 text-center rounded-2xl border-2 border-dashed border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/30 space-y-3">
-              <div className="w-10 h-10 rounded-full bg-amber-500 text-slate-950 flex items-center justify-center mx-auto shadow-xs">
+            <div className="py-12 px-4 text-center rounded-2xl border-2 border-dashed border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/30 space-y-3">
+              <div className="w-10 h-10 rounded-full bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 flex items-center justify-center mx-auto shadow-xs border border-slate-300/50 dark:border-slate-600/50">
                 <AppIcon icon={Hourglass} size="sm" color="inherit" />
               </div>
               <div className="space-y-1">
@@ -1336,38 +1349,44 @@ export function SubmissionWindowPanel({
                 <span className="text-xs font-semibold text-slate-600 dark:text-slate-400">
                   Requests ({extensionRequests.length})
                 </span>
-                {pendingRequestsCount > 0 && (
-                  <button
-                    type="button"
-                    onClick={() => void handleMarkAllAsRead()}
-                    className="inline-flex items-center gap-1 text-xs font-bold text-amber-800 dark:text-amber-400 hover:underline cursor-pointer"
-                  >
-                    <AppIcon icon={CheckCircle} size="xs" color="inherit" />
-                    <span>Read All</span>
-                  </button>
-                )}
+                <div className="flex items-center gap-3">
+                  {pendingRequestsCount > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => void handleMarkAllAsRead()}
+                      className="inline-flex items-center gap-1 text-xs font-bold text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200 transition cursor-pointer"
+                    >
+                      <AppIcon icon={CheckCircle} size="xs" color="inherit" />
+                      <span>Read All</span>
+                    </button>
+                  )}
+                  {extensionRequests.length > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => void handleClearAllRequests()}
+                      className="inline-flex items-center gap-1 text-xs font-bold text-slate-500 hover:text-red-600 dark:text-slate-400 dark:hover:text-red-400 transition cursor-pointer"
+                    >
+                      <AppIcon icon={Trash} size="xs" color="inherit" />
+                      <span>Clear All</span>
+                    </button>
+                  )}
+                </div>
               </div>
 
-              <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950/60 shadow-xs divide-y divide-slate-100 dark:divide-slate-850 overflow-hidden">
+              <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs divide-y divide-slate-100 dark:divide-slate-800 overflow-hidden">
                 {extensionRequests.map((req, index) => (
                 <div
                   key={req.id}
-                  className="p-3.5 sm:px-4 hover:bg-slate-50/70 dark:hover:bg-slate-900/40 transition-colors flex items-center justify-between gap-3"
+                  className="p-3.5 sm:px-4 hover:bg-slate-50/70 dark:hover:bg-slate-800/40 transition-colors flex items-center justify-between gap-3"
                 >
                   <div className="flex items-center gap-3 min-w-0">
-                    <div
-                      className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full font-bold text-xs flex items-center justify-center shrink-0 shadow-xs transition-colors ${
-                        req.status === "pending"
-                          ? "bg-amber-500 text-slate-950"
-                          : "bg-slate-200 dark:bg-slate-800 text-slate-500 dark:text-slate-400"
-                      }`}
-                    >
+                    <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full font-bold text-xs flex items-center justify-center shrink-0 border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300">
                       {index + 1}
                     </div>
 
                     <div className="min-w-0 text-xs sm:text-sm">
                       <p className="text-slate-800 dark:text-slate-200 truncate">
-                        <span className="font-bold text-slate-950 dark:text-white">
+                        <span className="font-bold text-slate-900 dark:text-white">
                           {req.faculty_name}
                         </span>{" "}
                         requested an extension
@@ -1386,7 +1405,7 @@ export function SubmissionWindowPanel({
                         href={`/api/faculty/submissions/extension-request/document?requestId=${req.id}`}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1 text-[11px] font-semibold text-slate-950 bg-amber-500 hover:bg-amber-400 px-2.5 py-0.5 rounded-md shadow-2xs transition-colors"
+                        className="inline-flex items-center gap-1 text-[11px] font-semibold text-slate-900 bg-amber-500 hover:bg-amber-400 px-2.5 py-0.5 rounded-md shadow-2xs transition-colors"
                       >
                         <AppIcon icon={Page} size="xs" color="inherit" />
                         <span>Attachment</span>
@@ -1409,7 +1428,7 @@ export function SubmissionWindowPanel({
                       <button
                         type="button"
                         onClick={() => void handleMarkAsRead(req.id)}
-                        className="px-2.5 py-1 text-[11px] font-bold rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 transition cursor-pointer shadow-xs border border-amber-600 active:scale-95"
+                        className="px-2.5 py-1 text-[11px] font-bold rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-900 transition cursor-pointer shadow-xs border border-amber-600 active:scale-95"
                         title="Mark this request as read"
                       >
                         Read
@@ -1452,7 +1471,7 @@ export function SubmissionWindowPanel({
       {/* Save Confirmation Modal */}
       {showSaveConfirmation ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm animate-in fade-in">
-          <div className="w-full max-w-lg bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl text-slate-900 dark:text-slate-100 overflow-hidden flex flex-col">
+          <div className="w-full max-w-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl text-slate-900 dark:text-slate-100 overflow-hidden flex flex-col">
             <ModalHeader
               icon={Calendar}
               title="Save Submission Schedule?"
@@ -1481,7 +1500,7 @@ export function SubmissionWindowPanel({
                 <button
                   type="button"
                   onClick={() => void submitSave()}
-                  className="inline-flex items-center justify-center font-bold px-4 py-2 rounded-xl text-xs bg-amber-500 hover:bg-amber-400 text-slate-950 border border-amber-600 transition-all cursor-pointer shadow-xs active:scale-[0.98]"
+                  className="inline-flex items-center justify-center font-bold px-4 py-2 rounded-xl text-xs bg-amber-500 hover:bg-amber-400 text-slate-900 border border-amber-600 transition-all cursor-pointer shadow-xs active:scale-[0.98]"
                 >
                   Confirm Save
                 </button>
@@ -1494,7 +1513,7 @@ export function SubmissionWindowPanel({
       {/* Close Confirmation Modal — 10-second Safety Countdown */}
       {showCloseConfirmation ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm animate-in fade-in">
-          <div className="w-full max-w-lg bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl text-slate-900 dark:text-slate-100 overflow-hidden flex flex-col">
+          <div className="w-full max-w-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl text-slate-900 dark:text-slate-100 overflow-hidden flex flex-col">
             <ModalHeader
               icon={WarningTriangle}
               title="Close Submissions Now?"
@@ -1521,10 +1540,10 @@ export function SubmissionWindowPanel({
 
               {/* Countdown / Safety indicator Banner */}
               {closeCountdown > 0 ? (
-                <div className="p-3.5 rounded-xl bg-amber-500 border border-amber-600 text-slate-950 flex items-center justify-between gap-3 shadow-xs">
-                  <div className="flex items-center gap-2.5 min-w-0 text-slate-950">
-                    <AppIcon icon={Hourglass} size="sm" color="inherit" className="text-slate-950 shrink-0" />
-                    <span className="text-xs font-bold text-slate-950">
+                <div className="p-3.5 rounded-xl bg-amber-500 border border-amber-600 text-slate-900 flex items-center justify-between gap-3 shadow-xs">
+                  <div className="flex items-center gap-2.5 min-w-0 text-slate-900">
+                    <AppIcon icon={Hourglass} size="sm" color="inherit" className="text-slate-900 shrink-0" />
+                    <span className="text-xs font-bold text-slate-900">
                       Please wait before confirming accidental closure:
                     </span>
                   </div>
@@ -1567,11 +1586,9 @@ export function SubmissionWindowPanel({
         </div>
       ) : null}
 
-
-
       {warningModalData.isOpen ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4 animate-in fade-in">
-          <div className="w-full max-w-lg bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl text-slate-900 dark:text-slate-100 overflow-hidden flex flex-col">
+          <div className="w-full max-w-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl text-slate-900 dark:text-slate-100 overflow-hidden flex flex-col">
             <ModalHeader
               icon={WarningTriangle}
               title={warningModalData.title || "Window Close Blocked"}
@@ -1610,9 +1627,44 @@ export function SubmissionWindowPanel({
                       window.location.href = "/staff/dashboard?tab=requirements";
                     }
                   }}
-                  className="inline-flex items-center justify-center font-bold px-4 py-2 rounded-xl text-xs bg-amber-500 hover:bg-amber-400 text-slate-950 border border-amber-600 transition-all cursor-pointer shadow-xs active:scale-[0.98]"
+                  className="inline-flex items-center justify-center font-bold px-4 py-2 rounded-xl text-xs bg-amber-500 hover:bg-amber-400 text-slate-900 border border-amber-600 transition-all cursor-pointer shadow-xs active:scale-[0.98]"
                 >
                   Review Requirements
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {/* Clear Extension Requests Confirmation Modal */}
+      {showClearRequestsConfirmation ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm animate-in fade-in">
+          <div className="w-full max-w-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl text-slate-900 dark:text-slate-100 overflow-hidden flex flex-col">
+            <ModalHeader
+              icon={Trash}
+              title="Clear All Extension Requests?"
+              subtitle="Remove All Extension Requests"
+            />
+            <div className="p-6 space-y-4">
+              <p className="text-xs leading-5 text-slate-600 dark:text-slate-300">
+                Are you sure you want to clear all extension requests? This action will permanently remove all pending and reviewed extension notifications.
+              </p>
+
+              <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-slate-100 dark:border-slate-800/80">
+                <button
+                  type="button"
+                  onClick={() => setShowClearRequestsConfirmation(false)}
+                  className="px-4 py-2 rounded-xl text-xs font-semibold bg-[#780000] hover:bg-[#5e0000] text-white border border-[#5e0000] transition-all cursor-pointer shadow-xs"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={() => void confirmClearAllRequests()}
+                  className="inline-flex items-center justify-center font-bold px-4 py-2 rounded-xl text-xs bg-amber-500 hover:bg-amber-400 text-slate-900 border border-amber-600 transition-all cursor-pointer shadow-xs active:scale-[0.98]"
+                >
+                  Clear All Requests
                 </button>
               </div>
             </div>
