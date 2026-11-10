@@ -409,11 +409,12 @@ export function SidebarContent({
                   onClick={() =>
                     handleSelect(isSuperAdmin ? "window" : "submissionWindow")
                   }
-                  className={`flex w-full items-center gap-2.5 px-3 py-2 text-xs font-medium transition-colors cursor-pointer rounded-md whitespace-nowrap ${
+                  className={`flex w-full items-center gap-2.5 px-3 py-2 text-xs font-medium transition-colors cursor-pointer rounded-md text-left ${
                     isWindowActive
                       ? "bg-amber-400/20 text-white font-semibold border-l-2 border-amber-400 shadow-xs"
                       : "text-amber-100/80 hover:bg-white/10 hover:text-white"
                   }`}
+                  title="Submission Schedule & Extension Requests"
                 >
                   <Hourglass
                     strokeWidth={2}
@@ -421,7 +422,7 @@ export function SidebarContent({
                       isWindowActive ? "text-amber-300 stroke-[2]" : "text-amber-200/70"
                     }`}
                   />
-                  <span className="whitespace-nowrap">Submission Schedule</span>
+                  <span className="leading-tight">Submission Schedule &amp; Extension Requests</span>
                 </button>
                 <button
                   type="button"
