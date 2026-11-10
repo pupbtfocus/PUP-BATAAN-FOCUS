@@ -309,8 +309,10 @@ export function AdminNotificationDrawer({
   useEffect(() => {
     void fetchNotifications();
     const interval = setInterval(() => {
-      void fetchNotifications();
-    }, 20000);
+      if (typeof document !== "undefined" && document.visibilityState === "visible") {
+        void fetchNotifications();
+      }
+    }, 180000); // 3 minutes fallback (realtime handles instant updates)
 
     return () => clearInterval(interval);
   }, [fetchNotifications]);

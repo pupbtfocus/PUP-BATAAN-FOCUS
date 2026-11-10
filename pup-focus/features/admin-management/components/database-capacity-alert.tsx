@@ -113,8 +113,10 @@ export function DatabaseCapacityAlert({
     }
     void fetchDbStatus(refreshTrigger > 0);
     const interval = setInterval(() => {
-      void fetchDbStatus(true);
-    }, 60000);
+      if (typeof document !== "undefined" && document.visibilityState === "visible") {
+        void fetchDbStatus(true);
+      }
+    }, 300000); // 5 minutes fallback
     return () => clearInterval(interval);
   }, [fetchDbStatus, refreshTrigger, overrideStatus]);
 

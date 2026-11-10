@@ -337,8 +337,10 @@ export function NotificationDrawer() {
   useEffect(() => {
     void fetchNotifications();
     const interval = setInterval(() => {
-      void fetchNotifications();
-    }, 25000);
+      if (typeof document !== "undefined" && document.visibilityState === "visible") {
+        void fetchNotifications();
+      }
+    }, 180000); // 3 minutes fallback (realtime handles instant updates)
 
     return () => clearInterval(interval);
   }, [fetchNotifications]);

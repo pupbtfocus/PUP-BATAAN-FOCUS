@@ -314,12 +314,12 @@ export function SingleSessionEnforcer() {
       return;
     }
 
-    // Only poll periodically if tab is actively visible (30 seconds)
+    // Only poll periodically if tab is actively visible (2 minutes)
     const intervalId = setInterval(() => {
       if (typeof document !== "undefined" && document.visibilityState === "visible") {
         void verifySession();
       }
-    }, 30000);
+    }, 120000);
 
     const onFocus = () => {
       if (typeof document !== "undefined" && document.visibilityState === "visible") {
