@@ -1,7 +1,27 @@
 "use client";
 
-import React, { useEffect, useState, useCallback, useRef, useMemo } from "react";
-import { Calendar, CheckCircle, ClockRotateRight, EditPencil, FloppyDisk, Hourglass, Page, Search, ShieldAlert, SystemRestart, Trash, WarningTriangle, Xmark } from "iconoir-react";
+import React, {
+  useEffect,
+  useState,
+  useCallback,
+  useRef,
+  useMemo,
+} from "react";
+import {
+  Calendar,
+  CheckCircle,
+  ClockRotateRight,
+  EditPencil,
+  FloppyDisk,
+  Hourglass,
+  Page,
+  Search,
+  ShieldAlert,
+  SystemRestart,
+  Trash,
+  WarningTriangle,
+  Xmark,
+} from "iconoir-react";
 import { AppIcon } from "@/components/ui/app-icon";
 import { ModalHeader } from "@/components/ui/modal-header";
 import type {
@@ -138,7 +158,9 @@ function parseWindowDates(data: SubmissionWindowResponse | null) {
     return { openDt: "", closeDt: "", alwaysOpen: false };
   }
   const isAlwaysOpenWindow = Boolean(
-    data.endDate && (data.endDate.startsWith("2099") || new Date(data.endDate).getFullYear() >= 2099)
+    data.endDate &&
+    (data.endDate.startsWith("2099") ||
+      new Date(data.endDate).getFullYear() >= 2099),
   );
   let openDt = "";
   if (data.startDate && data.startTimeLabel) {
@@ -165,20 +187,21 @@ export function SubmissionWindowPanel({
   isSuperAdmin = false,
   onNavigateToRequirements,
 }: SubmissionWindowPanelProps) {
-  const [windowStatus, setWindowStatus] = useState<SubmissionWindowResponse | null>(() => {
-    if (cachedSubmissionWindow) return cachedSubmissionWindow;
-    if (typeof window !== "undefined") {
-      try {
-        const stored = sessionStorage.getItem("pup_focus_submission_window");
-        if (stored) {
-          const parsed = JSON.parse(stored);
-          cachedSubmissionWindow = parsed;
-          return parsed;
-        }
-      } catch {}
-    }
-    return null;
-  });
+  const [windowStatus, setWindowStatus] =
+    useState<SubmissionWindowResponse | null>(() => {
+      if (cachedSubmissionWindow) return cachedSubmissionWindow;
+      if (typeof window !== "undefined") {
+        try {
+          const stored = sessionStorage.getItem("pup_focus_submission_window");
+          if (stored) {
+            const parsed = JSON.parse(stored);
+            cachedSubmissionWindow = parsed;
+            return parsed;
+          }
+        } catch {}
+      }
+      return null;
+    });
 
   const parsedInit = parseWindowDates(windowStatus);
   const [openDateTime, setOpenDateTime] = useState(parsedInit.openDt);
@@ -188,7 +211,8 @@ export function SubmissionWindowPanel({
   const [isSaving, setIsSaving] = useState(false);
   const [showSaveConfirmation, setShowSaveConfirmation] = useState(false);
   const [showCloseConfirmation, setShowCloseConfirmation] = useState(false);
-  const [showClearRequestsConfirmation, setShowClearRequestsConfirmation] = useState(false);
+  const [showClearRequestsConfirmation, setShowClearRequestsConfirmation] =
+    useState(false);
   const [warningModalData, setWarningModalData] = useState<{
     isOpen: boolean;
     title: string;
@@ -203,8 +227,12 @@ export function SubmissionWindowPanel({
   const [isLoadingLogs, setIsLoadingLogs] = useState(false);
 
   // Extension Requests state
-  const [extensionRequests, setExtensionRequests] = useState<any[]>(() => cachedExtensionRequests || []);
-  const [pendingRequestsCount, setPendingRequestsCount] = useState<number>(() => cachedPendingRequestsCount || 0);
+  const [extensionRequests, setExtensionRequests] = useState<any[]>(
+    () => cachedExtensionRequests || [],
+  );
+  const [pendingRequestsCount, setPendingRequestsCount] = useState<number>(
+    () => cachedPendingRequestsCount || 0,
+  );
 
   // Edit vs. Save schedule toggle (defaults to editing if no schedule exists yet)
   const [isEditingSchedule, setIsEditingSchedule] = useState(false);
@@ -245,12 +273,14 @@ export function SubmissionWindowPanel({
 
   const isWindowOpen = Boolean(
     windowStatus?.status !== "Closed" &&
-    startDateObj && endDateObj && now >= startDateObj && now <= endDateObj
+    startDateObj &&
+    endDateObj &&
+    now >= startDateObj &&
+    now <= endDateObj,
   );
 
   const isUpcoming = Boolean(
-    windowStatus?.status !== "Closed" &&
-    startDateObj && now < startDateObj
+    windowStatus?.status !== "Closed" && startDateObj && now < startDateObj,
   );
 
   const isGlobalSubmissionOpen = useMemo(() => {
@@ -259,7 +289,15 @@ export function SubmissionWindowPanel({
     if (!startDateObj || !endDateObj) return false;
     if (now > endDateObj) return false;
     return isWindowOpen || isUpcoming;
-  }, [windowStatus?.status, isAlwaysOpen, startDateObj, endDateObj, now, isWindowOpen, isUpcoming]);
+  }, [
+    windowStatus?.status,
+    isAlwaysOpen,
+    startDateObj,
+    endDateObj,
+    now,
+    isWindowOpen,
+    isUpcoming,
+  ]);
 
   const formattedCountdownTime = useMemo(() => {
     if (windowStatus?.status === "Closed") {
@@ -281,10 +319,18 @@ export function SubmissionWindowPanel({
       return `Expired ${formatTimeAgo(diff)}`;
     }
     return "Not Configured";
-  }, [windowStatus?.status, isAlwaysOpen, isWindowOpen, isUpcoming, startDateObj, endDateObj, now]);
+  }, [
+    windowStatus?.status,
+    isAlwaysOpen,
+    isWindowOpen,
+    isUpcoming,
+    startDateObj,
+    endDateObj,
+    now,
+  ]);
 
   const isGlobalConfigured = Boolean(
-    isAlwaysOpen || (startDateObj && endDateObj)
+    isAlwaysOpen || (startDateObj && endDateObj),
   );
 
   const nowIso = getNowIsoLocal();
@@ -353,7 +399,9 @@ export function SubmissionWindowPanel({
   const fetchLogs = useCallback(async () => {
     try {
       setIsLoadingLogs(true);
-      const res = await fetch("/api/staff/submission-window/logs", { credentials: "include" });
+      const res = await fetch("/api/staff/submission-window/logs", {
+        credentials: "include",
+      });
       if (res.ok) {
         const body = await res.json();
         setExtensionLogs(body.logs || []);
@@ -371,9 +419,12 @@ export function SubmissionWindowPanel({
 
   const fetchExtensionRequests = useCallback(async () => {
     try {
-      const res = await fetch("/api/staff/submission-window/extension-requests?status=all", {
-        credentials: "include",
-      });
+      const res = await fetch(
+        "/api/staff/submission-window/extension-requests?status=all",
+        {
+          credentials: "include",
+        },
+      );
       if (res.ok) {
         const body = await res.json();
         const requests = body.requests || [];
@@ -388,28 +439,33 @@ export function SubmissionWindowPanel({
     }
   }, []);
 
-  const handleMarkAsRead = useCallback(async (requestId: string) => {
-    setExtensionRequests((prev) =>
-      prev.map((r) => (r.id === requestId ? { ...r, status: "approved" } : r))
-    );
-    setPendingRequestsCount((prev) => Math.max(0, prev - 1));
+  const handleMarkAsRead = useCallback(
+    async (requestId: string) => {
+      setExtensionRequests((prev) =>
+        prev.map((r) =>
+          r.id === requestId ? { ...r, status: "approved" } : r,
+        ),
+      );
+      setPendingRequestsCount((prev) => Math.max(0, prev - 1));
 
-    try {
-      await fetch("/api/staff/submission-window/extension-requests", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({ requestId, action: "read" }),
-      });
-      emitRealtimeSync();
-    } catch {
-      void fetchExtensionRequests();
-    }
-  }, [fetchExtensionRequests]);
+      try {
+        await fetch("/api/staff/submission-window/extension-requests", {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({ requestId, action: "read" }),
+        });
+        emitRealtimeSync();
+      } catch {
+        void fetchExtensionRequests();
+      }
+    },
+    [fetchExtensionRequests],
+  );
 
   const handleMarkAllAsRead = useCallback(async () => {
     setExtensionRequests((prev) =>
-      prev.map((r) => ({ ...r, status: "approved" }))
+      prev.map((r) => ({ ...r, status: "approved" })),
     );
     setPendingRequestsCount(0);
 
@@ -448,8 +504,6 @@ export function SubmissionWindowPanel({
     }
   }, [fetchExtensionRequests]);
 
-
-
   async function loadWindow(options?: { silent?: boolean }) {
     const isSilent = options?.silent ?? Boolean(cachedSubmissionWindow);
     if (!isSilent) {
@@ -467,7 +521,8 @@ export function SubmissionWindowPanel({
       if (!response.ok) {
         const details =
           typeof body === "object" && body !== null
-            ? (((body as ApiBody).error || (body as ApiBody).details) ?? `HTTP ${response.status}`)
+            ? (((body as ApiBody).error || (body as ApiBody).details) ??
+              `HTTP ${response.status}`)
             : `HTTP ${response.status}`;
 
         setError(`Failed to load submission window: ${details}`);
@@ -475,7 +530,9 @@ export function SubmissionWindowPanel({
       }
 
       if (typeof body !== "object" || body === null) {
-        setError(`Failed to load submission window: Invalid response (HTTP ${response.status})`);
+        setError(
+          `Failed to load submission window: Invalid response (HTTP ${response.status})`,
+        );
         return;
       }
 
@@ -484,13 +541,18 @@ export function SubmissionWindowPanel({
       // Ensure active academic term is populated even if window status config was previously uninitialized
       if (!data.academicYear || !data.semester) {
         try {
-          const termsRes = await fetch("/api/staff/academic-terms", { credentials: "include" });
+          const termsRes = await fetch("/api/staff/academic-terms", {
+            credentials: "include",
+          });
           if (termsRes.ok) {
             const termsJson = await termsRes.json();
-            const termsList = Array.isArray(termsJson?.terms) ? termsJson.terms : [];
-            const currentTerm = termsList.find(
-              (t: any) => (t.status || "").trim().toLowerCase() === "current"
-            ) || termsList[0];
+            const termsList = Array.isArray(termsJson?.terms)
+              ? termsJson.terms
+              : [];
+            const currentTerm =
+              termsList.find(
+                (t: any) => (t.status || "").trim().toLowerCase() === "current",
+              ) || termsList[0];
             if (currentTerm?.academicYear && currentTerm?.semester) {
               data = {
                 ...data,
@@ -507,7 +569,10 @@ export function SubmissionWindowPanel({
       cachedSubmissionWindow = data;
       if (typeof window !== "undefined") {
         try {
-          sessionStorage.setItem("pup_focus_submission_window", JSON.stringify(data));
+          sessionStorage.setItem(
+            "pup_focus_submission_window",
+            JSON.stringify(data),
+          );
         } catch {}
       }
       setWindowStatus(data);
@@ -520,13 +585,19 @@ export function SubmissionWindowPanel({
           setIsAlwaysOpen(false);
         } else {
           const isAlwaysOpenWindow = Boolean(
-            data.endDate && (data.endDate.startsWith("2099") || new Date(data.endDate).getFullYear() >= 2099)
+            data.endDate &&
+            (data.endDate.startsWith("2099") ||
+              new Date(data.endDate).getFullYear() >= 2099),
           );
           setIsAlwaysOpen(isAlwaysOpenWindow);
 
           if (data.startDate && data.startTimeLabel) {
             const time24 = toTimeInputValue(data.startTimeLabel);
-            setOpenDateTime(time24 ? `${data.startDate}T${time24}` : `${data.startDate}T09:00`);
+            setOpenDateTime(
+              time24
+                ? `${data.startDate}T${time24}`
+                : `${data.startDate}T09:00`,
+            );
           } else if (data.startDate) {
             setOpenDateTime(`${data.startDate}T09:00`);
           } else {
@@ -537,7 +608,9 @@ export function SubmissionWindowPanel({
             setCloseDateTime("2099-12-31T23:59");
           } else if (data.endDate && data.endTimeLabel) {
             const time24 = toTimeInputValue(data.endTimeLabel);
-            setCloseDateTime(time24 ? `${data.endDate}T${time24}` : `${data.endDate}T17:00`);
+            setCloseDateTime(
+              time24 ? `${data.endDate}T${time24}` : `${data.endDate}T17:00`,
+            );
           } else if (data.endDate) {
             setCloseDateTime(`${data.endDate}T17:00`);
           } else {
@@ -546,7 +619,11 @@ export function SubmissionWindowPanel({
         }
       }
     } catch (loadError) {
-      setError(loadError instanceof Error ? loadError.message : "Failed to load submission window");
+      setError(
+        loadError instanceof Error
+          ? loadError.message
+          : "Failed to load submission window",
+      );
     } finally {
       if (!isSilent) {
         setIsLoading(false);
@@ -574,12 +651,12 @@ export function SubmissionWindowPanel({
     }
   });
 
-  // Sync isEditingSchedule: lock inputs once a valid schedule loads on initial fetch
+  // Ensure edit mode is locked initially so Set/Edit Schedule button is displayed first
   useEffect(() => {
     if (!isLoading && windowStatus && !hasInitializedEditScheduleRef.current) {
       hasInitializedEditScheduleRef.current = true;
-      const hasSchedule = !!(windowStatus.startDate && windowStatus.endDate && windowStatus.status !== "Closed");
-      setIsEditingSchedule(!hasSchedule);
+      setIsEditingSchedule(false);
+      isEditingScheduleRef.current = false;
     }
   }, [isLoading, windowStatus]);
 
@@ -604,17 +681,26 @@ export function SubmissionWindowPanel({
 
     if (!currentAY || !currentSem) {
       try {
-        const termsRes = await fetch("/api/staff/academic-terms", { credentials: "include" });
+        const termsRes = await fetch("/api/staff/academic-terms", {
+          credentials: "include",
+        });
         if (termsRes.ok) {
           const termsJson = await termsRes.json();
-          const termsList = Array.isArray(termsJson?.terms) ? termsJson.terms : [];
-          const currentTerm = termsList.find(
-            (t: any) => (t.status || "").trim().toLowerCase() === "current"
-          ) || termsList[0];
+          const termsList = Array.isArray(termsJson?.terms)
+            ? termsJson.terms
+            : [];
+          const currentTerm =
+            termsList.find(
+              (t: any) => (t.status || "").trim().toLowerCase() === "current",
+            ) || termsList[0];
           if (currentTerm?.academicYear && currentTerm?.semester) {
             currentAY = currentTerm.academicYear;
             currentSem = currentTerm.semester;
-            setWindowStatus((prev) => (prev ? { ...prev, academicYear: currentAY, semester: currentSem } : null));
+            setWindowStatus((prev) =>
+              prev
+                ? { ...prev, academicYear: currentAY, semester: currentSem }
+                : null,
+            );
           }
         }
       } catch {
@@ -623,7 +709,9 @@ export function SubmissionWindowPanel({
     }
 
     if (!currentAY || !currentSem) {
-      setError("No active academic term is configured. Please set a current academic term first.");
+      setError(
+        "No active academic term is configured. Please set a current academic term first.",
+      );
       return;
     }
 
@@ -664,7 +752,9 @@ export function SubmissionWindowPanel({
 
       if (!response.ok) {
         if (typeof body !== "object" || body === null) {
-          setError(`Failed to save submission window (HTTP ${response.status}).`);
+          setError(
+            `Failed to save submission window (HTTP ${response.status}).`,
+          );
           return;
         }
 
@@ -678,7 +768,9 @@ export function SubmissionWindowPanel({
       }
 
       if (typeof body !== "object" || body === null) {
-        setError(`Failed to save submission window: Invalid response (HTTP ${response.status}).`);
+        setError(
+          `Failed to save submission window: Invalid response (HTTP ${response.status}).`,
+        );
         return;
       }
 
@@ -692,7 +784,11 @@ export function SubmissionWindowPanel({
       onWindowChange?.();
       void fetchLogs();
     } catch (saveError) {
-      setError(saveError instanceof Error ? saveError.message : "Failed to save submission window");
+      setError(
+        saveError instanceof Error
+          ? saveError.message
+          : "Failed to save submission window",
+      );
     } finally {
       setIsSaving(false);
     }
@@ -738,7 +834,9 @@ export function SubmissionWindowPanel({
       }
 
       if (typeof body !== "object" || body === null) {
-        setError(`Failed to close submissions: Invalid response (HTTP ${response.status}).`);
+        setError(
+          `Failed to close submissions: Invalid response (HTTP ${response.status}).`,
+        );
         return;
       }
 
@@ -758,7 +856,10 @@ export function SubmissionWindowPanel({
       cachedSubmissionWindow = closedData;
       if (typeof window !== "undefined") {
         try {
-          sessionStorage.setItem("pup_focus_submission_window", JSON.stringify(closedData));
+          sessionStorage.setItem(
+            "pup_focus_submission_window",
+            JSON.stringify(closedData),
+          );
         } catch {}
       }
 
@@ -766,8 +867,8 @@ export function SubmissionWindowPanel({
       setOpenDateTime("");
       setCloseDateTime("");
       setIsAlwaysOpen(false);
-      setIsEditingSchedule(true);
-      isEditingScheduleRef.current = true;
+      setIsEditingSchedule(false);
+      isEditingScheduleRef.current = false;
       savedOpenDateTimeRef.current = "";
       savedCloseDateTimeRef.current = "";
       setSuccess("Submissions closed and schedule cleared.");
@@ -775,7 +876,11 @@ export function SubmissionWindowPanel({
       onWindowChange?.();
       void fetchLogs();
     } catch (closeError) {
-      setError(closeError instanceof Error ? closeError.message : "Failed to close submissions");
+      setError(
+        closeError instanceof Error
+          ? closeError.message
+          : "Failed to close submissions",
+      );
     } finally {
       setIsSaving(false);
     }
@@ -794,11 +899,12 @@ export function SubmissionWindowPanel({
     setIsEditingSchedule(true);
     setTimeout(() => {
       openingInputRef.current?.focus();
-      openingInputRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+      openingInputRef.current?.scrollIntoView({
+        behavior: "smooth",
+        block: "nearest",
+      });
     }, 50);
   }
-
-
 
   const currentTermLabel =
     windowStatus?.academicYear && windowStatus?.semester
@@ -813,6 +919,12 @@ export function SubmissionWindowPanel({
       ? `${formatDisplayDateTime(`${windowStatus.startDate}T${toTimeInputValue(windowStatus.startTimeLabel)}`)} to ${formatDisplayDateTime(`${windowStatus.endDate}T${toTimeInputValue(windowStatus.endTimeLabel)}`)}`
       : "Not configured";
 
+  const hasSchedule = Boolean(
+    windowStatus?.startDate &&
+    windowStatus?.endDate &&
+    windowStatus.status !== "Closed",
+  );
+
   return (
     <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 sm:p-6 shadow-xs dark:shadow-none space-y-5 sm:space-y-6 transition-colors">
       {/* Real-time Status Banner */}
@@ -825,31 +937,33 @@ export function SubmissionWindowPanel({
                 windowStatus?.status === "Closed"
                   ? "bg-slate-400 dark:bg-slate-500"
                   : isAlwaysOpen || isWindowOpen
-                  ? "bg-emerald-500 animate-pulse"
-                  : isUpcoming
-                  ? "bg-amber-500 animate-ping"
-                  : "bg-slate-400 dark:bg-slate-500"
+                    ? "bg-emerald-500 animate-pulse"
+                    : isUpcoming
+                      ? "bg-amber-500 animate-ping"
+                      : "bg-slate-400 dark:bg-slate-500"
               }`}
             />
             <span>
               {windowStatus?.status === "Closed"
                 ? "Window Closed"
                 : isAlwaysOpen
-                ? "Always Open Window"
-                : isWindowOpen
-                ? "Live Submission Window"
-                : isUpcoming
-                ? "Scheduled Window"
-                : !isGlobalConfigured
-                ? "Not Configured"
-                : "Window Closed"}
+                  ? "Always Open Window"
+                  : isWindowOpen
+                    ? "Live Submission Window"
+                    : isUpcoming
+                      ? "Scheduled Window"
+                      : !isGlobalConfigured
+                        ? "Not Configured"
+                        : "Window Closed"}
             </span>
           </div>
 
           {/* Current Academic Term Badge */}
           <div className="inline-flex items-center justify-center sm:justify-start gap-1.5 text-xs text-slate-600 dark:text-slate-400 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 px-3 py-1.5 rounded-md shadow-2xs">
             <span>Current Term:</span>
-            <span className="font-semibold text-slate-900 dark:text-slate-200">{currentTermLabel}</span>
+            <span className="font-semibold text-slate-900 dark:text-slate-200">
+              {currentTermLabel}
+            </span>
           </div>
         </div>
 
@@ -861,8 +975,8 @@ export function SubmissionWindowPanel({
               {isWindowOpen
                 ? "Time Remaining"
                 : isUpcoming
-                ? "Opens In"
-                : "Status"}
+                  ? "Opens In"
+                  : "Status"}
             </span>
           </div>
           <span className="font-mono text-sm sm:text-base font-bold text-slate-900 dark:text-slate-100">
@@ -871,11 +985,7 @@ export function SubmissionWindowPanel({
         </div>
       </div>
 
-      <AlertPopup
-        type="error"
-        message={error}
-        onClose={() => setError(null)}
-      />
+      <AlertPopup type="error" message={error} onClose={() => setError(null)} />
 
       <AlertPopup
         type="success"
@@ -911,11 +1021,13 @@ export function SubmissionWindowPanel({
             <AppIcon icon={Hourglass} size="sm" color="inherit" />
             <span>Extension Requests</span>
             {pendingRequestsCount > 0 ? (
-              <span className={`px-2 py-0.5 text-[10px] font-bold rounded-full transition-colors ${
-                activeTab === "requests"
-                  ? "bg-white text-slate-900 shadow-2xs border border-amber-600/30"
-                  : "bg-amber-500 text-slate-900"
-              }`}>
+              <span
+                className={`px-2 py-0.5 text-[10px] font-bold rounded-full transition-colors ${
+                  activeTab === "requests"
+                    ? "bg-white text-slate-900 shadow-2xs border border-amber-600/30"
+                    : "bg-amber-500 text-slate-900"
+                }`}
+              >
                 {pendingRequestsCount}
               </span>
             ) : null}
@@ -933,362 +1045,424 @@ export function SubmissionWindowPanel({
         <>
           {/* 2. 2-Column Schedule Configuration Grid */}
           <form onSubmit={handleSave} className="space-y-6">
-        {/* Pending Extension Requests Alert Banner in Global Schedule View */}
-        {pendingRequestsCount > 0 ? (
-          <div className="flex items-center justify-between gap-3 px-4 py-2.5 rounded-xl bg-amber-500 border border-amber-600 text-slate-900 shadow-xs text-xs">
-            <div className="flex items-center gap-2.5 text-slate-900">
-              <AppIcon icon={Hourglass} size="md" color="inherit" />
-              <span>
-                <strong className="font-bold">{pendingRequestsCount} Pending Extension Request{pendingRequestsCount !== 1 ? "s" : ""}:</strong> Faculty have requested submission extensions due to closed or past due deadlines.
-              </span>
-            </div>
-            <button
-              type="button"
-              onClick={() => setActiveTab("requests")}
-              className="shrink-0 bg-white hover:bg-slate-50 text-slate-800 font-bold text-xs px-3.5 py-1.5 rounded-lg border border-amber-600/30 transition shadow-xs cursor-pointer active:scale-95"
-            >
-              Review Requests ({pendingRequestsCount})
-            </button>
-          </div>
-        ) : null}
-
-        {isEditingSchedule ? (
-          <div className="flex items-center gap-2.5 px-4 py-2.5 rounded-xl bg-slate-100 border border-slate-200/90 dark:bg-slate-800/50 dark:border-slate-700 text-slate-700 dark:text-slate-300 text-xs transition-all">
-            <AppIcon icon={EditPencil} size="md" color="default" />
-            <span>
-              <strong>Schedule Edit Mode Active:</strong> You can adjust the opening and closing schedules below. Remember to click <strong>Save Schedule</strong> to apply changes.
-            </span>
-          </div>
-        ) : null}
-
-        <div className="grid gap-4 sm:gap-5 md:grid-cols-2">
-          {/* Left Column: Opening Schedule Input */}
-          <div className={`p-3.5 sm:p-4 rounded-xl flex flex-col justify-between transition-all duration-200 ${
-            isEditingSchedule
-              ? "bg-white border-2 border-slate-300 dark:bg-slate-900 dark:border-slate-700 shadow-xs"
-              : "bg-slate-50 border border-slate-200/80 dark:bg-slate-900/50 dark:border-slate-800"
-          }`}>
-            <div>
-              <label htmlFor="opening-schedule" className="block text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-400 mb-1">
-                Opening Date & Time
-              </label>
-              <p className="text-xs text-slate-500 dark:text-slate-400 mb-3">
-                Select the opening date and time for document uploads.
-              </p>
-            </div>
-            <div>
-              <input
-                ref={openingInputRef}
-                id="opening-schedule"
-                type="datetime-local"
-                value={openDateTime}
-                onChange={(e) => setOpenDateTime(e.target.value)}
-                disabled={!isEditingSchedule || isLoading || isSaving}
-                className={`w-full px-3.5 py-2 text-sm rounded-lg outline-none transition-colors ${
-                  isEditingSchedule
-                    ? "bg-white border border-slate-300 focus:border-slate-500 focus:ring-1 focus:ring-slate-500 text-slate-900 dark:bg-slate-900 dark:border-slate-700 dark:focus:border-slate-500 dark:text-slate-100 shadow-2xs"
-                    : "bg-white border border-slate-200 text-slate-900 dark:bg-slate-900 dark:border-slate-800 dark:text-slate-100 cursor-not-allowed opacity-90"
-                }`}
-              />
-              {isEditingSchedule ? (
-                <div className="mt-2.5 flex flex-wrap items-center gap-1.5">
-                  <button
-                    type="button"
-                    onClick={() => setOpenDateTime(toDateTimeLocal(new Date()))}
-                    className="inline-flex items-center gap-1 text-xs font-medium px-2.5 py-1 rounded-md bg-white hover:bg-slate-100 dark:bg-slate-900 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 transition cursor-pointer"
-                  >
-                    <AppIcon icon={Hourglass} size="sm" color="default" />
-                    <span>Set to Now / Today</span>
-                  </button>
+            {/* Pending Extension Requests Alert Banner in Global Schedule View */}
+            {pendingRequestsCount > 0 ? (
+              <div className="flex items-center justify-between gap-3 px-4 py-2.5 rounded-xl bg-amber-500 border border-amber-600 text-slate-900 shadow-xs text-xs">
+                <div className="flex items-center gap-2.5 text-slate-900">
+                  <AppIcon icon={Hourglass} size="md" color="inherit" />
+                  <span>
+                    <strong className="font-bold">
+                      {pendingRequestsCount} Pending Extension Request
+                      {pendingRequestsCount !== 1 ? "s" : ""}:
+                    </strong>{" "}
+                    Faculty have requested submission extensions due to closed
+                    or past due deadlines.
+                  </span>
                 </div>
-              ) : null}
-            </div>
-          </div>
-
-          {/* Right Column: Closing Schedule & Deadline */}
-          <div className={`p-3.5 sm:p-4 rounded-xl flex flex-col justify-between transition-all duration-200 ${
-            isEditingSchedule
-              ? "bg-white border-2 border-slate-300 dark:bg-slate-900 dark:border-slate-700 shadow-xs"
-              : "bg-slate-50 border border-slate-200/80 dark:bg-slate-900/50 dark:border-slate-800"
-          }`}>
-            <div>
-              <div className="flex items-center justify-between gap-2 mb-1">
-                <label htmlFor="closing-schedule" className="block text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-400">
-                  Closing Date & Deadline
-                </label>
-                {isEditingSchedule ? (
-                  <label
-                    className={`flex items-center gap-1.5 text-xs font-semibold cursor-pointer select-none px-2.5 py-0.5 rounded-md transition ${
-                      isAlwaysOpen
-                        ? "bg-amber-500 text-slate-900 border border-amber-600 font-bold shadow-2xs"
-                        : "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-300 dark:border-slate-700 hover:bg-slate-200 dark:hover:bg-slate-750"
-                    }`}
-                  >
-                    <input
-                      type="checkbox"
-                      checked={isAlwaysOpen}
-                      onChange={(e) => {
-                        const checked = e.target.checked;
-                        setIsAlwaysOpen(checked);
-                        if (checked) {
-                          setCloseDateTime("2099-12-31T23:59");
-                        } else {
-                          const d = new Date();
-                          d.setDate(d.getDate() + 7);
-                          d.setHours(23, 59, 0, 0);
-                          setCloseDateTime(toDateTimeLocal(d));
-                        }
-                      }}
-                      disabled={!isEditingSchedule || isLoading || isSaving}
-                      className="h-3.5 w-3.5 rounded border-amber-400 text-amber-500 focus:ring-amber-400 cursor-pointer"
-                    />
-                    <span>Always Open</span>
-                  </label>
-                ) : null}
+                <button
+                  type="button"
+                  onClick={() => setActiveTab("requests")}
+                  className="shrink-0 bg-white hover:bg-slate-50 text-slate-800 font-bold text-xs px-3.5 py-1.5 rounded-lg border border-amber-600/30 transition shadow-xs cursor-pointer active:scale-95"
+                >
+                  Review Requests ({pendingRequestsCount})
+                </button>
               </div>
-              <p className="text-xs text-slate-500 dark:text-slate-400 mb-3">
-                {isAlwaysOpen
-                  ? "Submissions will remain open indefinitely for this semester with no closing deadline."
-                  : "Current active deadline for faculty compliance document uploads."}
-              </p>
-            </div>
+            ) : null}
 
-            <div>
-              {!isEditingSchedule && (isAlwaysOpen || (windowStatus?.endDate && windowStatus.endDate.startsWith("2099"))) ? (
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 bg-[#0b5336] border border-[#08412a] text-white p-3 sm:px-3.5 sm:py-2 text-sm rounded-lg shadow-xs">
-                  <div className="flex items-center gap-2 text-white font-semibold text-xs sm:text-sm">
-                    <AppIcon icon={CheckCircle} size="md" color="inherit" />
-                    <span>Always Open (No Closing Deadline)</span>
-                  </div>
-                  <span className="self-start sm:self-auto bg-white/20 text-white border border-white/25 px-2 py-0.5 text-xs font-bold rounded-md whitespace-nowrap">
-                    Indefinite
-                  </span>
-                </div>
-              ) : !isEditingSchedule && windowStatus?.endDate && windowStatus?.endTimeLabel ? (
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 bg-white border border-slate-200 text-slate-900 dark:bg-slate-900 dark:border-slate-800 dark:text-slate-100 p-3 sm:px-3.5 sm:py-2 text-sm rounded-lg shadow-2xs">
-                  <div className="flex items-center gap-2 min-w-0">
-                    <AppIcon icon={Calendar} size="md" color="default" />
-                    <span className="font-semibold text-slate-900 dark:text-slate-100 text-xs sm:text-sm">
-                      {windowStatus.endDate} at {windowStatus.endTimeLabel}
-                    </span>
-                  </div>
-                  <span className="self-start sm:self-auto bg-slate-200/80 text-slate-700 border border-slate-300 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700 px-2 py-0.5 text-[11px] sm:text-xs font-medium rounded-md whitespace-nowrap">
-                    Configured Deadline
-                  </span>
-                </div>
-              ) : (
-                <>
-                  {isAlwaysOpen ? (
-                    <div className="rounded-xl border border-[#08412a] bg-[#0b5336] text-white p-3.5 flex items-center justify-between gap-3 shadow-xs">
-                      <div className="flex items-center gap-2.5">
-                        <div className="h-2.5 w-2.5 rounded-full bg-emerald-400 animate-pulse shrink-0 ring-2 ring-white/20" />
-                        <div>
-                          <p className="text-xs font-bold text-white">
-                            Always Open Option Active
-                          </p>
-                          <p className="text-[11px] text-emerald-100">
-                            Faculty can upload compliance documents indefinitely without an expiration deadline.
-                          </p>
-                        </div>
-                      </div>
-                      <span className="shrink-0 px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider bg-white/20 text-white border border-white/25 shadow-2xs">
-                        No Deadline
-                      </span>
-                    </div>
-                  ) : (
-                    <input
-                      id="closing-schedule"
-                      type="datetime-local"
-                      value={closeDateTime}
-                      onChange={(e) => {
-                        setCloseDateTime(e.target.value);
-                        setIsAlwaysOpen(false);
-                      }}
-                      disabled={!isEditingSchedule || isLoading || isSaving}
-                      className={`w-full px-3.5 py-2 text-sm rounded-lg outline-none transition-colors ${
-                        isEditingSchedule
-                          ? "bg-white border-2 border-amber-500/60 text-slate-900 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 dark:bg-slate-900 dark:border-amber-500/60 dark:text-slate-100 dark:focus:border-amber-400 shadow-xs"
-                          : "bg-white border border-slate-200 text-slate-900 dark:bg-slate-900 dark:border-slate-800 dark:text-slate-100 cursor-not-allowed opacity-90"
-                      }`}
-                    />
-                  )}
+            {isEditingSchedule ? (
+              <div className="flex items-center gap-2.5 px-4 py-2.5 rounded-xl bg-slate-100 border border-slate-200/90 dark:bg-slate-800/50 dark:border-slate-700 text-slate-700 dark:text-slate-300 text-xs transition-all">
+                <AppIcon
+                  icon={hasSchedule ? EditPencil : Calendar}
+                  size="md"
+                  color="default"
+                />
+                <span>
+                  <strong>
+                    {hasSchedule
+                      ? "Schedule Edit Mode Active:"
+                      : "Set Schedule Mode Active:"}
+                  </strong>{" "}
+                  You can adjust the opening and closing schedules below.
+                  Remember to click <strong>Save Schedule</strong> to apply
+                  changes.
+                </span>
+              </div>
+            ) : null}
 
+            <div className="grid gap-4 sm:gap-5 md:grid-cols-2">
+              {/* Left Column: Opening Schedule Input */}
+              <div
+                className={`p-3.5 sm:p-4 rounded-xl flex flex-col justify-between transition-all duration-200 ${
+                  isEditingSchedule
+                    ? "bg-white border-2 border-slate-300 dark:bg-slate-900 dark:border-slate-700 shadow-xs"
+                    : "bg-slate-50 border border-slate-200/80 dark:bg-slate-900/50 dark:border-slate-800"
+                }`}
+              >
+                <div>
+                  <label
+                    htmlFor="opening-schedule"
+                    className="block text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-400 mb-1"
+                  >
+                    Opening Date & Time
+                  </label>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 mb-3">
+                    Select the opening date and time for document uploads.
+                  </p>
+                </div>
+                <div>
+                  <input
+                    ref={openingInputRef}
+                    id="opening-schedule"
+                    type="datetime-local"
+                    value={openDateTime}
+                    onChange={(e) => setOpenDateTime(e.target.value)}
+                    disabled={!isEditingSchedule || isLoading || isSaving}
+                    className={`w-full px-3.5 py-2 text-sm rounded-lg outline-none transition-colors ${
+                      isEditingSchedule
+                        ? "bg-white border border-slate-300 focus:border-slate-500 focus:ring-1 focus:ring-slate-500 text-slate-900 dark:bg-slate-900 dark:border-slate-700 dark:focus:border-slate-500 dark:text-slate-100 shadow-2xs"
+                        : "bg-white border border-slate-200 text-slate-900 dark:bg-slate-900 dark:border-slate-800 dark:text-slate-100 cursor-not-allowed opacity-90"
+                    }`}
+                  />
                   {isEditingSchedule ? (
                     <div className="mt-2.5 flex flex-wrap items-center gap-1.5">
                       <button
                         type="button"
-                        onClick={() => {
-                          setIsAlwaysOpen(false);
-                          const d = new Date();
-                          d.setHours(23, 59, 0, 0);
-                          setCloseDateTime(toDateTimeLocal(d));
-                        }}
-                        className={`inline-flex items-center gap-1 text-xs px-2.5 py-1 rounded-md transition cursor-pointer ${
-                          activePreset === "today"
-                            ? "bg-amber-500 hover:bg-amber-400 text-slate-900 font-bold border border-amber-500 shadow-2xs"
-                            : "font-medium bg-white hover:bg-slate-100 dark:bg-slate-900 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700"
-                        }`}
+                        onClick={() =>
+                          setOpenDateTime(toDateTimeLocal(new Date()))
+                        }
+                        className="inline-flex items-center gap-1 text-xs font-medium px-2.5 py-1 rounded-md bg-white hover:bg-slate-100 dark:bg-slate-900 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 transition cursor-pointer"
                       >
-                        <span>Today (End of Day)</span>
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setIsAlwaysOpen(false);
-                          const d = new Date();
-                          d.setDate(d.getDate() + 3);
-                          d.setHours(23, 59, 0, 0);
-                          setCloseDateTime(toDateTimeLocal(d));
-                        }}
-                        className={`inline-flex items-center gap-1 text-xs px-2.5 py-1 rounded-md transition cursor-pointer ${
-                          activePreset === "+3d"
-                            ? "bg-amber-500 hover:bg-amber-400 text-slate-900 font-bold border border-amber-500 shadow-2xs"
-                            : "font-medium bg-white hover:bg-slate-100 dark:bg-slate-900 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700"
-                        }`}
-                      >
-                        <span>+3 Days</span>
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setIsAlwaysOpen(false);
-                          const d = new Date();
-                          d.setDate(d.getDate() + 7);
-                          d.setHours(23, 59, 0, 0);
-                          setCloseDateTime(toDateTimeLocal(d));
-                        }}
-                        className={`inline-flex items-center gap-1 text-xs px-2.5 py-1 rounded-md transition cursor-pointer ${
-                          activePreset === "+1w"
-                            ? "bg-amber-500 hover:bg-amber-400 text-slate-900 font-bold border border-amber-500 shadow-2xs"
-                            : "font-medium bg-white hover:bg-slate-100 dark:bg-slate-900 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700"
-                        }`}
-                      >
-                        <span>+1 Week</span>
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setIsAlwaysOpen(false);
-                          const d = new Date();
-                          d.setDate(d.getDate() + 14);
-                          d.setHours(23, 59, 0, 0);
-                          setCloseDateTime(toDateTimeLocal(d));
-                        }}
-                        className={`inline-flex items-center gap-1 text-xs px-2.5 py-1 rounded-md transition cursor-pointer ${
-                          activePreset === "+2w"
-                            ? "bg-amber-500 hover:bg-amber-400 text-slate-900 font-bold border border-amber-500 shadow-2xs"
-                            : "font-medium bg-white hover:bg-slate-100 dark:bg-slate-900 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700"
-                        }`}
-                      >
-                        <span>+2 Weeks</span>
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setIsAlwaysOpen(true);
-                          setCloseDateTime("2099-12-31T23:59");
-                        }}
-                        className={`inline-flex items-center gap-1 text-xs px-2.5 py-1 rounded-md transition cursor-pointer ${
-                          activePreset === "always"
-                            ? "bg-amber-500 hover:bg-amber-400 text-slate-900 font-bold border border-amber-500 shadow-2xs"
-                            : "font-medium bg-white hover:bg-slate-100 dark:bg-slate-900 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700"
-                        }`}
-                      >
-                        <span>Always Open</span>
+                        <AppIcon icon={Hourglass} size="sm" color="default" />
+                        <span>Set to Now / Today</span>
                       </button>
                     </div>
                   ) : null}
-                </>
-              )}
-            </div>
-          </div>
-        </div>
+                </div>
+              </div>
 
-        {/* 3. Structured Footer Action Toolbar */}
-        <div className="flex flex-col-reverse sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4 border-t border-slate-200 dark:border-slate-800 pt-5 mt-6">
-          {/* Operational & Destructive Triggers */}
-          <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-2.5 w-full sm:w-auto">
-            <button
-              type="button"
-              onClick={() => {
-                setShowLogsModal(true);
-                refetchLogs();
-              }}
-              className="flex items-center justify-center sm:justify-start gap-1.5 bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 dark:bg-slate-900 dark:hover:bg-slate-800 dark:text-slate-300 dark:border-slate-800 px-3.5 py-2.5 sm:py-2 text-sm font-medium rounded-xl transition-colors cursor-pointer w-full sm:w-auto"
-            >
-              <AppIcon icon={ClockRotateRight} size="sm" color="default" />
-              <span>Submission Schedule Logs {extensionLogs.length > 0 ? `(${extensionLogs.length})` : ""}</span>
-            </button>
+              {/* Right Column: Closing Schedule & Deadline */}
+              <div
+                className={`p-3.5 sm:p-4 rounded-xl flex flex-col justify-between transition-all duration-200 ${
+                  isEditingSchedule
+                    ? "bg-white border-2 border-slate-300 dark:bg-slate-900 dark:border-slate-700 shadow-xs"
+                    : "bg-slate-50 border border-slate-200/80 dark:bg-slate-900/50 dark:border-slate-800"
+                }`}
+              >
+                <div>
+                  <div className="flex items-center justify-between gap-2 mb-1">
+                    <label
+                      htmlFor="closing-schedule"
+                      className="block text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-400"
+                    >
+                      Closing Date & Deadline
+                    </label>
+                    {isEditingSchedule ? (
+                      <label
+                        className={`flex items-center gap-1.5 text-xs font-semibold cursor-pointer select-none px-2.5 py-0.5 rounded-md transition ${
+                          isAlwaysOpen
+                            ? "bg-amber-500 text-slate-900 border border-amber-600 font-bold shadow-2xs"
+                            : "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-300 dark:border-slate-700 hover:bg-slate-200 dark:hover:bg-slate-750"
+                        }`}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={isAlwaysOpen}
+                          onChange={(e) => {
+                            const checked = e.target.checked;
+                            setIsAlwaysOpen(checked);
+                            if (checked) {
+                              setCloseDateTime("2099-12-31T23:59");
+                            } else {
+                              const d = new Date();
+                              d.setDate(d.getDate() + 7);
+                              d.setHours(23, 59, 0, 0);
+                              setCloseDateTime(toDateTimeLocal(d));
+                            }
+                          }}
+                          disabled={!isEditingSchedule || isLoading || isSaving}
+                          className="h-3.5 w-3.5 rounded border-amber-400 text-amber-500 focus:ring-amber-400 cursor-pointer"
+                        />
+                        <span>Always Open</span>
+                      </label>
+                    ) : null}
+                  </div>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 mb-3">
+                    {isAlwaysOpen
+                      ? "Submissions will remain open indefinitely for this semester with no closing deadline."
+                      : "Current active deadline for faculty compliance document uploads."}
+                  </p>
+                </div>
 
-            <button
-              type="button"
-              onClick={handleCloseSubmission}
-              disabled={isLoading || isSaving || !isGlobalSubmissionOpen}
-              className="flex items-center justify-center sm:justify-start gap-1.5 bg-[#780000] hover:bg-[#5e0000] text-white border border-[#5e0000] px-3.5 py-2.5 sm:py-2 text-sm font-semibold rounded-xl transition-colors disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer shadow-xs w-full sm:w-auto"
-              title={!isGlobalSubmissionOpen ? "Global submission window is currently closed" : "Close active submissions"}
-            >
-              <AppIcon icon={ShieldAlert} size="sm" color="white" />
-              <span>Close Submissions</span>
-            </button>
-          </div>
-
-          {/* Active Mode Controls (Edit / Save / Cancel / Extend) */}
-          <div className="grid grid-cols-2 sm:flex sm:items-center gap-2 sm:gap-2.5 w-full sm:w-auto">
-            {isEditingSchedule ? (
-              <>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setOpenDateTime(savedOpenDateTimeRef.current);
-                    setCloseDateTime(savedCloseDateTimeRef.current);
-                    setIsEditingSchedule(false);
-                  }}
-                  disabled={isSaving}
-                  className="flex items-center justify-center gap-1.5 bg-[#780000] hover:bg-[#5e0000] text-white border border-[#5e0000] px-3.5 py-2.5 sm:py-2 text-sm font-semibold rounded-xl transition-colors disabled:opacity-50 cursor-pointer shadow-xs"
-                >
-                  <AppIcon icon={Xmark} size="sm" color="inherit" />
-                  <span>Cancel</span>
-                </button>
-
-                <button
-                  type="submit"
-                  disabled={isLoading || isSaving}
-                  className="flex items-center justify-center gap-1.5 bg-amber-500 hover:bg-amber-400 text-slate-900 font-bold px-4 py-2.5 sm:py-2 text-sm rounded-xl transition-colors shadow-xs disabled:opacity-50 cursor-pointer border border-amber-600"
-                >
-                  {isSaving ? (
-                    <AppIcon icon={SystemRestart} size="sm" color="inherit" className="animate-spin text-slate-900" />
+                <div>
+                  {!isEditingSchedule &&
+                  (isAlwaysOpen ||
+                    (windowStatus?.endDate &&
+                      windowStatus.endDate.startsWith("2099"))) ? (
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 bg-[#0b5336] border border-[#08412a] text-white p-3 sm:px-3.5 sm:py-2 text-sm rounded-lg shadow-xs">
+                      <div className="flex items-center gap-2 text-white font-semibold text-xs sm:text-sm">
+                        <AppIcon icon={CheckCircle} size="md" color="inherit" />
+                        <span>Always Open (No Closing Deadline)</span>
+                      </div>
+                      <span className="self-start sm:self-auto bg-white/20 text-white border border-white/25 px-2 py-0.5 text-xs font-bold rounded-md whitespace-nowrap">
+                        Indefinite
+                      </span>
+                    </div>
+                  ) : !isEditingSchedule &&
+                    windowStatus?.endDate &&
+                    windowStatus?.endTimeLabel ? (
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 bg-white border border-slate-200 text-slate-900 dark:bg-slate-900 dark:border-slate-800 dark:text-slate-100 p-3 sm:px-3.5 sm:py-2 text-sm rounded-lg shadow-2xs">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <AppIcon icon={Calendar} size="md" color="default" />
+                        <span className="font-semibold text-slate-900 dark:text-slate-100 text-xs sm:text-sm">
+                          {windowStatus.endDate} at {windowStatus.endTimeLabel}
+                        </span>
+                      </div>
+                      <span className="self-start sm:self-auto bg-slate-200/80 text-slate-700 border border-slate-300 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700 px-2 py-0.5 text-[11px] sm:text-xs font-medium rounded-md whitespace-nowrap">
+                        Configured Deadline
+                      </span>
+                    </div>
                   ) : (
-                    <AppIcon icon={FloppyDisk} size="sm" color="inherit" className="text-slate-900" />
+                    <>
+                      {isAlwaysOpen ? (
+                        <div className="rounded-xl border border-[#08412a] bg-[#0b5336] text-white p-3.5 flex items-center justify-between gap-3 shadow-xs">
+                          <div className="flex items-center gap-2.5">
+                            <div className="h-2.5 w-2.5 rounded-full bg-emerald-400 animate-pulse shrink-0 ring-2 ring-white/20" />
+                            <div>
+                              <p className="text-xs font-bold text-white">
+                                Always Open Option Active
+                              </p>
+                              <p className="text-[11px] text-emerald-100">
+                                Faculty can upload compliance documents
+                                indefinitely without an expiration deadline.
+                              </p>
+                            </div>
+                          </div>
+                          <span className="shrink-0 px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider bg-white/20 text-white border border-white/25 shadow-2xs">
+                            No Deadline
+                          </span>
+                        </div>
+                      ) : (
+                        <input
+                          id="closing-schedule"
+                          type="datetime-local"
+                          value={closeDateTime}
+                          onChange={(e) => {
+                            setCloseDateTime(e.target.value);
+                            setIsAlwaysOpen(false);
+                          }}
+                          disabled={!isEditingSchedule || isLoading || isSaving}
+                          className={`w-full px-3.5 py-2 text-sm rounded-lg outline-none transition-colors ${
+                            isEditingSchedule
+                              ? "bg-white border-2 border-amber-500/60 text-slate-900 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 dark:bg-slate-900 dark:border-amber-500/60 dark:text-slate-100 dark:focus:border-amber-400 shadow-xs"
+                              : "bg-white border border-slate-200 text-slate-900 dark:bg-slate-900 dark:border-slate-800 dark:text-slate-100 cursor-not-allowed opacity-90"
+                          }`}
+                        />
+                      )}
+
+                      {isEditingSchedule ? (
+                        <div className="mt-2.5 flex flex-wrap items-center gap-1.5">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setIsAlwaysOpen(false);
+                              const d = new Date();
+                              d.setHours(23, 59, 0, 0);
+                              setCloseDateTime(toDateTimeLocal(d));
+                            }}
+                            className={`inline-flex items-center gap-1 text-xs px-2.5 py-1 rounded-md transition cursor-pointer ${
+                              activePreset === "today"
+                                ? "bg-amber-500 hover:bg-amber-400 text-slate-900 font-bold border border-amber-500 shadow-2xs"
+                                : "font-medium bg-white hover:bg-slate-100 dark:bg-slate-900 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700"
+                            }`}
+                          >
+                            <span>Today (End of Day)</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setIsAlwaysOpen(false);
+                              const d = new Date();
+                              d.setDate(d.getDate() + 3);
+                              d.setHours(23, 59, 0, 0);
+                              setCloseDateTime(toDateTimeLocal(d));
+                            }}
+                            className={`inline-flex items-center gap-1 text-xs px-2.5 py-1 rounded-md transition cursor-pointer ${
+                              activePreset === "+3d"
+                                ? "bg-amber-500 hover:bg-amber-400 text-slate-900 font-bold border border-amber-500 shadow-2xs"
+                                : "font-medium bg-white hover:bg-slate-100 dark:bg-slate-900 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700"
+                            }`}
+                          >
+                            <span>+3 Days</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setIsAlwaysOpen(false);
+                              const d = new Date();
+                              d.setDate(d.getDate() + 7);
+                              d.setHours(23, 59, 0, 0);
+                              setCloseDateTime(toDateTimeLocal(d));
+                            }}
+                            className={`inline-flex items-center gap-1 text-xs px-2.5 py-1 rounded-md transition cursor-pointer ${
+                              activePreset === "+1w"
+                                ? "bg-amber-500 hover:bg-amber-400 text-slate-900 font-bold border border-amber-500 shadow-2xs"
+                                : "font-medium bg-white hover:bg-slate-100 dark:bg-slate-900 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700"
+                            }`}
+                          >
+                            <span>+1 Week</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setIsAlwaysOpen(false);
+                              const d = new Date();
+                              d.setDate(d.getDate() + 14);
+                              d.setHours(23, 59, 0, 0);
+                              setCloseDateTime(toDateTimeLocal(d));
+                            }}
+                            className={`inline-flex items-center gap-1 text-xs px-2.5 py-1 rounded-md transition cursor-pointer ${
+                              activePreset === "+2w"
+                                ? "bg-amber-500 hover:bg-amber-400 text-slate-900 font-bold border border-amber-500 shadow-2xs"
+                                : "font-medium bg-white hover:bg-slate-100 dark:bg-slate-900 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700"
+                            }`}
+                          >
+                            <span>+2 Weeks</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setIsAlwaysOpen(true);
+                              setCloseDateTime("2099-12-31T23:59");
+                            }}
+                            className={`inline-flex items-center gap-1 text-xs px-2.5 py-1 rounded-md transition cursor-pointer ${
+                              activePreset === "always"
+                                ? "bg-amber-500 hover:bg-amber-400 text-slate-900 font-bold border border-amber-500 shadow-2xs"
+                                : "font-medium bg-white hover:bg-slate-100 dark:bg-slate-900 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700"
+                            }`}
+                          >
+                            <span>Always Open</span>
+                          </button>
+                        </div>
+                      ) : null}
+                    </>
                   )}
-                  <span>{isSaving ? "Saving..." : "Save Schedule"}</span>
-                </button>
-              </>
-            ) : (
-              <>
+                </div>
+              </div>
+            </div>
+
+            {/* 3. Structured Footer Action Toolbar */}
+            <div className="flex flex-col-reverse sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4 border-t border-slate-200 dark:border-slate-800 pt-5 mt-6">
+              {/* Operational & Destructive Triggers */}
+              <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-2.5 w-full sm:w-auto">
                 <button
                   type="button"
                   onClick={() => {
-                    savedOpenDateTimeRef.current = openDateTime;
-                    savedCloseDateTimeRef.current = closeDateTime;
-                    setIsEditingSchedule(true);
-                    setTimeout(() => {
-                      openingInputRef.current?.focus();
-                      openingInputRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
-                    }, 50);
+                    setShowLogsModal(true);
+                    refetchLogs();
                   }}
-                  disabled={isLoading || isSaving}
-                  className="flex items-center justify-center gap-1.5 bg-amber-500 hover:bg-amber-400 text-slate-900 font-semibold px-3.5 py-2.5 sm:py-2 text-sm rounded-xl transition-colors disabled:opacity-50 cursor-pointer shadow-xs active:scale-[0.98]"
+                  className="flex items-center justify-center sm:justify-start gap-1.5 bg-[#0b5336] hover:bg-[#08412a] text-white border border-[#08412a] px-3.5 py-2.5 sm:py-2 text-sm font-semibold rounded-xl transition-colors cursor-pointer shadow-xs active:scale-[0.98] w-full sm:w-auto"
                 >
-                  <AppIcon icon={EditPencil} size="sm" color="inherit" className="text-slate-900" />
-                  <span>Edit Schedule</span>
+                  <AppIcon icon={ClockRotateRight} size="sm" color="white" />
+                  <span>
+                    Submission Schedule Logs{" "}
+                    {extensionLogs.length > 0
+                      ? `(${extensionLogs.length})`
+                      : ""}
+                  </span>
                 </button>
 
-              </>
-            )}
-          </div>
-        </div>
-      </form>
-    </>
+                <button
+                  type="button"
+                  onClick={handleCloseSubmission}
+                  disabled={isLoading || isSaving || !isGlobalSubmissionOpen}
+                  className="flex items-center justify-center sm:justify-start gap-1.5 bg-[#780000] hover:bg-[#5e0000] text-white border border-[#5e0000] px-3.5 py-2.5 sm:py-2 text-sm font-semibold rounded-xl transition-colors disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer shadow-xs w-full sm:w-auto"
+                  title={
+                    !isGlobalSubmissionOpen
+                      ? "Global submission window is currently closed"
+                      : "Close active submissions"
+                  }
+                >
+                  <AppIcon icon={ShieldAlert} size="sm" color="white" />
+                  <span>Close Submissions</span>
+                </button>
+              </div>
+
+              {/* Active Mode Controls (Edit / Save / Cancel / Extend) */}
+              <div className="grid grid-cols-2 sm:flex sm:items-center gap-2 sm:gap-2.5 w-full sm:w-auto">
+                {isEditingSchedule ? (
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setOpenDateTime(savedOpenDateTimeRef.current);
+                        setCloseDateTime(savedCloseDateTimeRef.current);
+                        setIsEditingSchedule(false);
+                      }}
+                      disabled={isSaving}
+                      className="flex items-center justify-center gap-1.5 bg-[#780000] hover:bg-[#5e0000] text-white border border-[#5e0000] px-3.5 py-2.5 sm:py-2 text-sm font-semibold rounded-xl transition-colors disabled:opacity-50 cursor-pointer shadow-xs"
+                    >
+                      <AppIcon icon={Xmark} size="sm" color="inherit" />
+                      <span>Cancel</span>
+                    </button>
+
+                    <button
+                      type="submit"
+                      disabled={isLoading || isSaving}
+                      className="flex items-center justify-center gap-1.5 bg-amber-500 hover:bg-amber-400 text-slate-900 font-bold px-4 py-2.5 sm:py-2 text-sm rounded-xl transition-colors shadow-xs disabled:opacity-50 cursor-pointer border border-amber-600"
+                    >
+                      {isSaving ? (
+                        <AppIcon
+                          icon={SystemRestart}
+                          size="sm"
+                          color="inherit"
+                          className="animate-spin text-slate-900"
+                        />
+                      ) : (
+                        <AppIcon
+                          icon={FloppyDisk}
+                          size="sm"
+                          color="inherit"
+                          className="text-slate-900"
+                        />
+                      )}
+                      <span>{isSaving ? "Saving..." : "Save Schedule"}</span>
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        savedOpenDateTimeRef.current = openDateTime;
+                        savedCloseDateTimeRef.current = closeDateTime;
+                        setIsEditingSchedule(true);
+                        setTimeout(() => {
+                          openingInputRef.current?.focus();
+                          openingInputRef.current?.scrollIntoView({
+                            behavior: "smooth",
+                            block: "nearest",
+                          });
+                        }, 50);
+                      }}
+                      disabled={isLoading || isSaving}
+                      className="flex items-center justify-center gap-1.5 bg-amber-500 hover:bg-amber-400 text-slate-900 font-semibold px-3.5 py-2.5 sm:py-2 text-sm rounded-xl transition-colors disabled:opacity-50 cursor-pointer shadow-xs active:scale-[0.98]"
+                    >
+                      <AppIcon
+                        icon={hasSchedule ? EditPencil : Calendar}
+                        size="sm"
+                        color="inherit"
+                        className="text-slate-900"
+                      />
+                      <span>
+                        {hasSchedule ? "Edit Schedule" : "Set Schedule"}
+                      </span>
+                    </button>
+                  </>
+                )}
+              </div>
+            </div>
+          </form>
+        </>
       ) : (
         /* SECTION: Extension Requests Tab */
         <div className="space-y-5 animate-in fade-in duration-200">
@@ -1303,7 +1477,9 @@ export function SubmissionWindowPanel({
                   Faculty Extension Requests
                 </h3>
                 <p className="mt-0.5 text-slate-600 dark:text-slate-400 leading-relaxed">
-                  Faculty who missed the deadline have submitted extension requests. Adjust the Global Schedule to open document submissions for all faculty at once.
+                  Faculty who missed the deadline have submitted extension
+                  requests. Adjust the Global Schedule to open document
+                  submissions for all faculty at once.
                 </p>
               </div>
             </div>
@@ -1330,7 +1506,8 @@ export function SubmissionWindowPanel({
                   No extension requests found
                 </p>
                 <p className="text-xs text-slate-500 dark:text-slate-400 max-w-md mx-auto">
-                  When faculty members request deadline extensions for overdue requirements, their requests will appear here.
+                  When faculty members request deadline extensions for overdue
+                  requirements, their requests will appear here.
                 </p>
               </div>
               <div className="pt-2">
@@ -1375,75 +1552,80 @@ export function SubmissionWindowPanel({
 
               <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs divide-y divide-slate-100 dark:divide-slate-800 overflow-hidden">
                 {extensionRequests.map((req, index) => (
-                <div
-                  key={req.id}
-                  className="p-3.5 sm:px-4 hover:bg-slate-50/70 dark:hover:bg-slate-800/40 transition-colors flex items-center justify-between gap-3"
-                >
-                  <div className="flex items-center gap-3 min-w-0">
-                    <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full font-bold text-xs flex items-center justify-center shrink-0 border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300">
-                      {index + 1}
+                  <div
+                    key={req.id}
+                    className="p-3.5 sm:px-4 hover:bg-slate-50/70 dark:hover:bg-slate-800/40 transition-colors flex items-center justify-between gap-3"
+                  >
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full font-bold text-xs flex items-center justify-center shrink-0 border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300">
+                        {index + 1}
+                      </div>
+
+                      <div className="min-w-0 text-xs sm:text-sm">
+                        <p className="text-slate-800 dark:text-slate-200 truncate">
+                          <span className="font-bold text-slate-900 dark:text-white">
+                            {req.faculty_name}
+                          </span>{" "}
+                          requested an extension
+                          {req.reason ? (
+                            <span className="text-slate-500 dark:text-slate-400 italic font-normal">
+                              {" "}
+                              — &ldquo;{req.reason}&rdquo;
+                            </span>
+                          ) : null}
+                        </p>
+                      </div>
                     </div>
 
-                    <div className="min-w-0 text-xs sm:text-sm">
-                      <p className="text-slate-800 dark:text-slate-200 truncate">
-                        <span className="font-bold text-slate-900 dark:text-white">
-                          {req.faculty_name}
-                        </span>{" "}
-                        requested an extension
-                        {req.reason ? (
-                          <span className="text-slate-500 dark:text-slate-400 italic font-normal">
-                            {" "}— &ldquo;{req.reason}&rdquo;
-                          </span>
-                        ) : null}
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-2.5 shrink-0">
-                    {(req.supporting_document_url || req.supporting_document_name) && (
-                      <a
-                        href={`/api/faculty/submissions/extension-request/document?requestId=${req.id}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1 text-[11px] font-semibold text-slate-900 bg-amber-500 hover:bg-amber-400 px-2.5 py-0.5 rounded-md shadow-2xs transition-colors"
-                      >
-                        <AppIcon icon={Page} size="xs" color="inherit" />
-                        <span>Attachment</span>
-                      </a>
-                    )}
-                    <span className="text-[11px] text-slate-400 dark:text-slate-500 whitespace-nowrap">
-                      {req.created_at
-                        ? new Date(req.created_at).toLocaleDateString("en-US", {
-                            month: "short",
-                            day: "numeric",
-                            year: "numeric",
-                            hour: "numeric",
-                            minute: "2-digit",
-                          })
-                        : ""}
-                    </span>
-
-                    {/* Read / Unread Status Button */}
-                    {req.status === "pending" ? (
-                      <button
-                        type="button"
-                        onClick={() => void handleMarkAsRead(req.id)}
-                        className="px-2.5 py-1 text-[11px] font-bold rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-900 transition cursor-pointer shadow-xs border border-amber-600 active:scale-95"
-                        title="Mark this request as read"
-                      >
-                        Read
-                      </button>
-                    ) : (
-                      <span className="text-[10px] font-medium text-slate-400 dark:text-slate-500 px-1">
-                        Read
+                    <div className="flex items-center gap-2.5 shrink-0">
+                      {(req.supporting_document_url ||
+                        req.supporting_document_name) && (
+                        <a
+                          href={`/api/faculty/submissions/extension-request/document?requestId=${req.id}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1 text-[11px] font-semibold text-slate-900 bg-amber-500 hover:bg-amber-400 px-2.5 py-0.5 rounded-md shadow-2xs transition-colors"
+                        >
+                          <AppIcon icon={Page} size="xs" color="inherit" />
+                          <span>Attachment</span>
+                        </a>
+                      )}
+                      <span className="text-[11px] text-slate-400 dark:text-slate-500 whitespace-nowrap">
+                        {req.created_at
+                          ? new Date(req.created_at).toLocaleDateString(
+                              "en-US",
+                              {
+                                month: "short",
+                                day: "numeric",
+                                year: "numeric",
+                                hour: "numeric",
+                                minute: "2-digit",
+                              },
+                            )
+                          : ""}
                       </span>
-                    )}
+
+                      {/* Read / Unread Status Button */}
+                      {req.status === "pending" ? (
+                        <button
+                          type="button"
+                          onClick={() => void handleMarkAsRead(req.id)}
+                          className="px-2.5 py-1 text-[11px] font-bold rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-900 transition cursor-pointer shadow-xs border border-amber-600 active:scale-95"
+                          title="Mark this request as read"
+                        >
+                          Read
+                        </button>
+                      ) : (
+                        <span className="text-[10px] font-medium text-slate-400 dark:text-slate-500 px-1">
+                          Read
+                        </span>
+                      )}
+                    </div>
                   </div>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
-          </div>
-        )}
+          )}
 
           {/* Footer Toolbar: Logs only */}
           <div className="flex items-center justify-between gap-3 border-t border-slate-200 dark:border-slate-800 pt-5">
@@ -1453,10 +1635,13 @@ export function SubmissionWindowPanel({
                 setShowLogsModal(true);
                 refetchLogs();
               }}
-              className="inline-flex items-center gap-1.5 bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 dark:bg-slate-900 dark:hover:bg-slate-800 dark:text-slate-300 dark:border-slate-800 px-3.5 py-2 text-xs font-medium rounded-xl transition cursor-pointer"
+              className="inline-flex items-center gap-1.5 bg-[#0b5336] hover:bg-[#08412a] text-white border border-[#08412a] px-3.5 py-2 text-xs font-semibold rounded-xl transition-colors cursor-pointer shadow-xs active:scale-[0.98]"
             >
-              <AppIcon icon={ClockRotateRight} size="sm" color="default" />
-              <span>Submission Schedule Logs {extensionLogs.length > 0 ? `(${extensionLogs.length})` : ""}</span>
+              <AppIcon icon={ClockRotateRight} size="sm" color="white" />
+              <span>
+                Submission Schedule Logs{" "}
+                {extensionLogs.length > 0 ? `(${extensionLogs.length})` : ""}
+              </span>
             </button>
           </div>
         </div>
@@ -1479,14 +1664,16 @@ export function SubmissionWindowPanel({
             />
             <div className="p-6 space-y-4">
               <p className="text-xs leading-5 text-slate-600 dark:text-slate-300">
-                Faculty will be permitted to upload compliance documents starting from{" "}
+                Faculty will be permitted to upload compliance documents
+                starting from{" "}
                 <span className="font-semibold text-slate-900 dark:text-slate-100">
                   {formatDisplayDateTime(openDateTime)}
                 </span>{" "}
                 until{" "}
                 <span className="font-semibold text-slate-900 dark:text-slate-100">
                   {formatDisplayDateTime(closeDateTime)}
-                </span>.
+                </span>
+                .
               </p>
 
               <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-slate-100 dark:border-slate-800/80">
@@ -1521,7 +1708,12 @@ export function SubmissionWindowPanel({
             />
             <div className="p-6 space-y-4">
               <p className="text-xs leading-5 text-slate-600 dark:text-slate-300">
-                This will <span className="font-bold text-rose-700 dark:text-rose-400">immediately close</span> the active submission window and clear the schedule. Faculty will no longer be able to upload compliance documents.
+                This will{" "}
+                <span className="font-bold text-rose-700 dark:text-rose-400">
+                  immediately close
+                </span>{" "}
+                the active submission window and clear the schedule. Faculty
+                will no longer be able to upload compliance documents.
               </p>
 
               <div className="flex items-start gap-3 p-3.5 rounded-xl border border-[#08412a] bg-[#0b5336] text-white shadow-xs">
@@ -1533,7 +1725,9 @@ export function SubmissionWindowPanel({
                     Completed Accounts Preserved
                   </p>
                   <p className="text-[11px] text-emerald-100 leading-relaxed">
-                    Faculty accounts that completed and validated all requirements will be placed under &ldquo;Completed / Validated&rdquo; and remain protected in completed status.
+                    Faculty accounts that completed and validated all
+                    requirements will be placed under &ldquo;Completed /
+                    Validated&rdquo; and remain protected in completed status.
                   </p>
                 </div>
               </div>
@@ -1542,7 +1736,12 @@ export function SubmissionWindowPanel({
               {closeCountdown > 0 ? (
                 <div className="p-3.5 rounded-xl bg-amber-500 border border-amber-600 text-slate-900 flex items-center justify-between gap-3 shadow-xs">
                   <div className="flex items-center gap-2.5 min-w-0 text-slate-900">
-                    <AppIcon icon={Hourglass} size="sm" color="inherit" className="text-slate-900 shrink-0" />
+                    <AppIcon
+                      icon={Hourglass}
+                      size="sm"
+                      color="inherit"
+                      className="text-slate-900 shrink-0"
+                    />
                     <span className="text-xs font-bold text-slate-900">
                       Please wait before confirming accidental closure:
                     </span>
@@ -1553,7 +1752,12 @@ export function SubmissionWindowPanel({
                 </div>
               ) : (
                 <div className="p-3.5 rounded-xl bg-[#0b5336] border border-[#08412a] text-white flex items-center gap-2.5 shadow-xs">
-                  <AppIcon icon={CheckCircle} size="sm" color="white" className="text-white shrink-0" />
+                  <AppIcon
+                    icon={CheckCircle}
+                    size="sm"
+                    color="white"
+                    className="text-white shrink-0"
+                  />
                   <span className="text-xs font-bold text-white">
                     Safety timer completed. You may now confirm the closure.
                   </span>
@@ -1563,7 +1767,10 @@ export function SubmissionWindowPanel({
               <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-slate-100 dark:border-slate-800/80">
                 <button
                   type="button"
-                  onClick={() => { setShowCloseConfirmation(false); setCloseCountdown(3); }}
+                  onClick={() => {
+                    setShowCloseConfirmation(false);
+                    setCloseCountdown(3);
+                  }}
                   className="px-4 py-2 rounded-xl text-xs font-semibold bg-[#780000] hover:bg-[#5e0000] text-white border border-[#5e0000] transition-all cursor-pointer shadow-xs"
                 >
                   Cancel
@@ -1578,7 +1785,9 @@ export function SubmissionWindowPanel({
                       : "bg-[#780000] hover:bg-[#5e0000] text-white border border-[#5e0000] cursor-pointer active:scale-[0.98]"
                   }`}
                 >
-                  {closeCountdown > 0 ? `Confirm Close (${closeCountdown}s)` : "Confirm Close Submissions"}
+                  {closeCountdown > 0
+                    ? `Confirm Close (${closeCountdown}s)`
+                    : "Confirm Close Submissions"}
                 </button>
               </div>
             </div>
@@ -1622,9 +1831,11 @@ export function SubmissionWindowPanel({
                         (window.location.pathname.startsWith("/admin") ||
                           window.location.pathname.startsWith("/super-admin")));
                     if (isSuper) {
-                      window.location.href = "/admin/dashboard?tab=verification";
+                      window.location.href =
+                        "/admin/dashboard?tab=verification";
                     } else {
-                      window.location.href = "/staff/dashboard?tab=requirements";
+                      window.location.href =
+                        "/staff/dashboard?tab=requirements";
                     }
                   }}
                   className="inline-flex items-center justify-center font-bold px-4 py-2 rounded-xl text-xs bg-amber-500 hover:bg-amber-400 text-slate-900 border border-amber-600 transition-all cursor-pointer shadow-xs active:scale-[0.98]"
@@ -1648,7 +1859,9 @@ export function SubmissionWindowPanel({
             />
             <div className="p-6 space-y-4">
               <p className="text-xs leading-5 text-slate-600 dark:text-slate-300">
-                Are you sure you want to clear all extension requests? This action will permanently remove all pending and reviewed extension notifications.
+                Are you sure you want to clear all extension requests? This
+                action will permanently remove all pending and reviewed
+                extension notifications.
               </p>
 
               <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-slate-100 dark:border-slate-800/80">
@@ -1671,8 +1884,6 @@ export function SubmissionWindowPanel({
           </div>
         </div>
       ) : null}
-
-
     </div>
   );
 }

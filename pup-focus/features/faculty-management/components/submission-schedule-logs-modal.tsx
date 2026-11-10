@@ -68,7 +68,7 @@ export function SubmissionScheduleLogsModal({
   const [actionFilter, setActionFilter] = useState<ActionFilterType>("all");
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedLogForDetails, setSelectedLogForDetails] = useState<SubmissionScheduleLogEntry | null>(null);
-  const itemsPerPage = 8;
+  const itemsPerPage = 10;
 
   const fetchLogs = useCallback(async () => {
     try {
@@ -235,29 +235,29 @@ export function SubmissionScheduleLogsModal({
   };
 
   return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/75 p-3 sm:p-4 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="w-[96vw] max-w-[1550px] rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xl text-slate-900 dark:text-slate-100 flex flex-col max-h-[92vh] overflow-hidden">
+    <div className="fixed inset-0 z-[60] flex flex-col bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 animate-in fade-in duration-200 overflow-hidden w-screen h-screen">
+      <div className="w-full h-full flex flex-col overflow-hidden">
         {/* Modal Header */}
         <ModalHeader
           icon={ClockRotateRight}
           title="Submission Schedule Logs"
           subtitle="Audit record of submission deadlines, extensions, manual closures, and faculty grace period assignments"
-          className="rounded-t-2xl border-b border-slate-200 dark:border-slate-800 px-6 py-4"
+          className="border-b border-slate-200 dark:border-slate-800 px-6 py-4 shrink-0"
         >
           <button
             type="button"
             onClick={() => void fetchLogs()}
             disabled={isLoading}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 border border-amber-600 text-xs font-bold transition shadow-xs cursor-pointer active:scale-95 disabled:opacity-50"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-900 border border-amber-600 text-xs font-bold transition shadow-xs cursor-pointer active:scale-95 disabled:opacity-50"
             title="Refresh logs"
           >
-            <Refresh className={`h-3.5 w-3.5 text-slate-950 ${isLoading ? "animate-spin" : ""}`} />
+            <Refresh className={`h-3.5 w-3.5 text-slate-900 ${isLoading ? "animate-spin" : ""}`} />
             <span className="hidden sm:inline">Refresh</span>
           </button>
         </ModalHeader>
 
         {/* Filters & Search Toolbar */}
-        <div className="p-4 sm:p-6 pb-2">
+        <div className="p-4 sm:p-6 pb-2 shrink-0">
           <div className="flex flex-col sm:flex-row items-center gap-2.5">
             <div className="relative w-full sm:flex-1">
               <Search className="h-3.5 w-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
@@ -302,7 +302,7 @@ export function SubmissionScheduleLogsModal({
                   }}
                   className={`px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition cursor-pointer ${
                     actionFilter === tab.key
-                      ? "bg-amber-500 text-slate-950 font-bold shadow-xs border border-amber-600"
+                      ? "bg-amber-500 text-slate-900 font-bold shadow-xs border border-amber-600"
                       : "bg-white hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-750 text-slate-800 dark:text-slate-200 border border-slate-300 dark:border-slate-700"
                   }`}
                 >
@@ -314,8 +314,8 @@ export function SubmissionScheduleLogsModal({
         </div>
 
         {/* Data Table */}
-        <div className="flex-1 overflow-y-auto px-4 sm:px-6 py-2">
-          <div className="w-full overflow-x-auto rounded-xl border-2 border-amber-400 dark:border-amber-500/60 bg-white text-slate-900 dark:bg-slate-900 dark:text-slate-100 shadow-xs overflow-hidden transition-colors">
+        <div className="flex-1 min-h-0 overflow-y-auto px-4 sm:px-6 py-2">
+          <div className="w-full overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-800 bg-white text-slate-900 dark:bg-slate-900 dark:text-slate-100 shadow-xs overflow-hidden transition-colors">
             <table className="w-full text-left border-collapse text-xs text-slate-800 dark:text-slate-300 min-w-[900px]">
               <thead className="border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/60 uppercase tracking-wider text-[10px] text-slate-600 dark:text-slate-400">
                 <tr>
@@ -391,7 +391,7 @@ export function SubmissionScheduleLogsModal({
                               <span>{badge.label}</span>
                             </span>
                             {log.extension_preset ? (
-                              <span className="px-2 py-0.5 rounded bg-amber-500 text-slate-950 border border-amber-600 text-[10px] font-bold shadow-2xs">
+                              <span className="px-2 py-0.5 rounded bg-amber-500 text-slate-900 border border-amber-600 text-[10px] font-bold shadow-2xs">
                                 {log.extension_preset}
                               </span>
                             ) : null}
@@ -465,7 +465,7 @@ export function SubmissionScheduleLogsModal({
                           <button
                             type="button"
                             onClick={() => setSelectedLogForDetails(log)}
-                            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-bold transition shadow-xs cursor-pointer active:scale-95"
+                            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-900 text-xs font-bold transition shadow-xs cursor-pointer active:scale-95"
                             title="View log details"
                           >
                             <AppIcon icon={Eye} size="xs" color="inherit" />
@@ -482,7 +482,7 @@ export function SubmissionScheduleLogsModal({
         </div>
 
         {/* Modal Footer & Pagination */}
-        <div className="border-t border-slate-200 dark:border-slate-800 px-4 sm:px-6 py-3.5 flex flex-wrap items-center justify-between gap-3 bg-slate-50 dark:bg-slate-850">
+        <div className="border-t border-slate-200 dark:border-slate-800 px-4 sm:px-6 py-3.5 flex flex-wrap items-center justify-between gap-3 bg-slate-50 dark:bg-slate-850 shrink-0">
           <div className="text-xs text-slate-500 dark:text-slate-400">
             Showing {filteredLogs.length === 0 ? 0 : (currentPage - 1) * itemsPerPage + 1}–
             {Math.min(currentPage * itemsPerPage, filteredLogs.length)} of {filteredLogs.length} events
@@ -539,7 +539,7 @@ export function SubmissionScheduleLogsModal({
 
             <div className="p-6 space-y-4 text-xs overflow-y-auto max-h-[70vh]">
               {/* Event & Status */}
-              <div className="flex items-center justify-between gap-2 p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700">
+              <div className="flex items-center justify-between gap-2 p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60">
                 <div>
                   <span className="text-[10px] uppercase font-bold text-slate-500 block mb-1">Action / Event</span>
                   <span
@@ -561,7 +561,7 @@ export function SubmissionScheduleLogsModal({
 
               {/* Scope & Academic Term */}
               <div className="grid grid-cols-2 gap-3">
-                <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700">
+                <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60">
                   <span className="text-[10px] uppercase font-bold text-slate-500 block mb-1">Scope</span>
                   <span className="font-semibold text-slate-900 dark:text-slate-100">
                     {selectedLogForDetails.scope === "global"
@@ -569,7 +569,7 @@ export function SubmissionScheduleLogsModal({
                       : `${selectedLogForDetails.scope.toUpperCase()}: ${selectedLogForDetails.scope_target || "All"}`}
                   </span>
                 </div>
-                <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700">
+                <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60">
                   <span className="text-[10px] uppercase font-bold text-slate-500 block mb-1">Academic Term</span>
                   <span className="font-semibold text-slate-900 dark:text-slate-100">
                     {selectedLogForDetails.academic_year
@@ -580,7 +580,7 @@ export function SubmissionScheduleLogsModal({
               </div>
 
               {/* Submission Window */}
-              <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 space-y-2">
+              <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 space-y-2">
                 <span className="text-[10px] uppercase font-bold text-slate-500 block">Submission Window</span>
                 {selectedLogForDetails.start_date && (
                   <div className="flex justify-between font-mono">
@@ -610,13 +610,13 @@ export function SubmissionScheduleLogsModal({
 
               {/* Configured By & Date */}
               <div className="grid grid-cols-2 gap-3">
-                <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700">
+                <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60">
                   <span className="text-[10px] uppercase font-bold text-slate-500 block mb-1">Configured By</span>
                   <span className="font-semibold text-slate-900 dark:text-slate-100">
                     {selectedLogForDetails.actor_name || "Administrator"}
                   </span>
                 </div>
-                <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700">
+                <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60">
                   <span className="text-[10px] uppercase font-bold text-slate-500 block mb-1">Timestamp</span>
                   <span className="font-semibold text-slate-900 dark:text-slate-100">
                     {formatDate(selectedLogForDetails.created_at)}
@@ -625,13 +625,13 @@ export function SubmissionScheduleLogsModal({
               </div>
 
               {/* Reason & Uncompressed Full Remarks */}
-              <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 space-y-1.5">
+              <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 space-y-1.5">
                 <span className="text-[10px] uppercase font-bold text-slate-500 block">Reason & Full Remarks</span>
                 <p className="font-bold text-slate-900 dark:text-slate-100 text-xs">
                   {selectedLogForDetails.reason || "Submission window configured"}
                 </p>
                 {selectedLogForDetails.reason_details && (
-                  <p className="text-slate-700 dark:text-slate-300 text-xs whitespace-pre-wrap leading-relaxed pt-1 border-t border-slate-200 dark:border-slate-700">
+                  <p className="text-slate-700 dark:text-slate-300 text-xs whitespace-pre-wrap leading-relaxed pt-1 border-t border-slate-200 dark:border-slate-700/50">
                     {selectedLogForDetails.reason_details}
                   </p>
                 )}
