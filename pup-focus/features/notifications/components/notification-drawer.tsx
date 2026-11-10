@@ -97,12 +97,12 @@ function getNotificationTypeCategory(notification: AppNotification): {
       category: "DEADLINE_ALERT",
       label: "Deadline Alert",
       Icon: Hourglass,
-      colorClasses: "bg-amber-500 text-amber-950 border border-amber-600 shadow-xs",
-      badgeBg: "bg-amber-500 text-amber-950 border border-amber-600 font-bold shadow-2xs",
-      bannerBg: "bg-amber-500 text-amber-950 border border-amber-600",
-      heroIconClasses: "bg-white text-amber-900 shadow-sm border border-amber-600/30",
-      heroBadgeBg: "bg-white text-amber-900 font-bold shadow-2xs border border-amber-600/30",
-      glowColor: "ring-amber-500/30",
+      colorClasses: "bg-slate-100 text-slate-500 border border-slate-200 shadow-xs",
+      badgeBg: "bg-rose-50 text-[#800000] border border-rose-200/70 font-bold shadow-2xs",
+      bannerBg: "bg-[#800000] text-white border border-amber-500/60",
+      heroIconClasses: "bg-white/10 text-white shadow-sm border border-white/20",
+      heroBadgeBg: "bg-white text-slate-800 font-bold shadow-2xs border border-white/30",
+      glowColor: "ring-slate-500/30",
     };
   }
 
@@ -116,12 +116,12 @@ function getNotificationTypeCategory(notification: AppNotification): {
       category: "APPROVED",
       label: "Submission Approved",
       Icon: CheckCircle,
-      colorClasses: "bg-[#0b5336] text-white border border-[#08412a] shadow-xs",
-      badgeBg: "bg-[#0b5336] text-white border border-[#08412a] font-bold shadow-2xs",
-      bannerBg: "bg-[#0b5336] text-white border border-[#08412a]",
-      heroIconClasses: "bg-white text-[#0b5336] shadow-sm",
-      heroBadgeBg: "bg-white text-[#0b5336] font-black shadow-2xs",
-      glowColor: "ring-emerald-500/30",
+      colorClasses: "bg-slate-100 text-slate-500 border border-slate-200 shadow-xs",
+      badgeBg: "bg-rose-50 text-[#800000] border border-rose-200/70 font-bold shadow-2xs",
+      bannerBg: "bg-[#800000] text-white border border-amber-500/60",
+      heroIconClasses: "bg-white/10 text-white shadow-sm border border-white/20",
+      heroBadgeBg: "bg-white text-slate-800 font-black shadow-2xs border border-white/30",
+      glowColor: "ring-slate-500/30",
     };
   }
 
@@ -134,12 +134,12 @@ function getNotificationTypeCategory(notification: AppNotification): {
       category: "REVISION_REQUESTED",
       label: "Revision Requested",
       Icon: WarningTriangle,
-      colorClasses: "bg-[#780000] text-white border border-[#5e0000] shadow-xs",
-      badgeBg: "bg-[#780000] text-white border border-[#5e0000] font-bold shadow-2xs",
-      bannerBg: "bg-[#780000] text-white border border-[#5e0000]",
-      heroIconClasses: "bg-white text-[#780000] shadow-sm",
-      heroBadgeBg: "bg-white text-[#780000] font-black shadow-2xs",
-      glowColor: "ring-amber-500/30",
+      colorClasses: "bg-slate-100 text-slate-500 border border-slate-200 shadow-xs",
+      badgeBg: "bg-rose-50 text-[#800000] border border-rose-200/70 font-bold shadow-2xs",
+      bannerBg: "bg-[#800000] text-white border border-amber-500/60",
+      heroIconClasses: "bg-white/10 text-white shadow-sm border border-white/20",
+      heroBadgeBg: "bg-white text-slate-800 font-black shadow-2xs border border-white/30",
+      glowColor: "ring-slate-500/30",
     };
   }
 
@@ -152,12 +152,12 @@ function getNotificationTypeCategory(notification: AppNotification): {
       category: "REJECTED",
       label: "Submission Rejected",
       Icon: XmarkCircle,
-      colorClasses: "bg-[#990000] text-white border border-[#780000] shadow-xs",
-      badgeBg: "bg-[#990000] text-white border border-[#780000] font-bold shadow-2xs",
-      bannerBg: "bg-[#990000] text-white border border-[#780000]",
-      heroIconClasses: "bg-white text-[#990000] shadow-sm",
-      heroBadgeBg: "bg-white text-[#990000] font-black shadow-2xs",
-      glowColor: "ring-rose-500/30",
+      colorClasses: "bg-slate-100 text-slate-500 border border-slate-200 shadow-xs",
+      badgeBg: "bg-rose-50 text-[#800000] border border-rose-200/70 font-bold shadow-2xs",
+      bannerBg: "bg-[#800000] text-white border border-amber-500/60",
+      heroIconClasses: "bg-white/10 text-white shadow-sm border border-white/20",
+      heroBadgeBg: "bg-white text-slate-800 font-black shadow-2xs border border-white/30",
+      glowColor: "ring-slate-500/30",
     };
   }
 
@@ -167,9 +167,9 @@ function getNotificationTypeCategory(notification: AppNotification): {
     Icon: InfoCircle,
     colorClasses: "bg-slate-700 text-white border border-slate-600 shadow-xs",
     badgeBg: "bg-slate-700 text-white border border-slate-600 font-bold shadow-2xs",
-    bannerBg: "bg-slate-800 text-white border border-slate-700",
-    heroIconClasses: "bg-white/20 text-white shadow-sm border border-white/30",
-    heroBadgeBg: "bg-white/25 text-white font-black shadow-2xs",
+    bannerBg: "bg-[#800000] text-white border border-amber-500/60",
+    heroIconClasses: "bg-white/10 text-white shadow-sm border border-white/20",
+    heroBadgeBg: "bg-white text-slate-800 font-black shadow-2xs border border-white/30",
     glowColor: "ring-slate-500/30",
   };
 }
@@ -501,9 +501,9 @@ export function NotificationDrawer() {
         const element = targetElementId ? document.getElementById(targetElementId) : null;
         if (element) {
           element.scrollIntoView({ behavior: "smooth", block: "center" });
-          element.classList.add("ring-4", "ring-amber-400", "bg-amber-500/15", "transition-all", "duration-500");
+          element.classList.add("ring-4", "ring-slate-500", "bg-slate-800/15", "transition-all", "duration-500");
           setTimeout(() => {
-            element.classList.remove("ring-4", "ring-amber-400", "bg-amber-500/15", "transition-all", "duration-500");
+            element.classList.remove("ring-4", "ring-slate-500", "bg-slate-800/15", "transition-all", "duration-500");
           }, 4000);
         } else {
           router.push(`/faculty/dashboard?view=status&highlight=${reqCode}#${targetElementId}`);
@@ -570,11 +570,11 @@ export function NotificationDrawer() {
         type="button"
         onClick={handleOpenDrawer}
         aria-label={`Notifications${unreadCount > 0 ? `, ${unreadCount} unread` : ""}`}
-        className="relative flex items-center justify-center shrink-0 p-1.5 sm:p-2 rounded-xl text-amber-950 bg-amber-500 hover:bg-amber-400 border border-amber-600/50 transition-all focus:outline-none focus:ring-2 focus:ring-amber-500/40 cursor-pointer shadow-xs hover:shadow-sm active:scale-95"
+        className="relative flex items-center justify-center shrink-0 p-1.5 sm:p-2 rounded-xl text-white bg-[#800000] hover:bg-[#5e0000] border border-amber-500/40 transition-all focus:outline-none focus:ring-2 focus:ring-amber-500/40 cursor-pointer shadow-xs hover:shadow-sm active:scale-95"
       >
         <AppIcon icon={Bell} size="lg" color="inherit" />
         {unreadCount > 0 && (
-          <span className="absolute -top-1 -right-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-600 px-1 text-[9px] font-bold text-white shadow-md ring-2 ring-white dark:ring-slate-900 animate-pulse">
+          <span className="absolute -top-1 -right-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-amber-500 px-1 text-[9px] font-bold text-slate-950 shadow-md ring-2 ring-white dark:ring-slate-900">
             {unreadCount > 99 ? "99+" : unreadCount}
           </span>
         )}
@@ -602,14 +602,14 @@ export function NotificationDrawer() {
             <div className="fixed inset-y-0 right-0 z-[100] flex h-full w-full sm:max-w-md md:max-w-lg flex-col p-0 bg-white text-slate-900 border-l border-slate-200 dark:bg-slate-950 dark:text-slate-100 dark:border-slate-800 shadow-2xl animate-in slide-in-from-right duration-250 overflow-x-hidden">
               
               {/* TOP HEADER BAR */}
-              <div className="flex items-center justify-between border-b border-amber-500/20 bg-gradient-to-r from-[#600000] via-[#4d0000] to-[#3a0000] text-white px-4 sm:px-5 py-3.5 shrink-0 shadow-xs">
+              <div className="flex items-center justify-between border-b-4 border-amber-500 bg-[#800000] text-white px-4 sm:px-5 py-3.5 shrink-0 shadow-xs">
                 {selectedNotification ? (
                   /* Detail Mode Header: Back Button + Close */
                   <div className="flex items-center justify-between w-full gap-2">
                     <button
                       type="button"
                       onClick={() => setSelectedNotification(null)}
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-amber-100 hover:text-white bg-[#7a0000]/80 hover:bg-[#8d0000] border border-amber-500/30 transition-all cursor-pointer shadow-2xs active:scale-95"
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-slate-950 hover:text-slate-950 bg-amber-500 hover:bg-amber-600 border border-amber-600 transition-all cursor-pointer shadow-2xs active:scale-95"
                       aria-label="Back to notification list"
                     >
                       <AppIcon icon={NavArrowLeft} size="sm" color="inherit" />
@@ -622,7 +622,7 @@ export function NotificationDrawer() {
                         setSelectedNotification(null);
                         setIsOpen(false);
                       }}
-                      className="p-1.5 rounded-lg border border-[#5e0000] bg-[#780000] hover:bg-[#5e0000] text-white transition-colors shrink-0 cursor-pointer shadow-xs active:scale-95"
+                      className="p-1.5 rounded-lg border border-amber-600 bg-amber-500 hover:bg-amber-600 text-slate-950 transition-colors shrink-0 cursor-pointer shadow-xs active:scale-95"
                       aria-label="Close notification drawer"
                     >
                       <AppIcon icon={Xmark} size="md" color="inherit" />
@@ -632,7 +632,7 @@ export function NotificationDrawer() {
                   /* List Mode Header: Bell + Title + Unread Badge + Close */
                   <>
                     <div className="flex items-center gap-2.5 min-w-0">
-                      <div className="p-1.5 rounded-lg bg-amber-500/20 text-amber-400 border border-amber-500/30 shrink-0">
+                      <div className="p-1.5 rounded-lg bg-white/10 text-rose-100 border border-white/20 shrink-0">
                         <AppIcon icon={Bell} size="md" color="inherit" />
                       </div>
                       <div className="flex items-center gap-2 min-w-0">
@@ -640,7 +640,7 @@ export function NotificationDrawer() {
                           Notifications
                         </h3>
                         {unreadCount > 0 && (
-                          <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-500/20 border border-amber-500/40 px-2.5 py-0.5 text-xs font-bold text-amber-300 whitespace-nowrap shadow-xs">
+                          <span className="inline-flex items-center gap-1.5 rounded-full bg-white/10 border border-white/20 px-2.5 py-0.5 text-xs font-bold text-rose-100 whitespace-nowrap shadow-xs">
                             <span className="h-1.5 w-1.5 rounded-full bg-amber-400 animate-pulse" />
                             {unreadCount} unread
                           </span>
@@ -651,7 +651,7 @@ export function NotificationDrawer() {
                     <button
                       type="button"
                       onClick={() => setIsOpen(false)}
-                      className="p-1.5 rounded-lg border border-[#5e0000] bg-[#780000] hover:bg-[#5e0000] text-white transition-colors shrink-0 cursor-pointer shadow-xs active:scale-95"
+                      className="p-1.5 rounded-lg border border-amber-600 bg-amber-500 hover:bg-amber-600 text-slate-950 transition-colors shrink-0 cursor-pointer shadow-xs active:scale-95"
                       aria-label="Close notification drawer"
                     >
                       <AppIcon icon={Xmark} size="md" color="inherit" />
@@ -662,17 +662,17 @@ export function NotificationDrawer() {
 
               {/* LIST MODE: TOOLBAR */}
               {!selectedNotification && (
-                <div className="flex items-center justify-between gap-2 px-4 sm:px-5 py-2.5 border-b border-slate-200 dark:border-slate-800 bg-slate-50/90 dark:bg-slate-900/70 text-xs shrink-0 overflow-x-hidden">
+                <div className="flex items-center justify-between gap-2 px-4 sm:px-5 py-2.5 border-b border-slate-200/70 bg-slate-50/70 text-xs shrink-0 overflow-x-hidden">
                   {/* Filter Tabs */}
-                  <div className="flex items-center gap-1 bg-slate-200/80 dark:bg-slate-800 p-0.5 rounded-lg shrink-0">
+                  <div className="flex items-center gap-1 bg-slate-200/60 p-0.5 rounded-lg shrink-0">
                     <button
                       type="button"
                       onClick={() => setFilterTab("all")}
                       className={cn(
                         "px-2.5 py-1 rounded-md font-semibold text-xs transition cursor-pointer whitespace-nowrap",
                         filterTab === "all"
-                          ? "bg-white dark:bg-slate-900 text-slate-950 dark:text-slate-100 shadow-2xs font-bold"
-                          : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200"
+                          ? "bg-slate-100 text-slate-700 font-bold shadow-sm"
+                          : "font-medium text-slate-600 hover:text-slate-900"
                       )}
                     >
                       All ({notifications.length})
@@ -683,8 +683,8 @@ export function NotificationDrawer() {
                       className={cn(
                         "px-2.5 py-1 rounded-md font-semibold text-xs transition cursor-pointer whitespace-nowrap",
                         filterTab === "unread"
-                          ? "bg-white dark:bg-slate-900 text-slate-950 dark:text-slate-100 shadow-2xs font-bold"
-                          : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200"
+                          ? "bg-slate-100 text-slate-700 font-bold shadow-sm"
+                          : "font-medium text-slate-600 hover:text-slate-900"
                       )}
                     >
                       Unread ({unreadCount})
@@ -698,7 +698,7 @@ export function NotificationDrawer() {
                         type="button"
                         onClick={handleMarkAllAsRead}
                         disabled={isMarkingAll || isClearingAll}
-                        className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-bold rounded-lg bg-amber-500 hover:bg-amber-400 text-amber-950 border border-amber-600/50 transition-colors shadow-xs disabled:opacity-50 cursor-pointer whitespace-nowrap"
+                        className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-bold rounded-lg bg-amber-500 hover:bg-amber-600 text-slate-950 transition-colors shadow-sm disabled:opacity-50 cursor-pointer whitespace-nowrap"
                         title="Mark all notifications as read"
                       >
                         {isMarkingAll ? (
@@ -715,15 +715,15 @@ export function NotificationDrawer() {
                         type="button"
                         onClick={handleClearAll}
                         disabled={isClearingAll || isMarkingAll}
-                        className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold rounded-lg bg-[#780000] hover:bg-[#5e0000] text-white border border-[#5e0000] transition-colors shadow-xs disabled:opacity-50 cursor-pointer whitespace-nowrap"
+                        className="inline-flex items-center justify-center h-7 w-7 rounded-lg bg-[#800000] text-white hover:bg-[#5e0000] transition-colors disabled:opacity-50 cursor-pointer"
                         title="Clear all notifications"
+                        aria-label="Clear all notifications"
                       >
                         {isClearingAll ? (
                           <AppIcon icon={SystemRestart} size="xs" color="inherit" className="animate-spin" />
                         ) : (
                           <AppIcon icon={Trash} size="xs" color="inherit" />
                         )}
-                        <span>Clear all</span>
                       </button>
                     )}
                   </div>
@@ -732,7 +732,7 @@ export function NotificationDrawer() {
 
               {/* Toast Banner Feedback */}
               {toastMessage && (
-                <div className="flex items-center justify-between gap-2 bg-[#0b5336] border-b border-[#08412a] px-4 py-2.5 text-xs text-white animate-in fade-in slide-in-from-top-1 duration-150 shrink-0 shadow-xs">
+                <div className="flex items-center justify-between gap-2 bg-[#800000] border-b-2 border-amber-500 px-4 py-2.5 text-xs text-white animate-in fade-in slide-in-from-top-1 duration-150 shrink-0 shadow-xs">
                   <div className="flex items-center gap-2">
                     <AppIcon icon={CheckCircle} size="md" color="inherit" />
                     <span className="font-bold">{toastMessage}</span>
@@ -811,7 +811,7 @@ export function NotificationDrawer() {
                                 <span className="text-xs font-bold opacity-90">
                                   Requirement:
                                 </span>
-                                <span className="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-bold bg-white text-amber-900 border border-amber-600/30 shadow-2xs">
+                                <span className="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-bold bg-white text-slate-800 border border-slate-700/30 shadow-2xs">
                                   {reqLabel}
                                 </span>
                               </div>
@@ -835,7 +835,7 @@ export function NotificationDrawer() {
                                 <h4 className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
                                   <span className={cn(
                                     "p-1 rounded-md text-white shadow-2xs",
-                                    isApproved ? "bg-[#0b5336]" : isRevision ? "bg-[#780000]" : "bg-amber-500 text-slate-950"
+                                    isApproved ? "bg-slate-100 text-slate-700" : isRevision ? "bg-[#800000] text-white" : "bg-[#800000] text-white"
                                   )}>
                                     <AppIcon icon={Notes} size="xs" color="inherit" />
                                   </span>
@@ -843,7 +843,7 @@ export function NotificationDrawer() {
                                 </h4>
                                 <span className={cn(
                                   "inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold text-white shadow-2xs",
-                                  isApproved ? "bg-[#0b5336] border border-[#08412a]" : isRevision ? "bg-[#780000] border border-[#5e0000]" : "bg-amber-500 text-amber-950 border border-amber-600"
+                                  isApproved ? "bg-slate-100 text-slate-700 border border-amber-600" : isRevision ? "bg-[#800000] text-white border border-[#5e0000]" : "bg-[#800000] text-white border border-amber-500/60"
                                 )}>
                                   Official Remarks
                                 </span>
@@ -851,10 +851,10 @@ export function NotificationDrawer() {
                               <div className={cn(
                                 "rounded-xl border-2 p-4 text-sm font-semibold italic leading-relaxed break-words shadow-xs",
                                 isApproved
-                                  ? "border-[#0b5336] bg-emerald-50/50 dark:bg-[#0b5336]/15 text-slate-900 dark:text-slate-100"
+                                  ? "border-slate-500 bg-slate-50/50 dark:bg-slate-800/15 text-slate-900 dark:text-slate-100"
                                   : isRevision
-                                  ? "border-[#780000] bg-rose-50/50 dark:bg-[#780000]/15 text-slate-900 dark:text-slate-100"
-                                  : "border-amber-600 bg-amber-50/50 dark:bg-amber-950/20 text-slate-900 dark:text-slate-100"
+                                  ? "border-slate-400 bg-slate-50/50 dark:bg-slate-800/15 text-slate-900 dark:text-slate-100"
+                                  : "border-slate-700 bg-slate-100/50 dark:bg-slate-950/20 text-slate-900 dark:text-slate-100"
                               )}>
                                 &ldquo;{remarks}&rdquo;
                               </div>
@@ -870,7 +870,7 @@ export function NotificationDrawer() {
                               </h4>
                               <div className="flex items-center justify-between gap-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/90 dark:bg-slate-900 p-3.5 shadow-2xs">
                                 <div className="flex items-center gap-2.5 min-w-0">
-                                  <div className="p-2 rounded-lg bg-[#780000] text-white border border-[#5e0000] shrink-0 shadow-2xs">
+                                  <div className="p-2 rounded-lg bg-[#800000] text-white border border-amber-500/60 shrink-0 shadow-2xs">
                                     <AppIcon icon={Page} size="md" color="inherit" />
                                   </div>
                                   <div className="min-w-0">
@@ -886,7 +886,7 @@ export function NotificationDrawer() {
                                   href={fileInfo.fileUrl}
                                   target="_blank"
                                   rel="noopener noreferrer"
-                                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-[#780000] hover:bg-[#5e0000] text-white border border-[#5e0000] transition-colors shadow-xs shrink-0 cursor-pointer"
+                                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-amber-500 hover:bg-amber-600 text-slate-950 transition-colors shadow-xs shrink-0 cursor-pointer"
                                 >
                                   <span>Open File</span>
                                   <AppIcon icon={OpenNewWindow} size="xs" color="inherit" />
@@ -901,7 +901,7 @@ export function NotificationDrawer() {
                             <button
                               type="button"
                               onClick={() => handleNavigateToTarget(selectedNotification)}
-                              className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-black bg-amber-500 hover:bg-amber-400 text-amber-950 border-2 border-amber-600 transition-all shadow-md active:scale-[0.99] cursor-pointer"
+                              className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-black bg-amber-500 hover:bg-amber-600 text-slate-950 border-2 border-amber-600 transition-all shadow-md active:scale-[0.99] cursor-pointer"
                             >
                               <span>
                                 {reqCode
@@ -921,7 +921,7 @@ export function NotificationDrawer() {
                                     selectedNotification.isRead
                                   )
                                 }
-                                className="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl text-xs font-bold bg-[#0b5336] hover:bg-[#08412a] text-white border-2 border-[#08412a] transition cursor-pointer shadow-xs active:scale-95"
+                                className="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl text-xs font-bold bg-[#800000] hover:bg-[#5e0000] text-white transition cursor-pointer shadow-xs active:scale-95"
                               >
                                 <AppIcon icon={DoubleCheck} size="xs" color="inherit" />
                                 <span>
@@ -934,7 +934,7 @@ export function NotificationDrawer() {
                               <button
                                 type="button"
                                 onClick={() => setSelectedNotification(null)}
-                                className="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl text-xs font-bold bg-[#780000] hover:bg-[#5e0000] text-white border border-[#5e0000] transition cursor-pointer shadow-xs active:scale-95"
+                                className="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl text-xs font-bold bg-[#800000] hover:bg-[#5e0000] text-white transition cursor-pointer shadow-xs active:scale-95"
                               >
                                 <AppIcon icon={NavArrowLeft} size="xs" color="inherit" />
                                 <span>Back to list</span>
@@ -950,7 +950,7 @@ export function NotificationDrawer() {
                   <div className="divide-y divide-slate-100 dark:divide-slate-800/70">
                     {isLoading ? (
                       <div className="flex items-center justify-center py-16 text-slate-400 gap-2">
-                        <AppIcon icon={SystemRestart} size="lg" color="active" className="animate-spin" />
+                        <AppIcon icon={SystemRestart} size="lg" color="default" className="animate-spin" />
                         <span className="text-xs">Loading notifications...</span>
                       </div>
                     ) : filteredNotifications.length === 0 ? (
@@ -1003,12 +1003,12 @@ export function NotificationDrawer() {
                             className={cn(
                               "group relative flex items-start gap-3.5 px-4 sm:px-5 py-4 transition-all duration-150 cursor-pointer text-left overflow-x-hidden",
                               isUnread
-                                ? "bg-amber-500/[0.04] hover:bg-amber-500/[0.08] dark:bg-amber-500/[0.06] dark:hover:bg-amber-500/[0.12] border-l-4 border-l-amber-500"
+                                ? "bg-white hover:bg-slate-50 dark:bg-slate-950 dark:hover:bg-slate-900/60 border-l-4 border-l-transparent"
                                 : "bg-white hover:bg-slate-50/90 dark:bg-slate-950 dark:hover:bg-slate-900/60 border-l-4 border-l-transparent"
                             )}
                           >
                             {/* Icon Avatar */}
-                            <div className={cn("mt-0.5 p-2 rounded-xl border shrink-0 flex items-center justify-center shadow-xs", colorClasses)}>
+                            <div className="mt-0.5 p-2 rounded-xl border border-slate-200 bg-slate-100 text-slate-500 shrink-0 flex items-center justify-center shadow-xs">
                               <AppIcon icon={Icon} size="md" color="inherit" />
                             </div>
 
@@ -1018,7 +1018,7 @@ export function NotificationDrawer() {
                               <div className="flex items-start justify-between gap-2">
                                 <h4
                                   className={cn(
-                                    "text-sm tracking-tight text-slate-900 dark:text-slate-100 group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors leading-snug break-words",
+                                    "text-sm tracking-tight text-slate-900 dark:text-slate-100 group-hover:text-slate-700 dark:group-hover:text-slate-300 transition-colors leading-snug break-words",
                                     isUnread ? "font-extrabold" : "font-semibold"
                                   )}
                                 >
@@ -1029,7 +1029,7 @@ export function NotificationDrawer() {
                                     {formatRelativeTime(notification.createdAt)}
                                   </span>
                                   {isUnread && (
-                                    <span className="h-2 w-2 rounded-full bg-amber-500 shrink-0 shadow-xs ring-1 ring-amber-400/50" title="Unread" />
+                                    <span className="h-2 w-2 rounded-full bg-slate-400 shrink-0 shadow-xs ring-1 ring-slate-300/50" title="Unread" />
                                   )}
                                 </div>
                               </div>
@@ -1038,13 +1038,13 @@ export function NotificationDrawer() {
                               {(reqLabel || isDeadlineAlert) && (
                                 <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
                                   {isDeadlineAlert && (
-                                    <span className="inline-flex items-center gap-1 rounded-md border border-amber-600 bg-amber-500 px-2 py-0.5 text-[10px] font-bold text-amber-950 shadow-2xs">
+                                    <span className="inline-flex items-center gap-1 rounded-md border border-amber-200/70 bg-amber-50 px-2 py-0.5 text-[10px] font-bold text-amber-900 shadow-2xs">
                                       <AppIcon icon={Hourglass} size="xs" color="inherit" />
                                       Deadline Alert
                                     </span>
                                   )}
                                   {reqLabel && (
-                                    <span className={cn("inline-flex items-center rounded-md px-2 py-0.5 text-[10px] font-bold border shadow-2xs", badgeBg)}>
+                                    <span className="inline-flex items-center rounded-md px-2 py-0.5 text-[10px] font-bold border border-slate-200 bg-white text-slate-600 shadow-2xs">
                                       {reqLabel}
                                     </span>
                                   )}
@@ -1060,15 +1060,15 @@ export function NotificationDrawer() {
                               {remarks && (
                                 <div className={cn(
                                   "mt-2 rounded-xl border-l-4 border-y border-r border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/90 p-3 text-xs shadow-2xs",
-                                  category === "APPROVED" ? "border-l-[#0b5336]" : category === "REVISION_REQUESTED" || category === "REJECTED" ? "border-l-[#780000]" : "border-l-amber-500"
+                                  "border-l-slate-300"
                                 )}>
                                   <div className={cn(
                                     "font-bold not-italic flex items-center gap-1.5 mb-1 text-xs",
-                                    category === "APPROVED" ? "text-[#0b5336] dark:text-emerald-400" : category === "REVISION_REQUESTED" || category === "REJECTED" ? "text-[#780000] dark:text-rose-400" : "text-amber-700 dark:text-amber-400"
+                                    "text-slate-600 dark:text-slate-400"
                                   )}>
                                     <span className={cn(
                                       "p-0.5 rounded text-white text-[10px]",
-                                      category === "APPROVED" ? "bg-[#0b5336]" : category === "REVISION_REQUESTED" || category === "REJECTED" ? "bg-[#780000]" : "bg-amber-500 text-amber-950"
+                                      "bg-slate-200 text-slate-600"
                                     )}>
                                       <AppIcon icon={Notes} size="xs" color="inherit" />
                                     </span>
@@ -1088,7 +1088,7 @@ export function NotificationDrawer() {
                                     e.stopPropagation();
                                     handleNavigateToTarget(notification);
                                   }}
-                                  className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold bg-amber-500 hover:bg-amber-400 text-amber-950 border border-amber-600 shadow-xs transition-colors cursor-pointer active:scale-95"
+                                  className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold bg-amber-500 hover:bg-amber-600 text-slate-950 shadow-sm transition-colors cursor-pointer active:scale-95"
                                   title="View requirement in dashboard"
                                 >
                                   <span>View requirement</span>
@@ -1101,7 +1101,7 @@ export function NotificationDrawer() {
                                     e.stopPropagation();
                                     void handleToggleSingleRead(notification.id, notification.isRead);
                                   }}
-                                  className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-bold rounded-lg shadow-xs transition-colors cursor-pointer active:scale-95 bg-[#0b5336] hover:bg-[#08412a] text-white border border-[#08412a]"
+                                  className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-semibold rounded-lg transition-colors cursor-pointer active:scale-95 bg-[#800000] hover:bg-[#5e0000] text-white"
                                   title={isUnread ? "Mark as read" : "Mark as unread"}
                                 >
                                   <AppIcon icon={DoubleCheck} size="xs" color="inherit" />

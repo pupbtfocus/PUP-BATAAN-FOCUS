@@ -1451,40 +1451,41 @@ export function SubmissionWindowPanel({
 
       {/* Save Confirmation Modal */}
       {showSaveConfirmation ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm">
-          <div className="w-full max-w-lg bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-2xl space-y-4 text-slate-900 dark:text-slate-100">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm animate-in fade-in">
+          <div className="w-full max-w-lg bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl text-slate-900 dark:text-slate-100 overflow-hidden flex flex-col">
             <ModalHeader
               icon={Calendar}
               title="Save Submission Schedule?"
               subtitle="Confirm Window Schedule"
-              className="-mx-6 -mt-6 mb-4 rounded-t-2xl"
             />
-            <p className="text-xs leading-5 text-slate-600 dark:text-slate-300">
-              Faculty will be permitted to upload compliance documents starting from{" "}
-              <span className="font-semibold text-slate-900 dark:text-slate-100">
-                {formatDisplayDateTime(openDateTime)}
-              </span>{" "}
-              until{" "}
-              <span className="font-semibold text-slate-900 dark:text-slate-100">
-                {formatDisplayDateTime(closeDateTime)}
-              </span>.
-            </p>
+            <div className="p-6 space-y-4">
+              <p className="text-xs leading-5 text-slate-600 dark:text-slate-300">
+                Faculty will be permitted to upload compliance documents starting from{" "}
+                <span className="font-semibold text-slate-900 dark:text-slate-100">
+                  {formatDisplayDateTime(openDateTime)}
+                </span>{" "}
+                until{" "}
+                <span className="font-semibold text-slate-900 dark:text-slate-100">
+                  {formatDisplayDateTime(closeDateTime)}
+                </span>.
+              </p>
 
-            <div className="flex justify-end gap-3 pt-2">
-              <button
-                type="button"
-                onClick={() => setShowSaveConfirmation(false)}
-                className="bg-[#780000] hover:bg-[#5e0000] text-white border border-[#5e0000] text-xs font-semibold px-4 py-2 rounded-lg transition-colors cursor-pointer shadow-xs"
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                onClick={() => void submitSave()}
-                className="bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs rounded-lg px-4 py-2 transition-colors cursor-pointer shadow-xs border border-amber-600"
-              >
-                Confirm Save
-              </button>
+              <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-slate-100 dark:border-slate-800/80">
+                <button
+                  type="button"
+                  onClick={() => setShowSaveConfirmation(false)}
+                  className="px-4 py-2 rounded-xl text-xs font-semibold bg-[#780000] hover:bg-[#5e0000] text-white border border-[#5e0000] transition-all cursor-pointer shadow-xs"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={() => void submitSave()}
+                  className="inline-flex items-center justify-center font-bold px-4 py-2 rounded-xl text-xs bg-amber-500 hover:bg-amber-400 text-slate-950 border border-amber-600 transition-all cursor-pointer shadow-xs active:scale-[0.98]"
+                >
+                  Confirm Save
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -1492,74 +1493,75 @@ export function SubmissionWindowPanel({
 
       {/* Close Confirmation Modal — 10-second Safety Countdown */}
       {showCloseConfirmation ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm">
-          <div className="w-full max-w-lg bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-2xl space-y-4 text-slate-900 dark:text-slate-100">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm animate-in fade-in">
+          <div className="w-full max-w-lg bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl text-slate-900 dark:text-slate-100 overflow-hidden flex flex-col">
             <ModalHeader
               icon={WarningTriangle}
               title="Close Submissions Now?"
               subtitle="Immediate Closure & Schedule Reset"
-              className="-mx-6 -mt-6 mb-4 rounded-t-2xl"
             />
-            <p className="text-xs leading-5 text-slate-600 dark:text-slate-300">
-              This will <span className="font-bold text-rose-700 dark:text-rose-400">immediately close</span> the active submission window and clear the schedule. Faculty will no longer be able to upload compliance documents.
-            </p>
-
-            <div className="flex items-start gap-2.5 rounded-xl border border-emerald-200 dark:border-emerald-950/60 bg-emerald-50/70 dark:bg-emerald-950/20 p-3 text-xs text-emerald-900 dark:text-emerald-300">
-              <AppIcon icon={CheckCircle} size="md" color="success" className="mt-0.5" />
-              <p className="leading-relaxed">
-                <span className="font-semibold">Completed Accounts Preserved:</span> Faculty accounts that completed and validated all requirements will be placed under &ldquo;Completed / Validated&rdquo; and remain protected in completed status.
+            <div className="p-6 space-y-4">
+              <p className="text-xs leading-5 text-slate-600 dark:text-slate-300">
+                This will <span className="font-bold text-rose-700 dark:text-rose-400">immediately close</span> the active submission window and clear the schedule. Faculty will no longer be able to upload compliance documents.
               </p>
-            </div>
 
-            {/* Countdown indicator */}
-            {closeCountdown > 0 ? (
-              <div className="flex items-center gap-3 rounded-xl border border-rose-200 dark:border-rose-900/60 bg-rose-50/70 dark:bg-rose-950/30 px-4 py-3">
-                <div className="relative flex items-center justify-center h-10 w-10 shrink-0">
-                  <svg className="h-10 w-10 -rotate-90" viewBox="0 0 36 36">
-                    <circle cx="18" cy="18" r="15.5" fill="none" stroke="currentColor" strokeWidth="2" className="text-slate-300 dark:text-slate-800" />
-                    <circle
-                      cx="18" cy="18" r="15.5" fill="none" stroke="currentColor" strokeWidth="2.5"
-                      className="text-rose-600 dark:text-rose-500 transition-all duration-1000 ease-linear"
-                      strokeDasharray="97.39"
-                      strokeDashoffset={97.39 * (1 - closeCountdown / 3)}
-                      strokeLinecap="round"
-                    />
-                  </svg>
-                  <span className="absolute text-sm font-black text-rose-700 dark:text-rose-400">{closeCountdown}</span>
+              <div className="flex items-start gap-3 p-3.5 rounded-xl border border-[#08412a] bg-[#0b5336] text-white shadow-xs">
+                <div className="h-8 w-8 rounded-lg flex items-center justify-center shrink-0 bg-white/20 text-white border border-white/30 shadow-2xs">
+                  <AppIcon icon={CheckCircle} size="sm" color="white" />
                 </div>
-                <p className="text-[11px] text-rose-800 dark:text-rose-300">
-                  Please wait <span className="font-bold">{closeCountdown} second{closeCountdown !== 1 ? "s" : ""}</span> before confirming. This safety timer protects against accidental closures.
-                </p>
+                <div className="space-y-0.5 min-w-0">
+                  <p className="text-xs font-bold text-white">
+                    Completed Accounts Preserved
+                  </p>
+                  <p className="text-[11px] text-emerald-100 leading-relaxed">
+                    Faculty accounts that completed and validated all requirements will be placed under &ldquo;Completed / Validated&rdquo; and remain protected in completed status.
+                  </p>
+                </div>
               </div>
-            ) : (
-              <div className="flex items-center gap-2 rounded-xl border border-emerald-200 dark:border-emerald-800/60 bg-emerald-50 dark:bg-emerald-950/30 px-4 py-3">
-                <AppIcon icon={CheckCircle} size="lg" color="success" />
-                <p className="text-[11px] text-emerald-800 dark:text-emerald-300 font-semibold">
-                  Safety timer completed. You may now confirm the closure.
-                </p>
-              </div>
-            )}
 
-            <div className="flex justify-end gap-3 pt-2">
-              <button
-                type="button"
-                onClick={() => { setShowCloseConfirmation(false); setCloseCountdown(3); }}
-                className="bg-[#780000] hover:bg-[#5e0000] text-white border border-[#5e0000] text-xs font-semibold px-4 py-2 rounded-lg transition-all cursor-pointer shadow-xs"
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                onClick={() => void confirmCloseSubmission()}
-                disabled={closeCountdown > 0}
-                className={`text-xs font-semibold rounded-lg px-4 py-2 transition-all cursor-pointer shadow-xs ${
-                  closeCountdown > 0
-                    ? "bg-slate-200 dark:bg-slate-800 text-slate-400 border border-slate-300 dark:border-slate-700 cursor-not-allowed opacity-60"
-                    : "bg-[#780000] hover:bg-[#5e0000] text-white"
-                }`}
-              >
-                {closeCountdown > 0 ? `Confirm Close (${closeCountdown}s)` : "Confirm Close Submissions"}
-              </button>
+              {/* Countdown / Safety indicator Banner */}
+              {closeCountdown > 0 ? (
+                <div className="p-3.5 rounded-xl bg-amber-500 border border-amber-600 text-slate-950 flex items-center justify-between gap-3 shadow-xs">
+                  <div className="flex items-center gap-2.5 min-w-0 text-slate-950">
+                    <AppIcon icon={Hourglass} size="sm" color="inherit" className="text-slate-950 shrink-0" />
+                    <span className="text-xs font-bold text-slate-950">
+                      Please wait before confirming accidental closure:
+                    </span>
+                  </div>
+                  <span className="font-mono font-black text-xs px-2.5 py-1 rounded-lg bg-white text-amber-950 border border-amber-600/30 shrink-0 shadow-xs">
+                    {closeCountdown}s
+                  </span>
+                </div>
+              ) : (
+                <div className="p-3.5 rounded-xl bg-[#0b5336] border border-[#08412a] text-white flex items-center gap-2.5 shadow-xs">
+                  <AppIcon icon={CheckCircle} size="sm" color="white" className="text-white shrink-0" />
+                  <span className="text-xs font-bold text-white">
+                    Safety timer completed. You may now confirm the closure.
+                  </span>
+                </div>
+              )}
+
+              <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-slate-100 dark:border-slate-800/80">
+                <button
+                  type="button"
+                  onClick={() => { setShowCloseConfirmation(false); setCloseCountdown(3); }}
+                  className="px-4 py-2 rounded-xl text-xs font-semibold bg-[#780000] hover:bg-[#5e0000] text-white border border-[#5e0000] transition-all cursor-pointer shadow-xs"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={() => void confirmCloseSubmission()}
+                  disabled={closeCountdown > 0}
+                  className={`inline-flex items-center justify-center font-bold px-4 py-2 rounded-xl text-xs transition-all shadow-sm ${
+                    closeCountdown > 0
+                      ? "bg-slate-200 dark:bg-slate-800 text-slate-400 border border-slate-300 dark:border-slate-700 cursor-not-allowed"
+                      : "bg-[#780000] hover:bg-[#5e0000] text-white border border-[#5e0000] cursor-pointer active:scale-[0.98]"
+                  }`}
+                >
+                  {closeCountdown > 0 ? `Confirm Close (${closeCountdown}s)` : "Confirm Close Submissions"}
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -1568,50 +1570,51 @@ export function SubmissionWindowPanel({
 
 
       {warningModalData.isOpen ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-md p-4 animate-in fade-in">
-          <div className="bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 max-w-md w-full text-center shadow-2xl space-y-4 text-slate-900 dark:text-slate-100">
-            <div className="w-14 h-14 bg-amber-500/10 border border-amber-500/30 rounded-full flex items-center justify-center mx-auto text-amber-600 dark:text-amber-400">
-              <AppIcon icon={WarningTriangle} size="md" color="inherit" />
-            </div>
-            <h3 className="text-xl font-bold text-slate-900 dark:text-slate-100">
-              {warningModalData.title}
-            </h3>
-            <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
-              {warningModalData.description}
-            </p>
-            <div className="flex gap-3 pt-2">
-              <button
-                type="button"
-                onClick={() =>
-                  setWarningModalData({ ...warningModalData, isOpen: false })
-                }
-                className="flex-1 py-2.5 rounded-lg border border-[#5e0000] bg-[#780000] hover:bg-[#5e0000] text-white text-xs font-semibold transition-colors cursor-pointer shadow-xs"
-              >
-                Close
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setWarningModalData({ ...warningModalData, isOpen: false });
-                  if (onNavigateToRequirements) {
-                    onNavigateToRequirements();
-                    return;
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4 animate-in fade-in">
+          <div className="w-full max-w-lg bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl text-slate-900 dark:text-slate-100 overflow-hidden flex flex-col">
+            <ModalHeader
+              icon={WarningTriangle}
+              title={warningModalData.title || "Window Close Blocked"}
+              subtitle="Pending Requirements Must Be Reviewed"
+            />
+            <div className="p-6 space-y-4">
+              <p className="text-xs leading-relaxed text-slate-600 dark:text-slate-300">
+                {warningModalData.description}
+              </p>
+              <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-slate-100 dark:border-slate-800/80">
+                <button
+                  type="button"
+                  onClick={() =>
+                    setWarningModalData({ ...warningModalData, isOpen: false })
                   }
-                  const isSuper =
-                    isSuperAdmin ||
-                    (typeof window !== "undefined" &&
-                      (window.location.pathname.startsWith("/admin") ||
-                        window.location.pathname.startsWith("/super-admin")));
-                  if (isSuper) {
-                    window.location.href = "/admin/dashboard?tab=verification";
-                  } else {
-                    window.location.href = "/staff/dashboard?tab=requirements";
-                  }
-                }}
-                className="flex-1 py-2.5 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold text-xs shadow-xs active:scale-[0.98] transition-colors cursor-pointer"
-              >
-                Review Requirements
-              </button>
+                  className="px-4 py-2 rounded-xl text-xs font-semibold bg-[#780000] hover:bg-[#5e0000] text-white border border-[#5e0000] transition-all cursor-pointer shadow-xs"
+                >
+                  Close
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setWarningModalData({ ...warningModalData, isOpen: false });
+                    if (onNavigateToRequirements) {
+                      onNavigateToRequirements();
+                      return;
+                    }
+                    const isSuper =
+                      isSuperAdmin ||
+                      (typeof window !== "undefined" &&
+                        (window.location.pathname.startsWith("/admin") ||
+                          window.location.pathname.startsWith("/super-admin")));
+                    if (isSuper) {
+                      window.location.href = "/admin/dashboard?tab=verification";
+                    } else {
+                      window.location.href = "/staff/dashboard?tab=requirements";
+                    }
+                  }}
+                  className="inline-flex items-center justify-center font-bold px-4 py-2 rounded-xl text-xs bg-amber-500 hover:bg-amber-400 text-slate-950 border border-amber-600 transition-all cursor-pointer shadow-xs active:scale-[0.98]"
+                >
+                  Review Requirements
+                </button>
+              </div>
             </div>
           </div>
         </div>

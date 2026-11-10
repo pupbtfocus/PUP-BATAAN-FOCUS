@@ -476,20 +476,40 @@ export async function PATCH(request: NextRequest) {
     };
 
     if (markAll) {
-      // Mark all read for this user
+      // Mark all read for this user, including general submission alerts
+      // that are visible to every staff/admin (user_id may be null or another reviewer).
       await supabase
         .from("notifications")
         .update({ is_read: true })
-        .eq("user_id", user.id);
+        .or(
+          `user_id.eq.${user.id},type.in.(${SUBMISSION_ALERT_TYPES.map((t) => `"${t}"`).join(",")})`,
+        );
 
       return NextResponse.json({ success: true, message: "All notifications marked as read" });
     }
 
     if (notificationId) {
-      await supabase
+      // Mark the selected notification read. If it is a general submission alert,
+      // also mark every duplicate row so it does not reappear from another reviewer's copy.
+      const { data: target } = await supabase
         .from("notifications")
-        .update({ is_read: true })
-        .eq("id", notificationId);
+        .select("id,user_id,type,title,message")
+        .eq("id", notificationId)
+        .maybeSingle();
+
+      if (target && target.user_id !== user.id) {
+        await supabase
+          .from("notifications")
+          .update({ is_read: true })
+          .eq("type", target.type)
+          .eq("title", target.title ?? "")
+          .eq("message", target.message ?? "");
+      } else {
+        await supabase
+          .from("notifications")
+          .update({ is_read: true })
+          .eq("id", notificationId);
+      }
 
       return NextResponse.json({ success: true, message: "Notification marked as read" });
     }
