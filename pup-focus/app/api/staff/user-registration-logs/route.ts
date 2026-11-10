@@ -323,11 +323,17 @@ export async function GET(request: NextRequest) {
       }
 
       // Determine Status: Accepted vs Pending
-      // A user is only accepted if they confirmed email or actually signed in
+      // A user is accepted if they confirmed email, signed in, completed invite verification, or their profile is active
       const isAccepted = Boolean(
         u.email_confirmed_at ||
         u.confirmed_at ||
-        u.last_sign_in_at
+        u.last_sign_in_at ||
+        u.user_metadata?.invite_accepted ||
+        u.user_metadata?.invite_accepted_at ||
+        u.user_metadata?.temp_password ||
+        u.user_metadata?.temp_password_issued_at ||
+        profile?.status === "active" ||
+        profile?.status === "accepted"
       );
 
       const inviteStatus: "Accepted" | "Pending" = isAccepted ? "Accepted" : "Pending";
@@ -347,7 +353,15 @@ export async function GET(request: NextRequest) {
         profile?.created_at ||
         u.created_at;
 
-      const confirmedAt = u.email_confirmed_at || u.confirmed_at || null;
+      const confirmedAt =
+        u.email_confirmed_at ||
+        u.confirmed_at ||
+        u.user_metadata?.invite_accepted_at ||
+        (u.user_metadata?.temp_password_issued_at
+          ? new Date(Number(u.user_metadata.temp_password_issued_at)).toISOString()
+          : null) ||
+        (profile?.status === "active" && profile?.updated_at ? profile.updated_at : null) ||
+        null;
       const lastLoginAt = u.last_sign_in_at || null;
 
       // Program (if faculty)

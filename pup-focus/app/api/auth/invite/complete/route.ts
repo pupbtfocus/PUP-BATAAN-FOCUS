@@ -196,6 +196,8 @@ export async function POST(req: Request) {
         pending_email_change_verification: false,
         temp_password: isTempPasswordGenerated ? passwordToSet : null,
         temp_password_issued_at: isTempPasswordGenerated ? Date.now() : null,
+        invite_accepted: true,
+        invite_accepted_at: new Date().toISOString(),
       },
     };
 
@@ -222,7 +224,7 @@ export async function POST(req: Request) {
       );
     }
 
-    // 4. Ensure profiles table is updated/upserted with user's id, email, and full_name
+    // 4. Ensure profiles table is updated/upserted with user's id, email, full_name, and active status
     const { data: profile, error: profileError } = await supabaseAdmin
       .from("profiles")
       .upsert(
@@ -230,6 +232,7 @@ export async function POST(req: Request) {
           user_id: targetUserId,
           email: email,
           full_name: fullNameToSet,
+          status: "active",
           updated_at: new Date().toISOString(),
         },
         { onConflict: "user_id" }
@@ -277,6 +280,7 @@ export async function POST(req: Request) {
       } catch (emailErr) {
         tempPasswordError =
           emailErr instanceof Error ? emailErr.message : String(emailErr);
+        console.error("[TEMP PASSWORD SEND ERROR]", emailErr);
       }
     }
 

@@ -15,6 +15,7 @@ import {
   Trash,
   User,
   WarningTriangle,
+  Xmark,
 } from "iconoir-react";
 import { AppIcon } from "@/components/ui/app-icon";
 import { ModalHeader } from "@/components/ui/modal-header";
@@ -952,15 +953,15 @@ export function UserRegistrationLogsModal({
                               ) : null}
                             </td>
 
-                            {/* Actions - Solid Colors */}
+                            {/* Actions - Standardized Buttons */}
                             <td className="px-4 py-2.5 text-right whitespace-nowrap">
                               <div className="flex items-center justify-end gap-1.5">
-                                {/* View Details Button - Solid Maroon */}
+                                {/* View Details Button */}
                                 <button
                                   type="button"
                                   onClick={() => setSelectedLogForDetails(log)}
                                   title="View Details"
-                                  className="bg-[#780000] hover:bg-[#5e0000] text-white font-semibold border border-[#5e0000] text-xs rounded-md px-2.5 py-1 transition-colors cursor-pointer inline-flex items-center gap-1.5 shadow-2xs"
+                                  className="h-7 px-2.5 bg-[#780000] hover:bg-[#5e0000] text-white font-medium border border-[#5e0000] text-xs rounded-md transition-colors cursor-pointer inline-flex items-center gap-1 shadow-2xs"
                                 >
                                   <AppIcon
                                     icon={Eye}
@@ -972,18 +973,18 @@ export function UserRegistrationLogsModal({
 
                                 {!isAccepted ? (
                                   <>
-                                    {/* Edit Invite Button - Amber */}
+                                    {/* Edit Invite Button */}
                                     <button
                                       type="button"
                                       onClick={() => openEditModal(log)}
                                       title="Edit Details"
-                                      className="bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold border border-amber-600/30 text-xs rounded-md px-2.5 py-1 transition-colors cursor-pointer inline-flex items-center gap-1.5 shadow-2xs"
+                                      className="h-7 px-2.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-medium border border-amber-600/30 text-xs rounded-md transition-colors cursor-pointer inline-flex items-center gap-1 shadow-2xs"
                                     >
                                       <AppIcon icon={EditPencil} size="sm" color="inherit" className="text-slate-950" />
                                       <span>Edit</span>
                                     </button>
 
-                                    {/* Cancel Invite Button - Solid Maroon */}
+                                    {/* Cancel Invite Button */}
                                     <button
                                       type="button"
                                       onClick={() => {
@@ -991,19 +992,19 @@ export function UserRegistrationLogsModal({
                                         setPendingCancelLog(log);
                                       }}
                                       title="Cancel Invitation"
-                                      className="bg-[#780000] hover:bg-[#5e0000] text-white font-semibold border border-[#5e0000] text-xs rounded-md px-2.5 py-1 transition-colors cursor-pointer inline-flex items-center gap-1.5 shadow-2xs"
+                                      className="h-7 px-2.5 bg-[#780000] hover:bg-[#5e0000] text-white font-medium border border-[#5e0000] text-xs rounded-md transition-colors cursor-pointer inline-flex items-center gap-1 shadow-2xs"
                                     >
                                       <AppIcon icon={Trash} size="sm" color="white" />
-                                      <span>Cancel Invite</span>
+                                      <span>Cancel</span>
                                     </button>
 
-                                    {/* Resend Invite Button - Solid Gold */}
+                                    {/* Resend Invite Button */}
                                     <button
                                       type="button"
                                       onClick={() => openResendModal(log)}
                                       disabled={isResending}
                                       title="Resend invitation email"
-                                      className="bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold border border-amber-600 text-xs rounded-md px-2.5 py-1 transition-colors cursor-pointer inline-flex items-center gap-1.5 shadow-2xs disabled:opacity-50"
+                                      className="h-7 px-2.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold border border-amber-600 text-xs rounded-md transition-colors cursor-pointer inline-flex items-center gap-1 shadow-2xs disabled:opacity-50"
                                     >
                                       <AppIcon
                                         icon={SendMail}
@@ -1109,17 +1110,31 @@ export function UserRegistrationLogsModal({
           role="dialog"
           aria-modal="true"
         >
-          <div className="w-full max-w-lg rounded-2xl border-2 border-amber-400 dark:border-amber-500/70 bg-white dark:bg-slate-900 p-4 sm:p-6 shadow-2xl text-slate-900 dark:text-slate-100 max-h-[90vh] overflow-y-auto">
-            <ModalHeader
-              icon={User}
-              title="Invitation Details"
-              subtitle="Comprehensive registration and account invite status"
-              className="-mx-4 -mt-4 sm:-mx-6 sm:-mt-6 mb-4 sm:mb-5 rounded-t-2xl"
-            />
+          <div className="w-full max-w-lg rounded-2xl border-2 border-amber-400 dark:border-amber-500/70 bg-white dark:bg-slate-900 shadow-2xl text-slate-900 dark:text-slate-100 max-h-[90vh] overflow-y-auto">
+            {/* Solid Maroon Banner Header */}
+            <div className="-mx-0 px-5 py-4 rounded-t-2xl bg-[#780000] text-white border-b border-[#5e0000] flex items-center justify-between shadow-xs">
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="p-2 rounded-xl bg-white/10 text-white border border-white/20 shadow-2xs shrink-0 flex items-center justify-center">
+                  <AppIcon icon={User} size="lg" color="white" />
+                </div>
+                <div className="min-w-0">
+                  <h3 className="text-base font-bold text-white truncate">Invitation Details</h3>
+                  <p className="text-xs text-white/80 truncate mt-0.5">Comprehensive registration and account invite status</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setSelectedLogForDetails(null)}
+                className="p-1.5 rounded-lg bg-black/20 hover:bg-black/30 border border-white/20 text-white transition-colors cursor-pointer"
+                aria-label="Close modal"
+              >
+                <AppIcon icon={Xmark} size="md" color="white" />
+              </button>
+            </div>
 
-            <div className="space-y-4">
+            <div className="p-4 sm:p-6 space-y-4">
               {/* Recipient Profile Card */}
-              <div className="flex items-center gap-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/40 p-3.5 sm:p-4">
+              <div className="flex items-center gap-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/40 p-3.5 sm:p-4 shadow-2xs">
                 <UserLogAvatar
                   avatarUrl={selectedLogForDetails.avatarUrl}
                   name={selectedLogForDetails.fullName}
@@ -1226,7 +1241,7 @@ export function UserRegistrationLogsModal({
                 </div>
               ) : null}
 
-              {/* Modal Actions - Solid Colors */}
+              {/* Modal Actions - Uniform Sizing */}
               <div className="flex flex-col-reverse sm:flex-row sm:items-center justify-between gap-2.5 pt-3 border-t border-slate-200 dark:border-slate-800">
                 <div>
                   {selectedLogForDetails.status === "Pending" || !selectedLogForDetails.lastLoginAt ? (
@@ -1237,7 +1252,7 @@ export function UserRegistrationLogsModal({
                         setCancelError(null);
                         setPendingCancelLog(target);
                       }}
-                      className="w-full sm:w-auto bg-[#780000] hover:bg-[#5e0000] text-white font-semibold border border-[#5e0000] text-xs rounded-xl px-3.5 py-2 transition-colors cursor-pointer inline-flex items-center justify-center gap-1.5 shadow-2xs"
+                      className="w-full sm:w-auto h-9 px-3.5 bg-[#780000] hover:bg-[#5e0000] text-white font-medium border border-[#5e0000] text-xs rounded-lg transition-colors cursor-pointer inline-flex items-center justify-center gap-1.5 shadow-2xs"
                     >
                       <AppIcon icon={Trash} size="sm" color="white" />
                       <span>Cancel Invite</span>
@@ -1254,7 +1269,7 @@ export function UserRegistrationLogsModal({
                         setSelectedLogForDetails(null);
                         openEditModal(target);
                       }}
-                      className="flex-1 sm:flex-initial bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold border border-amber-600/30 text-xs rounded-xl px-3.5 py-2 transition-colors cursor-pointer inline-flex items-center justify-center gap-1.5 shadow-2xs"
+                      className="flex-1 sm:flex-initial h-9 px-3.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold border border-amber-600/30 text-xs rounded-lg transition-colors cursor-pointer inline-flex items-center justify-center gap-1.5 shadow-2xs"
                     >
                       <AppIcon icon={EditPencil} size="sm" color="inherit" className="text-slate-950" />
                       <span>Edit Details</span>
@@ -1265,7 +1280,7 @@ export function UserRegistrationLogsModal({
                       type="button"
                       onClick={() => openResendModal(selectedLogForDetails)}
                       disabled={resendingEmail === selectedLogForDetails.email}
-                      className="flex-1 sm:flex-initial bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold border border-amber-600 text-xs rounded-xl px-3.5 py-2 transition-colors cursor-pointer inline-flex items-center justify-center gap-1.5 shadow-2xs disabled:opacity-50"
+                      className="flex-1 sm:flex-initial h-9 px-3.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold border border-amber-600 text-xs rounded-lg transition-colors cursor-pointer inline-flex items-center justify-center gap-1.5 shadow-2xs disabled:opacity-50"
                     >
                       <AppIcon icon={SendMail} size="sm" color="inherit" className="text-slate-950" />
                       <span>
@@ -1278,7 +1293,7 @@ export function UserRegistrationLogsModal({
                   <button
                     type="button"
                     onClick={() => setSelectedLogForDetails(null)}
-                    className="flex-1 sm:flex-initial rounded-xl border border-[#5e0000] bg-[#780000] hover:bg-[#5e0000] px-4 py-2 text-xs font-semibold text-white transition cursor-pointer text-center shadow-xs"
+                    className="flex-1 sm:flex-initial h-9 px-4 rounded-lg border border-[#5e0000] bg-[#780000] hover:bg-[#5e0000] text-xs font-semibold text-white transition cursor-pointer text-center shadow-xs inline-flex items-center justify-center"
                   >
                     Close
                   </button>

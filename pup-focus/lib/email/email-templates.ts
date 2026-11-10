@@ -13,13 +13,14 @@ export function getAppBaseUrl() {
   const configuredBase = [
     process.env.APP_URL,
     process.env.NEXT_PUBLIC_APP_URL,
+    process.env.NEXT_PUBLIC_SITE_URL,
     process.env.SITE_URL,
     process.env.URL,
   ]
     .find(Boolean)
     ?.trim();
 
-  return (configuredBase || "https://pupfocus.cjaayy.dev").replace(/\/$/, "");
+  return (configuredBase || "https://pupfocus.cjaayy.tech").replace(/\/$/, "");
 }
 
 export function buildAppUrl(path: string) {
@@ -199,8 +200,8 @@ export function buildTempPasswordEmailHtml({
                       </div>
                     </td>
                     <td style="width:105px;text-align:right;vertical-align:middle;padding-left:10px;">
-                      <a href="${emailCopyHref}" target="_blank" id="copy-email-btn" onclick="if(navigator.clipboard){navigator.clipboard.writeText('${safeEmail}');var b=this;b.innerHTML='Copied!';setTimeout(function(){b.innerHTML='Copy Email'},2000);return false;}" style="display:inline-block;padding:6px 12px;background:#ffffff;border:1px solid #cbd5e1;border-radius:6px;font-size:12px;font-weight:600;color:#334155;cursor:pointer;white-space:nowrap;text-decoration:none;">
-                        Copy Email
+                      <a href="${emailCopyHref}" target="_blank" id="copy-email-btn" style="display:inline-block;padding:6px 12px;background:#ffffff;border:1px solid #cbd5e1;border-radius:6px;font-size:12px;font-weight:600;color:#334155;white-space:nowrap;text-decoration:none;">
+                        Open & Sign In
                       </a>
                     </td>
                   </tr>
@@ -224,8 +225,8 @@ export function buildTempPasswordEmailHtml({
                       </div>
                     </td>
                     <td style="width:125px;text-align:right;vertical-align:middle;padding-left:10px;">
-                      <a href="${passCopyHref}" target="_blank" id="copy-pass-btn" onclick="if(navigator.clipboard){navigator.clipboard.writeText('${safeTempPassword}');var b=this;b.innerHTML='Copied!';setTimeout(function(){b.innerHTML='Copy Password'},2000);return false;}" style="display:inline-block;padding:6px 12px;background:#ffffff;border:1px solid #cbd5e1;border-radius:6px;font-size:12px;font-weight:600;color:#334155;cursor:pointer;white-space:nowrap;text-decoration:none;">
-                        Copy Password
+                      <a href="${passCopyHref}" target="_blank" id="copy-pass-btn" style="display:inline-block;padding:6px 12px;background:#ffffff;border:1px solid #cbd5e1;border-radius:6px;font-size:12px;font-weight:600;color:#334155;white-space:nowrap;text-decoration:none;">
+                        Autofill Login
                       </a>
                     </td>
                   </tr>
@@ -491,8 +492,8 @@ export function buildEmailChangeTempPasswordHtml({
                       </div>
                     </td>
                     <td style="width:105px;text-align:right;vertical-align:middle;padding-left:10px;">
-                      <a href="${emailCopyHref}" target="_blank" id="copy-update-email-btn" onclick="if(navigator.clipboard){navigator.clipboard.writeText('${safeEmail}');var b=this;b.innerHTML='Copied!';setTimeout(function(){b.innerHTML='Copy Email'},2000);return false;}" style="display:inline-block;padding:6px 12px;background:#ffffff;border:1px solid #cbd5e1;border-radius:6px;font-size:12px;font-weight:600;color:#334155;cursor:pointer;white-space:nowrap;text-decoration:none;">
-                        Copy Email
+                      <a href="${emailCopyHref}" target="_blank" id="copy-update-email-btn" style="display:inline-block;padding:6px 12px;background:#ffffff;border:1px solid #cbd5e1;border-radius:6px;font-size:12px;font-weight:600;color:#334155;white-space:nowrap;text-decoration:none;">
+                        Open & Sign In
                       </a>
                     </td>
                   </tr>
@@ -516,8 +517,8 @@ export function buildEmailChangeTempPasswordHtml({
                       </div>
                     </td>
                     <td style="width:125px;text-align:right;vertical-align:middle;padding-left:10px;">
-                      <a href="${passCopyHref}" target="_blank" id="copy-update-pass-btn" onclick="if(navigator.clipboard){navigator.clipboard.writeText('${safeTempPassword}');var b=this;b.innerHTML='Copied!';setTimeout(function(){b.innerHTML='Copy Password'},2000);return false;}" style="display:inline-block;padding:6px 12px;background:#ffffff;border:1px solid #cbd5e1;border-radius:6px;font-size:12px;font-weight:600;color:#334155;cursor:pointer;white-space:nowrap;text-decoration:none;">
-                        Copy Password
+                      <a href="${passCopyHref}" target="_blank" id="copy-update-pass-btn" style="display:inline-block;padding:6px 12px;background:#ffffff;border:1px solid #cbd5e1;border-radius:6px;font-size:12px;font-weight:600;color:#334155;white-space:nowrap;text-decoration:none;">
+                        Autofill Login
                       </a>
                     </td>
                   </tr>
