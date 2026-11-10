@@ -69,6 +69,27 @@ const DEFAULT_SEEDS: Array<Omit<RequirementTemplate, "id" | "created_at" | "upda
   },
 ];
 
+const CANONICAL_ORDER: Record<string, number> = {
+  [REQUIREMENT_CODE.GRADE_SHEET]: 1,
+  [REQUIREMENT_CODE.ENHANCED_SYLLABUS]: 2,
+  [REQUIREMENT_CODE.CLASS_ORIENTATION]: 3,
+  [REQUIREMENT_CODE.MIDTERM_PACKAGE]: 4,
+  [REQUIREMENT_CODE.FINAL_PACKAGE]: 5,
+  [REQUIREMENT_CODE.CLASS_RECORDS]: 6,
+};
+
+function sortTemplatesStably(templates: RequirementTemplate[]): RequirementTemplate[] {
+  return [...templates].sort((a, b) => {
+    const orderA = CANONICAL_ORDER[a.code] ?? 1000;
+    const orderB = CANONICAL_ORDER[b.code] ?? 1000;
+    if (orderA !== orderB) return orderA - orderB;
+    const timeA = new Date(a.created_at || 0).getTime();
+    const timeB = new Date(b.created_at || 0).getTime();
+    if (timeA !== timeB) return timeA - timeB;
+    return (a.id || "").localeCompare(b.id || "");
+  });
+}
+
 function deduplicateRequirementTemplates(templates: RequirementTemplate[]): {
   unique: RequirementTemplate[];
   duplicateIds: string[];
@@ -125,8 +146,8 @@ export async function GET(request: NextRequest) {
     const { data: rows, error } = await supabase
       .from("requirement_templates")
       .select("*")
-      .order("is_mandatory", { ascending: false })
-      .order("created_at", { ascending: true });
+      .order("created_at", { ascending: true })
+      .order("id", { ascending: true });
 
     if (error) {
       console.warn("requirement_templates table lookup fallback:", error.message);
@@ -178,7 +199,8 @@ export async function GET(request: NextRequest) {
         });
     }
 
-    const filtered = onlyActive ? deduplicatedRows.filter((r) => r.is_active) : deduplicatedRows;
+    const sortedRows = sortTemplatesStably(deduplicatedRows);
+    const filtered = onlyActive ? sortedRows.filter((r) => r.is_active) : sortedRows;
     return NextResponse.json({ templates: filtered });
   } catch (error) {
     console.error("GET requirement-templates error:", error);
@@ -268,8 +290,8 @@ export async function POST(request: NextRequest) {
       const { data: allTemplates } = await supabase
         .from("requirement_templates")
         .select("*")
-        .order("is_mandatory", { ascending: false })
-        .order("created_at", { ascending: true });
+        .order("created_at", { ascending: true })
+        .order("id", { ascending: true });
 
       const { unique: deduplicatedAll, duplicateIds: postDupIds } = deduplicateRequirementTemplates(allTemplates || []);
       if (postDupIds.length > 0) {
@@ -278,6 +300,8 @@ export async function POST(request: NextRequest) {
           .delete()
           .in("id", postDupIds);
       }
+
+      const sortedAll = sortTemplatesStably(deduplicatedAll);
 
       const totalUpdated = syncedCount + insertedCount;
       const message =
@@ -291,7 +315,7 @@ export async function POST(request: NextRequest) {
         insertedCount,
         restoredCount: totalUpdated,
         message,
-        templates: deduplicatedAll,
+        templates: sortedAll,
       });
     }
 

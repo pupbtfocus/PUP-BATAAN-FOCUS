@@ -26,6 +26,27 @@ interface RequirementTemplatesPanelProps {
   refreshTrigger?: number;
 }
 
+const CANONICAL_ORDER: Record<string, number> = {
+  grade_sheet: 1,
+  enhanced_syllabus: 2,
+  class_orientation: 3,
+  midterm_package: 4,
+  final_package: 5,
+  class_records: 6,
+};
+
+function sortTemplatesStably(templates: RequirementTemplate[]): RequirementTemplate[] {
+  return [...templates].sort((a, b) => {
+    const orderA = CANONICAL_ORDER[a.code] ?? 1000;
+    const orderB = CANONICAL_ORDER[b.code] ?? 1000;
+    if (orderA !== orderB) return orderA - orderB;
+    const timeA = new Date(a.created_at || 0).getTime();
+    const timeB = new Date(b.created_at || 0).getTime();
+    if (timeA !== timeB) return timeA - timeB;
+    return (a.id || "").localeCompare(b.id || "");
+  });
+}
+
 let cachedRequirementTemplates: RequirementTemplate[] | null = null;
 
 export function RequirementTemplatesPanel({
@@ -95,11 +116,12 @@ export function RequirementTemplatesPanel({
         deduplicated.push(t);
       }
 
-      setTemplates(deduplicated);
-      cachedRequirementTemplates = deduplicated;
+      const sorted = sortTemplatesStably(deduplicated);
+      setTemplates(sorted);
+      cachedRequirementTemplates = sorted;
       if (typeof window !== "undefined") {
         try {
-          sessionStorage.setItem("pup_focus_req_templates", JSON.stringify(deduplicated));
+          sessionStorage.setItem("pup_focus_req_templates", JSON.stringify(sorted));
         } catch {}
       }
       hasLoadedRef.current = true;
