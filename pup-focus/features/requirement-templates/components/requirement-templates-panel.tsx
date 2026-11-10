@@ -85,6 +85,7 @@ export function RequirementTemplatesPanel({
   const [templateToDelete, setTemplateToDelete] = useState<RequirementTemplate | null>(null);
   const [hideTarget, setHideTarget] = useState<RequirementTemplate | null>(null);
   const [countdown, setCountdown] = useState<number>(10);
+  const [deleteConfirmationText, setDeleteConfirmationText] = useState("");
   const [isDeleting, setIsDeleting] = useState(false);
   const [isTogglingStatus, setIsTogglingStatus] = useState<string | null>(null);
 
@@ -147,10 +148,12 @@ export function RequirementTemplatesPanel({
   useEffect(() => {
     if (!templateToDelete) {
       setCountdown(10);
+      setDeleteConfirmationText("");
       return;
     }
 
     setCountdown(10);
+    setDeleteConfirmationText("");
     const timer = setInterval(() => {
       setCountdown((prev) => (prev > 0 ? prev - 1 : 0));
     }, 1000);
@@ -240,7 +243,12 @@ export function RequirementTemplatesPanel({
   };
 
   const handleDeleteConfirm = async () => {
-    if (!templateToDelete || countdown > 0) return;
+    if (
+      !templateToDelete ||
+      countdown > 0 ||
+      deleteConfirmationText.trim().toLowerCase() !== "delete"
+    )
+      return;
 
     try {
       setIsDeleting(true);
@@ -662,6 +670,23 @@ export function RequirementTemplatesPanel({
                 </p>
               </div>
 
+              <div className="space-y-1.5 pt-1">
+                <label
+                  htmlFor="deleteRequirementConfirmInput"
+                  className="block text-xs font-semibold text-slate-700 dark:text-slate-300"
+                >
+                  Type <span className="font-bold text-red-600 dark:text-red-400 font-mono select-all">delete</span> to confirm:
+                </label>
+                <input
+                  id="deleteRequirementConfirmInput"
+                  type="text"
+                  value={deleteConfirmationText}
+                  onChange={(e) => setDeleteConfirmationText(e.target.value)}
+                  placeholder="Type delete to confirm"
+                  className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-3.5 py-2 text-xs text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:border-red-500 focus:outline-none focus:ring-2 focus:ring-red-500/20"
+                />
+              </div>
+
               {countdown > 0 ? (
                 <p className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">
                   Safety lock active. The confirmation button will be available in{" "}
@@ -684,7 +709,11 @@ export function RequirementTemplatesPanel({
               </button>
               <button
                 type="button"
-                disabled={isDeleting || countdown > 0}
+                disabled={
+                  isDeleting ||
+                  countdown > 0 ||
+                  deleteConfirmationText.trim().toLowerCase() !== "delete"
+                }
                 onClick={() => void handleDeleteConfirm()}
                 className="bg-[#780000] hover:bg-[#5e0000] text-white border border-[#5e0000] text-xs font-semibold px-4 py-2 rounded-xl transition disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer shadow-xs"
               >
