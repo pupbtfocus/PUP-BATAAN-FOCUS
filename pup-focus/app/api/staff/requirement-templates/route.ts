@@ -143,9 +143,10 @@ export async function GET(request: NextRequest) {
     // If table is empty, auto-seed defaults
     if (!rows || rows.length === 0) {
       try {
+        const sanitizedSeeds = DEFAULT_SEEDS.map(({ description: _d, ...s }) => s);
         const { data: seeded, error: seedError } = await supabase
           .from("requirement_templates")
-          .insert(DEFAULT_SEEDS)
+          .insert(sanitizedSeeds)
           .select();
 
         if (!seedError && seeded && seeded.length > 0) {
@@ -236,7 +237,6 @@ export async function POST(request: NextRequest) {
             .from("requirement_templates")
             .update({
               title: seed.title,
-              description: seed.description,
               allowed_formats: seed.allowed_formats,
               max_size_mb: seed.max_size_mb,
               is_mandatory: seed.is_mandatory,
@@ -249,10 +249,11 @@ export async function POST(request: NextRequest) {
           }
         } else {
           // Insert missing standard template
+          const { description: _desc, ...seedPayload } = seed;
           const { error: insertErr } = await supabase
             .from("requirement_templates")
             .insert({
-              ...seed,
+              ...seedPayload,
               created_at: new Date().toISOString(),
               updated_at: new Date().toISOString(),
             });
@@ -316,7 +317,7 @@ export async function POST(request: NextRequest) {
     const { data: existingCode } = await supabase
       .from("requirement_templates")
       .select("id")
-      .ilike("code", code)
+      .eq("code", code)
       .maybeSingle();
 
     const { data: existingTitle } = await supabase
@@ -325,11 +326,16 @@ export async function POST(request: NextRequest) {
       .ilike("title", title)
       .maybeSingle();
 
-    if (existingCode || existingTitle) {
+    if (existingTitle) {
       return NextResponse.json(
-        { error: "A requirement template with this document title or code already exists." },
+        { error: "A requirement template with this document title already exists." },
         { status: 409 }
       );
+    }
+
+    // If code already taken, ensure uniqueness by appending a unique timestamp suffix
+    if (existingCode) {
+      code = `${code.slice(0, 40)}_${Date.now().toString().slice(-6)}`;
     }
 
     const { data: created, error: insertError } = await supabase
@@ -337,7 +343,6 @@ export async function POST(request: NextRequest) {
       .insert({
         title,
         code,
-        description: description || null,
         allowed_formats,
         max_size_mb,
         is_mandatory,
@@ -347,6 +352,7 @@ export async function POST(request: NextRequest) {
       .single();
 
     if (insertError) {
+      console.error("[requirement-templates POST error]:", insertError);
       return NextResponse.json({ error: insertError.message }, { status: 400 });
     }
 
@@ -396,9 +402,6 @@ export async function PUT(request: NextRequest) {
 
     if (typeof body.title === "string" && body.title.trim()) {
       updatePayload.title = body.title.trim();
-    }
-    if (typeof body.description !== "undefined") {
-      updatePayload.description = body.description ? body.description.trim() : null;
     }
     if (Array.isArray(body.allowed_formats) && body.allowed_formats.length > 0) {
       updatePayload.allowed_formats = body.allowed_formats;

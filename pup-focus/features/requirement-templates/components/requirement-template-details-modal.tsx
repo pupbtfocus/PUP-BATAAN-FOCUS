@@ -1,19 +1,14 @@
 "use client";
 
 import React from "react";
-import {
-  Database,
-  EditPencil,
-  Eye,
-  EyeClosed,
-  Page,
-} from "iconoir-react";
+import { EditPencil, Eye, EyeClosed, Page } from "iconoir-react";
 import { AppIcon } from "@/components/ui/app-icon";
 import { ModalHeader } from "@/components/ui/modal-header";
 import {
   ALLOWED_FORMAT_OPTIONS,
   type RequirementTemplate,
 } from "@/features/requirement-templates/types/requirement-template.types";
+import { FormatIcon } from "./format-icon";
 
 interface RequirementTemplateDetailsModalProps {
   isOpen: boolean;
@@ -22,20 +17,6 @@ interface RequirementTemplateDetailsModalProps {
   onEdit?: (template: RequirementTemplate) => void;
   onToggleHide?: (template: RequirementTemplate) => Promise<void> | void;
   isTogglingStatus?: boolean;
-}
-
-function formatDate(isoString?: string | null): string {
-  if (!isoString) return "Not recorded";
-  const d = new Date(isoString);
-  if (Number.isNaN(d.getTime())) return "Invalid date";
-  return d.toLocaleDateString("en-PH", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-    hour: "numeric",
-    minute: "2-digit",
-    hour12: true,
-  });
 }
 
 export function RequirementTemplateDetailsModal({
@@ -72,39 +53,12 @@ export function RequirementTemplateDetailsModal({
             </div>
 
             <div className="flex-1 min-w-0">
-              <div className="flex flex-wrap items-center gap-2 mb-1">
-                <h3
-                  id="requirement-details-title"
-                  className="text-base sm:text-lg font-bold text-slate-900 dark:text-slate-100"
-                >
-                  {template.title}
-                </h3>
-              </div>
-
-              {/* Status and Configuration Badges */}
-              <div className="flex flex-wrap items-center gap-2">
-                {template.is_active ? (
-                  <span className="bg-[#0b5336] text-white border border-[#08412a] px-2.5 py-0.5 text-xs font-semibold rounded-md inline-flex items-center gap-1.5 shadow-2xs">
-                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-300" />
-                    Active & Visible
-                  </span>
-                ) : (
-                  <span className="bg-[#780000] text-white border border-[#5e0000] px-2.5 py-0.5 text-xs font-semibold rounded-md inline-flex items-center gap-1.5 shadow-2xs">
-                    <span className="w-1.5 h-1.5 rounded-full bg-rose-300" />
-                    Hidden from Faculty
-                  </span>
-                )}
-
-                {template.is_mandatory ? (
-                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-bold bg-amber-500 text-slate-950 border border-amber-600 shadow-2xs">
-                    Mandatory Submission
-                  </span>
-                ) : (
-                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-semibold bg-slate-600 text-white border border-slate-700 shadow-2xs">
-                    Optional Submission
-                  </span>
-                )}
-              </div>
+              <h3
+                id="requirement-details-title"
+                className="text-base sm:text-lg font-bold text-slate-900 dark:text-slate-100"
+              >
+                {template.title}
+              </h3>
             </div>
           </div>
 
@@ -117,19 +71,24 @@ export function RequirementTemplateDetailsModal({
                   Allowed File Formats
                 </span>
                 <span className="text-[11px] text-slate-500 dark:text-slate-400">
-                  {template.allowed_formats.length} format{template.allowed_formats.length === 1 ? "" : "s"}
+                  {template.allowed_formats.length} format
+                  {template.allowed_formats.length === 1 ? "" : "s"}
                 </span>
               </div>
-              <div className="pt-1">
-                <span
-                  className="inline-flex items-center px-2.5 py-1 text-xs font-semibold rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 border border-slate-300 dark:border-slate-700"
-                  title={template.allowed_formats.map((f) => ALLOWED_FORMAT_OPTIONS.find((o) => o.value === f)?.label || f).join(", ")}
-                >
-                  {template.allowed_formats.join(", ")}
-                </span>
+              <div className="flex flex-wrap gap-2 pt-1">
+                {template.allowed_formats.map((fmt) => (
+                  <span
+                    key={fmt}
+                    className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold rounded-lg bg-transparent text-slate-800 dark:text-slate-200 border-2 border-slate-300 dark:border-slate-700 shadow-2xs"
+                  >
+                    <FormatIcon format={fmt} className="h-4 w-4 shrink-0" />
+                    <span>{fmt}</span>
+                  </span>
+                ))}
               </div>
               <p className="text-[11px] text-slate-500 dark:text-slate-400">
-                Submissions in other file formats will be automatically blocked by the validator.
+                Submissions in other file formats will be automatically blocked
+                by the validator.
               </p>
             </div>
 
@@ -139,43 +98,66 @@ export function RequirementTemplateDetailsModal({
                 <span className="text-xs font-bold text-slate-700 dark:text-slate-300">
                   Maximum File Size Limit
                 </span>
-                <span className="px-2 py-0.5 text-xs font-bold rounded-md bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-500/20">
-                  {template.max_size_mb} MB
-                </span>
               </div>
               <div className="pt-1">
                 <p className="text-lg font-extrabold text-slate-900 dark:text-slate-100">
-                  {template.max_size_mb} Megabytes
+                  {template.max_size_mb} MB
                 </p>
                 <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1">
                   Upload payload ceiling enforced per file submission.
                 </p>
               </div>
             </div>
-          </div>
 
-          {/* System & Audit Information */}
-          <div className="space-y-2">
-            <h4 className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
-              <AppIcon icon={Database} size="sm" color="default" />
-              System & Audit Metadata
-            </h4>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-4 rounded-xl border border-slate-200/90 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-800/30 text-xs">
-              <div>
-                <span className="text-slate-500 dark:text-slate-400 block text-[11px]">System Code</span>
-                <span className="font-mono font-medium text-slate-800 dark:text-slate-200">{template.code}</span>
+            {/* Compliance Requirement */}
+            <div className="rounded-xl border border-slate-200/90 dark:border-slate-800 bg-white dark:bg-slate-800/20 p-4 space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-slate-700 dark:text-slate-300">
+                  Compliance Requirement
+                </span>
               </div>
-              <div>
-                <span className="text-slate-500 dark:text-slate-400 block text-[11px]">Template Record ID</span>
-                <span className="font-mono text-[11px] text-slate-600 dark:text-slate-400 break-all">{template.id}</span>
+              <div className="pt-1">
+                {template.is_mandatory ? (
+                  <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-bold bg-amber-500 text-slate-900 border border-amber-600 shadow-2xs">
+                    Mandatory Submission
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-semibold bg-slate-600 text-white border border-slate-700 shadow-2xs">
+                    Optional Submission
+                  </span>
+                )}
+                <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1.5">
+                  {template.is_mandatory
+                    ? "Faculty members are required to submit this document."
+                    : "This document submission is optional for faculty."}
+                </p>
               </div>
-              <div>
-                <span className="text-slate-500 dark:text-slate-400 block text-[11px]">Date Created</span>
-                <span className="font-medium text-slate-800 dark:text-slate-200">{formatDate(template.created_at)}</span>
+            </div>
+
+            {/* Faculty Visibility Status */}
+            <div className="rounded-xl border border-slate-200/90 dark:border-slate-800 bg-white dark:bg-slate-800/20 p-4 space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-slate-700 dark:text-slate-300">
+                  Faculty Visibility Status
+                </span>
               </div>
-              <div>
-                <span className="text-slate-500 dark:text-slate-400 block text-[11px]">Last Updated</span>
-                <span className="font-medium text-slate-800 dark:text-slate-200">{formatDate(template.updated_at)}</span>
+              <div className="pt-1">
+                {template.is_active ? (
+                  <span className="bg-[#0b5336] text-white border border-[#08412a] px-2.5 py-1 text-xs font-semibold rounded-md inline-flex items-center gap-1.5 shadow-2xs">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-300" />
+                    Active & Visible
+                  </span>
+                ) : (
+                  <span className="bg-[#780000] text-white border border-[#5e0000] px-2.5 py-1 text-xs font-semibold rounded-md inline-flex items-center gap-1.5 shadow-2xs">
+                    <span className="w-1.5 h-1.5 rounded-full bg-rose-300" />
+                    Hidden from Faculty
+                  </span>
+                )}
+                <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1.5">
+                  {template.is_active
+                    ? "Template is currently published and visible to faculty."
+                    : "Template is archived and hidden from faculty view."}
+                </p>
               </div>
             </div>
           </div>
@@ -190,7 +172,11 @@ export function RequirementTemplateDetailsModal({
                 type="button"
                 disabled={isTogglingStatus}
                 onClick={() => void onToggleHide(template)}
-                className="bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-200 dark:border-slate-700 text-xs font-semibold rounded-lg px-3 py-2 transition-colors cursor-pointer inline-flex items-center gap-1.5 shadow-2xs"
+                className={`text-xs font-semibold rounded-lg px-3 py-2 transition-colors cursor-pointer inline-flex items-center gap-1.5 shadow-2xs ${
+                  template.is_active
+                    ? "bg-[#780000] hover:bg-[#5e0000] text-white border border-[#5e0000]"
+                    : "bg-[#0b5336] hover:bg-[#08412a] text-white border border-[#08412a]"
+                }`}
               >
                 {template.is_active ? (
                   <>
@@ -216,7 +202,7 @@ export function RequirementTemplateDetailsModal({
                   onClose();
                   onEdit(template);
                 }}
-                className="bg-amber-500 hover:bg-amber-600 text-white dark:bg-amber-600 dark:hover:bg-amber-700 text-xs font-semibold rounded-lg px-3.5 py-2 transition-colors cursor-pointer inline-flex items-center gap-1.5 shadow-2xs"
+                className="bg-amber-500 hover:bg-amber-400 text-slate-900 border border-amber-600 text-xs font-semibold rounded-lg px-3.5 py-2 transition-colors cursor-pointer inline-flex items-center gap-1.5 shadow-2xs"
               >
                 <EditPencil className="h-4 w-4" strokeWidth={2} />
                 <span>Edit Template</span>

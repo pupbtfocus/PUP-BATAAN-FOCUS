@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { Check, Page } from "iconoir-react";
 import { ModalHeader } from "@/components/ui/modal-header";
 import { AlertPopup } from "@/components/ui/alert-popup";
+import { FormatIcon } from "./format-icon";
 import {
   ALLOWED_FORMAT_OPTIONS,
   MAX_SIZE_OPTIONS,
@@ -90,7 +91,6 @@ export function RequirementTemplateModal({
           body: JSON.stringify({
             id: templateToEdit.id,
             title: cleanTitle,
-            description: templateToEdit.description || null,
             allowed_formats: allowedFormats,
             max_size_mb: maxSizeMb,
             is_mandatory: isMandatory,
@@ -117,7 +117,6 @@ export function RequirementTemplateModal({
           body: JSON.stringify({
             title: cleanTitle,
             code: generatedCode,
-            description: null,
             allowed_formats: allowedFormats,
             max_size_mb: maxSizeMb,
             is_mandatory: isMandatory,
@@ -186,14 +185,19 @@ export function RequirementTemplateModal({
                     key={opt.value}
                     type="button"
                     onClick={() => toggleFormat(opt.value)}
-                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all cursor-pointer ${
+                    className={`inline-flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-bold border-2 transition-all cursor-pointer select-none bg-transparent ${
                       isSelected
-                        ? "bg-amber-500/15 border-amber-500 text-amber-900 dark:text-amber-300 dark:bg-amber-500/20 dark:border-amber-400 shadow-2xs"
-                        : "bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200"
+                        ? "border-amber-500 text-slate-900 dark:text-slate-100 shadow-xs ring-2 ring-amber-500/25"
+                        : "border-slate-300 dark:border-slate-600 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:border-slate-400"
                     }`}
                   >
-                    {isSelected ? <Check className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" strokeWidth={2} /> : null}
+                    <FormatIcon format={opt.value} className="h-4.5 w-4.5 shrink-0" />
                     <span>{opt.value}</span>
+                    {isSelected && (
+                      <span className="w-4 h-4 rounded-full bg-amber-500 text-slate-900 flex items-center justify-center shrink-0 -mr-0.5 shadow-2xs">
+                        <Check className="w-2.5 h-2.5" strokeWidth={3} />
+                      </span>
+                    )}
                   </button>
                 );
               })}
@@ -224,66 +228,42 @@ export function RequirementTemplateModal({
             </div>
 
             <div>
-              <label className="text-xs font-semibold uppercase tracking-wider text-slate-700 dark:text-slate-300 block mb-1.5">
+              <label
+                className="text-xs font-semibold uppercase tracking-wider text-slate-700 dark:text-slate-300 block mb-1.5"
+                htmlFor="templateMandatory"
+              >
                 Compliance Requirement
               </label>
-              <div className="flex items-center gap-2 mt-1">
-                <button
-                  type="button"
-                  onClick={() => setIsMandatory(true)}
-                  className={`flex-1 py-2 px-3 rounded-xl text-xs font-semibold border transition-all cursor-pointer ${
-                    isMandatory
-                      ? "bg-amber-500/15 border-amber-500 text-amber-900 dark:text-amber-300 dark:bg-amber-500/20 dark:border-amber-400 shadow-2xs"
-                      : "bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400"
-                  }`}
-                >
-                  Mandatory
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setIsMandatory(false)}
-                  className={`flex-1 py-2 px-3 rounded-xl text-xs font-semibold border transition-all cursor-pointer ${
-                    !isMandatory
-                      ? "bg-amber-500/15 border-amber-500 text-amber-900 dark:text-amber-300 dark:bg-amber-500/20 dark:border-amber-400 shadow-2xs"
-                      : "bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400"
-                  }`}
-                >
-                  Optional
-                </button>
-              </div>
+              <select
+                id="templateMandatory"
+                value={isMandatory ? "mandatory" : "optional"}
+                onChange={(e) => setIsMandatory(e.target.value === "mandatory")}
+                className="mt-1.5 w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-slate-100 rounded-xl px-4 py-2.5 focus:outline-none focus:border-amber-500 text-xs sm:text-sm outline-none transition-all cursor-pointer"
+              >
+                <option value="mandatory">Mandatory</option>
+                <option value="optional">Optional</option>
+              </select>
             </div>
           </div>
 
-          {/* Row 4: Visibility Status (Active vs Hidden) */}
+          {/* Row 4: Visibility Status (Dropdown) */}
           <div>
-            <label className="text-xs font-semibold uppercase tracking-wider text-slate-700 dark:text-slate-300 block mb-1.5">
+            <label
+              className="text-xs font-semibold uppercase tracking-wider text-slate-700 dark:text-slate-300 block mb-1.5"
+              htmlFor="templateVisibility"
+            >
               Faculty Visibility Status
             </label>
-            <div className="flex items-center gap-2 mt-1">
-              <button
-                type="button"
-                onClick={() => setIsActive(true)}
-                className={`flex-1 py-2 px-3 rounded-xl text-xs font-semibold border transition-all cursor-pointer ${
-                  isActive
-                    ? "bg-[#0b5336] text-white border-[#08412a] shadow-2xs"
-                    : "bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400"
-                }`}
-              >
-                Active (Visible)
-              </button>
-              <button
-                type="button"
-                onClick={() => setIsActive(false)}
-                className={`flex-1 py-2 px-3 rounded-xl text-xs font-semibold border transition-all cursor-pointer ${
-                  !isActive
-                    ? "bg-[#780000] text-white border-[#5e0000] shadow-2xs"
-                    : "bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400"
-                }`}
-              >
-                Hidden (Archived)
-              </button>
-            </div>
-            <p className="mt-1 text-[11px] text-slate-500 dark:text-slate-400">
+            <select
+              id="templateVisibility"
+              value={isActive ? "active" : "hidden"}
+              onChange={(e) => setIsActive(e.target.value === "active")}
+              className="mt-1.5 w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-slate-100 rounded-xl px-4 py-2.5 focus:outline-none focus:border-amber-500 text-xs sm:text-sm outline-none transition-all cursor-pointer"
+            >
+              <option value="active">Active (Visible)</option>
+              <option value="hidden">Hidden (Archived)</option>
+            </select>
+            <p className="mt-1.5 text-[11px] text-slate-500 dark:text-slate-400">
               Hidden templates will not appear in the faculty submission checklist.
             </p>
           </div>

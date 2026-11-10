@@ -618,7 +618,7 @@ export function TemplatesAndProgramsPanel({
                           <button
                             type="button"
                             onClick={(e) => handleOpenEditModal(prog, e)}
-                            className="bg-amber-500 hover:bg-amber-600 text-slate-950 border border-amber-600 text-xs font-medium rounded-md px-2.5 py-1 transition-colors cursor-pointer inline-flex items-center gap-1 shadow-2xs"
+                            className="bg-amber-500 hover:bg-amber-600 text-slate-900 border border-amber-600 text-xs font-medium rounded-md px-2.5 py-1 transition-colors cursor-pointer inline-flex items-center gap-1 shadow-2xs"
                             title="Edit program"
                           >
                             <EditPencil className="h-3.5 w-3.5" strokeWidth={2} />

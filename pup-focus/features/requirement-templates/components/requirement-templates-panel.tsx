@@ -61,6 +61,7 @@ export function RequirementTemplatesPanel({
   const [templateToView, setTemplateToView] = useState<RequirementTemplate | null>(null);
   const [templateToEdit, setTemplateToEdit] = useState<RequirementTemplate | null>(null);
   const [templateToDelete, setTemplateToDelete] = useState<RequirementTemplate | null>(null);
+  const [hideTarget, setHideTarget] = useState<RequirementTemplate | null>(null);
   const [countdown, setCountdown] = useState<number>(10);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isTogglingStatus, setIsTogglingStatus] = useState<string | null>(null);
@@ -463,7 +464,7 @@ export function RequirementTemplatesPanel({
                       <button
                         type="button"
                         onClick={() => setTemplateToView(tpl)}
-                        className="bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 dark:bg-slate-800/60 dark:hover:bg-slate-800 dark:text-slate-300 dark:border-slate-700 text-xs font-medium rounded-md px-2.5 py-1 transition-colors cursor-pointer inline-flex items-center gap-1 shadow-2xs"
+                        className="bg-amber-500 hover:bg-amber-400 text-slate-900 border border-amber-600 text-xs font-medium rounded-md px-2.5 py-1 transition-colors cursor-pointer inline-flex items-center gap-1 shadow-2xs"
                         title="View requirement details"
                       >
                         <Eye className="h-3.5 w-3.5" strokeWidth={2} />
@@ -474,7 +475,8 @@ export function RequirementTemplatesPanel({
                       <button
                         type="button"
                         onClick={() => handleOpenEditModal(tpl)}
-                        className="bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 dark:bg-slate-800/60 dark:hover:bg-slate-800 dark:text-slate-300 dark:border-slate-700 text-xs font-medium rounded-md px-2.5 py-1 transition-colors cursor-pointer inline-flex items-center gap-1 shadow-2xs"
+                        className="bg-amber-500 hover:bg-amber-600 text-slate-900 border border-amber-600 text-xs font-medium rounded-md px-2.5 py-1 transition-colors cursor-pointer inline-flex items-center gap-1 shadow-2xs"
+                        title="Edit requirement template"
                       >
                         <EditPencil className="h-3.5 w-3.5" strokeWidth={2} />
                         <span>Edit</span>
@@ -484,8 +486,15 @@ export function RequirementTemplatesPanel({
                       <button
                         type="button"
                         disabled={isTogglingStatus === tpl.id}
-                        onClick={() => void handleToggleHide(tpl)}
-                        className="bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 dark:bg-slate-800/60 dark:hover:bg-slate-800 dark:text-slate-300 dark:border-slate-700 text-xs font-medium rounded-md px-2.5 py-1 transition-colors cursor-pointer inline-flex items-center gap-1 shadow-2xs"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setHideTarget(tpl);
+                        }}
+                        className={
+                          tpl.is_active
+                            ? "bg-[#780000] hover:bg-[#5e0000] text-white border border-[#5e0000] text-xs font-medium rounded-md px-2.5 py-1 transition-colors cursor-pointer inline-flex items-center gap-1 shadow-2xs"
+                            : "bg-[#0b5336] hover:bg-[#08412a] text-white border border-[#08412a] text-xs font-medium rounded-md px-2.5 py-1 transition-colors cursor-pointer inline-flex items-center gap-1 shadow-2xs"
+                        }
                         title={tpl.is_active ? "Hide requirement from faculty" : "Unhide requirement for faculty"}
                       >
                         {tpl.is_active ? (
@@ -549,6 +558,51 @@ export function RequirementTemplatesPanel({
         }}
         templateToEdit={templateToEdit}
       />
+
+      {/* ─── HIDE/UNHIDE REQUIREMENT CONFIRMATION MODAL ───────────────── */}
+      {hideTarget && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4 backdrop-blur-sm">
+          <div className="w-full max-w-md rounded-2xl border border-slate-300 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-2xl text-slate-900 dark:text-slate-100" role="dialog" aria-modal="true">
+            <ModalHeader
+              icon={!hideTarget.is_active ? Eye : EyeClosed}
+              title={!hideTarget.is_active ? "Unhide Requirement Template" : "Hide Requirement Template"}
+              subtitle="Confirm Requirement Visibility Change"
+              className="-mx-6 -mt-6 mb-4 rounded-t-2xl"
+            />
+            <p className="text-xs text-slate-700 dark:text-slate-300 leading-relaxed">
+              Are you sure you want to {!hideTarget.is_active ? "unhide" : "hide"}{" "}
+              <strong className="text-slate-900 dark:text-slate-100">
+                &ldquo;{hideTarget.title}&rdquo;
+              </strong>{" "}
+              ({hideTarget.code}) {!hideTarget.is_active ? "for faculty submission?" : "from faculty submission lists?"}
+            </p>
+            <div className="mt-6 flex items-center justify-end gap-2.5">
+              <button
+                type="button"
+                onClick={() => setHideTarget(null)}
+                className="px-4 py-2 rounded-xl bg-[#780000] hover:bg-[#5e0000] text-white border border-[#5e0000] text-xs font-semibold transition cursor-pointer shadow-xs"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={async () => {
+                  const target = hideTarget;
+                  setHideTarget(null);
+                  await handleToggleHide(target);
+                }}
+                className={
+                  !hideTarget.is_active
+                    ? "bg-[#0b5336] hover:bg-[#08412a] text-white border border-[#08412a] text-xs font-semibold px-4 py-2 rounded-xl transition cursor-pointer shadow-xs"
+                    : "bg-[#780000] hover:bg-[#5e0000] text-white border border-[#5e0000] text-xs font-semibold px-4 py-2 rounded-xl transition cursor-pointer shadow-xs"
+                }
+              >
+                Confirm {!hideTarget.is_active ? "Unhide" : "Hide"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Delete Confirmation Modal with 10-Second Safety Timer */}
       {templateToDelete && (
