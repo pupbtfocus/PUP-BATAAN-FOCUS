@@ -111,13 +111,16 @@ export function FacultyTable({
 
     const query = searchTerm.trim().toLowerCase();
     if (!query) {
-      return result;
+      return result.slice().sort((a, b) => (a.fullName || "").localeCompare(b.fullName || ""));
     }
 
-    return result.filter((faculty) => {
-      const haystack = `${faculty.fullName} ${faculty.email}`.toLowerCase();
-      return haystack.includes(query);
-    });
+    return result
+      .filter((faculty) => {
+        const haystack = `${faculty.fullName} ${faculty.email}`.toLowerCase();
+        return haystack.includes(query);
+      })
+      .slice()
+      .sort((a, b) => (a.fullName || "").localeCompare(b.fullName || ""));
   }, [facultyAccounts, searchTerm, statusFilter, programFilter]);
 
   const buildFacultyReportPayload = () => {

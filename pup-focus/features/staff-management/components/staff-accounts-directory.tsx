@@ -354,13 +354,16 @@ export function AdminAccountsTable({
     }
 
     const query = searchTerm.trim().toLowerCase();
-    if (!query) return result;
+    if (!query) return result.slice().sort((a, b) => formatAdminName(a).localeCompare(formatAdminName(b)));
 
-    return result.filter((admin) => {
-      const name = formatAdminName(admin).toLowerCase();
-      const email = (admin.email || "").toLowerCase();
-      return name.includes(query) || email.includes(query);
-    });
+    return result
+      .filter((admin) => {
+        const name = formatAdminName(admin).toLowerCase();
+        const email = (admin.email || "").toLowerCase();
+        return name.includes(query) || email.includes(query);
+      })
+      .slice()
+      .sort((a, b) => formatAdminName(a).localeCompare(formatAdminName(b)));
   }, [currentTabBaseAccounts, activeTab, roleFilter, statusFilter, searchTerm]);
 
   const entityLabel =

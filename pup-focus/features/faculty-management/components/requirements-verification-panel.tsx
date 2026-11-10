@@ -451,7 +451,7 @@ export function FacultyVerificationDrawer({
 }: FacultyVerificationDrawerProps) {
   const activeAy = academicYear || "";
   const activeSem = semester || "";
-  const [activeTab, setActiveTab] = useState<"current" | "history">(initialTab);
+  const [activeTab] = useState<"current" | "history">(initialTab);
   const [submissions, setSubmissions] = useState<FacultyRequirementSubmission[]>(
     initialSubmissions ?? [],
   );
@@ -1219,7 +1219,7 @@ export function FacultyVerificationDrawer({
           return codeMatched;
         })
       );
-      setSelectedClassId(matchedGroup ? matchedGroup.key : classGroups[0].key);
+      setSelectedClassId(matchedGroup ? matchedGroup.key : null);
       return;
     }
 
@@ -2224,58 +2224,9 @@ export function FacultyVerificationDrawer({
           </div>
         ) : null}
 
-        {/* Unified Tab Switcher & Search/Filter Controls in 1 Row */}
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 border-b border-slate-200 dark:border-slate-800/80 px-6 py-3 bg-white dark:bg-slate-900">
-          <div className="inline-flex p-1 bg-slate-100 dark:bg-slate-950/80 rounded-2xl border border-slate-200/80 dark:border-slate-800/80 shrink-0">
-            <button
-              type="button"
-              onClick={() => setActiveTab("current")}
-              className={`inline-flex items-center gap-2 rounded-xl px-4 py-2 text-xs sm:text-sm font-bold transition cursor-pointer ${
-                activeTab === "current"
-                  ? "bg-amber-500 text-slate-950 border border-amber-600 shadow-xs"
-                  : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200"
-              }`}
-            >
-              <span>Current Submissions</span>
-              <span
-                className={`inline-flex items-center justify-center rounded-full px-2 py-0.5 text-xs font-black leading-none ${
-                  activeTab === "current"
-                    ? "bg-white text-slate-950 border border-amber-600/30 shadow-2xs"
-                    : "bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300"
-                }`}
-              >
-                {classGroups.length}
-              </span>
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                setActiveTab("history");
-                if (historySubmissions.length === 0) {
-                  setIsLoadingHistory(true);
-                }
-              }}
-              className={`inline-flex items-center gap-2 rounded-xl px-4 py-2 text-xs sm:text-sm font-bold transition cursor-pointer ${
-                activeTab === "history"
-                  ? "bg-amber-500 text-slate-950 border border-amber-600 shadow-xs"
-                  : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200"
-              }`}
-            >
-              <span>Verification History</span>
-              <span
-                className={`inline-flex items-center justify-center rounded-full px-2 py-0.5 text-xs font-black leading-none ${
-                  activeTab === "history"
-                    ? "bg-white text-slate-950 border border-amber-600/30 shadow-2xs"
-                    : "bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300"
-                }`}
-              >
-                {historySubmissions.length}
-              </span>
-            </button>
-          </div>
-
-          {/* Subject Search & Status Filter Controls (Row Partner) */}
-          {activeTab === "current" && selectedClassId === null && classGroups.length > 0 && (
+        {/* Subject Search & Status Filter Controls */}
+        {activeTab === "current" && selectedClassId === null && classGroups.length > 0 && (
+          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 border-b border-slate-200 dark:border-slate-800/80 px-6 py-3 bg-white dark:bg-slate-900">
             <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2.5 w-full lg:w-auto">
               {/* Search Input */}
               <input
@@ -2353,8 +2304,8 @@ export function FacultyVerificationDrawer({
                 )}
               </div>
             </div>
+          </div>
           )}
-        </div>
 
         {/* Body Content */}
         <div className="px-6 py-5">
@@ -2565,7 +2516,7 @@ export function FacultyVerificationDrawer({
             ) : (
               /* Step 2: Class Detail Step */
               <div className="space-y-4">
-                {/* Top Navigation Bar: Back Button, Header Banner & Dropdown Switcher */}
+                {/* Class Header & Dropdown Switcher */}
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 py-1">
                   <div className="flex items-center gap-2.5 min-w-0 flex-1">
                     <button
@@ -3490,7 +3441,7 @@ export function FacultyVerificationDrawer({
               ) : (
                 /* History Step 2: Subject Historical Requirements View */
                 <div className="space-y-4">
-                  {/* Top Context Navigation Bar */}
+                  {/* Class Header & Switcher */}
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 py-1">
                     <div className="flex items-center gap-2.5 min-w-0 flex-1">
                       <button
@@ -4511,6 +4462,9 @@ const globalVerificationCache: Record<
 
 const inflightVerificationFetches = new Map<string, Promise<any>>();
 
+// Module-level flag so it survives React StrictMode remounts.
+let openedFromRowFlag = false;
+
 export function RequirementsPanel({
   facultyAccounts,
   selectedFaculty,
@@ -4730,6 +4684,8 @@ export function RequirementsPanel({
   const [reviewingFaculty, setReviewingFaculty] = useState<FacultyAccount | null>(
     selectedFaculty || null
   );
+  // Module-level flag (openedFromRowFlag) is used instead of a ref so it
+  // survives React StrictMode remounts. See module scope above.
 
   // Sync with selectedFaculty prop from parent
   useEffect(() => {
@@ -5178,7 +5134,7 @@ export function RequirementsPanel({
   }, [facultyAccounts.length, facultyStatusMap]);
 
   const filteredFaculty = useMemo(() => {
-    return facultyAccounts.filter((f) => {
+    const result = facultyAccounts.filter((f) => {
       const matchesSearch =
         !searchTerm ||
         f.fullName.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -5194,6 +5150,9 @@ export function RequirementsPanel({
 
       return matchesSearch && matchesProgram && matchesStatus;
     });
+    return result
+      .slice()
+      .sort((a, b) => (a.fullName || "").localeCompare(b.fullName || ""));
   }, [facultyAccounts, searchTerm, selectedProgram, statusFilter, facultyStatusMap]);
 
   const statusFilterOptions: Array<{
@@ -5290,7 +5249,7 @@ export function RequirementsPanel({
           academicYear={academicYear}
           semester={semester}
           initialTab={activePanelTab}
-          initialRequirementCode={initialRequirementCode}
+          initialRequirementCode={openedFromRowFlag ? null : initialRequirementCode}
           requirementTemplates={requirementTemplates}
           initialClasses={
             submissionsCache[reviewingFaculty.id]?.classes ??
@@ -5300,11 +5259,13 @@ export function RequirementsPanel({
           initialAvailableAcademicYears={availableAcademicYears}
           onSubmissionsLoaded={handleSubmissionsLoaded}
           onBack={() => {
+            openedFromRowFlag = false;
             initialOpenedRef.current = "__closed__";
             setReviewingFaculty(null);
             onSelectFaculty?.(null);
           }}
           onClose={() => {
+            openedFromRowFlag = false;
             initialOpenedRef.current = "__closed__";
             setReviewingFaculty(null);
             onSelectFaculty?.(null);
@@ -5856,6 +5817,7 @@ export function RequirementsPanel({
                           }
                           onClick={() => {
                             if (isNotSubmitted) return;
+                            openedFromRowFlag = true;
                             initialOpenedRef.current = faculty.id;
                             setReviewingFaculty(faculty);
                             onSelectFaculty?.(faculty.id);

@@ -68,7 +68,7 @@ let serverTermsCache: {
 } | null = null;
 const SERVER_TERMS_CACHE_TTL_MS = 15_000;
 
-export function invalidateServerTermsCache() {
+function invalidateServerTermsCache() {
   serverTermsCache = null;
 }
 

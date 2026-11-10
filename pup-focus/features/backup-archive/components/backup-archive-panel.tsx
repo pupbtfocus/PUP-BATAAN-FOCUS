@@ -5,6 +5,7 @@ import {
   Archive,
   Calendar,
   Check,
+  CheckCircle,
   Database,
   Download,
   Eye,
@@ -704,9 +705,9 @@ export function BackupArchivePanel() {
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-slate-100 dark:border-slate-800">
           <div className="space-y-1">
             <div className="flex items-center gap-2.5 flex-wrap">
-              <span className="p-2 rounded-xl bg-amber-500 text-slate-950 border border-amber-600 shrink-0 shadow-2xs">
-                <AppIcon icon={Archive} size="sm" color="inherit" />
-              </span>
+              <div className="h-9 w-9 rounded-xl flex items-center justify-center shrink-0 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700/60 shadow-2xs">
+                <AppIcon icon={Archive} size="sm" color="default" />
+              </div>
               <div>
                 <h2 className="text-base sm:text-lg font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
                   <span>Semester Compliance Backup &amp; Document Vault</span>
@@ -719,21 +720,6 @@ export function BackupArchivePanel() {
           </div>
 
           <div className="flex items-center gap-2 shrink-0">
-            {currentActiveTerm && !isExactCurrentActiveTerm && (
-              <button
-                type="button"
-                onClick={() => {
-                  setSelectedAcademicYear(currentActiveTerm.academic_year);
-                  setSelectedSemester(currentActiveTerm.semester);
-                }}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-xl border border-amber-500/40 bg-amber-500/15 hover:bg-amber-500/25 text-amber-950 dark:text-amber-200 transition-all cursor-pointer shadow-2xs active:scale-[0.98]"
-                title="Reset filters to active operational term"
-              >
-                <AppIcon icon={Calendar} size="xs" color="inherit" />
-                <span>Active Term Preset</span>
-              </button>
-            )}
-
             <button
               type="button"
               onClick={() => void handleRefresh()}
@@ -746,41 +732,30 @@ export function BackupArchivePanel() {
           </div>
         </div>
 
-        {/* Compact Operational Term Alert Banner */}
+        {/* Centered Operational Term Notice Banner */}
         {currentActiveTerm && (
-          <div
-            className={`flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 px-4 py-2.5 rounded-xl border text-xs shadow-xs font-medium transition-all ${
-              isCurrentTermBackedUp
-                ? "bg-[#0b5336] text-white border-[#08412a]"
-                : "bg-amber-500 text-slate-950 border-amber-600"
-            }`}
-          >
-            <div className="flex items-center gap-2 min-w-0">
-              <span className="shrink-0 text-sm">💡</span>
-              <span className="truncate">
-                Active Operational Term: <strong className="font-bold">A.Y. {currentActiveTerm.academic_year} · {currentActiveTerm.semester}</strong>
-                <span
-                  className={`ml-1.5 hidden md:inline ${
-                    isCurrentTermBackedUp ? "text-emerald-100" : "text-slate-900/80 font-normal"
-                  }`}
-                >
-                  ({isCurrentTermBackedUp ? "Verified backup on file" : "Backup required before term change"})
-                </span>
-              </span>
-            </div>
-            <span
-              className={`shrink-0 px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider inline-flex items-center gap-1.5 shadow-2xs ${
-                isCurrentTermBackedUp
-                  ? "bg-white/20 text-white border border-white/30"
-                  : "bg-white text-amber-950 border border-amber-300/80"
-              }`}
-            >
-              <span
-                className={`w-1.5 h-1.5 rounded-full ${
-                  isCurrentTermBackedUp ? "bg-emerald-300" : "bg-amber-600"
-                }`}
-              />
-              {isCurrentTermBackedUp ? "Backup Saved" : "Backup Required"}
+          <div className="flex items-center justify-center gap-2 px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-900/60 text-xs text-slate-700 dark:text-slate-300 text-center transition-all">
+            <AppIcon
+              icon={isCurrentTermBackedUp ? CheckCircle : WarningTriangle}
+              size="sm"
+              color={isCurrentTermBackedUp ? "success" : "warning"}
+              className="shrink-0"
+            />
+            <span>
+              Active Operational Term:{" "}
+              <strong className="font-bold text-slate-900 dark:text-slate-100">
+                A.Y. {currentActiveTerm.academic_year} · {currentActiveTerm.semester}
+              </strong>
+              {" — "}
+              {isCurrentTermBackedUp ? (
+                <strong className="font-bold text-emerald-700 dark:text-emerald-400">
+                  Verified backup on file
+                </strong>
+              ) : (
+                <strong className="font-bold text-amber-700 dark:text-amber-400">
+                  Backup required before changing terms
+                </strong>
+              )}
             </span>
           </div>
         )}
