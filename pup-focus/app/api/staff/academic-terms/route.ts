@@ -62,8 +62,26 @@ function buildTermKey(academicYear: string, semester: string) {
   return `${academicYear}|${semester}`;
 }
 
+let serverTermsCache: {
+  timestamp: number;
+  payload: any;
+} | null = null;
+const SERVER_TERMS_CACHE_TTL_MS = 15_000;
+
+export function invalidateServerTermsCache() {
+  serverTermsCache = null;
+}
+
 export async function GET() {
   try {
+    if (serverTermsCache && Date.now() - serverTermsCache.timestamp < SERVER_TERMS_CACHE_TTL_MS) {
+      return NextResponse.json(serverTermsCache.payload, {
+        headers: {
+          "Cache-Control": "public, max-age=15, stale-while-revalidate=30",
+        },
+      });
+    }
+
     const sessionClient = await createServerSupabaseClient();
     const {
       data: { user },
@@ -244,7 +262,17 @@ export async function GET() {
           })
         : [];
 
-    return NextResponse.json({ terms, nextAcademicYear });
+    const payload = { terms, nextAcademicYear };
+    serverTermsCache = {
+      timestamp: Date.now(),
+      payload,
+    };
+
+    return NextResponse.json(payload, {
+      headers: {
+        "Cache-Control": "public, max-age=15, stale-while-revalidate=30",
+      },
+    });
   } catch (error) {
     return NextResponse.json(
       {
@@ -271,8 +299,9 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    const supabase = getServiceRoleClient();
+    invalidateServerTermsCache();
 
+    const supabase = getServiceRoleClient();
     let body: any = null;
     try {
       body = await request.json();
@@ -475,6 +504,8 @@ export async function PATCH(request: NextRequest) {
     if (!user || !isAdminRole(requesterRole)) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
+
+    invalidateServerTermsCache();
 
     const url = new URL(request.url);
     const academicYear = url.searchParams.get("academicYear")?.trim() ?? "";
@@ -974,6 +1005,8 @@ export async function DELETE(request: NextRequest) {
     if (!user || !isAdminRole(requesterRole)) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
+
+    invalidateServerTermsCache();
 
     const url = new URL(request.url);
     const academicYear = url.searchParams.get("academicYear")?.trim() ?? "";

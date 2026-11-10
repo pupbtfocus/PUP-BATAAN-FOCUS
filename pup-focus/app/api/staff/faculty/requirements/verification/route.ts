@@ -14,14 +14,18 @@ import {
 } from "@/config/roles";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { getServiceRoleClient } from "@/lib/supabase/service-role";
-import {
-  evaluateSubmissionWindow,
-  getSubmissionWindow,
-  normalizeTime24Hour,
-} from "@/features/submissions/services/submission-window.service";
 
 type RequirementStatus = "not_submitted" | "uploaded" | "validated";
 type SemesterOption = "1st Semester" | "2nd Semester" | "Summer Semester";
+
+const serverVerificationCache = new Map<
+  string,
+  {
+    timestamp: number;
+    payload: any;
+  }
+>();
+const SERVER_CACHE_TTL_MS = 15_000;
 
 type SubmissionRow = {
   id: string;
@@ -316,39 +320,61 @@ export async function GET(request: NextRequest) {
       );
     }
 
+    const cacheKey = `${user.id}:${requestedAcademicYear || ""}:${selectedSemester || ""}:${requestedIds.slice().sort().join(",")}`;
+    const cached = serverVerificationCache.get(cacheKey);
+    if (cached && Date.now() - cached.timestamp < SERVER_CACHE_TTL_MS) {
+      return NextResponse.json(cached.payload, {
+        headers: {
+          "Cache-Control": "public, max-age=15, stale-while-revalidate=30",
+        },
+      });
+    }
+
     const supabase = getServiceRoleClient();
 
-    // Wave 1: Fetch profiles, current term, all academic terms, submission window, and templates in parallel
+    // Parallel Wave: Fetch profiles, terms, templates, assignments, classes, and submissions in a single round-trip
     const [
-      profilesByIdRes,
-      profilesByUserIdRes,
-      currentAcademicTerm,
+      profilesRes,
       dbTermsRes,
-      submissionWindow,
       dbTemplatesRes,
+      assignmentRowsRes,
+      classesRes,
+      submissionsRes,
     ] = await Promise.all([
-      supabase.from("profiles").select("id, user_id").in("id", requestedIds),
-      supabase.from("profiles").select("id, user_id").in("user_id", requestedIds),
-      getCurrentAcademicTerm(supabase),
+      supabase
+        .from("profiles")
+        .select("id, user_id")
+        .or(`id.in.(${requestedIds.join(",")}),user_id.in.(${requestedIds.join(",")})`),
       supabase
         .from("academic_terms")
-        .select("academic_year, semester, status")
+        .select("academic_year, semester, status, created_at")
         .order("academic_year", { ascending: false }),
-      getSubmissionWindow(supabase),
       supabase
         .from("requirement_templates")
         .select("code, title, is_mandatory, max_size_mb, allowed_formats, is_active")
         .eq("is_active", true)
         .order("is_mandatory", { ascending: false })
         .order("created_at", { ascending: true }),
+      supabase
+        .from("faculty_program_assignments")
+        .select("id, faculty_profile_id, academic_year, term")
+        .in("faculty_profile_id", requestedIds)
+        .limit(2000),
+      supabase
+        .from("faculty_classes")
+        .select("id, faculty_profile_id, subject_code, description, section_code, units, is_archived, academic_year, semester")
+        .in("faculty_profile_id", requestedIds)
+        .eq("is_archived", false),
+      supabase
+        .from("submissions")
+        .select("id, faculty_profile_id, requirement_code, status, submitted_at, faculty_assignment_id, class_id")
+        .in("faculty_profile_id", requestedIds)
+        .order("submitted_at", { ascending: false }),
     ]);
 
     const profileMap = new Map<string, string>(); // requestedId -> profile.id
     const allProfileIds = new Set<string>();
-    for (const row of [
-      ...(profilesByIdRes.data ?? []),
-      ...(profilesByUserIdRes.data ?? []),
-    ]) {
+    for (const row of profilesRes.data ?? []) {
       allProfileIds.add(row.id);
       if (requestedIds.includes(row.id)) profileMap.set(row.id, row.id);
       if (row.user_id && requestedIds.includes(row.user_id)) {
@@ -366,30 +392,20 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const assignmentLookupIds = Array.from(
-      new Set([...requestedIds, ...Array.from(allProfileIds)]),
+    const assignmentRows = assignmentRowsRes.data ?? [];
+    const dbTerms = dbTermsRes.data ?? [];
+
+    const currentTermRow = dbTerms.find(
+      (t: any) => (t.status || "").trim().toLowerCase() === "current",
     );
+    const currentAcademicTerm = currentTermRow?.academic_year && currentTermRow?.semester
+      ? {
+          academicYear: currentTermRow.academic_year,
+          semester: normalizeSemester(currentTermRow.semester),
+          createdAt: currentTermRow.created_at || null,
+        }
+      : null;
 
-    const { data: assignmentRows, error: assignmentError } =
-      assignmentLookupIds.length > 0
-        ? await supabase
-            .from("faculty_program_assignments")
-            .select("id, faculty_profile_id, academic_year, term")
-            .in("faculty_profile_id", assignmentLookupIds)
-            .limit(2000)
-        : { data: [], error: null };
-
-    if (assignmentError) {
-      return NextResponse.json(
-        {
-          error: "Failed to load faculty assignments",
-          details: assignmentError.message,
-        },
-        { status: 500 },
-      );
-    }
-
-    const dbTerms = dbTermsRes.data;
     const termsByYear: Record<string, SemesterOption[]> = {};
 
     const registerTerm = (ay?: string | null, sem?: string | null) => {
@@ -480,38 +496,12 @@ export async function GET(request: NextRequest) {
     );
     const allFilteredAssignmentIds = filteredAssignments.map((row: any) => row.id);
 
-    // Wave 2: Batch fetch submissions and faculty_classes for all requested profiles in parallel
-    const [submissionsRes, classesRes] = await Promise.all([
-      allFilteredAssignmentIds.length > 0 && assignmentLookupIds.length > 0
-        ? supabase
-            .from("submissions")
-            .select(
-              "id, faculty_profile_id, requirement_code, status, submitted_at, faculty_assignment_id, class_id",
-            )
-            .in("faculty_profile_id", assignmentLookupIds)
-            .in("faculty_assignment_id", allFilteredAssignmentIds)
-            .order("submitted_at", { ascending: false })
-        : Promise.resolve({ data: [], error: null }),
-      assignmentLookupIds.length > 0
-        ? supabase
-            .from("faculty_classes")
-            .select("id, faculty_profile_id, subject_code, description, section_code, units, is_archived, academic_year, semester")
-            .in("faculty_profile_id", assignmentLookupIds)
-            .eq("is_archived", false)
-        : Promise.resolve({ data: [], error: null }),
-    ]);
-
-    if (submissionsRes.error) {
-      return NextResponse.json(
-        {
-          error: "Failed to load faculty requirements",
-          details: submissionsRes.error.message,
-        },
-        { status: 500 },
-      );
-    }
-
-    const allSubmissionRows = (submissionsRes.data as any[] | null) ?? [];
+    const allSubmissionRows = ((submissionsRes.data as any[] | null) ?? []).filter(
+      (s: any) =>
+        allFilteredAssignmentIds.length === 0 ||
+        !s.faculty_assignment_id ||
+        allFilteredAssignmentIds.includes(s.faculty_assignment_id),
+    );
     const allFacultyClasses = (classesRes.data as any[] | null) ?? [];
 
     const rank: Record<RequirementStatus, number> = {
@@ -631,7 +621,7 @@ export async function GET(request: NextRequest) {
         resultsByFacultyId[id] = computeForFaculty(id);
       }
 
-      return NextResponse.json({
+      const payload = {
         availableAcademicYears,
         semesters: SEMESTER_OPTIONS,
         availableSemesters,
@@ -643,12 +633,22 @@ export async function GET(request: NextRequest) {
         currentTermConfigured: Boolean(currentAcademicTerm),
         requirementTemplates: activeTemplateRows,
         resultsByFacultyId,
+      };
+
+      serverVerificationCache.set(cacheKey, {
+        timestamp: Date.now(),
+        payload,
+      });
+
+      return NextResponse.json(payload, {
+        headers: {
+          "Cache-Control": "public, max-age=15, stale-while-revalidate=30",
+        },
       });
     }
 
     const singleResult = computeForFaculty(requestedIds[0]);
-
-    return NextResponse.json({
+    const payload = {
       availableAcademicYears,
       semesters: SEMESTER_OPTIONS,
       availableSemesters,
@@ -662,6 +662,17 @@ export async function GET(request: NextRequest) {
       requirementTemplates: activeTemplateRows,
       classProgress: singleResult.classProgress,
       subjectProgress: singleResult.subjectProgress,
+    };
+
+    serverVerificationCache.set(cacheKey, {
+      timestamp: Date.now(),
+      payload,
+    });
+
+    return NextResponse.json(payload, {
+      headers: {
+        "Cache-Control": "public, max-age=15, stale-while-revalidate=30",
+      },
     });
   } catch (error) {
     console.error(

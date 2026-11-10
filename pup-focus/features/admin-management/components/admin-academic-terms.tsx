@@ -18,6 +18,7 @@ import {
 } from "iconoir-react";
 import { AppIcon } from "@/components/ui/app-icon";
 import { ModalHeader } from "@/components/ui/modal-header";
+import { AlertPopup } from "@/components/ui/alert-popup";
 import { HistoricalSubmissionsModal, prefetchHistoricalSubmissions } from "./historical-submissions-modal";
 
 type AcademicTermStatus = "Current" | "Upcoming" | "Archived" | "Completed";
@@ -32,6 +33,7 @@ type AcademicTermItem = {
 
 let cachedAcademicTerms: AcademicTermItem[] | null = null;
 let cachedNextAcademicYear: string | null = null;
+let inFlightTermsFetch: Promise<void> | null = null;
 
 function getTermScore(academicYear: string, semester: string): number {
   const startYear = parseInt(academicYear.split("-")[0], 10) || 0;
@@ -57,7 +59,7 @@ export function AdminAcademicTerms({
     if (cachedAcademicTerms && cachedAcademicTerms.length > 0) return cachedAcademicTerms;
     if (typeof window !== "undefined") {
       try {
-        const stored = sessionStorage.getItem("pup_focus_academic_terms");
+        const stored = sessionStorage.getItem("pup_focus_academic_terms") || localStorage.getItem("pup_focus_academic_terms");
         if (stored) {
           const parsed = JSON.parse(stored);
           if (Array.isArray(parsed) && parsed.length > 0) {
@@ -81,14 +83,15 @@ export function AdminAcademicTerms({
     if (cachedNextAcademicYear) return cachedNextAcademicYear;
     if (typeof window !== "undefined") {
       try {
-        const stored = sessionStorage.getItem("pup_focus_next_academic_year");
+        const stored = sessionStorage.getItem("pup_focus_next_academic_year") || localStorage.getItem("pup_focus_next_academic_year");
         if (stored) return stored;
       } catch {}
     }
     return "2026-2027";
   });
   const [isLoading, setIsLoading] = useState(() => {
-    return !cachedAcademicTerms || cachedAcademicTerms.length === 0;
+    return (!cachedAcademicTerms || cachedAcademicTerms.length === 0) &&
+      (typeof window === "undefined" || (!sessionStorage.getItem("pup_focus_academic_terms") && !localStorage.getItem("pup_focus_academic_terms")));
   });
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -111,8 +114,11 @@ export function AdminAcademicTerms({
   const [isConfirmBackupOpen, setIsConfirmBackupOpen] = useState(false);
 
   useEffect(() => {
-    void loadTerms();
-    void prefetchHistoricalSubmissions();
+    void loadTerms({ silent: terms.length > 0 });
+    const timer = setTimeout(() => {
+      void prefetchHistoricalSubmissions();
+    }, 1200);
+    return () => clearTimeout(timer);
   }, []);
 
   useRealtimeSync(() => {
@@ -227,58 +233,66 @@ export function AdminAcademicTerms({
   }, [terms, currentScore]);
 
   async function loadTerms(options?: { silent?: boolean }) {
-    const isSilent = options?.silent ?? (cachedAcademicTerms !== null && cachedAcademicTerms.length > 0);
+    if (inFlightTermsFetch) return inFlightTermsFetch;
+
+    const hasCachedData = (cachedAcademicTerms !== null && cachedAcademicTerms.length > 0) || terms.length > 0;
+    const isSilent = options?.silent ?? hasCachedData;
     if (!isSilent) {
       setIsLoading(true);
       setError(null);
       setSuccess(null);
     }
 
-    try {
-      const response = await fetch("/api/staff/academic-terms", {
-        credentials: "include",
-        cache: "no-store",
-      });
-      const data = await response.json();
+    inFlightTermsFetch = (async () => {
+      try {
+        const response = await fetch(`/api/staff/academic-terms?_t=${Date.now()}`, {
+          credentials: "include",
+          cache: "no-store",
+        });
+        const data = await response.json();
 
-      if (!response.ok) {
+        if (!response.ok) {
+          setError(
+            data?.details
+              ? `${data?.error || "Failed to load academic terms"}: ${data.details}`
+              : data?.error ||
+                  `Failed to load academic terms (HTTP ${response.status})`,
+          );
+          return;
+        }
+
+        const nextTerms = Array.isArray(data.terms) ? data.terms : [];
+        const nextYear =
+          typeof data.nextAcademicYear === "string"
+            ? data.nextAcademicYear
+            : "2026-2027";
+
+        cachedAcademicTerms = nextTerms;
+        cachedNextAcademicYear = nextYear;
+        if (typeof window !== "undefined") {
+          try {
+            sessionStorage.setItem("pup_focus_academic_terms", JSON.stringify(nextTerms));
+            sessionStorage.setItem("pup_focus_next_academic_year", nextYear);
+            localStorage.setItem("pup_focus_academic_terms", JSON.stringify(nextTerms));
+            localStorage.setItem("pup_focus_next_academic_year", nextYear);
+          } catch {}
+        }
+
+        setTerms(nextTerms);
+        setNextAcademicYear(nextYear);
+      } catch (loadError) {
         setError(
-          data?.details
-            ? `${data?.error || "Failed to load academic terms"}: ${data.details}`
-            : data?.error ||
-                `Failed to load academic terms (HTTP ${response.status})`,
+          loadError instanceof Error
+            ? loadError.message
+            : "Failed to load academic terms",
         );
-        return;
-      }
-
-      const nextTerms = Array.isArray(data.terms) ? data.terms : [];
-      const nextYear =
-        typeof data.nextAcademicYear === "string"
-          ? data.nextAcademicYear
-          : "2026-2027";
-
-      cachedAcademicTerms = nextTerms;
-      cachedNextAcademicYear = nextYear;
-      if (typeof window !== "undefined") {
-        try {
-          sessionStorage.setItem("pup_focus_academic_terms", JSON.stringify(nextTerms));
-          sessionStorage.setItem("pup_focus_next_academic_year", nextYear);
-        } catch {}
-      }
-
-      setTerms(nextTerms);
-      setNextAcademicYear(nextYear);
-    } catch (loadError) {
-      setError(
-        loadError instanceof Error
-          ? loadError.message
-          : "Failed to load academic terms",
-      );
-    } finally {
-      if (!isSilent) {
+      } finally {
+        inFlightTermsFetch = null;
         setIsLoading(false);
       }
-    }
+    })();
+
+    return inFlightTermsFetch;
   }
 
   async function handleCreateNextAcademicYear() {
@@ -635,7 +649,7 @@ export function AdminAcademicTerms({
         <button
           type="button"
           onClick={() => setHistoryModalData({ isOpen: true })}
-          className="inline-flex items-center gap-1.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 border border-slate-300 dark:border-slate-700 font-semibold px-3.5 py-2 rounded-xl text-xs transition-all cursor-pointer shadow-2xs"
+          className="inline-flex items-center gap-1.5 bg-amber-500 hover:bg-amber-400 dark:bg-amber-500 dark:hover:bg-amber-400 text-slate-950 border border-amber-600 font-semibold px-3.5 py-2 rounded-xl text-xs transition-all cursor-pointer shadow-2xs"
           title="Browse read-only historical submissions from past inactive terms"
         >
           <AppIcon icon={Archive} size="xs" color="inherit" />
@@ -653,14 +667,22 @@ export function AdminAcademicTerms({
       </div>
 
       {error ? (
-        <div className="rounded-xl border border-rose-200 bg-rose-50 text-rose-800 dark:border-rose-900/60 dark:bg-rose-950/40 dark:text-rose-300 p-3.5 text-xs">
-          {error}
-        </div>
+        <AlertPopup
+          type="error"
+          message={error}
+          onClose={() => setError(null)}
+          position="inline"
+          autoCloseMs={5000}
+        />
       ) : null}
       {success ? (
-        <div className="rounded-xl border border-emerald-200 bg-emerald-50 text-emerald-800 dark:border-emerald-900/60 dark:bg-emerald-950/40 dark:text-emerald-300 p-3.5 text-xs">
-          {success}
-        </div>
+        <AlertPopup
+          type="success"
+          message={success}
+          onClose={() => setSuccess(null)}
+          position="inline"
+          autoCloseMs={5000}
+        />
       ) : null}
 
       {/* Active & Upcoming Terms (Current on Top, Upcoming at Bottom) */}
@@ -743,7 +765,7 @@ export function AdminAcademicTerms({
                               ? "View submissions for the current active academic term"
                               : "Browse submissions from this academic term"
                           }
-                          className="inline-flex items-center gap-1 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 border border-slate-300 dark:border-slate-700 text-xs font-medium px-2.5 py-1 rounded-lg transition-all cursor-pointer shadow-2xs"
+                          className="inline-flex items-center gap-1 bg-amber-500 hover:bg-amber-400 dark:bg-amber-500 dark:hover:bg-amber-400 text-slate-950 border border-amber-600 text-xs font-medium px-2.5 py-1 rounded-lg transition-all cursor-pointer shadow-2xs"
                         >
                           <AppIcon icon={Eye} size="xs" color="inherit" />
                           <span>Submissions</span>
@@ -844,7 +866,7 @@ export function AdminAcademicTerms({
                             })
                           }
                           title="Browse read-only historical submissions from this academic term"
-                          className="inline-flex items-center gap-1 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 border border-slate-300 dark:border-slate-700 text-xs font-medium px-2.5 py-1 rounded-lg transition-all cursor-pointer shadow-2xs"
+                          className="inline-flex items-center gap-1 bg-amber-500 hover:bg-amber-400 dark:bg-amber-500 dark:hover:bg-amber-400 text-slate-950 border border-amber-600 text-xs font-medium px-2.5 py-1 rounded-lg transition-all cursor-pointer shadow-2xs"
                         >
                           <AppIcon icon={Eye} size="xs" color="inherit" />
                           <span>Submissions</span>
@@ -1136,19 +1158,13 @@ export function AdminAcademicTerms({
                 {/* Status Card */}
                 <div className="flex items-center justify-between gap-3 p-3.5 rounded-xl border border-slate-200/90 dark:border-slate-800 bg-white dark:bg-slate-900/60 shadow-2xs">
                   <div className="flex items-center gap-3 min-w-0">
-                    <div
-                      className={`h-9 w-9 rounded-xl flex items-center justify-center shrink-0 shadow-2xs ${
-                        warningModalData.hasPendingReviews || warningModalData.missingBackup
-                          ? "bg-amber-500 text-slate-950 border border-amber-600"
-                          : "bg-[#0b5336] text-white border border-[#08412a]"
-                      }`}
-                    >
+                    <div className="h-9 w-9 rounded-xl flex items-center justify-center shrink-0 shadow-2xs bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700/60">
                       {warningModalData.hasPendingReviews ? (
-                        <AppIcon icon={Hourglass} size="sm" color="inherit" />
+                        <AppIcon icon={Hourglass} size="sm" color="default" />
                       ) : warningModalData.missingBackup ? (
-                        <AppIcon icon={Database} size="sm" color="inherit" />
+                        <AppIcon icon={Database} size="sm" color="default" />
                       ) : (
-                        <AppIcon icon={Check} size="sm" color="inherit" strokeWidth={2.5} />
+                        <AppIcon icon={Check} size="sm" color="default" strokeWidth={2.5} />
                       )}
                     </div>
                     <div className="space-y-0.5 min-w-0">
@@ -1237,62 +1253,37 @@ export function AdminAcademicTerms({
                       <span>Review Submitted Requirements</span>
                     </button>
                   ) : (
-                    <>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setWarningModalData({
-                            ...warningModalData,
-                            isOpen: false,
-                          });
-                          setIsConfirmBackupOpen(false);
-                          if (onNavigateToBackups) {
-                            onNavigateToBackups();
-                            return;
-                          }
-                          const isSuper =
-                            isSuperAdmin ||
-                            (typeof window !== "undefined" &&
-                              (window.location.pathname.startsWith("/admin") ||
-                                window.location.pathname.startsWith("/super-admin")));
-                          const query = currentTerm
-                            ? `&academic_year=${encodeURIComponent(currentTerm.academicYear)}&semester=${encodeURIComponent(currentTerm.semester)}`
-                            : "";
-                          window.location.href = isSuper
-                            ? `/admin/dashboard?tab=backups${query}`
-                            : `/staff/dashboard?tab=backups${query}`;
-                        }}
-                        disabled={isModalBackingUp}
-                        className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-300 dark:border-slate-700 font-semibold text-xs transition-all cursor-pointer shadow-xs active:scale-[0.98] disabled:opacity-50 whitespace-nowrap"
-                      >
-                        <span>Open Backups &amp; Archive</span>
-                        <span aria-hidden="true">&rarr;</span>
-                      </button>
-
-                      {warningModalData.missingBackup ? (
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setModalBackupError(null);
-                            setIsConfirmBackupOpen(true);
-                          }}
-                          disabled={isModalBackingUp}
-                          className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 border border-amber-600 font-semibold text-xs transition-all cursor-pointer shadow-xs active:scale-[0.98] disabled:opacity-50 whitespace-nowrap"
-                        >
-                          {isModalBackingUp ? (
-                            <>
-                              <AppIcon icon={SystemRestart} size="xs" color="inherit" className="animate-spin" />
-                              <span>Backing Up &amp; Activating...</span>
-                            </>
-                          ) : (
-                            <>
-                              <AppIcon icon={Archive} size="xs" color="inherit" />
-                              <span>Backup Documents &amp; Activate Now</span>
-                            </>
-                          )}
-                        </button>
-                      ) : null}
-                    </>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setWarningModalData({
+                          ...warningModalData,
+                          isOpen: false,
+                        });
+                        setIsConfirmBackupOpen(false);
+                        if (onNavigateToBackups) {
+                          onNavigateToBackups();
+                          return;
+                        }
+                        const isSuper =
+                          isSuperAdmin ||
+                          (typeof window !== "undefined" &&
+                            (window.location.pathname.startsWith("/admin") ||
+                              window.location.pathname.startsWith("/super-admin")));
+                        const query = currentTerm
+                          ? `&academic_year=${encodeURIComponent(currentTerm.academicYear)}&semester=${encodeURIComponent(currentTerm.semester)}`
+                          : "";
+                        window.location.href = isSuper
+                          ? `/admin/dashboard?tab=backups${query}`
+                          : `/staff/dashboard?tab=backups${query}`;
+                      }}
+                      disabled={isModalBackingUp}
+                      className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 border border-amber-600 font-bold text-xs transition-all cursor-pointer shadow-xs active:scale-[0.98] disabled:opacity-50 whitespace-nowrap"
+                    >
+                      <AppIcon icon={Archive} size="xs" color="inherit" />
+                      <span>Open Backups &amp; Archive</span>
+                      <span aria-hidden="true">&rarr;</span>
+                    </button>
                   )}
                 </div>
               </div>

@@ -4498,6 +4498,19 @@ export interface RequirementsPanelProps {
   initialSemester?: SemesterOption;
 }
 
+// Module-level global verification cache so switching views or re-renders render Verification Progress INSTANTLY
+const globalVerificationCache: Record<
+  string,
+  {
+    statusMap: Record<string, Record<string, RequirementStatus>>;
+    classProgressMap: Record<string, FacultyClassProgress[]>;
+    subjectProgressMap: Record<string, FacultySubjectProgress>;
+    timestamp: number;
+  }
+> = {};
+
+const inflightVerificationFetches = new Map<string, Promise<any>>();
+
 export function RequirementsPanel({
   facultyAccounts,
   selectedFaculty,
@@ -4553,6 +4566,10 @@ export function RequirementsPanel({
   const [facultyStatuses, setFacultyStatuses] = useState<
     Record<string, Record<string, RequirementStatus>>
   >(() => {
+    const termKey = `${initialAcademicYear || ""}::${initialSemester || "1st Semester"}`;
+    if (globalVerificationCache[termKey]?.statusMap) {
+      return globalVerificationCache[termKey].statusMap;
+    }
     const initial: Record<string, Record<string, RequirementStatus>> = {};
     for (const f of facultyAccounts) {
       if (f?.id && f.requirementStatus) {
@@ -4580,10 +4597,29 @@ export function RequirementsPanel({
 
   const [facultyClassProgress, setFacultyClassProgress] = useState<
     Record<string, FacultyClassProgress[]>
-  >({});
+  >(() => {
+    const termKey = `${initialAcademicYear || ""}::${initialSemester || "1st Semester"}`;
+    return globalVerificationCache[termKey]?.classProgressMap || {};
+  });
   const [facultySubjectProgress, setFacultySubjectProgress] = useState<
     Record<string, FacultySubjectProgress>
-  >({});
+  >(() => {
+    const termKey = `${initialAcademicYear || ""}::${initialSemester || "1st Semester"}`;
+    return globalVerificationCache[termKey]?.subjectProgressMap || {};
+  });
+
+  // Immediate sync when switching academic years / semesters if term is already cached
+  useEffect(() => {
+    const targetAy = activePanelTab === "history" ? historyAy : academicYear;
+    const targetSem = activePanelTab === "history" ? historySem : semester;
+    const termKey = `${targetAy}::${targetSem}`;
+    if (globalVerificationCache[termKey]) {
+      setFacultyStatuses(globalVerificationCache[termKey].statusMap);
+      setFacultyClassProgress(globalVerificationCache[termKey].classProgressMap);
+      setFacultySubjectProgress(globalVerificationCache[termKey].subjectProgressMap);
+    }
+  }, [academicYear, semester, historyAy, historySem, activePanelTab]);
+
   const [isLoadingStatuses, setIsLoadingStatuses] = useState(false);
   const statusesByTermRef = useRef<
     Record<
@@ -4768,133 +4804,159 @@ export function RequirementsPanel({
       return;
     }
 
-    if (!options?.silent) {
+    const targetAy = ay ?? (activePanelTab === "history" ? historyAy : academicYear) ?? activeTermAy ?? "";
+    const targetSem = sem ?? (activePanelTab === "history" ? historySem : semester) ?? activeTermSem ?? "1st Semester";
+    const termKey = `${targetAy}::${targetSem}`;
+    const cached = globalVerificationCache[termKey];
+
+    if (cached) {
+      setFacultyStatuses(cached.statusMap);
+      setFacultyClassProgress(cached.classProgressMap);
+      setFacultySubjectProgress(cached.subjectProgressMap);
+    }
+
+    const hasAnyData = cached || Object.keys(facultyClassProgress).length > 0;
+    const isSilent = options?.silent || Boolean(hasAnyData);
+    if (!isSilent) {
       setIsLoadingStatuses(true);
     }
 
-    try {
-      const params = new URLSearchParams();
-      params.set("facultyIds", allIds.join(","));
-      if (ay) params.set("academicYear", ay);
-      if (sem) params.set("semester", sem);
-      params.set("_t", String(Date.now()));
+    const inflightKey = `${allIds.slice().sort().join(",")}::${targetAy}::${targetSem}`;
+    if (inflightVerificationFetches.has(inflightKey)) {
+      return inflightVerificationFetches.get(inflightKey);
+    }
 
-      const headers: Record<string, string> = {};
+    const fetchPromise = (async () => {
       try {
-        const supabase = createClient();
-        const { data: sessionData } = await supabase.auth.getSession();
-        const token = sessionData?.session?.access_token;
-        if (token) {
-          headers["Authorization"] = `Bearer ${token}`;
-        }
-      } catch {}
+        const params = new URLSearchParams();
+        params.set("facultyIds", allIds.join(","));
+        if (ay) params.set("academicYear", ay);
+        if (sem) params.set("semester", sem);
+        params.set("_t", String(Date.now()));
 
-      const res = await fetch(
-        `/api/staff/faculty/requirements/verification?${params.toString()}`,
-        { credentials: "include", cache: "no-store", headers },
-      );
+        const headers: Record<string, string> = {};
+        try {
+          const supabase = createClient();
+          const { data: sessionData } = await supabase.auth.getSession();
+          const token = sessionData?.session?.access_token;
+          if (token) {
+            headers["Authorization"] = `Bearer ${token}`;
+          }
+        } catch {}
 
-      if (!res.ok) return;
-      const data = await res.json();
-
-      if (Array.isArray(data.requirementTemplates) && data.requirementTemplates.length > 0) {
-        setRequirementTemplates(
-          data.requirementTemplates.map((t: any) => ({
-            code: t.code,
-            title: t.title,
-            is_mandatory: Boolean(t.is_mandatory),
-            is_active: t.is_active !== false,
-          })),
+        const res = await fetch(
+          `/api/staff/faculty/requirements/verification?${params.toString()}`,
+          { credentials: "include", cache: "no-store", headers },
         );
-      }
 
-      if (options?.syncActiveTerm) {
-        const resolvedAy = data.currentAcademicYear || data.selectedAcademicYear || "";
-        const resolvedSem: SemesterOption =
-          data.currentSemester || data.selectedSemester || "1st Semester";
+        if (!res.ok) return;
+        const data = await res.json();
 
-        setActiveTermAy(resolvedAy);
-        setActiveTermSem(resolvedSem);
-        if (activePanelTab === "current") {
-          setAcademicYear(resolvedAy);
-          setSemester(resolvedSem);
-        }
-
-        if (data.termsByYear && typeof data.termsByYear === "object") {
-          setTermsByYear(data.termsByYear);
-        }
-
-        if (Array.isArray(data.availableAcademicYears) && data.availableAcademicYears.length > 0) {
-          setAvailableAcademicYears(data.availableAcademicYears);
-          const chosenAy =
-            historyAy && data.availableAcademicYears.includes(historyAy)
-              ? historyAy
-              : resolvedAy && data.availableAcademicYears.includes(resolvedAy)
-                ? resolvedAy
-                : data.availableAcademicYears[0];
-          setHistoryAy(chosenAy);
-
-          const validSemsForAy = sortSemestersList(
-            (data.termsByYear && data.termsByYear[chosenAy]) || ["1st Semester", "2nd Semester"],
+        if (Array.isArray(data.requirementTemplates) && data.requirementTemplates.length > 0) {
+          setRequirementTemplates(
+            data.requirementTemplates.map((t: any) => ({
+              code: t.code,
+              title: t.title,
+              is_mandatory: Boolean(t.is_mandatory),
+              is_active: t.is_active !== false,
+            })),
           );
-          const defaultSem = validSemsForAy.includes(resolvedSem)
-            ? resolvedSem
-            : validSemsForAy[0];
-          setHistorySem(defaultSem);
-        }
-      }
-
-      if (data.resultsByFacultyId && typeof data.resultsByFacultyId === "object") {
-        const statusMap: Record<string, Record<string, RequirementStatus>> = {};
-        const classProgressMap: Record<string, FacultyClassProgress[]> = {};
-        const subjectProgressMap: Record<string, FacultySubjectProgress> = {};
-
-        for (const [fId, item] of Object.entries<any>(data.resultsByFacultyId)) {
-          if (item?.requirementStatus) {
-            statusMap[fId] = item.requirementStatus;
-          }
-          if (item?.classProgress) {
-            classProgressMap[fId] = item.classProgress;
-          }
-          if (item?.subjectProgress) {
-            subjectProgressMap[fId] = item.subjectProgress;
-          }
         }
 
-        const effectiveAy = ay || (options?.syncActiveTerm ? data.currentAcademicYear : "") || academicYear || activeTermAy || "";
-        const effectiveSem = sem || (options?.syncActiveTerm ? data.currentSemester : "") || semester || activeTermSem || "1st Semester";
-        if (effectiveAy) {
-          statusesByTermRef.current[`${effectiveAy}::${effectiveSem}`] = {
+        if (options?.syncActiveTerm) {
+          const resolvedAy = data.currentAcademicYear || data.selectedAcademicYear || "";
+          const resolvedSem: SemesterOption =
+            data.currentSemester || data.selectedSemester || "1st Semester";
+
+          setActiveTermAy(resolvedAy);
+          setActiveTermSem(resolvedSem);
+          if (activePanelTab === "current") {
+            setAcademicYear(resolvedAy);
+            setSemester(resolvedSem);
+          }
+
+          if (data.termsByYear && typeof data.termsByYear === "object") {
+            setTermsByYear(data.termsByYear);
+          }
+
+          if (Array.isArray(data.availableAcademicYears) && data.availableAcademicYears.length > 0) {
+            setAvailableAcademicYears(data.availableAcademicYears);
+            const chosenAy =
+              historyAy && data.availableAcademicYears.includes(historyAy)
+                ? historyAy
+                : resolvedAy && data.availableAcademicYears.includes(resolvedAy)
+                  ? resolvedAy
+                  : data.availableAcademicYears[0];
+            setHistoryAy(chosenAy);
+
+            const validSemsForAy = sortSemestersList(
+              (data.termsByYear && data.termsByYear[chosenAy]) || ["1st Semester", "2nd Semester"],
+            );
+            const defaultSem = validSemsForAy.includes(resolvedSem)
+              ? resolvedSem
+              : validSemsForAy[0];
+            setHistorySem(defaultSem);
+          }
+        }
+
+        if (data.resultsByFacultyId && typeof data.resultsByFacultyId === "object") {
+          const statusMap: Record<string, Record<string, RequirementStatus>> = {};
+          const classProgressMap: Record<string, FacultyClassProgress[]> = {};
+          const subjectProgressMap: Record<string, FacultySubjectProgress> = {};
+
+          for (const [fId, item] of Object.entries<any>(data.resultsByFacultyId)) {
+            if (item?.requirementStatus) {
+              statusMap[fId] = item.requirementStatus;
+            }
+            if (item?.classProgress) {
+              classProgressMap[fId] = item.classProgress;
+            }
+            if (item?.subjectProgress) {
+              subjectProgressMap[fId] = item.subjectProgress;
+            }
+          }
+
+          const effectiveAy = ay || (options?.syncActiveTerm ? data.currentAcademicYear : "") || academicYear || activeTermAy || "";
+          const effectiveSem = sem || (options?.syncActiveTerm ? data.currentSemester : "") || semester || activeTermSem || "1st Semester";
+          const resolvedKey = `${effectiveAy}::${effectiveSem}`;
+          globalVerificationCache[resolvedKey] = {
             statusMap,
             classProgressMap,
             subjectProgressMap,
+            timestamp: Date.now(),
           };
-        }
+          statusesByTermRef.current[resolvedKey] = globalVerificationCache[resolvedKey];
 
-        setFacultyStatuses(statusMap);
-        setFacultyClassProgress(classProgressMap);
-        setFacultySubjectProgress(subjectProgressMap);
-      }
-    } catch (err) {
-      console.error("Error fetching faculty statuses:", err);
-    } finally {
-      if (!options?.silent) {
+          setFacultyStatuses(statusMap);
+          setFacultyClassProgress(classProgressMap);
+          setFacultySubjectProgress(subjectProgressMap);
+        }
+      } catch (err) {
+        console.error("Error fetching faculty statuses:", err);
+      } finally {
+        inflightVerificationFetches.delete(inflightKey);
         setIsLoadingStatuses(false);
       }
-    }
+    })();
+
+    inflightVerificationFetches.set(inflightKey, fetchPromise);
+    return fetchPromise;
   }
 
-  // Background prefetch known past terms so switching is instant
+  // Background prefetch known past terms with debounce so primary term loads instantly
   useEffect(() => {
     if (facultyAccounts.length === 0 || allKnownYears.length === 0) return;
-    const sems: SemesterOption[] = ["1st Semester", "2nd Semester"];
-    allKnownYears.slice(0, 3).forEach((y) => {
-      sems.forEach((s) => {
-        const termKey = `${y}::${s}`;
-        if (statusesByTermRef.current[termKey]) return;
-        void fetchAllStatuses(y, s, { silent: true });
+    const timer = setTimeout(() => {
+      const sems: SemesterOption[] = ["1st Semester", "2nd Semester"];
+      allKnownYears.slice(0, 1).forEach((y) => {
+        sems.forEach((s) => {
+          const termKey = `${y}::${s}`;
+          if (statusesByTermRef.current[termKey] || globalVerificationCache[termKey]) return;
+          void fetchAllStatuses(y, s, { silent: true });
+        });
       });
-    });
+    }, 1200);
+    return () => clearTimeout(timer);
   }, [facultyAccounts.length, allKnownYears]);
 
   // Load active term, templates, and all faculty statuses in a single batched request on mount
@@ -5331,8 +5393,8 @@ export function RequirementsPanel({
             {/* Academic Term Selector / Status Badge */}
             {activePanelTab === "current" ? (
               activeTermAy ? (
-                <div className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl border border-amber-600 bg-amber-500 text-slate-950 text-xs font-bold shadow-2xs">
-                  <span className="h-2 w-2 rounded-full bg-[#0b5336]" />
+                <div className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-xs font-bold shadow-2xs">
+                  <span className="h-2 w-2 rounded-full bg-slate-400" />
                   <span>Active Term: A.Y. {activeTermAy} &bull; {activeTermSem}</span>
                 </div>
               ) : (
@@ -5685,7 +5747,7 @@ export function RequirementsPanel({
                         </span>
                       </td>
                       <td className="px-4 py-3 text-slate-700 dark:text-slate-300">
-                        {isLoadingStatuses && !facultySubjectProgress[faculty.id] && (!facultyClassProgress[faculty.id] || facultyClassProgress[faculty.id].length === 0) ? (
+                        {isLoadingStatuses && !facultySubjectProgress[faculty.id] && (!facultyClassProgress[faculty.id] || facultyClassProgress[faculty.id].length === 0) && !isNotSubmitted ? (
                           <div className="space-y-1.5 py-1">
                             <div className="h-4 w-28 bg-slate-200 dark:bg-slate-800 rounded animate-pulse" />
                             <div className="h-2 w-36 bg-slate-100 dark:bg-slate-800/60 rounded animate-pulse" />

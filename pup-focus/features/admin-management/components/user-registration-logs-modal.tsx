@@ -15,7 +15,6 @@ import {
   Trash,
   User,
   WarningTriangle,
-  Xmark,
 } from "iconoir-react";
 import { AppIcon } from "@/components/ui/app-icon";
 import { ModalHeader } from "@/components/ui/modal-header";
@@ -609,27 +608,13 @@ export function UserRegistrationLogsModal({
             />
 
             {feedbackMessage ? (
-              <div
-                className={`p-3 rounded-xl text-xs font-semibold flex items-center justify-between transition-all ${
-                  feedbackMessage.type === "success"
-                    ? "bg-emerald-50 text-emerald-800 border border-emerald-200 dark:bg-emerald-950/60 dark:text-emerald-300 dark:border-emerald-800/60"
-                    : "bg-red-50 text-red-800 border border-red-200 dark:bg-red-950/60 dark:text-red-300 dark:border-red-800/60"
-                }`}
-              >
-                <div className="flex items-center gap-2 min-w-0">
-                  {feedbackMessage.type === "success" && (
-                    <AppIcon icon={Check} size="sm" color="success" className="shrink-0" />
-                  )}
-                  <span>{feedbackMessage.text}</span>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setFeedbackMessage(null)}
-                  className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 ml-2 cursor-pointer"
-                >
-                  <AppIcon icon={Xmark} size="sm" color="inherit" />
-                </button>
-              </div>
+              <AlertPopup
+                type={feedbackMessage.type}
+                message={feedbackMessage.text}
+                onClose={() => setFeedbackMessage(null)}
+                position="inline"
+                autoCloseMs={5000}
+              />
             ) : null}
 
             {/* Stats Summary Bar */}
@@ -1504,9 +1489,13 @@ export function UserRegistrationLogsModal({
               </div>
 
               {cancelError ? (
-                <div className="p-3 rounded-xl text-xs font-semibold bg-red-50 text-red-800 border border-red-200 dark:bg-red-950/60 dark:text-red-300 dark:border-red-800/60 text-center">
-                  {cancelError}
-                </div>
+                <AlertPopup
+                  type="error"
+                  message={cancelError}
+                  onClose={() => setCancelError(null)}
+                  position="inline"
+                  autoCloseMs={5000}
+                />
               ) : null}
 
               {/* Confirmation Buttons */}
@@ -1515,7 +1504,7 @@ export function UserRegistrationLogsModal({
                   type="button"
                   onClick={() => setPendingCancelLog(null)}
                   disabled={isCancelling}
-                  className="w-full sm:w-auto rounded-xl border border-slate-300 dark:border-slate-700 bg-white hover:bg-slate-50 dark:bg-slate-800 dark:hover:bg-slate-750 px-4 py-2 text-xs font-semibold text-slate-700 dark:text-slate-200 transition cursor-pointer disabled:opacity-50 text-center shadow-2xs"
+                  className="w-full sm:w-auto rounded-xl border border-[#5e0000] bg-[#780000] hover:bg-[#5e0000] dark:bg-[#780000] dark:hover:bg-[#5e0000] px-4 py-2 text-xs font-semibold text-white dark:text-white transition cursor-pointer disabled:opacity-50 text-center shadow-2xs"
                 >
                   Keep Invitation
                 </button>
@@ -1599,9 +1588,13 @@ export function UserRegistrationLogsModal({
               </div>
 
               {resendError ? (
-                <div className="p-3 rounded-xl text-xs font-semibold bg-red-50 text-red-800 border border-red-200 dark:bg-red-950/60 dark:text-red-300 dark:border-red-800/60 text-center">
-                  {resendError}
-                </div>
+                <AlertPopup
+                  type="error"
+                  message={resendError}
+                  onClose={() => setResendError(null)}
+                  position="inline"
+                  autoCloseMs={5000}
+                />
               ) : null}
 
               {/* Confirmation Buttons - Solid Colors & Centered */}
@@ -1610,7 +1603,7 @@ export function UserRegistrationLogsModal({
                   type="button"
                   onClick={() => setPendingResendLog(null)}
                   disabled={Boolean(resendingEmail)}
-                  className="w-full sm:w-auto rounded-xl border border-slate-700 bg-slate-800 hover:bg-slate-700 px-4 py-2 text-xs font-semibold text-white transition cursor-pointer disabled:opacity-50 text-center shadow-2xs"
+                  className="w-full sm:w-auto rounded-xl border border-[#5e0000] bg-[#780000] hover:bg-[#5e0000] px-4 py-2 text-xs font-semibold text-white transition cursor-pointer disabled:opacity-50 text-center shadow-2xs"
                 >
                   Cancel
                 </button>

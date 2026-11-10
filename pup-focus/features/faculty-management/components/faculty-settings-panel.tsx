@@ -9,9 +9,10 @@ import {
 } from "@/lib/faculty-profile";
 import { createClient } from "@/lib/supabase/client";
 import { emitRealtimeSync, useRealtimeSync } from "@/lib/realtime";
-import { Camera, Check, CheckCircle, Circle, EditPencil, Eye, EyeClosed, Lock, Refresh, ShieldAlert, ShieldCheck, SystemRestart, User, WarningCircle, Xmark } from "iconoir-react";
+import { Camera, Check, CheckCircle, Circle, EditPencil, Eye, EyeClosed, Lock, Refresh, SystemRestart, User, WarningCircle, Xmark } from "iconoir-react";
 import { AppIcon } from "@/components/ui/app-icon";
 import { ModalHeader } from "@/components/ui/modal-header";
+import { AlertPopup } from "@/components/ui/alert-popup";
 import {
   recordActiveSessionLogin,
   pauseSessionVerification,
@@ -1272,64 +1273,15 @@ export function FacultySettingsPanel({
         </article>
       </section>
 
-      {/* Feedback & Alert Modal Dialog */}
+      {/* Feedback & Alert Toast */}
       {feedbackModal?.isOpen && (
-        <div
-          className="fixed inset-0 bg-black/50 dark:bg-black/70 backdrop-blur-xs z-50 flex items-center justify-center p-4"
-          onClick={() => setFeedbackModal(null)}
-        >
-          <div
-            className="bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-800/80 shadow-2xl rounded-3xl p-7 max-w-sm w-full mx-4 flex flex-col items-center text-center animate-in fade-in zoom-in-95 duration-200"
-            onClick={(event) => event.stopPropagation()}
-          >
-            {feedbackModal.type === "error" ? (
-              <div className="relative mb-5 flex items-center justify-center">
-                {/* Ambient Backdrop Glow */}
-                <div className="absolute inset-0 rounded-full bg-rose-500/20 blur-xl dark:bg-rose-500/30" />
-
-                {/* Outer Layer Ring */}
-                <div className="relative flex h-16 w-16 items-center justify-center rounded-2xl bg-rose-500/10 p-3 ring-8 ring-rose-500/5 dark:bg-rose-500/20 dark:ring-rose-500/10">
-                  {/* Inner Shield Icon */}
-                  <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-rose-600 text-white shadow-lg">
-                    <AppIcon icon={ShieldAlert} size="lg" color="inherit" strokeWidth={2.2} />
-                  </div>
-                </div>
-              </div>
-            ) : (
-              <div className="relative mb-5 flex items-center justify-center">
-                {/* Ambient Backdrop Glow */}
-                <div className="absolute inset-0 rounded-full bg-emerald-500/20 blur-xl dark:bg-emerald-500/30" />
-
-                {/* Outer Layer Ring */}
-                <div className="relative flex h-16 w-16 items-center justify-center rounded-2xl bg-emerald-500/10 p-3 ring-8 ring-emerald-500/5 dark:bg-emerald-500/20 dark:ring-emerald-500/10">
-                  {/* Inner Shield Icon */}
-                  <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-[#0b5336] dark:bg-emerald-600 text-white shadow-lg shadow-emerald-950/30">
-                    <AppIcon icon={ShieldCheck} size="lg" color="inherit" strokeWidth={2.4} />
-                  </div>
-                </div>
-              </div>
-            )}
-
-            <h3 className="text-slate-900 dark:text-slate-100 font-bold text-lg tracking-tight mb-1">
-              {feedbackModal.title}
-            </h3>
-            <p className="text-slate-600 dark:text-slate-400 text-sm leading-relaxed mb-5">
-              {feedbackModal.message}
-            </p>
-
-            <button
-              type="button"
-              onClick={() => setFeedbackModal(null)}
-              className={`w-full font-semibold py-3 rounded-2xl text-sm shadow-md transition-all active:scale-[0.98] cursor-pointer ${
-                feedbackModal.type === "success"
-                  ? "bg-[#0b5336] hover:bg-[#08412a] border border-[#08412a] text-white shadow-emerald-950/25"
-                  : "bg-[#780000] hover:bg-[#5e0000] border border-[#5e0000] text-white"
-              }`}
-            >
-              {feedbackModal.type === "success" ? "Done" : "Dismiss"}
-            </button>
-          </div>
-        </div>
+        <AlertPopup
+          type={feedbackModal.type}
+          message={`${feedbackModal.title}. ${feedbackModal.message}`}
+          onClose={() => setFeedbackModal(null)}
+          position="top-right"
+          autoCloseMs={5000}
+        />
       )}
 
       {/* Profile Image Action Modal */}

@@ -3,14 +3,15 @@
 import { useEffect, useState, useMemo } from "react";
 import {
   Archive,
+  OpenNewWindow,
   Page,
   Refresh,
   Search,
   SystemRestart,
-  WarningCircle,
 } from "iconoir-react";
 import { AppIcon } from "@/components/ui/app-icon";
 import { ModalHeader } from "@/components/ui/modal-header";
+import { AlertPopup } from "@/components/ui/alert-popup";
 import { SubmissionStatusBadge } from "@/features/submissions/components/submission-status-badge";
 import type { HistoricalSubmissionItem } from "@/app/api/staff/academic-terms/submissions/route";
 
@@ -165,8 +166,8 @@ export function HistoricalSubmissionsModal({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-2 sm:p-4 backdrop-blur-xs animate-in fade-in duration-200">
-      <div className="flex h-[92vh] w-[96vw] max-w-[1550px] flex-col rounded-2xl border border-slate-200 bg-white shadow-2xl overflow-hidden dark:border-slate-800 dark:bg-slate-900">
+    <div className="fixed inset-0 z-50 flex h-screen w-screen flex-col bg-white overflow-hidden dark:bg-slate-900 animate-in fade-in duration-200">
+      <div className="flex h-full w-full flex-col overflow-hidden bg-white dark:bg-slate-900">
         <ModalHeader
           title={
             isCurrentTerm
@@ -303,9 +304,10 @@ export function HistoricalSubmissionsModal({
                       ? "/admin/dashboard?tab=verification"
                       : "/staff/dashboard?tab=requirements"
                   }
-                  className="font-bold underline text-amber-200 hover:text-white inline-flex items-center gap-1 transition-colors"
+                  style={{ color: "#fef08a" }}
+                  className="font-bold underline !text-amber-200 hover:!text-white text-amber-200 inline-flex items-center gap-1 transition-colors"
                 >
-                  <span>Go to Requirements Verification →</span>
+                  <span style={{ color: "#fef08a" }} className="!text-amber-200 hover:!text-white">Go to Requirements Verification →</span>
                 </a>
               )}
               <span className="font-bold bg-black/20 px-2.5 py-0.5 rounded-full text-white">
@@ -324,10 +326,13 @@ export function HistoricalSubmissionsModal({
             </div>
           ) : error ? (
             <div className="flex h-64 items-center justify-center">
-              <div className="rounded-xl border border-rose-200 bg-rose-50 p-4 text-center text-xs text-rose-800 dark:border-rose-900/60 dark:bg-rose-950/40 dark:text-rose-300 max-w-md">
-                <AppIcon icon={WarningCircle} size="md" color="default" className="mx-auto mb-2 text-rose-500" />
-                <p className="font-semibold">{error}</p>
-              </div>
+              <AlertPopup
+                type="error"
+                message={error}
+                onClose={() => setError(null)}
+                position="inline"
+                autoCloseMs={5000}
+              />
             </div>
           ) : filteredSubmissions.length === 0 ? (
             <div className="flex h-64 flex-col items-center justify-center text-slate-500 dark:text-slate-400">
@@ -359,9 +364,13 @@ export function HistoricalSubmissionsModal({
                       ? "/admin/dashboard?tab=verification"
                       : "/staff/dashboard?tab=requirements"
                   }
-                  className="mt-4 inline-flex items-center gap-1.5 rounded-xl bg-[#0b5336] hover:bg-[#073d2a] text-white border border-[#08412a] px-4 py-2 text-xs font-semibold shadow-xs transition-all cursor-pointer"
+                  style={{ color: "#ffffff" }}
+                  className="mt-4 inline-flex items-center gap-2 rounded-xl bg-[#0b5336] hover:bg-[#073d2a] active:bg-[#052e1f] !text-white text-white border border-emerald-500/40 px-5 py-2.5 text-xs font-bold shadow-md transition-all cursor-pointer hover:shadow-lg hover:scale-[1.02] active:scale-[0.98]"
                 >
-                  <span>Open Requirements Verification</span>
+                  <AppIcon icon={OpenNewWindow} size="sm" color="white" className="shrink-0 text-white !text-white" />
+                  <span style={{ color: "#ffffff" }} className="!text-white text-white font-bold tracking-wide">
+                    Open Requirements Verification
+                  </span>
                 </a>
               )}
             </div>

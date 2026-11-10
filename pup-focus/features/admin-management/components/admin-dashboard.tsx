@@ -614,7 +614,7 @@ export function SuperAdminDashboard({
       });
       if (response.ok) {
         const data = await response.json();
-        setFacultyAccounts(data.faculty || []);
+        setFacultyAccounts((data.faculty || []).slice().sort((a: FacultyAccount, b: FacultyAccount) => (a.fullName || "").localeCompare(b.fullName || "")));
       } else if ((response.status === 401 || response.status === 403) && !isRetry) {
         await new Promise((resolve) => setTimeout(resolve, 300));
         return await loadFacultyFromDatabase(silent, true);
@@ -1023,7 +1023,7 @@ export function SuperAdminDashboard({
             lastLoginAt: acc.last_sign_in_at ?? null,
           };
         });
-        setAdminAccounts(mapped);
+        setAdminAccounts(mapped.slice().sort((a: AdminAccount, b: AdminAccount) => (a.full_name || "").localeCompare(b.full_name || "")));
         return;
       }
 
@@ -1108,6 +1108,8 @@ export function SuperAdminDashboard({
         setVerificationResetTrigger((prev) => prev + 1);
       } else if (activeSection === "settings") {
         await loadAccountSettings(true);
+      } else if (activeSection === "terms") {
+        emitRealtimeSync({ source: "terms-manual-refresh", timestamp: Date.now() });
       } else if (activeSection === "templates" || activeSection === "programs") {
         setTemplatesRefreshTrigger((prev) => prev + 1);
       } else if (activeSection === "dashboard") {
@@ -1142,6 +1144,16 @@ export function SuperAdminDashboard({
             if (current.semester) {
               setCurrentSemester(current.semester);
             }
+          }
+          if (Array.isArray(data.terms) && typeof window !== "undefined") {
+            try {
+              sessionStorage.setItem("pup_focus_academic_terms", JSON.stringify(data.terms));
+              localStorage.setItem("pup_focus_academic_terms", JSON.stringify(data.terms));
+              if (data.nextAcademicYear) {
+                sessionStorage.setItem("pup_focus_next_academic_year", data.nextAcademicYear);
+                localStorage.setItem("pup_focus_next_academic_year", data.nextAcademicYear);
+              }
+            } catch {}
           }
         }
       } catch {}
