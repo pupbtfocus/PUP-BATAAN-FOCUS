@@ -49,16 +49,16 @@ export function SidebarButton({
       onClick={onClick}
       className={`flex w-full items-center gap-3 px-4 py-3 text-left text-sm font-medium transition-colors cursor-pointer rounded-lg ${
         active
-          ? "bg-amber-400/20 text-white font-semibold border-l-2 border-amber-400 shadow-xs"
+          ? "bg-amber-500 text-slate-900 font-bold shadow-sm"
           : "text-amber-100/80 hover:bg-white/10 hover:text-white"
       }`}
     >
       {Icon && (
         <Icon
-          strokeWidth={2}
+          strokeWidth={active ? 2.5 : 2}
           className={`h-5 w-5 shrink-0 ${
             active
-              ? "text-amber-300 stroke-[2]"
+              ? "text-slate-900"
               : "text-amber-200/70"
           }`}
         />
@@ -69,7 +69,7 @@ export function SidebarButton({
           <p
             className={`mt-0.5 text-xs font-normal truncate ${
               active
-                ? "text-amber-200/90"
+                ? "text-slate-800"
                 : "text-amber-200/60"
             }`}
           >
@@ -251,7 +251,7 @@ export function SidebarContent({
               onClick={() => setIsUserManagementOpen((prev) => !prev)}
               className={`flex w-full items-center justify-between gap-3 px-4 py-3 text-left text-sm font-medium transition-colors cursor-pointer rounded-lg ${
                 isUserManagementActive
-                  ? "bg-amber-400/20 text-white font-semibold border-l-2 border-amber-400 shadow-xs"
+                  ? "bg-white/10 text-amber-200 font-semibold"
                   : "text-amber-100/80 hover:bg-white/10 hover:text-white"
               }`}
             >
@@ -285,20 +285,20 @@ export function SidebarContent({
 
             {/* Child Sub-items (Indented with left border indicator) */}
             {isUserManagementOpen && (
-              <div className="ml-3 pl-2.5 border-l border-amber-400/40 flex flex-col gap-1 mt-1">
+              <div className="ml-3 pl-2.5 border-l border-amber-400/30 flex flex-col gap-1 mt-1">
                 <button
                   type="button"
                   onClick={() => handleSelect("accounts")}
-                  className={`flex w-full items-center gap-2.5 px-3 py-2 text-xs font-medium transition-colors cursor-pointer rounded-md ${
+                  className={`flex w-full items-center gap-2.5 px-3 py-2 text-xs font-medium transition-colors cursor-pointer rounded-lg ${
                     isAccountsActive
-                      ? "bg-amber-400/20 text-white font-semibold border-l-2 border-amber-400 shadow-xs"
+                      ? "bg-amber-500 text-slate-900 font-bold shadow-sm"
                       : "text-amber-100/80 hover:bg-white/10 hover:text-white"
                   }`}
                 >
                   <UserBadgeCheck
-                    strokeWidth={2}
+                    strokeWidth={isAccountsActive ? 2.5 : 2}
                     className={`h-4 w-4 shrink-0 ${
-                      isAccountsActive ? "text-amber-300 stroke-[2]" : "text-amber-200/70"
+                      isAccountsActive ? "text-slate-900" : "text-amber-200/70"
                     }`}
                   />
                   <span>Admin & Staff Management</span>
@@ -306,16 +306,16 @@ export function SidebarContent({
                 <button
                   type="button"
                   onClick={() => handleSelect("faculty")}
-                  className={`flex w-full items-center gap-2.5 px-3 py-2 text-xs font-medium transition-colors cursor-pointer rounded-md ${
+                  className={`flex w-full items-center gap-2.5 px-3 py-2 text-xs font-medium transition-colors cursor-pointer rounded-lg ${
                     isFacultyActive
-                      ? "bg-amber-400/20 text-white font-semibold border-l-2 border-amber-400 shadow-xs"
+                      ? "bg-amber-500 text-slate-900 font-bold shadow-sm"
                       : "text-amber-100/80 hover:bg-white/10 hover:text-white"
                   }`}
                 >
                   <Group
-                    strokeWidth={2}
+                    strokeWidth={isFacultyActive ? 2.5 : 2}
                     className={`h-4 w-4 shrink-0 ${
-                      isFacultyActive ? "text-amber-300 stroke-[2]" : "text-amber-200/70"
+                      isFacultyActive ? "text-slate-900" : "text-amber-200/70"
                     }`}
                   />
                   <span>Faculty Management</span>
@@ -350,7 +350,7 @@ export function SidebarContent({
               onClick={() => setIsAcademicCycleOpen((prev) => !prev)}
               className={`flex w-full items-center justify-between gap-3 px-4 py-3 text-left text-sm font-medium transition-colors cursor-pointer rounded-lg ${
                 isAcademicCycleActive
-                  ? "bg-amber-400/20 text-white font-semibold border-l-2 border-amber-400 shadow-xs"
+                  ? "bg-white/10 text-amber-200 font-semibold"
                   : "text-amber-100/80 hover:bg-white/10 hover:text-white"
               }`}
             >
@@ -384,22 +384,22 @@ export function SidebarContent({
 
             {/* Child Sub-items (Indented with left border indicator) */}
             {isAcademicCycleOpen && (
-              <div className="ml-3 pl-2.5 border-l border-amber-400/40 flex flex-col gap-1 mt-1">
+              <div className="ml-3 pl-2.5 border-l border-amber-400/30 flex flex-col gap-1 mt-1">
                 <button
                   type="button"
                   onClick={() =>
                     handleSelect(isSuperAdmin ? "terms" : "academicTerms")
                   }
-                  className={`flex w-full items-center gap-2.5 px-3 py-2 text-xs font-medium transition-colors cursor-pointer rounded-md whitespace-nowrap ${
+                  className={`flex w-full items-center gap-2.5 px-3 py-2 text-xs font-medium transition-colors cursor-pointer rounded-lg whitespace-nowrap ${
                     isTermsActive
-                      ? "bg-amber-400/20 text-white font-semibold border-l-2 border-amber-400 shadow-xs"
+                      ? "bg-amber-500 text-slate-900 font-bold shadow-sm"
                       : "text-amber-100/80 hover:bg-white/10 hover:text-white"
                   }`}
                 >
                   <Calendar
-                    strokeWidth={2}
+                    strokeWidth={isTermsActive ? 2.5 : 2}
                     className={`h-4 w-4 shrink-0 ${
-                      isTermsActive ? "text-amber-300 stroke-[2]" : "text-amber-200/70"
+                      isTermsActive ? "text-slate-900" : "text-amber-200/70"
                     }`}
                   />
                   <span className="whitespace-nowrap">Academic Year & Semester</span>
@@ -409,17 +409,17 @@ export function SidebarContent({
                   onClick={() =>
                     handleSelect(isSuperAdmin ? "window" : "submissionWindow")
                   }
-                  className={`flex w-full items-center gap-2.5 px-3 py-2 text-xs font-medium transition-colors cursor-pointer rounded-md text-left ${
+                  className={`flex w-full items-center gap-2.5 px-3 py-2 text-xs font-medium transition-colors cursor-pointer rounded-lg text-left ${
                     isWindowActive
-                      ? "bg-amber-400/20 text-white font-semibold border-l-2 border-amber-400 shadow-xs"
+                      ? "bg-amber-500 text-slate-900 font-bold shadow-sm"
                       : "text-amber-100/80 hover:bg-white/10 hover:text-white"
                   }`}
                   title="Submission Schedule & Extension Requests"
                 >
                   <Hourglass
-                    strokeWidth={2}
+                    strokeWidth={isWindowActive ? 2.5 : 2}
                     className={`h-4 w-4 shrink-0 ${
-                      isWindowActive ? "text-amber-300 stroke-[2]" : "text-amber-200/70"
+                      isWindowActive ? "text-slate-900" : "text-amber-200/70"
                     }`}
                   />
                   <span className="leading-tight">Submission Schedule &amp; Extension Requests</span>
@@ -427,18 +427,18 @@ export function SidebarContent({
                 <button
                   type="button"
                   onClick={() => handleSelect("templates")}
-                  className={`flex w-full items-center gap-2.5 px-3 py-2 text-xs font-medium transition-colors cursor-pointer rounded-md whitespace-nowrap ${
+                  className={`flex w-full items-center gap-2.5 px-3 py-2 text-xs font-medium transition-colors cursor-pointer rounded-lg whitespace-nowrap ${
                     isTemplatesActive || isProgramsActive
-                      ? "bg-amber-400/20 text-white font-semibold border-l-2 border-amber-400 shadow-xs"
+                      ? "bg-amber-500 text-slate-900 font-bold shadow-sm"
                       : "text-amber-100/80 hover:bg-white/10 hover:text-white"
                   }`}
                   title="Requirement Templates & Academic Programs"
                 >
                   <Page
-                    strokeWidth={2}
+                    strokeWidth={isTemplatesActive || isProgramsActive ? 2.5 : 2}
                     className={`h-4 w-4 shrink-0 ${
                       isTemplatesActive || isProgramsActive
-                        ? "text-amber-300 stroke-[2]"
+                        ? "text-slate-900"
                         : "text-amber-200/70"
                     }`}
                   />
@@ -448,16 +448,16 @@ export function SidebarContent({
                   <button
                     type="button"
                     onClick={() => handleSelect("backups")}
-                    className={`flex w-full items-center gap-2.5 px-3 py-2 text-xs font-medium transition-colors cursor-pointer rounded-md whitespace-nowrap ${
+                    className={`flex w-full items-center gap-2.5 px-3 py-2 text-xs font-medium transition-colors cursor-pointer rounded-lg whitespace-nowrap ${
                       isBackupsActive
-                        ? "bg-amber-400/20 text-white font-semibold border-l-2 border-amber-400 shadow-xs"
+                        ? "bg-amber-500 text-slate-900 font-bold shadow-sm"
                         : "text-amber-100/80 hover:bg-white/10 hover:text-white"
                     }`}
                   >
                     <Archive
-                      strokeWidth={2}
+                      strokeWidth={isBackupsActive ? 2.5 : 2}
                       className={`h-4 w-4 shrink-0 ${
-                        isBackupsActive ? "text-amber-300 stroke-[2]" : "text-amber-200/70"
+                        isBackupsActive ? "text-slate-900" : "text-amber-200/70"
                       }`}
                     />
                     <span className="whitespace-nowrap">Backups & Archive</span>

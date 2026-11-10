@@ -3670,15 +3670,15 @@ function FacultySubmissionPanelContent({
                 onClick={() => navigateToView(key as PanelView)}
                 className={`flex w-full items-center gap-3 px-4 py-3 text-left text-sm font-medium transition-colors cursor-pointer rounded-lg ${
                   isActive
-                    ? "bg-amber-400/20 text-white font-semibold border-l-2 border-amber-400 shadow-xs"
+                    ? "bg-amber-500 text-slate-900 font-bold shadow-sm"
                     : "text-amber-100/80 hover:bg-white/10 hover:text-white"
                 }`}
               >
                 <Icon
-                  strokeWidth={2}
+                  strokeWidth={isActive ? 2.5 : 2}
                   className={`h-5 w-5 shrink-0 ${
                     isActive
-                      ? "text-amber-300 stroke-[2]"
+                      ? "text-slate-900"
                       : "text-amber-200/70"
                   }`}
                 />
@@ -3787,15 +3787,15 @@ function FacultySubmissionPanelContent({
                     }}
                     className={`flex w-full items-center gap-3 px-4 py-3 text-left text-sm font-medium transition-colors cursor-pointer rounded-lg ${
                       isActive
-                        ? "bg-amber-400/20 text-white font-semibold border-l-2 border-amber-400 shadow-xs"
+                        ? "bg-amber-500 text-slate-900 font-bold shadow-sm"
                         : "text-amber-100/80 hover:bg-white/10 hover:text-white"
                     }`}
                   >
                     <Icon
-                      strokeWidth={2}
+                      strokeWidth={isActive ? 2.5 : 2}
                       className={`h-5 w-5 shrink-0 ${
                         isActive
-                          ? "text-amber-300 stroke-[2]"
+                          ? "text-slate-900"
                           : "text-amber-200/70"
                       }`}
                     />
