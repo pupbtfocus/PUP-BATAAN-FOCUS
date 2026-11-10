@@ -19,6 +19,7 @@ import { ModalHeader } from "@/components/ui/modal-header";
 import type { RequirementTemplate } from "@/features/requirement-templates/types/requirement-template.types";
 import { RequirementTemplateModal } from "./requirement-template-modal";
 import { RequirementTemplateDetailsModal } from "./requirement-template-details-modal";
+import { FormatIcon } from "./format-icon";
 import { AlertPopup } from "@/components/ui/alert-popup";
 import { emitRealtimeSync, useRealtimeSync } from "@/lib/realtime";
 
@@ -372,7 +373,7 @@ export function RequirementTemplatesPanel({
             className="bg-amber-500 hover:bg-amber-400 text-slate-950 border border-amber-600 font-semibold px-4 py-2 rounded-xl text-xs transition-all shadow-xs cursor-pointer inline-flex items-center gap-1.5 whitespace-nowrap"
           >
             <Plus className="h-3.5 w-3.5" strokeWidth={2} />
-            <span>+ Add Requirement Template</span>
+            <span>Add Requirement Template</span>
           </button>
         </div>
       </div>
@@ -435,13 +436,19 @@ export function RequirementTemplatesPanel({
                   </td>
 
                   {/* Column 2: Allowed Formats */}
-                  <td className="py-3 px-4 whitespace-nowrap">
-                    <span
-                      className="inline-flex items-center px-2 py-0.5 text-[11px] font-semibold rounded-md bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-300 dark:border-slate-700 whitespace-nowrap"
-                      title={tpl.allowed_formats.join(", ")}
-                    >
-                      {tpl.allowed_formats.join(", ")}
-                    </span>
+                  <td className="py-3 px-4">
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      {tpl.allowed_formats.map((fmt) => (
+                        <span
+                          key={fmt}
+                          className="inline-flex items-center gap-1 px-1.5 py-0.5 text-[11px] font-bold rounded-md bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 border border-slate-300 dark:border-slate-700 shadow-2xs whitespace-nowrap"
+                          title={fmt}
+                        >
+                          <FormatIcon format={fmt} className="h-3.5 w-3.5 shrink-0" />
+                          <span>{fmt}</span>
+                        </span>
+                      ))}
+                    </div>
                   </td>
 
                   {/* Column 3: Max Size */}
