@@ -30,7 +30,6 @@ import {
   Book,
 } from "iconoir-react";
 import { AppIcon } from "@/components/ui/app-icon";
-import { ModalHeader } from "@/components/ui/modal-header";
 import { AlertPopup } from "@/components/ui/alert-popup";
 import { useRealtimeSync } from "@/lib/realtime";
 
@@ -110,49 +109,11 @@ type ActionBadgeStyle = {
 };
 
 function getActionBadgeStyle(action: string): ActionBadgeStyle {
-  if (action === "auth.login") {
-    return { bg: "bg-blue-700 border-blue-800", text: "text-white", icon: <AppIcon icon={LogIn} size="xs" color="inherit" /> };
-  }
-  if (action === "auth.logout") {
-    return { bg: "bg-slate-700 border-slate-800", text: "text-white", icon: <AppIcon icon={LogOut} size="xs" color="inherit" /> };
-  }
-  if (action.includes("academic_term")) {
-    return { bg: "bg-indigo-700 border-indigo-800", text: "text-white", icon: <AppIcon icon={Calendar} size="xs" color="inherit" /> };
-  }
-  if (action.includes("template")) {
-    return { bg: "bg-purple-700 border-purple-800", text: "text-white", icon: <AppIcon icon={ViewGrid} size="xs" color="inherit" /> };
-  }
-  if (action.includes("class") || action.includes("program")) {
-    return { bg: "bg-teal-700 border-teal-800", text: "text-white", icon: <AppIcon icon={Book} size="xs" color="inherit" /> };
-  }
-  if (action === "backup.create") {
-    return { bg: "bg-[#0b5336] border-[#08412a]", text: "text-white", icon: <AppIcon icon={CheckCircle} size="xs" color="inherit" /> };
-  }
-  if (action === "backup.delete") {
-    return { bg: "bg-[#780000] border-[#5e0000]", text: "text-white", icon: <AppIcon icon={Trash} size="xs" color="inherit" /> };
-  }
-  if (action === "backup.download") {
-    return { bg: "bg-amber-600 border-amber-700", text: "text-white", icon: <AppIcon icon={Page} size="xs" color="inherit" /> };
-  }
-  if (action === "backup.export_zip") {
-    return { bg: "bg-slate-600 border-slate-700", text: "text-white", icon: <AppIcon icon={Page} size="xs" color="inherit" /> };
-  }
-  if (action.includes("approve") || action.includes("validated") || action.includes("activate")) {
-    return { bg: "bg-[#0b5336] border-[#08412a]", text: "text-white", icon: <AppIcon icon={CheckCircle} size="xs" color="inherit" /> };
-  }
-  if (action.includes("create") || action.includes("invite")) {
-    return { bg: "bg-emerald-700 border-emerald-800", text: "text-white", icon: <AppIcon icon={UserPlus} size="xs" color="inherit" /> };
-  }
-  if (action.includes("reject") || action.includes("delete") || action.includes("deactivate")) {
-    return { bg: "bg-[#780000] border-[#5e0000]", text: "text-white", icon: <AppIcon icon={XmarkCircle} size="xs" color="inherit" /> };
-  }
-  if (action.includes("upload")) {
-    return { bg: "bg-blue-700 border-blue-800", text: "text-white", icon: <AppIcon icon={Upload} size="xs" color="inherit" /> };
-  }
-  if (action.includes("update") || action.includes("window")) {
-    return { bg: "bg-amber-600 border-amber-700", text: "text-white", icon: <AppIcon icon={EditPencil} size="xs" color="inherit" /> };
-  }
-  return { bg: "bg-slate-600 border-slate-700", text: "text-white", icon: <AppIcon icon={ShieldAlert} size="xs" color="inherit" /> };
+  return {
+    bg: "bg-slate-100 dark:bg-slate-800 border-slate-300 dark:border-slate-700",
+    text: "text-slate-700 dark:text-slate-200",
+    icon: <AppIcon icon={getActionIcon(action)} size="xs" color="inherit" />,
+  };
 }
 
 function getActionIcon(action: string) {
@@ -179,9 +140,9 @@ function formatActionLabel(action: string): string {
     .replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
-// ─── Metadata Modal ──────────────────────────────────────────────────
+// ─── Log Detail Modal (no metadata) ──────────────────────────────────
 
-function MetadataModal({
+function LogDetailModal({
   entry,
   onClose,
 }: {
@@ -194,110 +155,45 @@ function MetadataModal({
       onClick={onClose}
     >
       <div
-        className="flex w-full max-w-2xl flex-col overflow-hidden rounded-2xl border border-slate-400 dark:border-slate-800 bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 shadow-2xl"
+        className="flex w-full max-w-lg flex-col overflow-hidden rounded-2xl border border-slate-400 dark:border-slate-800 bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
-        <ModalHeader
-          title={formatActionLabel(entry.action)}
-          subtitle="Transaction Log Detail"
-          icon={getActionIcon(entry.action)}
-        />
-
-        {/* Body */}
-        <div className="max-h-[70vh] overflow-y-auto px-6 py-5 space-y-4">
-          {/* Summary Grid */}
-          <div className="grid grid-cols-2 gap-3">
-            <div className="rounded-xl border border-slate-400 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 p-3">
-              <p className="text-[10px] uppercase tracking-[0.2em] text-slate-600 dark:text-slate-400 font-semibold">
-                Timestamp
-              </p>
-              <p className="mt-1 text-sm font-medium text-slate-900 dark:text-slate-100">
-                {formatTimestamp(entry.createdAt)}
-              </p>
-            </div>
-            <div className="rounded-xl border border-slate-400 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 p-3">
-              <p className="text-[10px] uppercase tracking-[0.2em] text-slate-600 dark:text-slate-400 font-semibold">
-                Actor
-              </p>
-              <p className="mt-1 text-sm font-medium text-slate-900 dark:text-slate-100">
-                {entry.actorName ?? truncateId(entry.actorId)}
-              </p>
-            </div>
-            <div className="rounded-xl border border-slate-400 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 p-3">
-              <p className="text-[10px] uppercase tracking-[0.2em] text-slate-600 dark:text-slate-400 font-semibold">
-                Entity Type
-              </p>
-              <p className="mt-1 text-sm font-medium text-slate-900 dark:text-slate-100">
-                {entry.entityType}
-              </p>
-            </div>
-            <div className="rounded-xl border border-slate-400 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 p-3">
-              <p className="text-[10px] uppercase tracking-[0.2em] text-slate-600 dark:text-slate-400 font-semibold">
-                Entity ID
-              </p>
-              <p className="mt-1 text-sm font-mono text-slate-900 dark:text-slate-100 break-all">
-                {entry.entityId ?? "—"}
-              </p>
+        <div className="px-6 py-4 border-b border-slate-300 dark:border-slate-800">
+          <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">
+            {formatActionLabel(entry.action)}
+          </h3>
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+            Transaction Log Detail
+          </p>
+        </div>
+        <div className="px-6 py-5 space-y-3">
+          <div className="rounded-xl border border-slate-300 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 p-3 flex items-center gap-3">
+            <AppIcon icon={Hourglass} size="sm" color="muted" />
+            <div>
+              <p className="text-[10px] uppercase tracking-[0.2em] text-slate-600 dark:text-slate-400 font-semibold">Timestamp</p>
+              <p className="mt-1 text-sm font-medium text-slate-900 dark:text-slate-100">{formatTimestamp(entry.createdAt)}</p>
             </div>
           </div>
-
-          {/* Full Actor ID */}
-          <div className="rounded-xl border border-slate-400 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 p-3">
-            <p className="text-[10px] uppercase tracking-[0.2em] text-slate-600 dark:text-slate-400 font-semibold">
-              Actor ID
-            </p>
-            <p className="mt-1 text-sm font-mono text-slate-900 dark:text-slate-100 break-all">
-              {entry.actorId ?? "—"}
-            </p>
+          <div className="rounded-xl border border-slate-300 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 p-3 flex items-center gap-3">
+            <AppIcon icon={UserBadgeCheck} size="sm" color="muted" />
+            <div>
+              <p className="text-[10px] uppercase tracking-[0.2em] text-slate-600 dark:text-slate-400 font-semibold">Actor</p>
+              <p className="mt-1 text-sm font-medium text-slate-900 dark:text-slate-100">{entry.actorName ?? "System"}</p>
+            </div>
           </div>
-
-          {/* Metadata JSON */}
-          <div className="rounded-xl border border-slate-400 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 p-3">
-            <p className="text-[10px] uppercase tracking-[0.2em] text-slate-600 dark:text-slate-400 font-semibold mb-2">
-              Metadata
-            </p>
-            {Object.keys(entry.metadata).length > 0 ? (
-              <div className="space-y-1.5">
-                {Object.entries(entry.metadata).map(([key, value]) => (
-                  <div
-                    key={key}
-                    className="flex items-start gap-2 text-sm"
-                  >
-                    <span className="font-mono text-amber-700 dark:text-amber-300 font-semibold shrink-0">
-                      {key}:
-                    </span>
-                    <span className="font-mono text-slate-900 dark:text-slate-200 break-all">
-                      {typeof value === "object"
-                        ? JSON.stringify(value)
-                        : String(value ?? "null")}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p className="text-sm italic text-slate-500 dark:text-slate-400">
-                No metadata recorded.
-              </p>
-            )}
-          </div>
-
-          {/* Log ID */}
-          <div className="rounded-xl border border-slate-400 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 p-3">
-            <p className="text-[10px] uppercase tracking-[0.2em] text-slate-600 dark:text-slate-400 font-semibold">
-              Log ID
-            </p>
-            <p className="mt-1 text-sm font-mono text-slate-900 dark:text-slate-100 break-all">
-              {entry.id}
-            </p>
+          <div className="rounded-xl border border-slate-300 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 p-3 flex items-center gap-3">
+            <AppIcon icon={Page} size="sm" color="muted" />
+            <div>
+              <p className="text-[10px] uppercase tracking-[0.2em] text-slate-600 dark:text-slate-400 font-semibold">Entity Type</p>
+              <p className="mt-1 text-sm font-medium text-slate-900 dark:text-slate-100 capitalize">{entry.entityType.replace(/_/g, " ")}</p>
+            </div>
           </div>
         </div>
-
-        {/* Footer */}
-        <div className="border-t border-slate-400 dark:border-slate-800 px-6 py-3 flex justify-end">
+        <div className="border-t border-slate-300 dark:border-slate-800 px-6 py-3 flex justify-end">
           <button
             type="button"
             onClick={onClose}
-            className="px-4 py-2 rounded-xl text-xs font-semibold bg-[#780000] hover:bg-[#5e0000] text-white border border-[#5e0000] transition cursor-pointer shadow-xs"
+            className="px-4 py-2 rounded-xl text-xs font-semibold bg-[#780000] hover:bg-[#5e0000] text-white border border-[#5e0000] transition cursor-pointer"
           >
             Close
           </button>
@@ -355,7 +251,6 @@ export function TransactionLogsPanel() {
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [actionCategory, setActionCategory] = useState<ActionCategory>("");
   const [isCategoryDropdownOpen, setIsCategoryDropdownOpen] = useState(false);
-  const [selectedEntry, setSelectedEntry] = useState<TransactionLogEntry | null>(null);
 
   const currentCategoryOption =
     ACTION_CATEGORY_OPTIONS.find((opt) => opt.value === actionCategory) ||
@@ -369,6 +264,7 @@ export function TransactionLogsPanel() {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [selectionMode, setSelectionMode] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [selectedEntry, setSelectedEntry] = useState<TransactionLogEntry | null>(null);
   const [deleteConfirmEntry, setDeleteConfirmEntry] = useState<TransactionLogEntry | null>(null);
 
   // Debounce search
@@ -843,9 +739,6 @@ export function TransactionLogsPanel() {
                       <p className="text-sm font-medium text-slate-800 dark:text-slate-200 capitalize">
                         {entry.entityType.replace(/_/g, " ")}
                       </p>
-                      <p className="text-[10px] font-mono text-slate-500 dark:text-slate-400 truncate">
-                        {truncateId(entry.entityId)}
-                      </p>
                     </div>
 
                     {/* Actions — View + Delete */}
@@ -853,7 +746,7 @@ export function TransactionLogsPanel() {
                       <button
                         type="button"
                         onClick={() => setSelectedEntry(entry)}
-                        className="bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 text-slate-900 dark:text-slate-200 border border-slate-300 dark:border-slate-700 rounded-lg px-2.5 py-1 text-xs font-semibold transition cursor-pointer flex items-center gap-1"
+                        className="bg-[#780000] hover:bg-[#5e0000] text-white border border-[#5e0000] rounded-lg px-2.5 py-1 text-xs font-semibold transition cursor-pointer flex items-center gap-1 shadow-xs"
                         title="View details"
                       >
                         <AppIcon icon={Eye} size="xs" color="inherit" />
@@ -937,9 +830,9 @@ export function TransactionLogsPanel() {
         </div>
       ) : null}
 
-      {/* ── Metadata Detail Modal ── */}
+      {/* ── Log Detail Modal ── */}
       {selectedEntry ? (
-        <MetadataModal
+        <LogDetailModal
           entry={selectedEntry}
           onClose={() => setSelectedEntry(null)}
         />
