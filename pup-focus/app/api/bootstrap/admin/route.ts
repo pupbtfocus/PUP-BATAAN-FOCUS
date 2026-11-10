@@ -40,9 +40,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    const effectivePassword =
-      SUPER_ADMIN_PASSWORD ||
-      (process.env.NODE_ENV !== "production" ? "SuperAdmin123!" : "");
+    const effectivePassword = SUPER_ADMIN_PASSWORD;
 
     if (!effectivePassword) {
       return NextResponse.json(

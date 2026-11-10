@@ -412,14 +412,13 @@ export function BackupArchivePanel() {
   }, [backups, backupSearchQuery]);
 
   // Section 3: Academic Terms & Semester Archive Vault terms
-  // Excludes upcoming terms without backups, strictly showing backed-up semesters, past academic semesters, and the active term.
+  // Shows archived/past semesters and semesters with verified backups. Ongoing active terms that cannot be archived yet are excluded.
   const allVaultCandidateTerms = useMemo(() => {
     const rawList = availableTerms.length > 0 ? availableTerms : archivedTerms;
     return rawList.filter((term) => {
       const isBackedUp = isTermBackedUp(term.academic_year, term.semester);
       const isPast = term.status === "Archived" || Boolean(term.is_archived);
-      const isCurrent = term.status === "Current";
-      return isBackedUp || isPast || isCurrent;
+      return isPast || isBackedUp;
     });
   }, [availableTerms, archivedTerms, backups]);
 
@@ -911,7 +910,7 @@ export function BackupArchivePanel() {
             />
             <span>
               Active Operational Term:{" "}
-              <span className="text-slate-950 dark:text-white font-extrabold">
+              <span className="text-slate-900 dark:text-white font-extrabold">
                 A.Y. {currentActiveTerm.academic_year} · {currentActiveTerm.semester}
               </span>
               {" — "}
@@ -999,13 +998,13 @@ export function BackupArchivePanel() {
               type="button"
               disabled={Boolean(exportingTermKey) || isGeneratingBackup}
               onClick={() => void handleDownloadZip()}
-              className="w-full h-10 flex items-center justify-center gap-2 bg-amber-500 hover:bg-amber-400 text-slate-950 border border-amber-600 font-bold rounded-xl text-xs sm:text-sm px-4 transition shadow-xs cursor-pointer active:scale-[0.98] disabled:opacity-50"
+              className="w-full h-10 flex items-center justify-center gap-2 bg-amber-500 hover:bg-amber-400 text-slate-900 border border-amber-600 font-bold rounded-xl text-xs sm:text-sm px-4 transition shadow-xs cursor-pointer active:scale-[0.98] disabled:opacity-50"
               title="Download all faculty submitted requirement documents as a verified ZIP vault"
             >
               {exportingTermKey ===
               `${selectedAcademicYear}__${selectedSemester}__all` ? (
                 <>
-                  <Refresh className="w-4 h-4 animate-spin text-slate-950" />
+                  <Refresh className="w-4 h-4 animate-spin text-slate-900" />
                   <span>{exportProgress || "Packaging documents..."}</span>
                 </>
               ) : (
@@ -1248,13 +1247,13 @@ export function BackupArchivePanel() {
                                   "all",
                                 )
                               }
-                              className="px-2.5 py-1 text-xs font-semibold rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 border border-amber-600 transition cursor-pointer flex items-center gap-1 shadow-xs disabled:opacity-50 shrink-0"
+                              className="px-2.5 py-1 text-xs font-semibold rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-900 border border-amber-600 transition cursor-pointer flex items-center gap-1 shadow-xs disabled:opacity-50 shrink-0"
                               title="Download document archive (.ZIP)"
                             >
                               {rowExportingKey ===
                               `${scopeAy ?? "all"}__${scopeSem ?? "all"}__all` ? (
                                 <>
-                                  <Refresh className="w-3 h-3 animate-spin text-slate-950" />
+                                  <Refresh className="w-3 h-3 animate-spin text-slate-900" />
                                   <span>
                                     {rowExportProgress || "Zipping..."}
                                   </span>
@@ -1300,8 +1299,7 @@ export function BackupArchivePanel() {
               <span>Academic Terms &amp; Semester Archive Vault</span>
             </h2>
             <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-              Monitor per-semester backup readiness across all academic periods.
-              Active terms require a verified backup before changing term.
+              Historical archive of finalized academic terms and verified semester snapshot backups.
             </p>
           </div>
 
@@ -1310,14 +1308,18 @@ export function BackupArchivePanel() {
             <button
               type="button"
               onClick={() => setArchiveVaultFilter("all")}
-              className={`px-3 py-1 rounded-lg font-medium transition cursor-pointer flex items-center gap-1.5 ${
+              className={`px-3 py-1.5 rounded-lg transition cursor-pointer flex items-center gap-1.5 font-bold ${
                 archiveVaultFilter === "all"
-                  ? "bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 shadow-2xs font-bold"
+                  ? "bg-amber-500 text-slate-900 border border-amber-600 shadow-2xs"
                   : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200"
               }`}
             >
               <span>All Terms</span>
-              <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-slate-200 dark:bg-slate-700 font-mono">
+              <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-mono ${
+                archiveVaultFilter === "all"
+                  ? "bg-amber-600/30 text-slate-900"
+                  : "bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300"
+              }`}>
                 {allVaultCandidateTerms.length}
               </span>
             </button>
@@ -1325,9 +1327,9 @@ export function BackupArchivePanel() {
             <button
               type="button"
               onClick={() => setArchiveVaultFilter("backed_up")}
-              className={`px-3 py-1 rounded-lg font-medium transition cursor-pointer flex items-center gap-1.5 ${
+              className={`px-3 py-1.5 rounded-lg transition cursor-pointer flex items-center gap-1.5 font-bold ${
                 archiveVaultFilter === "backed_up"
-                  ? "bg-amber-500 text-slate-950 font-bold shadow-2xs"
+                  ? "bg-[#0b5336] text-white border border-[#08412a] shadow-2xs"
                   : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200"
               }`}
             >
@@ -1335,8 +1337,8 @@ export function BackupArchivePanel() {
               <span
                 className={`text-[10px] px-1.5 py-0.2 rounded-full font-mono ${
                   archiveVaultFilter === "backed_up"
-                    ? "bg-slate-950 text-white"
-                    : "bg-slate-200 dark:bg-slate-700"
+                    ? "bg-emerald-950/40 text-emerald-100"
+                    : "bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300"
                 }`}
               >
                 {vaultBackedUpCount}
@@ -1346,9 +1348,9 @@ export function BackupArchivePanel() {
             <button
               type="button"
               onClick={() => setArchiveVaultFilter("past")}
-              className={`px-3 py-1 rounded-lg font-medium transition cursor-pointer flex items-center gap-1.5 ${
+              className={`px-3 py-1.5 rounded-lg transition cursor-pointer flex items-center gap-1.5 font-bold ${
                 archiveVaultFilter === "past"
-                  ? "bg-amber-500 text-slate-950 font-bold shadow-2xs"
+                  ? "bg-[#780000] text-white border border-[#5e0000] shadow-2xs"
                   : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200"
               }`}
             >
@@ -1356,8 +1358,8 @@ export function BackupArchivePanel() {
               <span
                 className={`text-[10px] px-1.5 py-0.2 rounded-full font-mono ${
                   archiveVaultFilter === "past"
-                    ? "bg-slate-950 text-white"
-                    : "bg-slate-200 dark:bg-slate-700"
+                    ? "bg-rose-950/40 text-rose-100"
+                    : "bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300"
                 }`}
               >
                 {vaultPastCount}
@@ -1370,7 +1372,7 @@ export function BackupArchivePanel() {
         <div className="w-full rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm shadow-slate-300/50 dark:shadow-none overflow-hidden transition-colors">
           <div className="overflow-x-auto">
             <table className="w-full min-w-[760px] text-left text-xs border-collapse">
-              <thead className="border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/60 text-slate-600 dark:text-slate-300 text-[11px] font-bold uppercase tracking-wider">
+              <thead className="border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/60 text-slate-700 dark:text-slate-300 text-[11px] font-bold uppercase tracking-wider">
                 <tr>
                   <th className="py-3 px-3 text-center w-10 text-slate-400 dark:text-slate-500">
                     #
@@ -1396,7 +1398,7 @@ export function BackupArchivePanel() {
                     >
                       <AppIcon
                         icon={Archive}
-                        size="md"
+                        size="xl"
                         color="muted"
                         className="mx-auto mb-2"
                       />
@@ -1405,14 +1407,14 @@ export function BackupArchivePanel() {
                           ? "No backed-up semesters found"
                           : archiveVaultFilter === "past"
                             ? "No past academic semesters found"
-                            : "No academic terms found"}
+                            : "No archived semesters in vault"}
                       </p>
-                      <p className="text-xs text-slate-500 mt-1">
+                      <p className="text-xs text-slate-500 mt-1 max-w-sm mx-auto">
                         {archiveVaultFilter === "backed_up"
                           ? "Semesters with verified snapshot backups stored will appear here."
                           : archiveVaultFilter === "past"
                             ? "Past academic semesters archived upon term changes will appear here."
-                            : "Only backed-up semesters or past academic terms are stored in this vault."}
+                            : "Past academic terms and verified semester backups are safely preserved in this archive vault."}
                       </p>
                     </td>
                   </tr>
@@ -1431,9 +1433,7 @@ export function BackupArchivePanel() {
                     return (
                       <tr
                         key={`${term.academic_year}-${term.semester}`}
-                        className={`hover:bg-slate-50/60 dark:hover:bg-slate-800/40 transition-colors align-middle ${
-                          isCurrent ? "bg-amber-500/5 dark:bg-amber-500/10" : ""
-                        }`}
+                        className="hover:bg-slate-50/60 dark:hover:bg-slate-800/40 transition-colors align-middle"
                       >
                         {/* Column 1: Row Index (#) */}
                         <td className="py-3.5 px-3 text-center text-slate-400 dark:text-slate-500 font-mono text-xs select-none">
@@ -1464,17 +1464,17 @@ export function BackupArchivePanel() {
                         {/* Column 3: Term State */}
                         <td className="py-3.5 px-4 whitespace-nowrap">
                           {isCurrent ? (
-                            <span className="inline-flex items-center gap-1.5 bg-amber-500 text-slate-950 border border-amber-600 px-2 py-0.5 text-xs font-bold rounded-md shadow-2xs">
-                              <span className="w-1.5 h-1.5 rounded-full bg-slate-950 animate-pulse" />
+                            <span className="inline-flex items-center gap-1.5 bg-amber-500 text-slate-900 border border-amber-600 px-2.5 py-0.5 text-xs font-bold rounded-md shadow-2xs">
+                              <span className="w-1.5 h-1.5 rounded-full bg-amber-700 animate-pulse" />
                               Current Term
                             </span>
                           ) : isArchived ? (
-                            <span className="inline-flex items-center gap-1.5 bg-[#0b5336] text-white border border-[#08412a] px-2 py-0.5 text-xs font-semibold rounded-md shadow-2xs">
+                            <span className="inline-flex items-center gap-1.5 bg-[#0b5336] text-white border border-[#08412a] px-2.5 py-0.5 text-xs font-semibold rounded-md shadow-2xs">
                               <span className="w-1.5 h-1.5 rounded-full bg-emerald-300" />
                               Archived
                             </span>
                           ) : (
-                            <span className="inline-flex items-center gap-1.5 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-300 dark:border-slate-700 px-2 py-0.5 text-xs font-semibold rounded-md shadow-2xs">
+                            <span className="inline-flex items-center gap-1.5 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-300 dark:border-slate-700 px-2.5 py-0.5 text-xs font-semibold rounded-md shadow-2xs">
                               Upcoming
                             </span>
                           )}
@@ -1491,15 +1491,6 @@ export function BackupArchivePanel() {
                                 strokeWidth={2.5}
                               />
                               <span>Verified Snapshot Stored</span>
-                            </span>
-                          ) : isCurrent ? (
-                            <span className="inline-flex items-center gap-1.5 text-xs font-bold text-slate-950 bg-amber-500 border border-amber-600 px-2.5 py-0.5 rounded-md shadow-2xs">
-                              <AppIcon
-                                icon={WarningTriangle}
-                                size="xs"
-                                color="inherit"
-                              />
-                              <span>Backup Required Before Changing Term</span>
                             </span>
                           ) : (
                             <span className="inline-flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400 font-normal">
@@ -1520,12 +1511,12 @@ export function BackupArchivePanel() {
                                   term.semester,
                                 )
                               }
-                              className="px-2.5 py-1 text-xs font-semibold rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 border border-amber-600 transition cursor-pointer inline-flex items-center gap-1 shadow-xs disabled:opacity-50 shrink-0"
+                              className="px-3 py-1.5 text-xs font-bold rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-900 border border-amber-600 transition cursor-pointer inline-flex items-center gap-1.5 shadow-xs disabled:opacity-50 shrink-0"
                               title="Download faculty files archive (.ZIP)"
                             >
                               {isRowExporting ? (
                                 <>
-                                  <Refresh className="w-3 h-3 animate-spin" />
+                                  <Refresh className="w-3.5 h-3.5 animate-spin" />
                                   <span>{exportProgress || "Zipping..."}</span>
                                 </>
                               ) : (
@@ -1640,7 +1631,7 @@ export function BackupArchivePanel() {
                             key={type}
                             className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-2xs font-semibold text-xs"
                           >
-                            <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-500 text-slate-950">
+                            <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-500 text-slate-900">
                               {type}
                             </span>
                             <span className="text-slate-700 dark:text-slate-200">
@@ -1767,7 +1758,7 @@ export function BackupArchivePanel() {
                           inspectedBackup.metadata?.semester || undefined;
                         void handleDownloadZip(ay, sem);
                       }}
-                      className="px-4 py-2 rounded-xl text-xs font-bold bg-amber-500 hover:bg-amber-400 text-slate-950 border border-amber-600 transition cursor-pointer flex items-center gap-1.5 shadow-xs disabled:opacity-50"
+                      className="px-4 py-2 rounded-xl text-xs font-bold bg-amber-500 hover:bg-amber-400 text-slate-900 border border-amber-600 transition cursor-pointer flex items-center gap-1.5 shadow-xs disabled:opacity-50"
                     >
                       <AppIcon icon={Archive} size="sm" color="inherit" />
                       <span>Download Documents (.ZIP)</span>
@@ -1836,7 +1827,7 @@ export function BackupArchivePanel() {
                     "all",
                   )
                 }
-                className="px-4 py-2 rounded-xl text-xs font-bold bg-amber-500 hover:bg-amber-400 text-slate-950 border border-amber-600 transition cursor-pointer flex items-center gap-1.5 disabled:opacity-50 shadow-xs"
+                className="px-4 py-2 rounded-xl text-xs font-bold bg-amber-500 hover:bg-amber-400 text-slate-900 border border-amber-600 transition cursor-pointer flex items-center gap-1.5 disabled:opacity-50 shadow-xs"
               >
                 {exportingTermKey ===
                 `${inspectedTerm.academic_year}__${inspectedTerm.semester}__all` ? (
@@ -1885,7 +1876,7 @@ export function BackupArchivePanel() {
                 ?
               </p>
 
-              <div className="rounded-xl border border-amber-600 bg-amber-500 p-3 text-xs text-slate-950 space-y-1 shadow-xs">
+              <div className="rounded-xl border border-amber-600 bg-amber-500 p-3 text-xs text-slate-900 space-y-1 shadow-xs">
                 <p className="font-bold">Safety Notice:</p>
                 <p className="font-medium">
                   Deleting this removes the backup from your list permanently.
