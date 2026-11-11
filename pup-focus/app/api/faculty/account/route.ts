@@ -7,6 +7,7 @@ import {
 } from "@/lib/faculty-profile";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { getServiceRoleClient } from "@/lib/supabase/service-role";
+import { filterCondition, orFilter } from "@/lib/supabase/filters";
 
 function trimOrEmpty(value: unknown) {
   return typeof value === "string" ? value.trim() : "";
@@ -115,7 +116,12 @@ async function loadFacultyAccount(
         const { data: progRecord } = await supabase
           .from("programs")
           .select("id, code, name")
-          .or(`id.eq.${fallbackProgramId},code.ilike.${fallbackProgramId}`)
+          .or(
+            orFilter([
+              filterCondition("id", "eq", fallbackProgramId),
+              filterCondition("code", "ilike", fallbackProgramId),
+            ])
+          )
           .maybeSingle();
         if (progRecord) {
           program = progRecord;

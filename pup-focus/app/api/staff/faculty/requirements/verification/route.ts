@@ -12,6 +12,11 @@ import {
   isQaAdmin,
   isQaStaff,
 } from "@/config/roles";
+import {
+  escapeFilterValue,
+  filterUuids,
+  orFilter,
+} from "@/lib/supabase/filters";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { getServiceRoleClient } from "@/lib/supabase/service-role";
 
@@ -307,16 +312,26 @@ export async function GET(request: NextRequest) {
       url.searchParams.get("semester"),
     );
 
-    const requestedIds = facultyIdsParam
+    const requestedIdsRaw = facultyIdsParam
       ? facultyIdsParam.split(",").map((s) => s.trim()).filter(Boolean)
       : facultyId
         ? [facultyId.trim()]
         : [];
 
-    if (requestedIds.length === 0) {
+    if (requestedIdsRaw.length === 0) {
       return NextResponse.json(
         { error: "facultyId or facultyIds is required" },
         { status: 400 },
+      );
+    }
+
+    // Profile and auth-user ids are UUIDs. Reject anything else so a crafted
+    // value can never be parsed as PostgREST filter syntax.
+    const requestedIds = filterUuids(requestedIdsRaw);
+    if (requestedIds.length === 0) {
+      return NextResponse.json(
+        { error: "facultyId or facultyIds must be valid UUIDs" },
+        { status: 400 }
       );
     }
 
@@ -344,7 +359,12 @@ export async function GET(request: NextRequest) {
       supabase
         .from("profiles")
         .select("id, user_id")
-        .or(`id.in.(${requestedIds.join(",")}),user_id.in.(${requestedIds.join(",")})`),
+        .or(
+          orFilter([
+            `id.in.(${requestedIds.map(escapeFilterValue).join(",")})`,
+            `user_id.in.(${requestedIds.map(escapeFilterValue).join(",")})`,
+          ])
+        ),
       supabase
         .from("academic_terms")
         .select("academic_year, semester, status, created_at")

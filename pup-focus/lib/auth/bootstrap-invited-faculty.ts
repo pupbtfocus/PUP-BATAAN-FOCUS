@@ -4,6 +4,7 @@ import {
   buildFacultyFullName,
 } from "@/lib/faculty-profile";
 import { getServiceRoleClient } from "@/lib/supabase/service-role";
+import { filterCondition, orFilter } from "@/lib/supabase/filters";
 
 export async function bootstrapInvitedFacultyAccount(user: {
   id: string;
@@ -80,13 +81,23 @@ export async function bootstrapInvitedFacultyAccount(user: {
     await serviceRoleClient
       .from("staff")
       .delete()
-      .or(`profile_id.eq.${profile.id},email.eq.${email}`);
+      .or(
+        orFilter([
+          filterCondition("profile_id", "eq", profile.id),
+          filterCondition("email", "eq", email),
+        ])
+      );
   } catch {}
   try {
     await serviceRoleClient
       .from("admins")
       .delete()
-      .or(`profile_id.eq.${profile.id},email.eq.${email}`);
+      .or(
+        orFilter([
+          filterCondition("profile_id", "eq", profile.id),
+          filterCondition("email", "eq", email),
+        ])
+      );
   } catch {}
 
   const { data: facultyRole, error: facultyRoleError } = await serviceRoleClient

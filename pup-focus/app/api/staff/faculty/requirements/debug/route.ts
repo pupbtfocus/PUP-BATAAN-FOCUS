@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServiceRoleClient } from "@/lib/supabase/service-role";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { ROLE } from "@/config/roles";
+import { filterCondition, orFilter } from "@/lib/supabase/filters";
 
 export async function GET(request: NextRequest) {
   try {
@@ -38,7 +39,12 @@ export async function GET(request: NextRequest) {
     const { data: profileRow, error: profileError } = await supabase
       .from("profiles")
       .select("id, user_id, full_name, email, user_roles(roles(code))")
-      .or(`id.eq.${facultyId},user_id.eq.${facultyId}`)
+      .or(
+        orFilter([
+          filterCondition("id", "eq", facultyId),
+          filterCondition("user_id", "eq", facultyId),
+        ])
+      )
       .maybeSingle();
 
     console.log("Step 1 - Profile Lookup:", {

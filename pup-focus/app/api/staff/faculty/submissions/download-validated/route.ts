@@ -9,6 +9,7 @@ import { ROLE } from "@/config/roles";
 import { getServiceRoleClient } from "@/lib/supabase/service-role";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { logger } from "@/lib/observability/logger";
+import { filterCondition, orFilter } from "@/lib/supabase/filters";
 
 export const runtime = "nodejs";
 
@@ -179,7 +180,12 @@ export async function GET(request: NextRequest) {
     const { data: profileRow, error: profileError } = await supabase
       .from("profiles")
       .select("id")
-      .or(`id.eq.${facultyId},user_id.eq.${facultyId}`)
+      .or(
+        orFilter([
+          filterCondition("id", "eq", facultyId),
+          filterCondition("user_id", "eq", facultyId),
+        ])
+      )
       .maybeSingle();
 
     if (profileError || !profileRow?.id) {

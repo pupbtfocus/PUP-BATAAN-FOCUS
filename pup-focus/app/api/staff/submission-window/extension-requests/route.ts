@@ -7,6 +7,7 @@ import { getServiceRoleClient } from "@/lib/supabase/service-role";
 import { ROLE } from "@/config/roles";
 import { logAuditEvent } from "@/features/audit-logs/services/audit-log.service";
 import { logger } from "@/lib/observability/logger";
+import { filterCondition, orFilter } from "@/lib/supabase/filters";
 
 function isApproverRole(role?: string): boolean {
   if (!role) return false;
@@ -467,7 +468,12 @@ export async function PATCH(request: NextRequest) {
             due_at: approvedIso,
             updated_at: nowIso,
           })
-          .or(`faculty_profile_id.eq.${facultyProfileId},user_id.eq.${facultyUserId}`);
+          .or(
+            orFilter([
+              filterCondition("faculty_profile_id", "eq", facultyProfileId),
+              filterCondition("user_id", "eq", facultyUserId),
+            ])
+          );
 
         if (reqCodes.length > 0) {
           updateSubQuery = updateSubQuery.in("requirement_code", reqCodes);
@@ -479,7 +485,12 @@ export async function PATCH(request: NextRequest) {
           const { data: existingRows } = await supabase
             .from("submissions")
             .select("requirement_code")
-            .or(`faculty_profile_id.eq.${profile.id},user_id.eq.${facultyUserId}`)
+            .or(
+              orFilter([
+                filterCondition("faculty_profile_id", "eq", profile.id),
+                filterCondition("user_id", "eq", facultyUserId),
+              ])
+            )
             .in("requirement_code", reqCodes);
 
           const existingSet = new Set((existingRows || []).map((r: any) => r.requirement_code));

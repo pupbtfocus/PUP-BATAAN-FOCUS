@@ -62,7 +62,7 @@ export async function GET(request: NextRequest) {
       const { data: userRoleRow } = await supabase
         .from("user_roles")
         .select("roles!inner(code)")
-        .or(`profile_id.eq.${user.id}`)
+        .eq("profile_id", user.id)
         .maybeSingle();
 
       const dbCode = (userRoleRow?.roles as any)?.code;
@@ -453,7 +453,7 @@ export async function PATCH(request: NextRequest) {
       const { data: userRoleRow } = await supabase
         .from("user_roles")
         .select("roles!inner(code)")
-        .or(`profile_id.eq.${user.id}`)
+        .eq("profile_id", user.id)
         .maybeSingle();
 
       const dbCode = (userRoleRow?.roles as any)?.code;
@@ -544,7 +544,7 @@ export async function DELETE(request: NextRequest) {
       const { data: userRoleRow } = await supabase
         .from("user_roles")
         .select("roles!inner(code)")
-        .or(`profile_id.eq.${user.id}`)
+        .eq("profile_id", user.id)
         .maybeSingle();
 
       const dbCode = (userRoleRow?.roles as any)?.code;

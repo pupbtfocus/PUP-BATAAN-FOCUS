@@ -7,6 +7,7 @@ import {
 import { resolveAdminAvatarUrl } from "@/lib/admin-profile";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { getServiceRoleClient } from "@/lib/supabase/service-role";
+import { filterCondition, orFilter } from "@/lib/supabase/filters";
 
 function trimOrEmpty(value: unknown): string {
   return typeof value === "string" ? value.trim() : "";
@@ -48,7 +49,12 @@ export async function GET() {
       const { data: profile } = await supabaseAdmin
         .from("profiles")
         .select("id, full_name, email")
-        .or(`user_id.eq.${user.id},id.eq.${user.id}`)
+        .or(
+          orFilter([
+            filterCondition("user_id", "eq", user.id),
+            filterCondition("id", "eq", user.id),
+          ])
+        )
         .maybeSingle();
 
       if (profile) {
@@ -240,7 +246,12 @@ export async function PATCH(request: NextRequest) {
     const { data: profile, error: profileFetchError } = await supabaseAdmin
       .from("profiles")
       .select("id, full_name, email")
-      .or(`user_id.eq.${user.id},id.eq.${user.id}`)
+      .or(
+        orFilter([
+          filterCondition("user_id", "eq", user.id),
+          filterCondition("id", "eq", user.id),
+        ])
+      )
       .maybeSingle();
 
     if (profileFetchError || !profile) {
@@ -370,7 +381,12 @@ export async function PATCH(request: NextRequest) {
           full_name: updatedFullName,
           updated_at: new Date().toISOString(),
         })
-        .or(`profile_id.eq.${profile.id},id.eq.${profile.id}`);
+        .or(
+          orFilter([
+            filterCondition("profile_id", "eq", profile.id),
+            filterCondition("id", "eq", profile.id),
+          ])
+        );
     } catch {
       // Optional table
     }

@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { ROLE, canManageAdminAccount } from "@/config/roles";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { getServiceRoleClient } from "@/lib/supabase/service-role";
+import { filterCondition, orFilter } from "@/lib/supabase/filters";
 
 export async function POST(request: NextRequest) {
   const sessionClient = await createServerSupabaseClient();
@@ -67,7 +68,12 @@ export async function POST(request: NextRequest) {
       await supabase
         .from("profiles")
         .update({ status: "active", updated_at: new Date().toISOString() })
-        .or(`id.eq.${profileId},user_id.eq.${profileId}`);
+        .or(
+          orFilter([
+            filterCondition("id", "eq", profileId),
+            filterCondition("user_id", "eq", profileId),
+          ])
+        );
     } catch {}
 
     if (targetEmail) {

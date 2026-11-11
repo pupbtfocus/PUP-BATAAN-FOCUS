@@ -8,6 +8,7 @@ import { getServiceRoleClient } from "@/lib/supabase/service-role";
 import { isValidEmailAddress } from "@/lib/validation/email";
 import { sendEmailChangeVerificationEmail } from "@/lib/email/send-invite";
 import { extractFirstName, parseFullNameFallback } from "@/lib/faculty-profile";
+import { filterCondition, orFilter } from "@/lib/supabase/filters";
 
 async function resolveAvatarUrl(
   supabaseAdmin: any,
@@ -141,7 +142,12 @@ export async function GET(request: NextRequest) {
       const { data } = await supabase
         .from("profiles")
         .select("id, user_id, full_name, email, avatar_url, status, created_at, updated_at, first_name, middle_name, last_name")
-        .or(`id.eq.${profileId},user_id.eq.${profileId}`)
+        .or(
+          orFilter([
+            filterCondition("id", "eq", profileId),
+            filterCondition("user_id", "eq", profileId),
+          ])
+        )
         .maybeSingle();
       profile = data;
     } catch {}
@@ -383,7 +389,12 @@ export async function PATCH(request: NextRequest) {
       const { data } = await supabase
         .from("profiles")
         .select("id, user_id, full_name, email")
-        .or(`id.eq.${profileId},user_id.eq.${profileId}`)
+        .or(
+          orFilter([
+            filterCondition("id", "eq", profileId),
+            filterCondition("user_id", "eq", profileId),
+          ])
+        )
         .maybeSingle();
       profile = data;
     } catch {}
@@ -511,7 +522,12 @@ export async function PATCH(request: NextRequest) {
       await supabase
         .from("profiles")
         .update(profileUpdates)
-        .or(`id.eq.${profile?.id || profileId},user_id.eq.${authUserId}`);
+        .or(
+          orFilter([
+            filterCondition("id", "eq", profile?.id || profileId),
+            filterCondition("user_id", "eq", authUserId),
+          ])
+        );
     } catch (profileErr) {
       console.warn("Could not update profile table:", profileErr);
     }

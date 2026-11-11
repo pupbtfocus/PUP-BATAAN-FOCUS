@@ -5,6 +5,7 @@ import { REQUIREMENT_LABEL, type RequirementCode } from "@/config/compliance";
 import { getServiceRoleClient } from "@/lib/supabase/service-role";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { logAudit, AUDIT_ACTION } from "@/lib/audit/log-audit";
+import { filterCondition, orFilter } from "@/lib/supabase/filters";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -413,7 +414,12 @@ export async function GET(request: NextRequest) {
           const { data: directFp } = await supabaseAdmin
             .from("faculty_profiles")
             .select("*")
-            .or(`id.eq.${targetId},user_id.eq.${targetId}`)
+            .or(
+              orFilter([
+                filterCondition("id", "eq", targetId),
+                filterCondition("user_id", "eq", targetId),
+              ])
+            )
             .maybeSingle();
 
           if (directFp) {
@@ -429,7 +435,12 @@ export async function GET(request: NextRequest) {
             const { data: directProf } = await supabaseAdmin
               .from("profiles")
               .select("*")
-              .or(`id.eq.${targetId},user_id.eq.${targetId}`)
+              .or(
+              orFilter([
+                filterCondition("id", "eq", targetId),
+                filterCondition("user_id", "eq", targetId),
+              ])
+            )
               .maybeSingle();
 
             if (directProf) {

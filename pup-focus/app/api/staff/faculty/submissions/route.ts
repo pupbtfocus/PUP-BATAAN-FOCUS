@@ -8,6 +8,7 @@ import {
   isQaAdmin,
   isQaStaff,
 } from "@/config/roles";
+import { filterCondition, orFilter } from "@/lib/supabase/filters";
 
 type ReviewDecision = {
   decision: "validated" | "rejected";
@@ -119,7 +120,12 @@ export async function GET(request: NextRequest) {
       supabase
         .from("profiles")
         .select("id")
-        .or(`id.eq.${facultyId},user_id.eq.${facultyId}`)
+        .or(
+          orFilter([
+            filterCondition("id", "eq", facultyId),
+            filterCondition("user_id", "eq", facultyId),
+          ])
+        )
         .maybeSingle(),
       !requestedAcademicYear || !requestedSemester
         ? supabase

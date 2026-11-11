@@ -4,6 +4,7 @@ import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { logger } from "@/lib/observability/logger";
 import { REQUIREMENT_CODE } from "@/config/compliance";
 import type { RequirementCode } from "@/config/compliance";
+import { filterCondition, orFilter } from "@/lib/supabase/filters";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -187,7 +188,12 @@ export async function GET(
           .select(
             "id, submission_id, version_number, storage_path, mime_type, size_bytes, checksum_sha256, created_by, created_at",
           )
-          .or(`id.eq.${submissionId},submission_id.eq.${submissionId}`)
+          .or(
+            orFilter([
+              filterCondition("id", "eq", submissionId),
+              filterCondition("submission_id", "eq", submissionId),
+            ])
+          )
           .order("created_at", { ascending: false })
           .limit(1)
           .maybeSingle();

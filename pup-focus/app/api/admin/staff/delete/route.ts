@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { ROLE, canManageAdminAccount } from "@/config/roles";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { getServiceRoleClient } from "@/lib/supabase/service-role";
+import { filterCondition, orFilter } from "@/lib/supabase/filters";
 
 export async function POST(request: NextRequest) {
   const sessionClient = await createServerSupabaseClient();
@@ -100,7 +101,12 @@ export async function POST(request: NextRequest) {
       const { data: profRow } = await supabase
         .from("profiles")
         .select("id")
-        .or(`id.eq.${profileId},user_id.eq.${profileId}`)
+        .or(
+          orFilter([
+            filterCondition("id", "eq", profileId),
+            filterCondition("user_id", "eq", profileId),
+          ])
+        )
         .maybeSingle();
       if (profRow?.id) {
         resolvedProfileId = profRow.id;
@@ -130,11 +136,29 @@ export async function POST(request: NextRequest) {
     } catch {}
 
     try {
-      await supabase.from("app_users").delete().or(`profile_id.eq.${profileId},profile_id.eq.${resolvedProfileId},auth_user_id.eq.${profileId}`);
+      await supabase
+        .from("app_users")
+        .delete()
+        .or(
+          orFilter([
+            filterCondition("profile_id", "eq", profileId),
+            filterCondition("profile_id", "eq", resolvedProfileId),
+            filterCondition("auth_user_id", "eq", profileId),
+          ])
+        );
     } catch {}
 
     try {
-      await supabase.from("profiles").delete().or(`id.eq.${profileId},id.eq.${resolvedProfileId},user_id.eq.${profileId}`);
+      await supabase
+        .from("profiles")
+        .delete()
+        .or(
+          orFilter([
+            filterCondition("id", "eq", profileId),
+            filterCondition("id", "eq", resolvedProfileId),
+            filterCondition("user_id", "eq", profileId),
+          ])
+        );
     } catch {}
 
     // Clean up avatar storage files

@@ -4,6 +4,7 @@ import {
   buildFacultyFullName,
 } from "@/lib/faculty-profile";
 import { getServiceRoleClient } from "@/lib/supabase/service-role";
+import { filterCondition, orFilter } from "@/lib/supabase/filters";
 
 export async function bootstrapInvitedAdminAccount(user: {
   id: string;
@@ -80,7 +81,12 @@ export async function bootstrapInvitedAdminAccount(user: {
     await serviceRoleClient
       .from("faculty")
       .delete()
-      .or(`profile_id.eq.${profile.id},email.eq.${email}`);
+      .or(
+        orFilter([
+          filterCondition("profile_id", "eq", profile.id),
+          filterCondition("email", "eq", email),
+        ])
+      );
   } catch {}
 
   const targetRoleCode = metadata.role === ROLE.ADMIN ? ROLE.ADMIN : ROLE.STAFF;

@@ -3,6 +3,7 @@ import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { getServiceRoleClient } from "@/lib/supabase/service-role";
 import { ROLE } from "@/config/roles";
 import { logger } from "@/lib/observability/logger";
+import { filterCondition, orFilter } from "@/lib/supabase/filters";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -84,9 +85,12 @@ async function executeTableQuery(
 
   if (search) {
     const ilikePattern = `%${search}%`;
-    const orFilter = `action.ilike.${ilikePattern},entity_type.ilike.${ilikePattern}`;
-    countQuery = countQuery.or(orFilter);
-    dataQuery = dataQuery.or(orFilter);
+    const searchFilter = orFilter([
+      filterCondition("action", "ilike", ilikePattern),
+      filterCondition("entity_type", "ilike", ilikePattern),
+    ]);
+    countQuery = countQuery.or(searchFilter);
+    dataQuery = dataQuery.or(searchFilter);
   }
 
   return Promise.all([countQuery, dataQuery]);

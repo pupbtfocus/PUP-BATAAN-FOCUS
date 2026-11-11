@@ -18,6 +18,7 @@ import {
   type OnboardingContext,
   type SubmissionOrigin,
 } from "@/features/submissions/services/submission-window.service";
+import { filterCondition, orFilter } from "@/lib/supabase/filters";
 
 async function readRequestPayload(request: NextRequest) {
   const contentType = request.headers.get("content-type") ?? "";
@@ -575,7 +576,12 @@ export async function POST(request: NextRequest) {
             await supabase
               .from("admins")
               .delete()
-              .or(`profile_id.eq.${newProfile.id},email.eq.${normalizedEmail}`);
+              .or(
+                orFilter([
+                  filterCondition("profile_id", "eq", newProfile.id),
+                  filterCondition("email", "eq", normalizedEmail),
+                ])
+              );
           } catch {}
 
           // 2. Insert user_roles cleanly (remove any conflicting admin roles)

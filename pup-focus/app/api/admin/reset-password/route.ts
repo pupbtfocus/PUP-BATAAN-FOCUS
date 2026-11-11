@@ -5,6 +5,7 @@ import { ROLE } from "@/config/roles";
 import { isValidEmailAddress } from "@/lib/validation/email";
 import { sendAdminPasswordResetEmail, getAppBaseUrl } from "@/lib/email/send-invite";
 import { logAuditEvent } from "@/features/audit-logs/services/audit-log.service";
+import { filterCondition, orFilter } from "@/lib/supabase/filters";
 
 export async function POST(request: NextRequest) {
   try {
@@ -40,7 +41,12 @@ export async function POST(request: NextRequest) {
         const { data } = await supabase
           .from("profiles")
           .select("id, user_id, full_name, email")
-          .or(`id.eq.${profileId},user_id.eq.${profileId}`)
+          .or(
+            orFilter([
+              filterCondition("id", "eq", profileId),
+              filterCondition("user_id", "eq", profileId),
+            ])
+          )
           .maybeSingle();
         profile = data;
       } catch {}

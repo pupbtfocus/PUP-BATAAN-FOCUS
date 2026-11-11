@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { getServiceRoleClient } from "@/lib/supabase/service-role";
+import { filterCondition, isUuid, orFilter } from "@/lib/supabase/filters";
 import { ROLE } from "@/config/roles";
 import {
   parseSubmissionOrigin,
@@ -430,11 +431,27 @@ export async function POST(request: Request) {
     const nowIso = new Date().toISOString();
 
     // 1. Resolve possible profile ID, user_id, and email
-    const queryTerm = facultyProfileId || bodyEmail;
+    const queryTerm = (facultyProfileId || bodyEmail).trim();
+    if (!queryTerm) {
+      return NextResponse.json(
+        { error: "facultyProfileId or email is required" },
+        { status: 400 }
+      );
+    }
+
+    // Resolve by profile id / auth user id, or by email. Values are quoted so
+    // the input cannot be parsed as PostgREST filter syntax.
+    const profileConditions = isUuid(queryTerm)
+      ? [
+          filterCondition("id", "eq", queryTerm),
+          filterCondition("user_id", "eq", queryTerm),
+        ]
+      : [filterCondition("email", "eq", queryTerm)];
+
     const { data: profile } = await supabase
       .from("profiles")
       .select("id, user_id, email, full_name")
-      .or(`id.eq.${queryTerm},user_id.eq.${queryTerm},email.eq.${queryTerm}`)
+      .or(orFilter(profileConditions))
       .maybeSingle();
 
     const targetProfileId = profile?.id || facultyProfileId;

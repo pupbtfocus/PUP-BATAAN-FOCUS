@@ -9,6 +9,7 @@ import { sendInviteEmail, sendTempPasswordEmail } from "@/lib/email/send-invite"
 import { generateTempPassword } from "@/lib/auth/temp-password";
 import { logAuditEvent } from "@/features/audit-logs/services/audit-log.service";
 import { isValidEmailAddress } from "@/lib/validation/email";
+import { filterCondition, orFilter } from "@/lib/supabase/filters";
 
 export interface RegistrationLogItem {
   id: string;
@@ -790,7 +791,12 @@ export async function DELETE(request: NextRequest) {
       const { data: prof } = await supabase
         .from("profiles")
         .select("id")
-        .or(`user_id.eq.${authUser.id},email.ilike.${email || authUser.email}`)
+        .or(
+          orFilter([
+            filterCondition("user_id", "eq", authUser.id),
+            filterCondition("email", "ilike", email || authUser.email),
+          ])
+        )
         .maybeSingle();
 
       const hasActiveLogin = Boolean(authUser.last_sign_in_at);
@@ -956,7 +962,12 @@ export async function PATCH(request: NextRequest) {
       const { data: pData } = await supabase
         .from("programs")
         .select("id, code, name")
-        .or(`code.ilike.${newProgram},id.eq.${newProgram}`)
+        .or(
+          orFilter([
+            filterCondition("code", "ilike", newProgram),
+            filterCondition("id", "eq", newProgram),
+          ])
+        )
         .maybeSingle();
       progRow = pData;
     }
@@ -1003,7 +1014,12 @@ export async function PATCH(request: NextRequest) {
     const { data: existingProf } = await supabase
       .from("profiles")
       .select("id")
-      .or(`user_id.eq.${updatedUserId || "none"},email.ilike.${email}`)
+      .or(
+        orFilter([
+          filterCondition("user_id", "eq", updatedUserId || "none"),
+          filterCondition("email", "ilike", email),
+        ])
+      )
       .maybeSingle();
 
     if (existingProf?.id) {

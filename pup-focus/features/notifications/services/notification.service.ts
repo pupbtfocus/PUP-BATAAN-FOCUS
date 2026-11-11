@@ -1,5 +1,6 @@
 import { getServiceRoleClient } from "@/lib/supabase/service-role";
 import { logger } from "@/lib/observability/logger";
+import { filterCondition, orFilter } from "@/lib/supabase/filters";
 
 const UUID_REGEX =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -162,7 +163,12 @@ export async function getUserNotifications(
     const { data: profile } = await supabase
       .from("profiles")
       .select("id, user_id")
-      .or(`user_id.eq.${safeUserId},id.eq.${safeUserId}`)
+      .or(
+        orFilter([
+          filterCondition("user_id", "eq", safeUserId),
+          filterCondition("id", "eq", safeUserId),
+        ])
+      )
       .maybeSingle();
 
     const authUserId = profile?.user_id || safeUserId;

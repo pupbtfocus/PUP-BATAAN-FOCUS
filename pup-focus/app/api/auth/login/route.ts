@@ -5,6 +5,7 @@ import {
   extractTurnstileToken,
   verifyTurnstileToken,
 } from "@/lib/turnstile/verify";
+import { filterCondition, orFilter } from "@/lib/supabase/filters";
 
 // In-memory lockout cache: 5 failed attempts -> 15-minute timeout
 interface AttemptRecord {
@@ -130,7 +131,17 @@ export async function POST(request: NextRequest) {
         const { data: profile } = await serviceClient
           .from("profiles")
           .select("status, is_active")
-          .or(targetUser?.id ? `id.eq.${targetUser.id},user_id.eq.${targetUser.id},email.eq.${email}` : `email.eq.${email}`)
+          .or(
+            orFilter([
+              ...(targetUser?.id
+                ? [
+                    filterCondition("id", "eq", targetUser.id),
+                    filterCondition("user_id", "eq", targetUser.id),
+                  ]
+                : []),
+              filterCondition("email", "eq", email),
+            ])
+          )
           .maybeSingle();
         const pStatus = (profile?.status || "").toString().toLowerCase().trim();
         if (pStatus === "inactive" || pStatus === "deactivated" || profile?.is_active === false) {

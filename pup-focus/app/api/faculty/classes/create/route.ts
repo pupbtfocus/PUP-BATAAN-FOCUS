@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { getServiceRoleClient } from "@/lib/supabase/service-role";
 import { logTransactionEvent } from "@/features/transaction-logs/services/transaction-log.service";
+import { filterCondition, orFilter } from "@/lib/supabase/filters";
 
 export async function POST(request: NextRequest) {
   try {
@@ -50,7 +51,12 @@ export async function POST(request: NextRequest) {
     const { data: profile } = await supabaseAdmin
       .from("profiles")
       .select("id")
-      .or(`id.eq.${user.id},user_id.eq.${user.id}`)
+      .or(
+        orFilter([
+          filterCondition("id", "eq", user.id),
+          filterCondition("user_id", "eq", user.id),
+        ])
+      )
       .maybeSingle();
 
     const profileId = profile?.id || user.id;

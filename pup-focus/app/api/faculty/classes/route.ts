@@ -5,6 +5,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { getServiceRoleClient } from "@/lib/supabase/service-role";
 import { logTransactionEvent } from "@/features/transaction-logs/services/transaction-log.service";
+import { filterCondition, orFilter } from "@/lib/supabase/filters";
 
 export async function GET(request: NextRequest) {
   try {
@@ -26,7 +27,12 @@ export async function GET(request: NextRequest) {
     const { data: profile } = await supabaseAdmin
       .from("profiles")
       .select("id")
-      .or(`id.eq.${user.id},user_id.eq.${user.id}`)
+      .or(
+        orFilter([
+          filterCondition("id", "eq", user.id),
+          filterCondition("user_id", "eq", user.id),
+        ])
+      )
       .maybeSingle();
 
     const profileId = profile?.id || user.id;
@@ -70,7 +76,10 @@ export async function GET(request: NextRequest) {
     // Only apply term filtering if explicitly requested via filterByTerm=true
     if (filterByTerm && targetYear && targetSem) {
       query = query.or(
-        `and(academic_year.eq."${targetYear}",semester.eq."${targetSem}"),and(academic_year.is.null,semester.is.null)`
+        orFilter([
+          `and(${filterCondition("academic_year", "eq", targetYear)},${filterCondition("semester", "eq", targetSem)})`,
+          "and(academic_year.is.null,semester.is.null)",
+        ])
       );
     }
 
@@ -141,7 +150,12 @@ export async function PATCH(request: NextRequest) {
     const { data: profile } = await supabaseAdmin
       .from("profiles")
       .select("id")
-      .or(`id.eq.${user.id},user_id.eq.${user.id}`)
+      .or(
+        orFilter([
+          filterCondition("id", "eq", user.id),
+          filterCondition("user_id", "eq", user.id),
+        ])
+      )
       .maybeSingle();
 
     const profileId = profile?.id || user.id;
@@ -287,7 +301,12 @@ export async function DELETE(request: NextRequest) {
     const { data: profile } = await supabaseAdmin
       .from("profiles")
       .select("id")
-      .or(`id.eq.${user.id},user_id.eq.${user.id}`)
+      .or(
+        orFilter([
+          filterCondition("id", "eq", user.id),
+          filterCondition("user_id", "eq", user.id),
+        ])
+      )
       .maybeSingle();
 
     const profileId = profile?.id || user.id;

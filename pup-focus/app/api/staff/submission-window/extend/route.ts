@@ -3,6 +3,7 @@ import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { getServiceRoleClient } from "@/lib/supabase/service-role";
 import { ROLE } from "@/config/roles";
 import { logger } from "@/lib/observability/logger";
+import { filterCondition, isUuid, orFilter } from "@/lib/supabase/filters";
 import { logAuditEvent } from "@/features/audit-logs/services/audit-log.service";
 import {
   buildOriginRemarks,
@@ -255,23 +256,33 @@ export async function POST(request: NextRequest) {
     } else if (scope === "faculty" && scopeTarget) {
       // Personal extension: update due_at on submissions strictly for this faculty member
       const cleanTarget = scopeTarget.trim();
-      const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(cleanTarget);
 
       let targetProfileId: string | null = null;
-      if (isUuid) {
+      if (isUuid(cleanTarget)) {
         const { data: pById } = await supabase
           .from("profiles")
           .select("id")
-          .or(`id.eq.${cleanTarget},user_id.eq.${cleanTarget}`)
+          .or(
+            orFilter([
+              filterCondition("id", "eq", cleanTarget),
+              filterCondition("user_id", "eq", cleanTarget),
+            ])
+          )
           .maybeSingle();
         targetProfileId = pById?.id || null;
       }
 
       if (!targetProfileId) {
+        const pattern = `%${cleanTarget}%`;
         const { data: pByText } = await supabase
           .from("profiles")
           .select("id")
-          .or(`email.ilike.%${cleanTarget}%,full_name.ilike.%${cleanTarget}%`)
+          .or(
+            orFilter([
+              filterCondition("email", "ilike", pattern),
+              filterCondition("full_name", "ilike", pattern),
+            ])
+          )
           .limit(1)
           .maybeSingle();
         targetProfileId = pByText?.id || null;
@@ -298,7 +309,12 @@ export async function POST(request: NextRequest) {
       const { data: progAssignments } = await supabase
         .from("faculty_program_assignments")
         .select("faculty_profile_id, programs(code, name)")
-        .or(`academic_year.eq.${activeAcademicYear},academic_year.is.null`);
+        .or(
+          orFilter([
+            filterCondition("academic_year", "eq", activeAcademicYear),
+            "academic_year.is.null",
+          ])
+        );
 
       const matchingProfileIds = (progAssignments || [])
         .filter((pa: any) => {

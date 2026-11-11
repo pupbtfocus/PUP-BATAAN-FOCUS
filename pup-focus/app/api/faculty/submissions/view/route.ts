@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
+import { filterCondition, orFilter } from "@/lib/supabase/filters";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -295,7 +296,12 @@ export async function GET(request: NextRequest) {
         const { data: latestVer } = await adminClient
           .from("document_versions")
           .select("id, submission_id, storage_path, mime_type, size_bytes")
-          .or(`submission_id.eq.${submissionId},id.eq.${submissionId}`)
+          .or(
+            orFilter([
+              filterCondition("submission_id", "eq", submissionId),
+              filterCondition("id", "eq", submissionId),
+            ])
+          )
           .order("created_at", { ascending: false })
           .limit(1)
           .maybeSingle();
