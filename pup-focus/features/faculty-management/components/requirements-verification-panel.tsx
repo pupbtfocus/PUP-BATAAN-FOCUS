@@ -3868,7 +3868,30 @@ export function FacultyVerificationDrawer({
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100 dark:divide-slate-800/70">
-                          {allRequirements.map((req) => {
+                          {(() => {
+                            const historicalRequirements = allRequirements.filter((req) => {
+                              return selectedHistoryGroup.submissions.some(
+                                (s) =>
+                                  (matchRequirementCode(s.requirement_code) ||
+                                    s.requirement_code) === req.code,
+                              );
+                            });
+
+                            if (historicalRequirements.length === 0) {
+                              return (
+                                <tr>
+                                  <td
+                                    colSpan={6}
+                                    className="px-4 py-8 text-center text-xs text-slate-400 dark:text-slate-500 italic"
+                                  >
+                                    No submitted requirements recorded for this class in{" "}
+                                    {selectedHistoryAy} &bull; {selectedHistorySem}.
+                                  </td>
+                                </tr>
+                              );
+                            }
+
+                            return historicalRequirements.map((req) => {
                             const code = req.code;
                             const reqLabel = req.title;
                             const isMandatory = req.isMandatory;
@@ -4217,7 +4240,8 @@ export function FacultyVerificationDrawer({
                                 </td>
                               </tr>
                             );
-                          })}
+                          });
+                        })()}
                         </tbody>
                       </table>
                     </div>

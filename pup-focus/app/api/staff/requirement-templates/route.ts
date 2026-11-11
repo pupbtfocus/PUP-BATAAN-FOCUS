@@ -452,45 +452,6 @@ export async function PUT(request: NextRequest) {
 
     const supabase = getServiceRoleClient();
 
-    // If is_active is changed, synchronize term-based visibility so unhiding in future terms
-    // does not retroactively pollute past terms/semesters
-    if (typeof body.is_active === "boolean") {
-      try {
-        const { data: currentTerm } = await supabase
-          .from("academic_terms")
-          .select("academic_year, semester")
-          .eq("status", "Current")
-          .maybeSingle();
-
-        if (currentTerm?.academic_year && currentTerm?.semester) {
-          const termKey = `${currentTerm.academic_year}|${currentTerm.semester}`;
-          const { data: existingTpl } = await supabase
-            .from("requirement_templates")
-            .select("description")
-            .eq("id", id)
-            .maybeSingle();
-
-          const baseDesc = typeof body.description === "string" ? body.description : existingTpl?.description;
-          const currentHiddenTerms = parseHiddenTerms(baseDesc);
-
-          let newHiddenTerms: string[];
-          if (body.is_active === false) {
-            newHiddenTerms = Array.from(new Set([...currentHiddenTerms, termKey]));
-          } else {
-            // Unhiding: remove only current term from hidden list, preserving past terms!
-            newHiddenTerms = currentHiddenTerms.filter((k) => {
-              const [kAy, kSem] = k.split("|");
-              return normalizeTermKey(kAy, kSem) !== normalizeTermKey(currentTerm.academic_year, currentTerm.semester);
-            });
-          }
-
-          updatePayload.description = formatDescriptionWithHiddenTerms(baseDesc, newHiddenTerms);
-        }
-      } catch (termErr) {
-        console.warn("Could not synchronize term-based visibility:", termErr);
-      }
-    }
-
     const { data: updated, error: updateError } = await supabase
       .from("requirement_templates")
       .update(updatePayload)
