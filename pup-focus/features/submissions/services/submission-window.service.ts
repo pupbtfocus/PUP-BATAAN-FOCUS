@@ -185,10 +185,10 @@ export function getCurrentYearInManila(): number {
   return Number(yearText);
 }
 
-export function buildAcademicYearOptions(): string[] {
+export function buildAcademicYearOptions(maxUpcomingYears: number = 3): string[] {
   const currentYear = getCurrentYearInManila();
   const firstYear = 2026;
-  const lastYear = Math.max(currentYear, firstYear);
+  const lastYear = Math.max(currentYear + maxUpcomingYears, firstYear);
   return Array.from({ length: lastYear - firstYear + 1 }, (_, index) => {
     const startYear = firstYear + index;
     return `${startYear}-${startYear + 1}`;
@@ -207,10 +207,23 @@ export function isAllowedAcademicYear(value: string): boolean {
 
   const startYear = Number(match[1]);
   const firstYear = 2026;
-  const currentYear = getCurrentYearInManila();
-  const lastYear = Math.max(currentYear, firstYear);
 
-  return startYear >= firstYear && startYear <= lastYear;
+  return startYear >= firstYear;
+}
+
+export function isAdvancingBeyondCalendarYear(value: string): boolean {
+  if (!isValidAcademicYear(value)) {
+    return false;
+  }
+
+  const match = value.trim().match(/^([0-9]{4})-([0-9]{4})$/);
+  if (!match) {
+    return false;
+  }
+
+  const startYear = Number(match[1]);
+  const currentYear = getCurrentYearInManila();
+  return startYear > currentYear;
 }
 
 export function normalizeSemester(

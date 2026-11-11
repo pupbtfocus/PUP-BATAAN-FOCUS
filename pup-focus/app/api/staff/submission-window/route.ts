@@ -180,8 +180,7 @@ export async function PUT(request: NextRequest) {
     if (!isAllowedAcademicYear(academicYear)) {
       return NextResponse.json(
         {
-          error:
-            "Academic year must start at 2026-2027 and may not advance beyond the current calendar year.",
+          error: "Academic year must start at 2026-2027.",
         },
         { status: 400 },
       );

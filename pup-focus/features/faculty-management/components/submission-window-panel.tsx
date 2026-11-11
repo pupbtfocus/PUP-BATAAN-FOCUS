@@ -1676,6 +1676,34 @@ export function SubmissionWindowPanel({
                 .
               </p>
 
+              {(() => {
+                const targetAy = windowStatus?.academicYear;
+                const match = targetAy?.match(/^([0-9]{4})-([0-9]{4})$/);
+                const currentCalendarYear = new Date().getFullYear();
+                const isAdvanceYear = match
+                  ? Number(match[1]) > currentCalendarYear
+                  : false;
+                if (!isAdvanceYear) return null;
+                return (
+                  <div className="p-3.5 rounded-xl bg-amber-500 border border-amber-600 text-slate-950 text-xs flex items-start gap-2.5 shadow-xs">
+                    <AppIcon
+                      icon={WarningTriangle}
+                      size="sm"
+                      color="inherit"
+                      className="shrink-0 mt-0.5 text-slate-950"
+                    />
+                    <div className="space-y-1">
+                      <p className="font-bold text-slate-950">
+                        Advance Academic Year Confirmation
+                      </p>
+                      <p className="leading-relaxed text-slate-900 font-medium">
+                        The active academic year (<span className="font-bold text-slate-950">{targetAy}</span>) advances beyond the current calendar year ({currentCalendarYear}). Confirm that you want to schedule this submission window.
+                      </p>
+                    </div>
+                  </div>
+                );
+              })()}
+
               <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-slate-100 dark:border-slate-800/80">
                 <button
                   type="button"
