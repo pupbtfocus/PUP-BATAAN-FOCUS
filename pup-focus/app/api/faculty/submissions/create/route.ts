@@ -917,49 +917,19 @@ export async function POST(request: NextRequest) {
         .select()
         .single();
 
-      // If duplicate key / unique conflict occurs on active submission, update the existing row preserving class_id
-      if (
-        submissionError &&
-        (submissionError.code === "23505" ||
-          submissionError.message?.toLowerCase().includes("duplicate key") ||
-          submissionError.message?.toLowerCase().includes("unique"))
-      ) {
-        let updateQuery = supabaseAdmin
-          .from("submissions")
-          .update(submissionPayload)
-          .eq("faculty_profile_id", profile.id)
-          .eq("requirement_code", payload.requirementCode)
-          .eq("is_archived", false);
-
-        if (payload.classId) {
-          updateQuery = updateQuery.eq("class_id", payload.classId);
-        } else {
-          updateQuery = updateQuery.is("class_id", null);
-        }
-
-        const { data: updatedSub, error: updateErr } = await updateQuery
-          .select()
-          .maybeSingle();
-
-        if (!updateErr && updatedSub) {
-          newSub = updatedSub;
-          submissionError = null;
-        }
-      }
-
       if (submissionError) {
+        // Fallback: stripped schema without storage columns in case table does not have 0029 file columns
         const fallbackPayload: Record<string, any> = {
           id: targetSubmissionId,
           faculty_profile_id: profile.id,
           requirement_code: payload.requirementCode,
           status: "uploaded",
           submitted_at: submissionPayload.submitted_at,
-          class_id: payload.classId || null,
-          storage_path: storagePath || null,
-          file_name: fileName || null,
-          mime_type: fileMimeType || null,
-          size_bytes: fileBufferLength || null,
         };
+
+        if (payload.classId) {
+          fallbackPayload.class_id = payload.classId;
+        }
 
         if (!isMissingRemarksColumnError(submissionError) && trimmedRemarks) {
           fallbackPayload.remarks = trimmedRemarks;
@@ -977,6 +947,55 @@ export async function POST(request: NextRequest) {
           .insert(fallbackPayload)
           .select()
           .single());
+
+        // If insert failed due to class_id column missing, retry without class_id
+        if (
+          submissionError &&
+          (submissionError.message?.toLowerCase().includes("class_id") ||
+            submissionError.code === "42703")
+        ) {
+          delete fallbackPayload.class_id;
+          ({ data: newSub, error: submissionError } = await supabaseAdmin
+            .from("submissions")
+            .insert(fallbackPayload)
+            .select()
+            .single());
+        }
+      }
+
+      // If duplicate key / unique conflict occurs on active submission, update the existing row preserving class_id
+      if (
+        submissionError &&
+        (submissionError.code === "23505" ||
+          submissionError.message?.toLowerCase().includes("duplicate key") ||
+          submissionError.message?.toLowerCase().includes("unique"))
+      ) {
+        const updatePayload: Record<string, any> = {
+          status: "uploaded",
+          submitted_at: new Date().toISOString(),
+        };
+        if (trimmedRemarks) updatePayload.remarks = trimmedRemarks;
+        if (payload.classId) updatePayload.class_id = payload.classId;
+        if (facultyAssignmentId) updatePayload.faculty_assignment_id = facultyAssignmentId;
+
+        let updateQuery = supabaseAdmin
+          .from("submissions")
+          .update(updatePayload)
+          .eq("faculty_profile_id", profile.id)
+          .eq("requirement_code", payload.requirementCode);
+
+        if (payload.classId) {
+          updateQuery = updateQuery.eq("class_id", payload.classId);
+        }
+
+        const { data: updatedSub, error: updateErr } = await updateQuery
+          .select()
+          .maybeSingle();
+
+        if (!updateErr && updatedSub) {
+          newSub = updatedSub;
+          submissionError = null;
+        }
       }
 
       if (submissionError) {
