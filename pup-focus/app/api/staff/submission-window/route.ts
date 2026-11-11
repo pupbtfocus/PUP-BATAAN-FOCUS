@@ -339,22 +339,23 @@ export async function PUT(request: NextRequest) {
       semester,
     });
 
-    // When global schedule is open, auto-resolve pending extension requests and restore closed submissions
+    // When global schedule is updated or open, auto-resolve/supersede pending extension requests and restore closed submissions
+    try {
+      await supabase
+        .from("extension_requests")
+        .update({
+          status: "superseded",
+          admin_remarks: `Global submission schedule was reopened/updated by admin until ${endDate}${endTime ? ` (${endTime})` : ""}`,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("academic_year", academicYear)
+        .eq("semester", semester)
+        .eq("status", "pending");
+    } catch {}
+
     if (status.isOpen) {
       try {
         const windowDueAtIso = toManilaIso(endDate, endTime24 || "23:59:59");
-        await supabase
-          .from("extension_requests")
-          .update({
-            status: "approved",
-            admin_remarks: `Global submission window opened until ${endDate}${endTime ? ` (${endTime})` : ""}`,
-            approved_date: endDate,
-            approved_time: endTime24 || "23:59:59",
-            updated_at: new Date().toISOString(),
-          })
-          .eq("academic_year", academicYear)
-          .eq("semester", semester)
-          .eq("status", "pending");
 
         await supabase
           .from("submissions")

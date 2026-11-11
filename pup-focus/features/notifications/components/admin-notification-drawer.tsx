@@ -1013,13 +1013,26 @@ export function AdminNotificationDrawer({
                               );
                             }
 
+                            const displayMsg = (() => {
+                              const msg = selectedNotification.message || "";
+                              if (msg.trim().startsWith("{")) {
+                                try {
+                                  const parsed = JSON.parse(msg);
+                                  if (parsed.reason) {
+                                    return `${parsed.faculty_name || "Faculty"} requested a submission extension for ${parsed.academic_year || ""} • ${parsed.semester || ""} (${parsed.requested_preset || "+3 Days"}).\n\nReason: "${parsed.reason}"`;
+                                  }
+                                } catch {}
+                              }
+                              return msg;
+                            })();
+
                             return (
                               <div className="space-y-1.5">
                                 <h4 className="text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400">
                                   Notification Details
                                 </h4>
-                                <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-3 text-xs font-medium text-slate-800 dark:text-slate-100 leading-relaxed break-words shadow-2xs">
-                                  {selectedNotification.message}
+                                <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-3 text-xs font-medium text-slate-800 dark:text-slate-100 leading-relaxed break-words shadow-2xs whitespace-pre-line">
+                                  {displayMsg}
                                 </div>
                               </div>
                             );

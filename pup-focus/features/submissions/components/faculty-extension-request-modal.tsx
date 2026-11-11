@@ -4,22 +4,15 @@ import React, { useState, useEffect, useRef } from "react";
 import {
   CheckCircle,
   Hourglass,
-  InfoCircle,
   Page,
   SystemRestart,
   Trash,
   Upload,
-  WarningCircle,
   WarningTriangle,
-  Xmark,
 } from "iconoir-react";
 import { AppIcon } from "@/components/ui/app-icon";
 import { ModalHeader } from "@/components/ui/modal-header";
-import {
-  REQUIREMENT_LABEL,
-  type RequirementCode,
-} from "@/config/compliance";
-import { SubmissionStatusBadge } from "./submission-status-badge";
+import type { RequirementCode } from "@/config/compliance";
 
 export interface LackingRequirementItem {
   code: RequirementCode | string;
@@ -38,8 +31,6 @@ export interface FacultyExtensionRequestModalProps {
   preSelectedCode?: RequirementCode | string | null;
 }
 
-
-
 export function FacultyExtensionRequestModal({
   isOpen,
   onClose,
@@ -47,9 +38,7 @@ export function FacultyExtensionRequestModal({
   academicYear,
   semester,
   lackings,
-  preSelectedCode,
 }: FacultyExtensionRequestModalProps) {
-  const [selectedCodes, setSelectedCodes] = useState<(RequirementCode | string)[]>([]);
   const [reason, setReason] = useState("");
   const [supportingDocument, setSupportingDocument] = useState<File | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -58,49 +47,25 @@ export function FacultyExtensionRequestModal({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const prevIsOpenRef = useRef(false);
 
-  // Initialize selected codes only when modal transitions from closed to open
+  // Reset form when modal opens
   useEffect(() => {
     if (isOpen && !prevIsOpenRef.current) {
-      if (preSelectedCode && lackings.some((l) => l.code === preSelectedCode)) {
-        setSelectedCodes([preSelectedCode]);
-      } else if (lackings.length > 0) {
-        setSelectedCodes(lackings.map((l) => l.code));
-      } else {
-        setSelectedCodes([]);
-      }
       setReason("");
       setSupportingDocument(null);
       setErrorMessage(null);
       setSuccessState(false);
     }
     prevIsOpenRef.current = isOpen;
-  }, [isOpen, preSelectedCode]);
+  }, [isOpen]);
 
   if (!isOpen) return null;
-
-  function toggleCodeSelection(code: RequirementCode | string) {
-    setSelectedCodes((prev) =>
-      prev.includes(code) ? prev.filter((c) => c !== code) : [...prev, code],
-    );
-  }
-
-  function selectAllCodes() {
-    setSelectedCodes(lackings.map((l) => l.code));
-  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setErrorMessage(null);
 
-    if (selectedCodes.length === 0) {
-      setErrorMessage("Please select at least one requirement to extend.");
-      return;
-    }
-
-    if (!reason.trim() || reason.trim().length < 5) {
-      setErrorMessage(
-        "Please provide a clear reason or justification (at least 5 characters).",
-      );
+    if (!reason.trim()) {
+      setErrorMessage("Please state your reason for requesting an extension.");
       return;
     }
 
@@ -110,7 +75,7 @@ export function FacultyExtensionRequestModal({
       const formData = new FormData();
       formData.append("academicYear", academicYear);
       formData.append("semester", semester);
-      formData.append("requirementCodes", JSON.stringify(selectedCodes));
+      formData.append("requirementCodes", JSON.stringify(lackings.map((l) => l.code)));
       formData.append("reason", reason.trim());
       if (supportingDocument) {
         formData.append("supportingDocument", supportingDocument);
@@ -182,80 +147,46 @@ export function FacultyExtensionRequestModal({
               {errorMessage && (
                 <div
                   role="alert"
-                  className="p-3 rounded-xl bg-red-500/10 border border-red-500/30 text-red-700 dark:text-red-400 text-xs flex items-start gap-2"
+                  className="p-3 rounded-xl bg-[#780000] border border-[#5e0000] text-white text-xs font-semibold flex items-center gap-2 shadow-xs"
                 >
-                  <AppIcon icon={WarningTriangle} size="sm" color="inherit" className="shrink-0 mt-0.5" />
+                  <AppIcon icon={WarningTriangle} size="sm" color="white" className="shrink-0" />
                   <span>{errorMessage}</span>
                 </div>
               )}
 
-              {/* Requirement Selection Checklist */}
-              <div>
-                <div className="flex items-center justify-between mb-2">
-                  <label className="text-xs font-bold text-slate-800 dark:text-slate-200">
-                    Requirements to Extend <span className="text-red-500">*</span>
-                  </label>
-                  {lackings.length > 1 && (
-                    <button
-                      type="button"
-                      onClick={selectAllCodes}
-                      className="text-[11px] font-semibold text-amber-800 dark:text-amber-400 hover:underline cursor-pointer"
-                    >
-                      Select All ({lackings.length})
-                    </button>
-                  )}
-                </div>
-
-                {lackings.length === 0 ? (
-                  <div className="p-4 rounded-xl border border-dashed border-slate-300 dark:border-slate-700 text-center text-xs text-slate-500 dark:text-slate-400">
-                    No overdue or pending requirements found for this academic term.
-                  </div>
-                ) : (
-                  <div className="space-y-1.5 max-h-40 overflow-y-auto pr-1">
-                    {lackings.map((item) => {
-                      const isSelected = selectedCodes.includes(item.code);
-                      const label = item.label || REQUIREMENT_LABEL[item.code as RequirementCode] || item.code;
-                      return (
-                        <div
-                          key={item.code}
-                          onClick={() => toggleCodeSelection(item.code)}
-                          className={`flex items-center justify-between p-2.5 rounded-xl border text-xs cursor-pointer transition-all ${
-                            isSelected
-                              ? "bg-amber-500/10 border-amber-500/40 text-slate-900 dark:text-slate-100 font-semibold shadow-2xs"
-                              : "bg-slate-50 dark:bg-slate-800/40 border-slate-200 dark:border-slate-700/60 text-slate-600 dark:text-slate-400 hover:border-slate-300 dark:hover:border-slate-600"
-                          }`}
-                        >
-                          <div className="flex items-center gap-2.5 min-w-0">
-                            <input
-                              type="checkbox"
-                              checked={isSelected}
-                              onChange={() => {}}
-                              className="rounded border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-amber-500 focus:ring-amber-400 h-4 w-4 cursor-pointer accent-amber-500"
-                            />
-                            <span className="truncate">{label}</span>
-                          </div>
-                          <SubmissionStatusBadge
-                            status={
-                              item.status === "Rejected"
-                                ? "Needs Revision"
-                                : item.status
-                            }
-                            size="sm"
-                          />
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
-
-
-
               {/* Reason / Justification */}
               <div>
-                <label className="block text-xs font-bold text-slate-800 dark:text-slate-200 mb-1.5">
-                  Reason / Justification <span className="text-red-500">*</span>
-                </label>
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="block text-xs font-bold text-slate-800 dark:text-slate-200">
+                    Reason / Justification <span className="text-red-500">*</span>
+                  </label>
+                  <span className="text-[11px] text-slate-500 dark:text-slate-400">Select preset or type below</span>
+                </div>
+
+                {/* Preset Dropdown */}
+                <select
+                  value={[
+                    "Grading system synchronization",
+                    "Medical emergency",
+                    "Syllabus alignment",
+                    "Technical issue",
+                    "Document clearance delay",
+                  ].includes(reason) ? reason : ""}
+                  onChange={(e) => {
+                    if (e.target.value) {
+                      setReason(e.target.value);
+                    }
+                  }}
+                  className="w-full mb-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950/60 px-3 py-2 text-xs text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-amber-500/30 focus:border-amber-500 transition cursor-pointer"
+                >
+                  <option value="">-- Select a reason preset (or write below) --</option>
+                  <option value="Grading system synchronization">Grading system synchronization</option>
+                  <option value="Medical emergency">Medical emergency</option>
+                  <option value="Syllabus alignment">Syllabus alignment</option>
+                  <option value="Technical issue">Technical issue</option>
+                  <option value="Document clearance delay">Document clearance delay</option>
+                </select>
+
                 <textarea
                   value={reason}
                   onChange={(e) => setReason(e.target.value)}
@@ -324,15 +255,6 @@ export function FacultyExtensionRequestModal({
                   </button>
                 )}
               </div>
-
-              {/* Informational Guidance Note */}
-              <div className="flex items-start gap-2 p-2.5 rounded-xl bg-amber-500/5 dark:bg-amber-500/10 border border-amber-500/20 text-[11px] text-slate-700 dark:text-slate-300">
-                <AppIcon icon={InfoCircle} size="md" color="active" />
-                <span className="leading-relaxed">
-                  Only one pending extension request is permitted per requirement schedule.
-                  Once approved, your portal will be unlocked until the approved date.
-                </span>
-              </div>
             </div>
 
             {/* Sticky Fixed Action Buttons */}
@@ -347,7 +269,7 @@ export function FacultyExtensionRequestModal({
               </button>
               <button
                 type="submit"
-                disabled={isSubmitting || selectedCodes.length === 0}
+                disabled={isSubmitting || !reason.trim()}
                 className="inline-flex items-center gap-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold px-4 py-2 rounded-xl text-xs shadow-sm active:scale-[0.98] transition-all cursor-pointer disabled:opacity-50"
               >
                 {isSubmitting ? (

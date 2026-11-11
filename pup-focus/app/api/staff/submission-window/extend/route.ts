@@ -253,6 +253,20 @@ export async function POST(request: NextRequest) {
         },
         { onConflict: "academic_year,semester" },
       );
+
+      // Supersede pending extension requests since global window was extended/reopened
+      try {
+        await supabase
+          .from("extension_requests")
+          .update({
+            status: "superseded",
+            admin_remarks: "Global submission schedule was extended by administrator",
+            updated_at: new Date().toISOString(),
+          })
+          .eq("status", "pending")
+          .eq("academic_year", activeAcademicYear)
+          .eq("semester", activeSemester);
+      } catch {}
     } else if (scope === "faculty" && scopeTarget) {
       // Personal extension: update due_at on submissions strictly for this faculty member
       const cleanTarget = scopeTarget.trim();

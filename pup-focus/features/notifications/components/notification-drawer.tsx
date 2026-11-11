@@ -559,10 +559,16 @@ export function NotificationDrawer() {
   };
 
   const filteredNotifications = useMemo(() => {
+    // Extension requests are meant for admin attention, filter them out from faculty view
+    const visibleNotifications = notifications.filter(
+      (n) =>
+        n.type !== "EXTENSION_REQUEST" &&
+        !n.title?.toLowerCase().includes("extension request:"),
+    );
     if (filterTab === "unread") {
-      return notifications.filter((n) => !n.isRead);
+      return visibleNotifications.filter((n) => !n.isRead);
     }
-    return notifications;
+    return visibleNotifications;
   }, [notifications, filterTab]);
 
   return (
@@ -778,10 +784,20 @@ export function NotificationDrawer() {
                         (selectedNotification.message.includes("Remarks:")
                           ? selectedNotification.message.split("Remarks:")[1]?.trim()
                           : null);
-                      const cleanMessage =
+                      let cleanMessage =
                         remarks && selectedNotification.message.includes("Remarks:")
                           ? selectedNotification.message.split("Remarks:")[0].trim().replace(/\.$/, "") + "."
                           : selectedNotification.message;
+
+                      // Remove raw JSON metadata from display
+                      if (typeof cleanMessage === "string" && cleanMessage.trim().startsWith("{")) {
+                        try {
+                          const parsed = JSON.parse(cleanMessage);
+                          cleanMessage = parsed.reason
+                            ? `Extension request for ${parsed.academic_year || ""} • ${parsed.semester || ""}.\n\nReason: "${parsed.reason}"`
+                            : (parsed.message || "Notification notice.");
+                        } catch {}
+                      }
 
                       const isApproved = category === "APPROVED";
                       const isRevision = category === "REVISION_REQUESTED" || category === "REJECTED";

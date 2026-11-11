@@ -1,5 +1,5 @@
 import React from "react";
-import { Check, Hourglass, Minus, Xmark } from "iconoir-react";
+import { Check, ClockRotateRight, Hourglass, Minus, Xmark } from "iconoir-react";
 import { AppIcon } from "@/components/ui/app-icon";
 import { cn } from "@/utils/cn";
 
@@ -147,7 +147,7 @@ export function SubmissionStatusBadge({
         "bg-[#780000] text-white border border-[#5e0000] font-bold",
       dotClass: "bg-rose-300",
       iconBadgeClass: "bg-white/20 text-white border border-white/30",
-      icon: <AppIcon icon={Xmark} color="white" className="shrink-0" strokeWidth={2.5} />,
+      icon: <AppIcon icon={ClockRotateRight} color="white" className="shrink-0" strokeWidth={2.5} />,
     },
     Extended: {
       label: "Extended",

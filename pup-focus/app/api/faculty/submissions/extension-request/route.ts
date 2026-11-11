@@ -95,6 +95,34 @@ export async function GET(request: NextRequest) {
       }
     }
 
+    // Check if the submission window was reopened/updated after any pending request was submitted
+    try {
+      const { data: winData } = await supabase
+        .from("submission_windows")
+        .select("start_date, end_date, start_time, end_time, academic_year, semester, updated_at")
+        .order("id", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (winData) {
+        const winUpdatedMs = winData.updated_at ? new Date(winData.updated_at).getTime() : 0;
+        const winStartMs = winData.start_date ? new Date(`${winData.start_date}T00:00:00+08:00`).getTime() : 0;
+
+        for (const r of requests) {
+          if (r.status === "pending") {
+            const reqTime = r.created_at ? new Date(r.created_at).getTime() : 0;
+            if ((winUpdatedMs > 0 && reqTime < winUpdatedMs) || (winStartMs > 0 && reqTime < winStartMs)) {
+              r.status = "superseded";
+              void supabase
+                .from("extension_requests")
+                .update({ status: "superseded", admin_remarks: "Global schedule was reopened/updated by admin" })
+                .eq("id", r.id);
+            }
+          }
+        }
+      }
+    } catch {}
+
     const pendingRequest = requests.find((r) => r.status === "pending") || null;
     const latestApprovedRequest = requests.find((r) => r.status === "approved") || null;
     const latestRequest = requests[0] || null;
@@ -167,16 +195,16 @@ export async function POST(request: NextRequest) {
       customTime = body.customTime || "17:00";
     }
 
-    if (!reason || reason.trim().length < 5) {
+    if (!reason || !reason.trim()) {
       return NextResponse.json(
-        { error: "A valid explanation or reason (at least 5 characters) is required." },
+        { error: "A valid explanation or reason is required." },
         { status: 400 },
       );
     }
 
     const supabase = getServiceRoleClient();
 
-    // 1. Restrict faculty to a maximum of one pending extension request per requirement schedule
+    // 1. If an existing pending extension request exists, supersede it so faculty can re-request
     const { data: existingPending } = await supabase
       .from("extension_requests")
       .select("id, requirement_codes, requested_preset, status")
@@ -186,52 +214,17 @@ export async function POST(request: NextRequest) {
       .eq("status", "pending");
 
     if (existingPending && existingPending.length > 0) {
-      const hasOverlap = existingPending.some((ext: any) => {
-        const extCodes: string[] = Array.isArray(ext.requirement_codes) ? ext.requirement_codes : [];
-        if (extCodes.length === 0 || requirementCodes.length === 0) return true;
-        return requirementCodes.some((code) => extCodes.includes(code));
-      });
-
-      if (hasOverlap) {
-        return NextResponse.json(
-          {
-            error: "You already have a pending extension request for this requirement schedule. Maximum of one pending extension request is allowed.",
-          },
-          { status: 400 },
-        );
-      }
-    } else {
-      // Check fallback notifications
-      const { data: notifPending } = await supabase
-        .from("notifications")
-        .select("id, message")
-        .eq("type", "EXTENSION_REQUEST")
-        .eq("user_id", user.id)
-        .order("created_at", { ascending: false })
-        .limit(10);
-
-      if (notifPending) {
-        const hasPendingNotif = notifPending.some((n: any) => {
-          try {
-            const p = JSON.parse(n.message);
-            if (p.status !== "pending") return false;
-            if (p.academic_year !== academicYear || p.semester !== semester) return false;
-            const extCodes: string[] = Array.isArray(p.requirement_codes) ? p.requirement_codes : [];
-            if (extCodes.length === 0 || requirementCodes.length === 0) return true;
-            return requirementCodes.some((code: string) => extCodes.includes(code));
-          } catch {
-            return false;
-          }
-        });
-        if (hasPendingNotif) {
-          return NextResponse.json(
-            {
-              error: "You already have a pending extension request for this requirement schedule. Maximum of one pending extension request is allowed.",
-            },
-            { status: 400 },
-          );
-        }
-      }
+      await supabase
+        .from("extension_requests")
+        .update({
+          status: "superseded",
+          admin_remarks: "Superseded by new extension request",
+          updated_at: new Date().toISOString(),
+        })
+        .eq("faculty_user_id", user.id)
+        .eq("academic_year", academicYear)
+        .eq("semester", semester)
+        .eq("status", "pending");
     }
 
     // 2. Check if any requested requirement is marked exempted
@@ -355,25 +348,65 @@ export async function POST(request: NextRequest) {
       // Table may not exist yet, fallback will handle it
     }
 
-    // 7. Insert into notifications table with structured JSON message so admin and fallback queries can retrieve it
+    // 7. Dispatch notification strictly to Admins / Approvers (never to faculty themselves)
     const title = `Extension Request: ${facultyName}`;
-    const notificationInsert = {
-      id: requestId,
-      user_id: user.id,
-      title,
-      message: JSON.stringify(requestPayload),
-      type: "EXTENSION_REQUEST",
-      is_read: false,
-      created_at: nowIso,
-    };
+    const cleanNotificationMessage = `${facultyName} has submitted an extension request for ${academicYear} • ${semester} (${requestedPreset}).\n\nReason: "${reason.trim()}"`;
 
-    const { error: notifError } = await supabase
-      .from("notifications")
-      .insert(notificationInsert);
+    try {
+      // Clean up any legacy/erroneous extension request notifications previously sent to this faculty member
+      await supabase
+        .from("notifications")
+        .delete()
+        .eq("user_id", user.id)
+        .eq("type", "EXTENSION_REQUEST");
 
-    if (notifError) {
-      logger.warn("extension_request_notification_insert_warning", {
-        error: notifError.message,
+      // Query admin/approver accounts
+      const { data: adminProfiles } = await supabase
+        .from("profiles")
+        .select("user_id, role")
+        .in("role", [
+          "admin",
+          "super_admin",
+          "staff",
+          "ADMIN",
+          "SUPER_ADMIN",
+          "STAFF",
+          "dean",
+          "chairperson",
+          "coordinator",
+          "approver",
+        ]);
+
+      const adminUserIds = Array.from(
+        new Set(
+          (adminProfiles || [])
+            .map((p: any) => p.user_id)
+            .filter((id: string) => Boolean(id) && id !== user.id),
+        ),
+      );
+
+      if (adminUserIds.length > 0) {
+        const adminNotifications = adminUserIds.map((adminId) => ({
+          id: crypto.randomUUID(),
+          user_id: adminId,
+          title,
+          message: cleanNotificationMessage,
+          type: "EXTENSION_REQUEST",
+          is_read: false,
+          created_at: nowIso,
+          metadata: {
+            ...requestPayload,
+            faculty_name: facultyName,
+            reason: reason.trim(),
+            preset: requestedPreset,
+          },
+        }));
+
+        await supabase.from("notifications").insert(adminNotifications);
+      }
+    } catch (notifErr) {
+      logger.warn("extension_request_admin_notification_failed", {
+        error: String(notifErr),
       });
     }
 

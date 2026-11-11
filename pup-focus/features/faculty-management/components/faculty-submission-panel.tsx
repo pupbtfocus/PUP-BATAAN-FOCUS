@@ -446,7 +446,14 @@ function renderStatusIconBadge(
       </span>
     );
   }
-  if (status === "Rejected" || status === "Overdue") {
+  if (status === "Overdue") {
+    return (
+      <span className="inline-flex items-center justify-center h-5 w-5 rounded-full bg-[#780000] text-white border border-[#5e0000] shrink-0 shadow-2xs">
+        <AppIcon icon={ClockRotateRight} size="xs" color="white" />
+      </span>
+    );
+  }
+  if (status === "Rejected") {
     return (
       <span className="inline-flex items-center justify-center h-5 w-5 rounded-full bg-[#780000] text-white border border-[#5e0000] shrink-0 shadow-2xs">
         <AppIcon icon={Xmark} size="xs" color="white" />
@@ -2703,9 +2710,26 @@ function FacultySubmissionPanelContent({
         );
         if (res.ok) {
           const data = await res.json();
-          setHasPendingExtensionRequest(Boolean(data.hasPendingRequest));
+          let isPending = Boolean(data.hasPendingRequest);
+          let pendingReq = data.pendingRequest;
+
+          // If the global schedule was opened/updated after the request was created, it is no longer pending
+          if (isPending && pendingReq && submissionWindow?.startDate) {
+            const reqTime = pendingReq.created_at
+              ? new Date(pendingReq.created_at).getTime()
+              : 0;
+            const windowStartTime = new Date(
+              `${submissionWindow.startDate}T00:00:00+08:00`,
+            ).getTime();
+            if (reqTime > 0 && windowStartTime > 0 && reqTime < windowStartTime) {
+              isPending = false;
+              pendingReq = null;
+            }
+          }
+
+          setHasPendingExtensionRequest(isPending);
           setPendingExtensionData(
-            data.pendingRequest || data.latestRequest || null,
+            isPending ? pendingReq : (data.latestRequest || null),
           );
           setLatestApprovedExtension(data.latestApprovedRequest || null);
           setAllExtensionRequests(
@@ -2724,7 +2748,13 @@ function FacultySubmissionPanelContent({
       }
     }
     void checkPendingExtension();
-  }, [isMounted, activeAY, activeSem, refetchSubmissionWindow]);
+  }, [
+    isMounted,
+    activeAY,
+    activeSem,
+    refetchSubmissionWindow,
+    submissionWindow?.startDate,
+  ]);
 
   useEffect(() => {
     if (
@@ -5949,79 +5979,80 @@ function FacultySubmissionPanelContent({
                       !isAllValidated &&
                       !hasActiveGracePeriod &&
                       !isEffectivelyOpen && (
-                        <div className="p-3 sm:p-4 rounded-xl border border-amber-300 dark:border-amber-900/60 bg-amber-50/70 dark:bg-amber-950/30 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs text-slate-700 dark:text-slate-300">
-                          <div className="flex items-start sm:items-center gap-2.5">
-                            <div className="p-1 rounded-lg bg-amber-500/15 text-amber-700 dark:text-amber-400 shrink-0">
-                              <AppIcon
-                                icon={Hourglass}
-                                size="md"
-                                color="inherit"
-                              />
-                            </div>
-                            <div>
-                              <div>
-                                <span className="font-bold text-amber-900 dark:text-amber-300 mr-1.5">
-                                  Submission Window Closed:
-                                </span>
-                                Submission Window is currently closed. Document
-                                uploads are locked for this term.
+                        <div className="relative overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 sm:p-5 shadow-sm transition-all">
+                          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                            <div className="flex items-start sm:items-center gap-3.5 min-w-0">
+                              <div className="flex shrink-0 items-center justify-center text-slate-700 dark:text-slate-300">
+                                <AppIcon
+                                  icon={Hourglass}
+                                  size="md"
+                                  color="inherit"
+                                  strokeWidth={2.2}
+                                />
                               </div>
-                              {hasPendingExtensionRequest && (
-                                <div className="mt-2 flex flex-wrap items-center gap-2">
-                                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-amber-500/20 text-amber-950 dark:text-amber-200 border border-amber-500/40 text-[11px] font-bold">
+                              <div className="min-w-0">
+                                <div className="flex flex-wrap items-center gap-2">
+                                  <h4 className="text-sm font-black text-slate-900 dark:text-slate-100 tracking-tight">
+                                    Submission Window Closed
+                                  </h4>
+                                </div>
+                                <p className="mt-1 text-xs text-slate-600 dark:text-slate-400 font-medium leading-relaxed">
+                                  Submission window is currently closed and document uploads are locked for this term. If you need additional time to submit requirements, you may request an extension.
+                                </p>
+                                {hasPendingExtensionRequest && (
+                                  <div className="mt-2.5 flex flex-wrap items-center gap-2">
+                                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 text-[11px] font-bold">
+                                      <AppIcon
+                                        icon={Hourglass}
+                                        size="xs"
+                                        color="inherit"
+                                      />
+                                      Extension Request Pending Admin Review
+                                    </span>
+                                    {pendingExtensionData?.reason && (
+                                      <span className="text-[11px] text-slate-500 dark:text-slate-400 italic truncate max-w-md font-medium">
+                                        &ldquo;{pendingExtensionData.reason}
+                                        &rdquo;
+                                      </span>
+                                    )}
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                            {hasLackings && (
+                              <div className="shrink-0 flex items-center gap-2 self-start sm:self-center">
+                                {hasPendingExtensionRequest ? (
+                                  <button
+                                    type="button"
+                                    onClick={() =>
+                                      setShowExtensionDetailsModal(true)
+                                    }
+                                    className="inline-flex items-center gap-2 bg-[#780000] hover:bg-[#5e0000] text-white font-bold px-4.5 py-2.5 rounded-xl text-xs sm:text-sm shadow-sm hover:shadow-md transition-all cursor-pointer border border-[#5e0000]"
+                                  >
                                     <AppIcon
                                       icon={Hourglass}
-                                      size="xs"
-                                      color="active"
+                                      size="sm"
+                                      color="inherit"
                                     />
-                                    Extension Request Pending Admin Review (
-                                    {pendingExtensionData?.requested_preset ||
-                                      "+3 Days"}
-                                    )
-                                  </span>
-                                  {pendingExtensionData?.reason && (
-                                    <span className="text-[11px] text-slate-600 dark:text-slate-400 italic">
-                                      &ldquo;{pendingExtensionData.reason}
-                                      &rdquo;
-                                    </span>
-                                  )}
-                                </div>
-                              )}
-                            </div>
+                                    <span>View Request Details</span>
+                                  </button>
+                                ) : (
+                                  <button
+                                    type="button"
+                                    onClick={() => openExtensionRequestModal()}
+                                    className="inline-flex items-center justify-center gap-2 bg-[#780000] hover:bg-[#5e0000] text-white font-bold px-4.5 py-2.5 rounded-xl text-xs sm:text-sm shadow-sm hover:shadow-md active:scale-[0.98] transition-all cursor-pointer border border-[#5e0000]"
+                                  >
+                                    <AppIcon
+                                      icon={Hourglass}
+                                      size="sm"
+                                      color="inherit"
+                                    />
+                                    <span>Request Extension</span>
+                                  </button>
+                                )}
+                              </div>
+                            )}
                           </div>
-                          {hasLackings && (
-                            <div className="shrink-0 flex items-center gap-2">
-                              {hasPendingExtensionRequest ? (
-                                <button
-                                  type="button"
-                                  onClick={() =>
-                                    setShowExtensionDetailsModal(true)
-                                  }
-                                  className="inline-flex items-center gap-1.5 bg-amber-500/15 hover:bg-amber-500/25 text-amber-800 dark:text-amber-300 border border-amber-500/40 font-bold px-3.5 py-2 rounded-xl text-xs shadow-xs transition-all cursor-pointer"
-                                >
-                                  <AppIcon
-                                    icon={Hourglass}
-                                    size="sm"
-                                    color="inherit"
-                                  />
-                                  <span>View Request Details</span>
-                                </button>
-                              ) : (
-                                <button
-                                  type="button"
-                                  onClick={() => openExtensionRequestModal()}
-                                  className="inline-flex items-center justify-center gap-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold px-3.5 py-2 rounded-xl text-xs shadow-sm active:scale-[0.98] transition-all cursor-pointer"
-                                >
-                                  <AppIcon
-                                    icon={Hourglass}
-                                    size="sm"
-                                    color="inherit"
-                                  />
-                                  <span>Request Extension</span>
-                                </button>
-                              )}
-                            </div>
-                          )}
                         </div>
                       )}
 
@@ -6354,46 +6385,22 @@ function FacultySubmissionPanelContent({
                                                       !hasActiveGracePeriod &&
                                                       !isEffectivelyOpen &&
                                                       !req.customDueDate ? (
-                                                      hasPendingExtensionRequest ? (
                                                         <button
                                                           type="button"
-                                                          onClick={() =>
-                                                            setShowExtensionDetailsModal(
-                                                              true,
-                                                            )
-                                                          }
-                                                          className="inline-flex items-center justify-center gap-1.5 bg-amber-500/15 hover:bg-amber-500/25 text-amber-800 dark:text-amber-300 border border-amber-500/30 font-bold w-36 h-8 rounded-xl text-xs shadow-xs transition-all cursor-pointer"
+                                                          disabled
+                                                          className="inline-flex items-center justify-center gap-1.5 bg-slate-200/70 dark:bg-slate-800/70 text-slate-500 dark:text-slate-400 font-medium w-36 h-8 rounded-xl text-xs cursor-not-allowed opacity-80"
+                                                          title="Uploads are locked because the submission window is closed."
                                                         >
                                                           <AppIcon
-                                                            icon={Hourglass}
-                                                            size="sm"
-                                                            color="active"
-                                                          />
-                                                          <span>
-                                                            Extension Pending
-                                                          </span>
-                                                        </button>
-                                                      ) : (
-                                                        <button
-                                                          type="button"
-                                                          onClick={() =>
-                                                            openExtensionRequestModal(
-                                                              req.code,
-                                                            )
-                                                          }
-                                                          className="inline-flex items-center justify-center gap-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 border border-amber-600/40 font-bold w-36 h-8 rounded-xl text-xs shadow-xs active:scale-[0.98] transition-all cursor-pointer"
-                                                        >
-                                                          <AppIcon
-                                                            icon={Hourglass}
+                                                            icon={Lock}
                                                             size="sm"
                                                             color="inherit"
                                                           />
                                                           <span>
-                                                            Request Extension
+                                                            Uploads Locked
                                                           </span>
                                                         </button>
-                                                      )
-                                                    ) : (
+                                                      ) : (
                                                       <button
                                                         type="button"
                                                         onClick={() =>
@@ -6467,66 +6474,37 @@ function FacultySubmissionPanelContent({
                                                       </button>
                                                     )}
 
-                                                  {/* 5. OVERDUE: Lock file upload and display Request Extension option */}
-                                                  {req.status === "Overdue" &&
-                                                    ((isWindowNotConfigured ||
-                                                      req.isIndividualClosed) &&
-                                                    !hasActiveGracePeriod &&
-                                                    !isEffectivelyOpen ? (
-                                                      <button
-                                                        type="button"
-                                                        disabled
-                                                        className="inline-flex items-center justify-center gap-1.5 bg-slate-200/70 dark:bg-slate-800/70 text-slate-500 dark:text-slate-400 font-medium w-36 h-8 rounded-xl text-xs cursor-not-allowed opacity-80"
-                                                        title="Submissions will open once the administration announces the submission schedule."
-                                                      >
-                                                        <AppIcon
-                                                          icon={Calendar}
-                                                          size="sm"
-                                                          color="inherit"
-                                                        />
-                                                        <span>
-                                                          Awaiting Schedule
-                                                        </span>
-                                                      </button>
-                                                    ) : hasPendingExtensionRequest ? (
-                                                      <button
-                                                        type="button"
-                                                        onClick={() =>
-                                                          setShowExtensionDetailsModal(
-                                                            true,
-                                                          )
+                                                  {/* 5. OVERDUE: Lock file upload */}
+                                                  {req.status === "Overdue" && (
+                                                    <button
+                                                      type="button"
+                                                      disabled
+                                                      className="inline-flex items-center justify-center gap-1.5 bg-slate-200/70 dark:bg-slate-800/70 text-slate-500 dark:text-slate-400 font-medium w-36 h-8 rounded-xl text-xs cursor-not-allowed opacity-80"
+                                                      title={
+                                                        isWindowNotConfigured ||
+                                                        req.isIndividualClosed
+                                                          ? "Submissions will open once the administration announces the submission schedule."
+                                                          : "Uploads are locked because the submission window is closed."
+                                                      }
+                                                    >
+                                                      <AppIcon
+                                                        icon={
+                                                          isWindowNotConfigured ||
+                                                          req.isIndividualClosed
+                                                            ? Calendar
+                                                            : Lock
                                                         }
-                                                        className="inline-flex items-center justify-center gap-1.5 bg-amber-500/15 hover:bg-amber-500/25 text-amber-800 dark:text-amber-300 border border-amber-500/30 font-bold w-36 h-8 rounded-xl text-xs shadow-xs transition-all cursor-pointer"
-                                                      >
-                                                        <AppIcon
-                                                          icon={Hourglass}
-                                                          size="sm"
-                                                          color="active"
-                                                        />
-                                                        <span>
-                                                          Extension Pending
-                                                        </span>
-                                                      </button>
-                                                    ) : (
-                                                      <button
-                                                        type="button"
-                                                        onClick={() =>
-                                                          openExtensionRequestModal(
-                                                            req.code,
-                                                          )
-                                                        }
-                                                        className="inline-flex items-center justify-center gap-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 border border-amber-600/40 font-bold w-36 h-8 rounded-xl text-xs shadow-xs active:scale-[0.98] transition-all cursor-pointer"
-                                                      >
-                                                        <AppIcon
-                                                          icon={Hourglass}
-                                                          size="sm"
-                                                          color="inherit"
-                                                        />
-                                                        <span>
-                                                          Request Extension
-                                                        </span>
-                                                      </button>
-                                                    ))}
+                                                        size="sm"
+                                                        color="inherit"
+                                                      />
+                                                      <span>
+                                                        {isWindowNotConfigured ||
+                                                        req.isIndividualClosed
+                                                          ? "Awaiting Schedule"
+                                                          : "Uploads Locked"}
+                                                      </span>
+                                                    </button>
+                                                  )}
 
                                                   {/* 6. PENDING: Current date is on or before effective deadline, enable file upload */}
                                                   {(req.status === "Pending" &&
@@ -6540,64 +6518,34 @@ function FacultySubmissionPanelContent({
                                                     !req.customDueDate &&
                                                     !hasActiveGracePeriod &&
                                                     !isEffectivelyOpen ? (
-                                                      isWindowClosed &&
-                                                      !req.isIndividualClosed ? (
-                                                        hasPendingExtensionRequest ? (
-                                                          <button
-                                                            type="button"
-                                                            onClick={() =>
-                                                              setShowExtensionDetailsModal(
-                                                                true,
-                                                              )
-                                                            }
-                                                            className="inline-flex items-center justify-center gap-1.5 bg-amber-500/15 hover:bg-amber-500/25 text-amber-800 dark:text-amber-300 border border-amber-500/30 font-bold w-36 h-8 rounded-xl text-xs shadow-xs transition-all cursor-pointer"
-                                                          >
-                                                            <AppIcon
-                                                              icon={Hourglass}
-                                                              size="sm"
-                                                              color="active"
-                                                            />
-                                                            <span>
-                                                              Extension Pending
-                                                            </span>
-                                                          </button>
-                                                        ) : (
-                                                          <button
-                                                            type="button"
-                                                            onClick={() =>
-                                                              openExtensionRequestModal(
-                                                                req.code,
-                                                              )
-                                                            }
-                                                            className="inline-flex items-center justify-center gap-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 border border-amber-600/40 font-bold w-36 h-8 rounded-xl text-xs shadow-xs active:scale-[0.98] transition-all cursor-pointer"
-                                                          >
-                                                            <AppIcon
-                                                              icon={Hourglass}
-                                                              size="sm"
-                                                              color="inherit"
-                                                            />
-                                                            <span>
-                                                              Request Extension
-                                                            </span>
-                                                          </button>
-                                                        )
-                                                      ) : (
-                                                        <button
-                                                          type="button"
-                                                          disabled
-                                                          className="inline-flex items-center justify-center gap-1.5 bg-slate-200/70 dark:bg-slate-800/70 text-slate-500 dark:text-slate-400 font-medium w-36 h-8 rounded-xl text-xs cursor-not-allowed opacity-80"
-                                                          title="Submissions will open once the administration announces the submission schedule."
-                                                        >
-                                                          <AppIcon
-                                                            icon={Calendar}
-                                                            size="sm"
-                                                            color="inherit"
-                                                          />
-                                                          <span>
-                                                            Awaiting Schedule
-                                                          </span>
-                                                        </button>
-                                                      )
+                                                      <button
+                                                        type="button"
+                                                        disabled
+                                                        className="inline-flex items-center justify-center gap-1.5 bg-slate-200/70 dark:bg-slate-800/70 text-slate-500 dark:text-slate-400 font-medium w-36 h-8 rounded-xl text-xs cursor-not-allowed opacity-80"
+                                                        title={
+                                                          isWindowClosed &&
+                                                          !req.isIndividualClosed
+                                                            ? "Uploads are locked because the submission window is closed."
+                                                            : "Submissions will open once the administration announces the submission schedule."
+                                                        }
+                                                      >
+                                                        <AppIcon
+                                                          icon={
+                                                            isWindowClosed &&
+                                                            !req.isIndividualClosed
+                                                              ? Lock
+                                                              : Calendar
+                                                          }
+                                                          size="sm"
+                                                          color="inherit"
+                                                        />
+                                                        <span>
+                                                          {isWindowClosed &&
+                                                          !req.isIndividualClosed
+                                                            ? "Uploads Locked"
+                                                            : "Awaiting Schedule"}
+                                                        </span>
+                                                      </button>
                                                     ) : (
                                                       <button
                                                         type="button"
@@ -7499,18 +7447,18 @@ function FacultySubmissionPanelContent({
                   />
                   <div className="p-6 space-y-4">
                     <div className="space-y-3 text-xs">
-                      <div className="flex items-center justify-between p-2.5 rounded-xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/50">
-                        <span className="font-semibold text-slate-600 dark:text-slate-400">
+                      <div className="flex items-center justify-between p-3 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
+                        <span className="font-semibold text-xs text-slate-700 dark:text-slate-300">
                           Status
                         </span>
                         <span
-                          className={`px-2.5 py-0.5 rounded-full font-bold text-[11px] ${
+                          className={`px-3 py-1 rounded-lg font-bold text-xs ${
                             pendingExtensionData.status === "approved"
                               ? "bg-emerald-500 text-white"
                               : pendingExtensionData.status === "rejected"
-                                ? "bg-rose-600 text-white"
+                                ? "bg-[#780000] text-white"
                                 : "bg-amber-500 text-slate-950"
-                          }`}
+                          } shadow-xs`}
                         >
                           {pendingExtensionData.status === "approved"
                             ? "Approved"
@@ -7527,18 +7475,6 @@ function FacultySubmissionPanelContent({
                         <p className="font-medium text-slate-900 dark:text-slate-200">
                           {pendingExtensionData.academic_year} •{" "}
                           {pendingExtensionData.semester}
-                        </p>
-                      </div>
-
-                      <div className="space-y-1">
-                        <span className="font-semibold text-slate-500 dark:text-slate-400">
-                          Requested Target Deadline:
-                        </span>
-                        <p className="font-medium text-slate-900 dark:text-slate-200">
-                          {pendingExtensionData.requested_preset || "+3 Days"}
-                          {pendingExtensionData.requested_date
-                            ? ` (until ${pendingExtensionData.requested_date} ${pendingExtensionData.requested_time || ""})`
-                            : ""}
                         </p>
                       </div>
 
@@ -7608,7 +7544,20 @@ function FacultySubmissionPanelContent({
                       </p>
                     </div>
 
-                    <div className="flex justify-end pt-2">
+                    <div className="flex items-center justify-end gap-2.5 pt-2">
+                      {isWindowClosed && hasLackings && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setShowExtensionDetailsModal(false);
+                            openExtensionRequestModal();
+                          }}
+                          className="bg-amber-500 hover:bg-amber-400 text-slate-950 border border-amber-600 px-4 py-2 text-xs font-bold rounded-xl transition cursor-pointer shadow-xs inline-flex items-center gap-1.5"
+                        >
+                          <AppIcon icon={Hourglass} size="xs" color="inherit" />
+                          <span>Request Again</span>
+                        </button>
+                      )}
                       <button
                         type="button"
                         onClick={() => setShowExtensionDetailsModal(false)}
