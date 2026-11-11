@@ -994,6 +994,7 @@ export async function POST(request: NextRequest) {
 
         if (!updateErr && updatedSub) {
           newSub = updatedSub;
+          targetSubmissionId = updatedSub.id;
           submissionError = null;
         }
       }

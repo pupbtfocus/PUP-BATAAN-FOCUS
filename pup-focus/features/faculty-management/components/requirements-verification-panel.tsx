@@ -442,6 +442,15 @@ const VALIDATION_PRESETS = [
   "All criteria and requirements satisfied",
 ];
 
+const CANONICAL_REQUIREMENT_ORDER: Record<string, number> = {
+  [REQUIREMENT_CODE.GRADE_SHEET]: 1,
+  [REQUIREMENT_CODE.ENHANCED_SYLLABUS]: 2,
+  [REQUIREMENT_CODE.CLASS_ORIENTATION]: 3,
+  [REQUIREMENT_CODE.MIDTERM_PACKAGE]: 4,
+  [REQUIREMENT_CODE.FINAL_PACKAGE]: 5,
+  [REQUIREMENT_CODE.CLASS_RECORDS]: 6,
+};
+
 export function FacultyVerificationDrawer({
   faculty,
   academicYear,
@@ -802,13 +811,17 @@ export function FacultyVerificationDrawer({
           }));
 
     for (const tpl of templateSource) {
-      if (!seenCodes.has(tpl.code)) {
+      const canonicalCode = matchRequirementCode(tpl.code) || tpl.code;
+      if (!seenCodes.has(canonicalCode)) {
         items.push({
-          code: tpl.code,
-          title: tpl.title || getFriendlyRequirementName(tpl.code),
+          code: canonicalCode,
+          title:
+            tpl.title ||
+            (REQUIREMENT_LABEL as Record<string, string>)[canonicalCode] ||
+            getFriendlyRequirementName(canonicalCode),
           isMandatory: tpl.is_mandatory ?? true,
         });
-        seenCodes.add(tpl.code);
+        seenCodes.add(canonicalCode);
       }
     }
 
@@ -825,15 +838,26 @@ export function FacultyVerificationDrawer({
 
     for (const sub of [...submissions, ...historySubmissions]) {
       const rawCode = sub.requirement_code;
-      if (rawCode && !seenCodes.has(rawCode)) {
+      const canonicalCode = matchRequirementCode(rawCode) || rawCode;
+      if (canonicalCode && !seenCodes.has(canonicalCode)) {
         items.push({
-          code: rawCode,
-          title: getFriendlyRequirementName(rawCode),
+          code: canonicalCode,
+          title:
+            (REQUIREMENT_LABEL as Record<string, string>)[canonicalCode] ||
+            getFriendlyRequirementName(canonicalCode),
           isMandatory: false,
         });
-        seenCodes.add(rawCode);
+        seenCodes.add(canonicalCode);
       }
     }
+
+    // Always sort stably by canonical order so rows NEVER reorder, jump, or move on new uploads
+    items.sort((a, b) => {
+      const orderA = CANONICAL_REQUIREMENT_ORDER[a.code] ?? 100;
+      const orderB = CANONICAL_REQUIREMENT_ORDER[b.code] ?? 100;
+      if (orderA !== orderB) return orderA - orderB;
+      return a.title.localeCompare(b.title);
+    });
 
     return items;
   }, [dbTemplates, submissions, historySubmissions]);
@@ -1309,9 +1333,9 @@ export function FacultyVerificationDrawer({
         `req-row-${initialRequirementCode}`,
       );
       if (element) {
-        element.scrollIntoView({ behavior: "smooth", block: "center" });
+        element.scrollIntoView({ behavior: "auto", block: "center" });
       }
-    }, 450);
+    }, 200);
 
     return () => clearTimeout(timeout);
   }, [initialRequirementCode, isLoading, classGroups, selectedClassId]);
@@ -3014,22 +3038,22 @@ export function FacultyVerificationDrawer({
                 ) : (
                   <div className="overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs">
                     <div className="overflow-x-auto">
-                      <table className="w-full text-left text-xs text-slate-600 dark:text-slate-300 min-w-[880px]">
+                      <table className="w-full table-fixed text-left text-xs text-slate-600 dark:text-slate-300 min-w-[880px]">
                         <thead className="bg-slate-50/60 dark:bg-slate-950/50 border-b border-slate-200/80 dark:border-slate-800/80 text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
                           <tr>
-                            <th className="px-3.5 py-2.5 w-[25%]">
+                            <th className="px-4 py-3 w-[25%]">
                               Requirement
                             </th>
-                            <th className="px-2.5 py-2.5 w-[10%] text-center">
+                            <th className="px-3 py-3 w-[10%] text-center">
                               Type
                             </th>
-                            <th className="px-3.5 py-2.5 w-[23%]">
+                            <th className="px-4 py-3 w-[25%]">
                               Attached File
                             </th>
-                            <th className="px-3.5 py-2.5 w-[26%]">
+                            <th className="px-4 py-3 w-[24%]">
                               Notes &amp; Feedback
                             </th>
-                            <th className="px-3.5 py-2.5 w-[16%] text-center">
+                            <th className="px-4 py-3 w-[16%] text-center">
                               Status &amp; Action
                             </th>
                           </tr>
@@ -3137,8 +3161,8 @@ export function FacultyVerificationDrawer({
                                 className="hover:bg-slate-50/70 dark:hover:bg-slate-800/40 transition-colors"
                               >
                                 {/* Column 1: Requirement */}
-                                <td className="px-4 py-3.5 align-middle">
-                                  <div className="space-y-1">
+                                <td className="px-4 py-3.5 align-top">
+                                  <div className="space-y-1 min-w-0">
                                     <span className="font-semibold text-slate-900 dark:text-slate-100 text-xs block leading-snug">
                                       {reqLabel}
                                     </span>
@@ -3155,25 +3179,27 @@ export function FacultyVerificationDrawer({
                                 </td>
 
                                 {/* Column 2: Type (Centered) */}
-                                <td className="px-3 py-3.5 align-middle text-center">
-                                  {isMandatory ? (
-                                    <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider bg-[#780000] text-white border border-[#5e0000] shadow-2xs">
-                                      Required
-                                    </span>
-                                  ) : (
-                                    <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider bg-slate-700 text-white border border-slate-600 shadow-2xs">
-                                      Optional
-                                    </span>
-                                  )}
+                                <td className="px-3 py-3.5 align-top text-center">
+                                  <div className="flex items-center justify-center pt-0.5">
+                                    {isMandatory ? (
+                                      <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider bg-[#780000] text-white border border-[#5e0000] shadow-2xs">
+                                        Required
+                                      </span>
+                                    ) : (
+                                      <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider bg-slate-700 text-white border border-slate-600 shadow-2xs">
+                                        Optional
+                                      </span>
+                                    )}
+                                  </div>
                                 </td>
 
                                 {/* Column 3: Attached File */}
-                                <td className="px-4 py-3.5 align-middle">
+                                <td className="px-4 py-3.5 align-top">
                                   {hasFile && fileDownloadUrl ? (
-                                    <div className="space-y-1.5">
-                                      <div>
+                                    <div className="space-y-1.5 min-w-0">
+                                      <div className="min-w-0">
                                         <span
-                                          className="font-medium text-slate-900 dark:text-slate-100 truncate block text-xs leading-snug max-w-[200px] xl:max-w-[260px]"
+                                          className="font-medium text-slate-900 dark:text-slate-100 truncate block text-xs leading-snug"
                                           title={rawFileName}
                                         >
                                           {fileName}
@@ -3274,22 +3300,24 @@ export function FacultyVerificationDrawer({
                                       </div>
                                     </div>
                                   ) : (
-                                    <span className="text-xs text-slate-400 dark:text-slate-500 italic block">
-                                      No file attached
-                                    </span>
+                                    <div className="pt-0.5">
+                                      <span className="text-xs text-slate-400 dark:text-slate-500 italic block">
+                                        No file attached
+                                      </span>
+                                    </div>
                                   )}
                                 </td>
 
-                                {/* Column 3: Notes & Feedback */}
-                                <td className="px-3.5 py-2.5 align-middle">
+                                {/* Column 4: Notes & Feedback */}
+                                <td className="px-4 py-3.5 align-top">
                                   {facultyNote ||
                                   isRevisionRequested ||
                                   (isValidated && adminNote) ||
                                   (isRevisionUploaded && priorRejectionNote) ? (
-                                    <div className="flex flex-col gap-1.5 max-w-[340px]">
+                                    <div className="flex flex-col gap-1.5 min-w-0">
                                       {facultyNote ? (
                                         <div
-                                          className="rounded-lg border border-slate-200/90 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-900/40 px-2.5 py-1.5 text-xs shadow-2xs"
+                                          className="rounded-lg border border-slate-200/90 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-900/40 px-2.5 py-1.5 text-xs shadow-2xs min-w-0"
                                           title={facultyNote}
                                         >
                                           <div className="flex items-center gap-1.5 mb-1">
@@ -3306,7 +3334,7 @@ export function FacultyVerificationDrawer({
                                                 : "Faculty Remarks"}
                                             </span>
                                           </div>
-                                          <p className="text-[11px] text-slate-800 dark:text-slate-200 font-medium leading-relaxed line-clamp-2 pl-5">
+                                          <p className="text-[11px] text-slate-800 dark:text-slate-200 font-medium leading-relaxed line-clamp-2 pl-5 break-words">
                                             &ldquo;{facultyNote}&rdquo;
                                           </p>
                                         </div>
@@ -3315,7 +3343,7 @@ export function FacultyVerificationDrawer({
                                       {isRevisionUploaded &&
                                       priorRejectionNote ? (
                                         <div
-                                          className="rounded-lg border border-slate-200/90 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-900/40 px-2.5 py-1.5 text-xs shadow-2xs"
+                                          className="rounded-lg border border-slate-200/90 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-900/40 px-2.5 py-1.5 text-xs shadow-2xs min-w-0"
                                           title={priorRejectionNote}
                                         >
                                           <div className="flex items-center gap-1.5 mb-1">
@@ -3331,13 +3359,13 @@ export function FacultyVerificationDrawer({
                                               Prior Revision
                                             </span>
                                           </div>
-                                          <p className="text-[11px] text-slate-800 dark:text-slate-200 font-medium leading-relaxed line-clamp-2 pl-5">
+                                          <p className="text-[11px] text-slate-800 dark:text-slate-200 font-medium leading-relaxed line-clamp-2 pl-5 break-words">
                                             &ldquo;{priorRejectionNote}&rdquo;
                                           </p>
                                         </div>
                                       ) : isRevisionRequested ? (
                                         <div
-                                          className="rounded-lg border border-slate-200/90 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-900/40 px-2.5 py-1.5 text-xs shadow-2xs"
+                                          className="rounded-lg border border-slate-200/90 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-900/40 px-2.5 py-1.5 text-xs shadow-2xs min-w-0"
                                           title={
                                             adminNote ||
                                             "Please review and re-upload the corrected requirement document."
@@ -3356,7 +3384,7 @@ export function FacultyVerificationDrawer({
                                               Revision Sent
                                             </span>
                                           </div>
-                                          <p className="text-[11px] text-slate-800 dark:text-slate-200 font-medium leading-relaxed line-clamp-2 pl-5">
+                                          <p className="text-[11px] text-slate-800 dark:text-slate-200 font-medium leading-relaxed line-clamp-2 pl-5 break-words">
                                             &ldquo;
                                             {adminNote ||
                                               "Please review and re-upload the corrected requirement document."}
@@ -3365,7 +3393,7 @@ export function FacultyVerificationDrawer({
                                         </div>
                                       ) : isValidated && adminNote ? (
                                         <div
-                                          className="rounded-lg border border-slate-200/90 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-900/40 px-2.5 py-1.5 text-xs shadow-2xs"
+                                          className="rounded-lg border border-slate-200/90 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-900/40 px-2.5 py-1.5 text-xs shadow-2xs min-w-0"
                                           title={adminNote}
                                         >
                                           <div className="flex items-center gap-1.5 mb-1">
@@ -3381,99 +3409,97 @@ export function FacultyVerificationDrawer({
                                               Validated Remarks
                                             </span>
                                           </div>
-                                          <p className="text-[11px] text-slate-800 dark:text-slate-200 font-medium leading-relaxed line-clamp-2 pl-5">
+                                          <p className="text-[11px] text-slate-800 dark:text-slate-200 font-medium leading-relaxed line-clamp-2 pl-5 break-words">
                                             &ldquo;{adminNote}&rdquo;
                                           </p>
                                         </div>
                                       ) : null}
                                     </div>
                                   ) : (
-                                    <span className="text-slate-400 dark:text-slate-600 text-xs italic block">
-                                      &mdash;
-                                    </span>
+                                    <div className="pt-0.5">
+                                      <span className="text-slate-400 dark:text-slate-600 text-xs italic block">
+                                        &mdash;
+                                      </span>
+                                    </div>
                                   )}
                                 </td>
 
-                                {/* Column 4: Status / Action */}
-                                <td className="px-3.5 py-2.5 align-middle text-center">
-                                  {isValidated ? (
-                                    <div className="flex items-center justify-center">
+                                {/* Column 5: Status / Action */}
+                                <td className="px-4 py-3.5 align-top text-center">
+                                  <div className="flex items-center justify-center pt-0.5">
+                                    {isValidated ? (
                                       <SubmissionStatusBadge
                                         status="Validated"
                                         size="md"
                                       />
-                                    </div>
-                                  ) : isRevisionRequested ? (
-                                    <div className="flex items-center justify-center">
+                                    ) : isRevisionRequested ? (
                                       <SubmissionStatusBadge
                                         status="Needs Revision"
                                         size="md"
                                       />
-                                    </div>
-                                  ) : matchingSubmission ? (
-                                    <div className="flex items-center justify-center gap-2 whitespace-nowrap">
-                                      <button
-                                        type="button"
-                                        disabled={
-                                          submittingAction !== null ||
-                                          reviewingCode !== null ||
-                                          isValidatingSingle ||
-                                          isSubmittingRevision
-                                        }
-                                        onClick={() =>
-                                          openValidateModal(
-                                            matchingSubmission.id,
-                                            code,
-                                            reqLabel,
-                                          )
-                                        }
-                                        title="Validate Requirement"
-                                        aria-label="Validate Requirement"
-                                        className="inline-flex items-center justify-center h-8 w-8 rounded-full border border-[#08412a] bg-[#0b5336] hover:bg-[#073d2a] text-white shadow-2xs transition-all hover:scale-110 active:scale-95 disabled:opacity-50 cursor-pointer"
-                                      >
-                                        <AppIcon
-                                          icon={Check}
-                                          size="sm"
-                                          color="white"
-                                          strokeWidth={2.5}
-                                        />
-                                      </button>
-                                      <button
-                                        type="button"
-                                        disabled={
-                                          submittingAction !== null ||
-                                          reviewingCode !== null ||
-                                          isValidatingSingle ||
-                                          isSubmittingRevision
-                                        }
-                                        onClick={() =>
-                                          openRevisionModal(
-                                            matchingSubmission.id,
-                                            code,
-                                            reqLabel,
-                                          )
-                                        }
-                                        title="Request Revision"
-                                        aria-label="Request Revision"
-                                        className="inline-flex items-center justify-center h-8 w-8 rounded-full border border-[#5e0000] bg-[#780000] hover:bg-[#5e0000] text-white shadow-2xs transition-all hover:scale-110 active:scale-95 disabled:opacity-50 cursor-pointer"
-                                      >
-                                        <AppIcon
-                                          icon={Xmark}
-                                          size="sm"
-                                          color="white"
-                                          strokeWidth={2.5}
-                                        />
-                                      </button>
-                                    </div>
-                                  ) : (
-                                    <div className="flex items-center justify-center">
+                                    ) : matchingSubmission ? (
+                                      <div className="flex items-center justify-center gap-2 whitespace-nowrap">
+                                        <button
+                                          type="button"
+                                          disabled={
+                                            submittingAction !== null ||
+                                            reviewingCode !== null ||
+                                            isValidatingSingle ||
+                                            isSubmittingRevision
+                                          }
+                                          onClick={() =>
+                                            openValidateModal(
+                                              matchingSubmission.id,
+                                              code,
+                                              reqLabel,
+                                            )
+                                          }
+                                          title="Validate Requirement"
+                                          aria-label="Validate Requirement"
+                                          className="inline-flex items-center justify-center h-8 w-8 rounded-full border border-[#08412a] bg-[#0b5336] hover:bg-[#073d2a] text-white shadow-2xs transition-colors disabled:opacity-50 cursor-pointer"
+                                        >
+                                          <AppIcon
+                                            icon={Check}
+                                            size="sm"
+                                            color="white"
+                                            strokeWidth={2.5}
+                                          />
+                                        </button>
+                                        <button
+                                          type="button"
+                                          disabled={
+                                            submittingAction !== null ||
+                                            reviewingCode !== null ||
+                                            isValidatingSingle ||
+                                            isSubmittingRevision
+                                          }
+                                          onClick={() =>
+                                            openRevisionModal(
+                                              matchingSubmission.id,
+                                              code,
+                                              reqLabel,
+                                            )
+                                          }
+                                          title="Request Revision"
+                                          aria-label="Request Revision"
+                                          className="inline-flex items-center justify-center h-8 w-8 rounded-full border border-[#5e0000] bg-[#780000] hover:bg-[#5e0000] text-white shadow-2xs transition-colors disabled:opacity-50 cursor-pointer"
+                                        >
+                                          <AppIcon
+                                            icon={Xmark}
+                                            size="sm"
+                                            color="white"
+                                            strokeWidth={2.5}
+                                          />
+                                        </button>
+                                      </div>
+                                    ) : (
                                       <SubmissionStatusBadge
                                         status="Not Submitted"
                                         label="Awaiting Submission"
                                         size="md"
                                       />
-                                    </div>
-                                  )}
+                                    )}
+                                  </div>
                                 </td>
                               </tr>
                             );
@@ -3815,15 +3841,15 @@ export function FacultyVerificationDrawer({
                   {/* Historical Requirements Table for Selected Class */}
                   <div className="overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xs">
                     <div className="overflow-x-auto">
-                      <table className="w-full text-left text-xs text-slate-600 dark:text-slate-300 min-w-[880px]">
+                      <table className="w-full table-fixed text-left text-xs text-slate-600 dark:text-slate-300 min-w-[880px]">
                         <thead className="bg-slate-50 dark:bg-slate-950/70 border-b border-slate-200 dark:border-slate-800 text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
                           <tr>
                             <th className="px-4 py-3 w-[26%]">Requirement</th>
-                            <th className="px-3 py-3 w-[12%] text-center">
+                            <th className="px-3 py-3 w-[10%] text-center">
                               Type
                             </th>
                             <th className="px-4 py-3 w-[24%]">File Versions</th>
-                            <th className="px-4 py-3 w-[22%]">
+                            <th className="px-4 py-3 w-[24%]">
                               Notes &amp; Remarks
                             </th>
                             <th className="px-4 py-3 w-[10%] text-center">
@@ -3873,8 +3899,8 @@ export function FacultyVerificationDrawer({
                                 className="hover:bg-slate-50/70 dark:hover:bg-slate-800/40 transition-colors"
                               >
                                 {/* Requirement */}
-                                <td className="px-4 py-3.5 align-middle">
-                                  <div className="space-y-1">
+                                <td className="px-4 py-3.5 align-top">
+                                  <div className="space-y-1 min-w-0">
                                     <span className="font-semibold text-slate-900 dark:text-slate-100 text-xs block leading-snug">
                                       {reqLabel}
                                     </span>
@@ -3891,22 +3917,24 @@ export function FacultyVerificationDrawer({
                                 </td>
 
                                 {/* Type */}
-                                <td className="px-3 py-3.5 align-middle text-center">
-                                  {isMandatory ? (
-                                    <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider bg-[#780000] text-white border border-[#5e0000] shadow-2xs">
-                                      Required
-                                    </span>
-                                  ) : (
-                                    <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider bg-slate-700 text-white border border-slate-600 shadow-2xs">
-                                      Optional
-                                    </span>
-                                  )}
+                                <td className="px-3 py-3.5 align-top text-center">
+                                  <div className="flex items-center justify-center pt-0.5">
+                                    {isMandatory ? (
+                                      <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider bg-[#780000] text-white border border-[#5e0000] shadow-2xs">
+                                        Required
+                                      </span>
+                                    ) : (
+                                      <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider bg-slate-700 text-white border border-slate-600 shadow-2xs">
+                                        Optional
+                                      </span>
+                                    )}
+                                  </div>
                                 </td>
 
                                 {/* File Versions */}
-                                <td className="px-4 py-3.5 align-middle">
+                                <td className="px-4 py-3.5 align-top">
                                   {docs.length > 0 ? (
-                                    <div className="space-y-1.5">
+                                    <div className="space-y-1.5 min-w-0">
                                       {docs.map((doc, idx) => {
                                         const rawName =
                                           doc.storage_path?.split("/").pop() ||
@@ -4042,7 +4070,7 @@ export function FacultyVerificationDrawer({
                                 </td>
 
                                 {/* Notes */}
-                                <td className="px-3.5 py-2.5 align-middle">
+                                <td className="px-3.5 py-3.5 align-top">
                                   {facultyNote || adminNote ? (
                                     <div className="flex flex-col gap-1.5 max-w-[340px]">
                                       {facultyNote ? (
@@ -4092,15 +4120,17 @@ export function FacultyVerificationDrawer({
                                       ) : null}
                                     </div>
                                   ) : (
-                                    <span className="text-slate-400 dark:text-slate-600 text-xs italic block">
-                                      &mdash;
-                                    </span>
+                                    <div className="pt-0.5">
+                                      <span className="text-slate-400 dark:text-slate-600 text-xs italic block">
+                                        &mdash;
+                                      </span>
+                                    </div>
                                   )}
                                 </td>
 
                                 {/* Status */}
-                                <td className="px-4 py-3.5 align-middle text-center whitespace-nowrap">
-                                  <div className="flex items-center justify-center">
+                                <td className="px-4 py-3.5 align-top text-center whitespace-nowrap">
+                                  <div className="flex items-center justify-center pt-0.5">
                                     <SubmissionStatusBadge
                                       status={historyStatus}
                                       label={
@@ -4114,9 +4144,9 @@ export function FacultyVerificationDrawer({
                                 </td>
 
                                 {/* Action */}
-                                <td className="px-4 py-3.5 align-middle text-center">
+                                <td className="px-4 py-3.5 align-top text-center">
                                   {docs.length > 0 && docs[0]?.storage_path ? (
-                                    <div className="flex items-center justify-center">
+                                    <div className="flex items-center justify-center pt-0.5">
                                       <button
                                         type="button"
                                         onClick={() => {

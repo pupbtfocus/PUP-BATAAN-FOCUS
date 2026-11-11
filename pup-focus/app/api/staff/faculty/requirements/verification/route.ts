@@ -489,6 +489,21 @@ export async function GET(request: NextRequest) {
       }));
     }
 
+    const CANONICAL_ORDER: Record<string, number> = {
+      [REQUIREMENT_CODE.GRADE_SHEET]: 1,
+      [REQUIREMENT_CODE.ENHANCED_SYLLABUS]: 2,
+      [REQUIREMENT_CODE.CLASS_ORIENTATION]: 3,
+      [REQUIREMENT_CODE.MIDTERM_PACKAGE]: 4,
+      [REQUIREMENT_CODE.FINAL_PACKAGE]: 5,
+      [REQUIREMENT_CODE.CLASS_RECORDS]: 6,
+    };
+    activeTemplateRows.sort((a, b) => {
+      const orderA = CANONICAL_ORDER[a.code] ?? 100;
+      const orderB = CANONICAL_ORDER[b.code] ?? 100;
+      if (orderA !== orderB) return orderA - orderB;
+      return a.title.localeCompare(b.title);
+    });
+
     const filteredAssignments = (assignmentRows ?? []).filter(
       (row: any) =>
         row.academic_year === selectedAcademicYear &&
