@@ -3848,21 +3848,21 @@ export function FacultyVerificationDrawer({
                   {/* Historical Requirements Table for Selected Class */}
                   <div className="overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xs">
                     <div className="overflow-x-auto">
-                      <table className="w-full table-fixed text-left text-xs text-slate-600 dark:text-slate-300 min-w-[880px]">
+                      <table className="w-full table-fixed text-left text-xs text-slate-600 dark:text-slate-300 min-w-[1020px]">
                         <thead className="bg-slate-50 dark:bg-slate-950/70 border-b border-slate-200 dark:border-slate-800 text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
                           <tr>
-                            <th className="px-4 py-3 w-[26%]">Requirement</th>
-                            <th className="px-3 py-3 w-[10%] text-center">
+                            <th className="px-4 py-3 w-[23%]">Requirement</th>
+                            <th className="px-3 py-3 w-[8%] text-center">
                               Type
                             </th>
-                            <th className="px-4 py-3 w-[24%]">File Versions</th>
-                            <th className="px-4 py-3 w-[24%]">
+                            <th className="px-4 py-3 w-[21%]">File Versions</th>
+                            <th className="px-4 py-3 w-[21%]">
                               Notes &amp; Remarks
                             </th>
-                            <th className="px-4 py-3 w-[10%] text-center">
+                            <th className="px-3 py-3 w-[13%] text-center">
                               Status
                             </th>
-                            <th className="px-4 py-3 w-[6%] text-center">
+                            <th className="px-3 py-3 w-[14%] text-center">
                               Actions
                             </th>
                           </tr>
@@ -4136,7 +4136,7 @@ export function FacultyVerificationDrawer({
                                 </td>
 
                                 {/* Status */}
-                                <td className="px-4 py-3.5 align-middle text-center whitespace-nowrap">
+                                <td className="px-3 py-3.5 align-middle text-center whitespace-nowrap">
                                   <div className="flex items-center justify-center">
                                     <SubmissionStatusBadge
                                       status={historyStatus}
@@ -4151,7 +4151,7 @@ export function FacultyVerificationDrawer({
                                 </td>
 
                                 {/* Action */}
-                                <td className="px-4 py-3.5 align-middle text-center">
+                                <td className="px-3 py-3.5 align-middle text-center whitespace-nowrap">
                                   {docs.length > 0 && docs[0]?.storage_path ? (
                                     <div className="flex items-center justify-center">
                                       <button
@@ -4199,7 +4199,7 @@ export function FacultyVerificationDrawer({
                                             isAdminView: true,
                                           });
                                         }}
-                                        className="inline-flex items-center gap-1 rounded-xl border border-slate-200 bg-white hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-800 dark:hover:bg-slate-750 text-slate-800 dark:text-slate-200 px-2.5 py-1 text-xs font-semibold transition cursor-pointer shadow-2xs"
+                                        className="inline-flex items-center gap-1 rounded-xl border border-slate-200 bg-white hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-800 dark:hover:bg-slate-750 text-slate-800 dark:text-slate-200 px-2.5 py-1 text-xs font-semibold transition cursor-pointer shadow-2xs whitespace-nowrap shrink-0"
                                       >
                                         <AppIcon
                                           icon={Eye}
