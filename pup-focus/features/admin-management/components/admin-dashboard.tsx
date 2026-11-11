@@ -1123,43 +1123,43 @@ export function SuperAdminDashboard({
     }
   }
 
+  async function loadCurrentTerm() {
+    try {
+      const res = await fetch(`/api/staff/academic-terms?_t=${Date.now()}`, {
+        credentials: "include",
+        cache: "no-store",
+      });
+      if (res.ok) {
+        const data = await res.json();
+        const current = data.terms?.find((t: any) => t.status === "Current");
+        if (current?.academicYear) {
+          setCurrentAcademicYear(current.academicYear);
+          if (current.semester) {
+            setCurrentSemester(current.semester);
+          }
+        } else {
+          setCurrentAcademicYear("");
+        }
+        if (Array.isArray(data.terms) && typeof window !== "undefined") {
+          try {
+            sessionStorage.setItem("pup_focus_academic_terms", JSON.stringify(data.terms));
+            localStorage.setItem("pup_focus_academic_terms", JSON.stringify(data.terms));
+            if (data.nextAcademicYear) {
+              sessionStorage.setItem("pup_focus_next_academic_year", data.nextAcademicYear);
+              localStorage.setItem("pup_focus_next_academic_year", data.nextAcademicYear);
+            }
+          } catch {}
+        }
+      }
+    } catch {}
+  }
+
   useEffect(() => {
     void loadAdminAccounts();
     void loadFacultyFromDatabase();
     prefetchUserRegistrationLogs("all");
     prefetchUserRegistrationLogs("admin");
     prefetchUserRegistrationLogs("faculty");
-
-    async function loadCurrentTerm() {
-      try {
-        const res = await fetch(`/api/staff/academic-terms?_t=${Date.now()}`, {
-          credentials: "include",
-          cache: "no-store",
-        });
-        if (res.ok) {
-          const data = await res.json();
-          const current = data.terms?.find((t: any) => t.status === "Current");
-          if (current?.academicYear) {
-            setCurrentAcademicYear(current.academicYear);
-            if (current.semester) {
-              setCurrentSemester(current.semester);
-            }
-          } else {
-            setCurrentAcademicYear("");
-          }
-          if (Array.isArray(data.terms) && typeof window !== "undefined") {
-            try {
-              sessionStorage.setItem("pup_focus_academic_terms", JSON.stringify(data.terms));
-              localStorage.setItem("pup_focus_academic_terms", JSON.stringify(data.terms));
-              if (data.nextAcademicYear) {
-                sessionStorage.setItem("pup_focus_next_academic_year", data.nextAcademicYear);
-                localStorage.setItem("pup_focus_next_academic_year", data.nextAcademicYear);
-              }
-            } catch {}
-          }
-        }
-      } catch {}
-    }
     void loadCurrentTerm();
   }, []);
 
