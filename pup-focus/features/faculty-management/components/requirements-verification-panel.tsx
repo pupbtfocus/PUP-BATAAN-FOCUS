@@ -802,8 +802,8 @@ export function FacultyVerificationDrawer({
     const seenCodes = new Set<string>();
 
     const templateSource =
-      requirementTemplates.length > 0
-        ? requirementTemplates
+      requirementTemplatesProp && requirementTemplatesProp.length > 0
+        ? requirementTemplatesProp
         : dbTemplates.length > 0
         ? dbTemplates
         : DEFAULT_REQUIREMENTS.map((code) => ({
@@ -827,7 +827,10 @@ export function FacultyVerificationDrawer({
       }
     }
 
-    if (requirementTemplates.length === 0 && dbTemplates.length === 0) {
+    if (
+      (!requirementTemplatesProp || requirementTemplatesProp.length === 0) &&
+      dbTemplates.length === 0
+    ) {
       for (const code of DEFAULT_REQUIREMENTS) {
         if (!seenCodes.has(code)) {
           items.push({
@@ -864,7 +867,7 @@ export function FacultyVerificationDrawer({
     });
 
     return items;
-  }, [requirementTemplates, dbTemplates, submissions, historySubmissions]);
+  }, [requirementTemplatesProp, dbTemplates, submissions, historySubmissions]);
 
   interface SubmissionClassGroup {
     key: string;
