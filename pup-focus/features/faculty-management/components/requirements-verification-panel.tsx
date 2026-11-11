@@ -802,7 +802,9 @@ export function FacultyVerificationDrawer({
     const seenCodes = new Set<string>();
 
     const templateSource =
-      dbTemplates.length > 0
+      requirementTemplates.length > 0
+        ? requirementTemplates
+        : dbTemplates.length > 0
         ? dbTemplates
         : DEFAULT_REQUIREMENTS.map((code) => ({
             code,
@@ -825,14 +827,16 @@ export function FacultyVerificationDrawer({
       }
     }
 
-    for (const code of DEFAULT_REQUIREMENTS) {
-      if (!seenCodes.has(code)) {
-        items.push({
-          code,
-          title: REQUIREMENT_LABEL[code] || getFriendlyRequirementName(code),
-          isMandatory: true,
-        });
-        seenCodes.add(code);
+    if (requirementTemplates.length === 0 && dbTemplates.length === 0) {
+      for (const code of DEFAULT_REQUIREMENTS) {
+        if (!seenCodes.has(code)) {
+          items.push({
+            code,
+            title: REQUIREMENT_LABEL[code] || getFriendlyRequirementName(code),
+            isMandatory: true,
+          });
+          seenCodes.add(code);
+        }
       }
     }
 
@@ -860,7 +864,7 @@ export function FacultyVerificationDrawer({
     });
 
     return items;
-  }, [dbTemplates, submissions, historySubmissions]);
+  }, [requirementTemplates, dbTemplates, submissions, historySubmissions]);
 
   interface SubmissionClassGroup {
     key: string;

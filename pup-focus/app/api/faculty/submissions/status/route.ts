@@ -11,6 +11,7 @@ import {
   type RequirementCode,
 } from "@/config/compliance";
 import { logger } from "@/lib/observability/logger";
+import { isTemplateHiddenForTerm } from "@/lib/requirement-templates/term-visibility";
 import {
   evaluateSubmissionWindow,
   getFacultyPersonalDeadline,
@@ -301,21 +302,33 @@ export async function GET(request: NextRequest) {
     }));
 
     try {
+      const isCurrentTerm = Boolean(
+        dbCurrentTerm &&
+          (!requestedAcademicYear || requestedAcademicYear === dbCurrentTerm.academic_year) &&
+          (!requestedSemester || normalizeSemester(requestedSemester) === normalizeSemester(dbCurrentTerm.semester))
+      );
+
       const { data: dbTemplates } = await supabase
         .from("requirement_templates")
-        .select("code, title, is_mandatory, max_size_mb, allowed_formats, is_active")
-        .eq("is_active", true)
+        .select("code, title, is_mandatory, max_size_mb, allowed_formats, is_active, description")
         .order("is_mandatory", { ascending: false })
         .order("created_at", { ascending: true });
 
       if (dbTemplates && dbTemplates.length > 0) {
-        activeTemplateRows = dbTemplates.map((t) => ({
-          code: t.code,
-          title: t.title,
-          is_mandatory: t.is_mandatory,
-          max_size_mb: t.max_size_mb ? Number(t.max_size_mb) : 10,
-          allowed_formats: Array.isArray(t.allowed_formats) && t.allowed_formats.length > 0 ? t.allowed_formats : ["PDF", "DOCX", "XLSX", "PNG", "JPG", "ZIP"],
-        }));
+        activeTemplateRows = dbTemplates
+          .filter((t: any) => {
+            if (isCurrentTerm) {
+              return t.is_active !== false;
+            }
+            return !isTemplateHiddenForTerm(t, activeAcademicYear, activeSemester, false);
+          })
+          .map((t) => ({
+            code: t.code,
+            title: t.title,
+            is_mandatory: t.is_mandatory,
+            max_size_mb: t.max_size_mb ? Number(t.max_size_mb) : 10,
+            allowed_formats: Array.isArray(t.allowed_formats) && t.allowed_formats.length > 0 ? t.allowed_formats : ["PDF", "DOCX", "XLSX", "PNG", "JPG", "ZIP"],
+          }));
       }
     } catch {
       // Keep defaults

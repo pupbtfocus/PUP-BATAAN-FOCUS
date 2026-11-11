@@ -8,6 +8,12 @@ import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { getServiceRoleClient } from "@/lib/supabase/service-role";
 import type { RequirementTemplate } from "@/features/requirement-templates/types/requirement-template.types";
 import { logTransactionEvent } from "@/features/transaction-logs/services/transaction-log.service";
+import {
+  cleanDescription,
+  formatDescriptionWithHiddenTerms,
+  normalizeTermKey,
+  parseHiddenTerms,
+} from "@/lib/requirement-templates/term-visibility";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -200,7 +206,11 @@ export async function GET(request: NextRequest) {
     }
 
     const sortedRows = sortTemplatesStably(deduplicatedRows);
-    const filtered = onlyActive ? sortedRows.filter((r) => r.is_active) : sortedRows;
+    const sanitizedRows = sortedRows.map((r) => ({
+      ...r,
+      description: cleanDescription(r.description),
+    }));
+    const filtered = onlyActive ? sanitizedRows.filter((r) => r.is_active) : sanitizedRows;
     return NextResponse.json({ templates: filtered });
   } catch (error) {
     console.error("GET requirement-templates error:", error);
@@ -442,6 +452,45 @@ export async function PUT(request: NextRequest) {
 
     const supabase = getServiceRoleClient();
 
+    // If is_active is changed, synchronize term-based visibility so unhiding in future terms
+    // does not retroactively pollute past terms/semesters
+    if (typeof body.is_active === "boolean") {
+      try {
+        const { data: currentTerm } = await supabase
+          .from("academic_terms")
+          .select("academic_year, semester")
+          .eq("status", "Current")
+          .maybeSingle();
+
+        if (currentTerm?.academic_year && currentTerm?.semester) {
+          const termKey = `${currentTerm.academic_year}|${currentTerm.semester}`;
+          const { data: existingTpl } = await supabase
+            .from("requirement_templates")
+            .select("description")
+            .eq("id", id)
+            .maybeSingle();
+
+          const baseDesc = typeof body.description === "string" ? body.description : existingTpl?.description;
+          const currentHiddenTerms = parseHiddenTerms(baseDesc);
+
+          let newHiddenTerms: string[];
+          if (body.is_active === false) {
+            newHiddenTerms = Array.from(new Set([...currentHiddenTerms, termKey]));
+          } else {
+            // Unhiding: remove only current term from hidden list, preserving past terms!
+            newHiddenTerms = currentHiddenTerms.filter((k) => {
+              const [kAy, kSem] = k.split("|");
+              return normalizeTermKey(kAy, kSem) !== normalizeTermKey(currentTerm.academic_year, currentTerm.semester);
+            });
+          }
+
+          updatePayload.description = formatDescriptionWithHiddenTerms(baseDesc, newHiddenTerms);
+        }
+      } catch (termErr) {
+        console.warn("Could not synchronize term-based visibility:", termErr);
+      }
+    }
+
     const { data: updated, error: updateError } = await supabase
       .from("requirement_templates")
       .update(updatePayload)
@@ -461,7 +510,11 @@ export async function PUT(request: NextRequest) {
       metadata: { ...updatePayload },
     });
 
-    return NextResponse.json({ template: updated, success: true });
+    const sanitized = updated
+      ? { ...updated, description: cleanDescription(updated.description) }
+      : updated;
+
+    return NextResponse.json({ template: sanitized, success: true });
   } catch (error) {
     console.error("PUT requirement-templates error:", error);
     return NextResponse.json(

@@ -17,6 +17,7 @@ import {
   type SubmissionWindowSemester,
 } from "@/features/submissions/services/submission-window.service";
 import { logger } from "@/lib/observability/logger";
+import { isTemplateHiddenForTerm } from "@/lib/requirement-templates/term-visibility";
 
 export type RequirementStatusData = {
   code: RequirementCode | string;
@@ -219,8 +220,7 @@ export async function getFacultyInitialData(
       .maybeSingle(),
     supabase
       .from("requirement_templates")
-      .select("code, title, is_mandatory, max_size_mb, allowed_formats, is_active")
-      .eq("is_active", true)
+      .select("code, title, is_mandatory, max_size_mb, allowed_formats, is_active, description")
       .order("is_mandatory", { ascending: false })
       .order("created_at", { ascending: true }),
     supabase
@@ -263,17 +263,33 @@ export async function getFacultyInitialData(
     allowed_formats: ["PDF", "DOCX", "XLSX"],
   }));
 
-  if (templatesRes.data && templatesRes.data.length > 0) {
-    activeTemplates = templatesRes.data.map((t) => ({
-      code: t.code,
-      title: t.title,
-      is_mandatory: t.is_mandatory,
-      max_size_mb: t.max_size_mb ? Number(t.max_size_mb) : 10,
-      allowed_formats:
-        Array.isArray(t.allowed_formats) && t.allowed_formats.length > 0
-          ? t.allowed_formats
-          : ["PDF", "DOCX", "XLSX", "PNG", "JPG", "ZIP"],
-    }));
+  const isCurrentTerm = Boolean(
+    dbCurrentTerm &&
+      (!requestedAcademicYear || requestedAcademicYear === dbCurrentTerm.academic_year) &&
+      (!requestedSemester || normalizeSemester(requestedSemester) === normalizeSemester(dbCurrentTerm.semester))
+  );
+
+  const allDbTemplates = (templatesRes.data && templatesRes.data.length > 0 ? templatesRes.data : []) as any[];
+
+  if (allDbTemplates.length > 0) {
+    activeTemplates = allDbTemplates
+      .filter((t: any) => {
+        if (isCurrentTerm) {
+          return t.is_active !== false;
+        }
+        // Past term: only hide if it was explicitly marked hidden for that past term
+        return !isTemplateHiddenForTerm(t, activeAcademicYear, activeSemester, false);
+      })
+      .map((t) => ({
+        code: t.code,
+        title: t.title,
+        is_mandatory: t.is_mandatory,
+        max_size_mb: t.max_size_mb ? Number(t.max_size_mb) : 10,
+        allowed_formats:
+          Array.isArray(t.allowed_formats) && t.allowed_formats.length > 0
+            ? t.allowed_formats
+            : ["PDF", "DOCX", "XLSX", "PNG", "JPG", "ZIP"],
+      }));
   }
 
   // Faculty Profile IDs & Avatar Metadata
@@ -884,8 +900,11 @@ export async function getFacultyInitialData(
       academicYear: histAY,
       semester: histSem || "1st Semester",
       requirementCode:
-        matchRequirementCode(row.requirement_code, row.requirement_id, activeTemplates) ||
-        row.requirement_code,
+        matchRequirementCode(
+          row.requirement_code,
+          row.requirement_id,
+          allDbTemplates.length > 0 ? allDbTemplates : activeTemplates,
+        ) || row.requirement_code,
       status: resolvedStatus,
       submittedAt: row.submitted_at || row.created_at || new Date().toISOString(),
       updatedAt: (row as any).updated_at || undefined,

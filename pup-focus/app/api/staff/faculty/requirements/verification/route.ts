@@ -19,6 +19,10 @@ import {
 } from "@/lib/supabase/filters";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { getServiceRoleClient } from "@/lib/supabase/service-role";
+import {
+  isTemplateHiddenForTerm,
+  cleanDescription,
+} from "@/lib/requirement-templates/term-visibility";
 
 type RequirementStatus = "not_submitted" | "uploaded" | "validated";
 type SemesterOption = "1st Semester" | "2nd Semester" | "Summer Semester";
@@ -371,8 +375,7 @@ export async function GET(request: NextRequest) {
         .order("academic_year", { ascending: false }),
       supabase
         .from("requirement_templates")
-        .select("code, title, is_mandatory, max_size_mb, allowed_formats, is_active")
-        .eq("is_active", true)
+        .select("code, title, is_mandatory, max_size_mb, allowed_formats, is_active, description")
         .order("is_mandatory", { ascending: false })
         .order("created_at", { ascending: true }),
       supabase
@@ -499,14 +502,66 @@ export async function GET(request: NextRequest) {
       allowed_formats: ["PDF", "DOCX", "XLSX"],
     }));
 
+    const filteredAssignments = (assignmentRows ?? []).filter(
+      (row: any) =>
+        row.academic_year === selectedAcademicYear &&
+        normalizeSemester(row.term) === effectiveSelectedSemester,
+    );
+    const allFilteredAssignmentIds = filteredAssignments.map((row: any) => row.id);
+
+    const allSubmissionRows = ((submissionsRes.data as any[] | null) ?? []).filter(
+      (s: any) =>
+        allFilteredAssignmentIds.length === 0 ||
+        !s.faculty_assignment_id ||
+        allFilteredAssignmentIds.includes(s.faculty_assignment_id),
+    );
+
+    const isCurrentTerm = Boolean(
+      currentAcademicTerm &&
+      currentAcademicTerm.academicYear === selectedAcademicYear &&
+      currentAcademicTerm.semester === effectiveSelectedSemester
+    );
+
     if (dbTemplatesRes.data && dbTemplatesRes.data.length > 0) {
-      activeTemplateRows = dbTemplatesRes.data.map((t: any) => ({
-        code: t.code,
-        title: t.title,
-        is_mandatory: t.is_mandatory,
-        max_size_mb: t.max_size_mb || 5,
-        allowed_formats: t.allowed_formats || ["PDF"],
-      }));
+      const submittedCodesInTerm = new Set(
+        allSubmissionRows
+          .map((s: any) => matchRequirementCode(s.requirement_code, s.requirement_id, dbTemplatesRes.data) || s.requirement_code)
+          .filter(Boolean)
+      );
+
+      activeTemplateRows = dbTemplatesRes.data
+        .filter((t: any) => {
+          // If evaluating current active term, current is_active state is respected
+          if (isCurrentTerm) {
+            return t.is_active !== false;
+          }
+
+          // Evaluating past term:
+          // 1. If faculty made submissions for this requirement in this past term, CANNOT hide it in past submissions!
+          if (submittedCodesInTerm.has(t.code)) {
+            return true;
+          }
+
+          // 2. If it was explicitly marked hidden in that past academic term, keep it hidden
+          if (isTemplateHiddenForTerm(t, selectedAcademicYear, effectiveSelectedSemester, false)) {
+            return false;
+          }
+
+          // 3. If standard default requirement and not hidden in that past term, keep visible
+          if ((DEFAULT_REQUIREMENTS as readonly string[]).includes(t.code)) {
+            return true;
+          }
+
+          // 4. Custom templates without submissions in this past term are omitted so past sem history stays clean
+          return false;
+        })
+        .map((t: any) => ({
+          code: t.code,
+          title: t.title,
+          is_mandatory: t.is_mandatory,
+          max_size_mb: t.max_size_mb || 5,
+          allowed_formats: t.allowed_formats || ["PDF"],
+        }));
     }
 
     const CANONICAL_ORDER: Record<string, number> = {
@@ -523,20 +578,6 @@ export async function GET(request: NextRequest) {
       if (orderA !== orderB) return orderA - orderB;
       return a.title.localeCompare(b.title);
     });
-
-    const filteredAssignments = (assignmentRows ?? []).filter(
-      (row: any) =>
-        row.academic_year === selectedAcademicYear &&
-        normalizeSemester(row.term) === effectiveSelectedSemester,
-    );
-    const allFilteredAssignmentIds = filteredAssignments.map((row: any) => row.id);
-
-    const allSubmissionRows = ((submissionsRes.data as any[] | null) ?? []).filter(
-      (s: any) =>
-        allFilteredAssignmentIds.length === 0 ||
-        !s.faculty_assignment_id ||
-        allFilteredAssignmentIds.includes(s.faculty_assignment_id),
-    );
     const allFacultyClasses = (classesRes.data as any[] | null) ?? [];
 
     const rank: Record<RequirementStatus, number> = {
