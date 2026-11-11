@@ -3179,8 +3179,8 @@ export function FacultyVerificationDrawer({
                                 </td>
 
                                 {/* Column 2: Type (Centered) */}
-                                <td className="px-3 py-3.5 align-top text-center">
-                                  <div className="flex items-center justify-center pt-0.5">
+                                <td className="px-3 py-3.5 align-middle text-center">
+                                  <div className="flex items-center justify-center">
                                     {isMandatory ? (
                                       <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider bg-[#780000] text-white border border-[#5e0000] shadow-2xs">
                                         Required
@@ -3425,8 +3425,8 @@ export function FacultyVerificationDrawer({
                                 </td>
 
                                 {/* Column 5: Status / Action */}
-                                <td className="px-4 py-3.5 align-top text-center">
-                                  <div className="flex items-center justify-center pt-0.5">
+                                <td className="px-4 py-3.5 align-middle text-center">
+                                  <div className="flex items-center justify-center">
                                     {isValidated ? (
                                       <SubmissionStatusBadge
                                         status="Validated"
@@ -3917,8 +3917,8 @@ export function FacultyVerificationDrawer({
                                 </td>
 
                                 {/* Type */}
-                                <td className="px-3 py-3.5 align-top text-center">
-                                  <div className="flex items-center justify-center pt-0.5">
+                                <td className="px-3 py-3.5 align-middle text-center">
+                                  <div className="flex items-center justify-center">
                                     {isMandatory ? (
                                       <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider bg-[#780000] text-white border border-[#5e0000] shadow-2xs">
                                         Required
@@ -4129,8 +4129,8 @@ export function FacultyVerificationDrawer({
                                 </td>
 
                                 {/* Status */}
-                                <td className="px-4 py-3.5 align-top text-center whitespace-nowrap">
-                                  <div className="flex items-center justify-center pt-0.5">
+                                <td className="px-4 py-3.5 align-middle text-center whitespace-nowrap">
+                                  <div className="flex items-center justify-center">
                                     <SubmissionStatusBadge
                                       status={historyStatus}
                                       label={
@@ -4144,9 +4144,9 @@ export function FacultyVerificationDrawer({
                                 </td>
 
                                 {/* Action */}
-                                <td className="px-4 py-3.5 align-top text-center">
+                                <td className="px-4 py-3.5 align-middle text-center">
                                   {docs.length > 0 && docs[0]?.storage_path ? (
-                                    <div className="flex items-center justify-center pt-0.5">
+                                    <div className="flex items-center justify-center">
                                       <button
                                         type="button"
                                         onClick={() => {
