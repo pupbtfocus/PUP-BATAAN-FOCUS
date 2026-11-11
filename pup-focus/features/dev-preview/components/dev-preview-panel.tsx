@@ -54,6 +54,7 @@ import {
   DatabaseCapacityAlert,
   type DbStatusData,
 } from "@/features/admin-management/components/database-capacity-alert";
+import { SystemErrorView } from "@/components/errors/system-error-view";
 
 type PreviewTab =
   | "gmail"
@@ -61,7 +62,8 @@ type PreviewTab =
   | "change-password"
   | "login-feedback"
   | "modals"
-  | "db-capacity";
+  | "db-capacity"
+  | "error-page";
 
 export function DevPreviewPanel() {
   const [activeTab, setActiveTab] = useState<PreviewTab>("gmail");
@@ -71,6 +73,9 @@ export function DevPreviewPanel() {
   const [simulatedDbPercent, setSimulatedDbPercent] = useState<number>(92);
   const [simulatedBucketPercent, setSimulatedBucketPercent] = useState<number>(85);
   const [isTriggeringLiveDbAlert, setIsTriggeringLiveDbAlert] = useState(false);
+  const [customErrorMsg, setCustomErrorMsg] = useState(
+    "ReferenceError: requirementTemplates is not defined"
+  );
 
   const simulatedMaxDbMb = simulatedTier === "pro" ? 8192 : 500; // 8 GB (8192 MB) Pro vs 500 MB Free
   const simulatedMaxBucketMb = simulatedTier === "pro" ? 102400 : 1024; // 100 GB (102400 MB) Pro vs 1 GB (1024 MB) Free
@@ -426,6 +431,19 @@ export function DevPreviewPanel() {
         >
           <AppIcon icon={Database} size="md" color="inherit" />
           <span>DB Capacity Alert</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setActiveTab("error-page")}
+          className={`flex items-center gap-2 px-3 py-2 text-xs font-semibold rounded-lg transition-colors cursor-pointer shrink-0 ${
+            activeTab === "error-page"
+              ? "bg-white dark:bg-slate-800 text-amber-900 dark:text-amber-300 shadow-xs"
+              : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200"
+          }`}
+        >
+          <AppIcon icon={WarningTriangle} size="md" color="warning" />
+          <span>System Error Screen</span>
         </button>
       </div>
 
@@ -2264,6 +2282,58 @@ export function DevPreviewPanel() {
                 }
               />
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* TAB 7: REDESIGNED SYSTEM ERROR SCREEN */}
+      {activeTab === "error-page" && (
+        <div className="space-y-6">
+          <div className="p-4 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+                <span>Redesigned System Error Boundary</span>
+                <code className="text-[11px] font-mono text-amber-600 dark:text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded-md">
+                  app/error.tsx
+                </code>
+              </h3>
+              <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                Institutional branding, error code digest, copy incident button, collapsible technical trace, and instant recovery actions.
+              </p>
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() =>
+                  setCustomErrorMsg(
+                    customErrorMsg.includes("ReferenceError")
+                      ? "DatabaseConnectionError: Server failed to respond within 5000ms"
+                      : "ReferenceError: requirementTemplates is not defined"
+                  )
+                }
+                className="px-3.5 py-2 rounded-xl text-xs font-semibold bg-amber-500 hover:bg-amber-400 text-slate-950 border border-amber-600 transition-colors cursor-pointer shadow-xs active:scale-[0.98]"
+              >
+                Switch Sample Error
+              </button>
+            </div>
+          </div>
+
+          <div className="rounded-2xl border-2 border-dashed border-slate-300 dark:border-slate-800 p-2 sm:p-6 bg-slate-100/50 dark:bg-slate-950/40">
+            <SystemErrorView
+              error={{
+                name: "RuntimeError",
+                message: customErrorMsg,
+                digest: "PUP-FOCUS-ERR-98421",
+                stack: `${customErrorMsg}\n    at FacultyVerificationDrawer (requirements-verification-panel.tsx:867:7)\n    at RequirementsPanel (requirements-verification-panel.tsx:5865:9)\n    at SuperAdminDashboard (admin-dashboard.tsx:2346:17)`,
+              }}
+              reset={() =>
+                setDevToast({
+                  type: "success",
+                  message: "Try Again clicked: Triggers component recovery reset().",
+                })
+              }
+              isEmbeddedPreview={true}
+            />
           </div>
         </div>
       )}
