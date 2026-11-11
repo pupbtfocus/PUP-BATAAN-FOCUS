@@ -510,12 +510,108 @@ export async function PATCH(request: NextRequest) {
     const url = new URL(request.url);
     const academicYear = url.searchParams.get("academicYear")?.trim() ?? "";
     const semester = normalizeSemester(url.searchParams.get("semester"));
+    const action = url.searchParams.get("action");
 
     if (!isValidAcademicYear(academicYear) || !isValidSemester(semester)) {
       return NextResponse.json(
         { error: "Invalid academic year or semester." },
         { status: 400 },
       );
+    }
+
+    if (action === "archive") {
+      const supabase = getServiceRoleClient();
+
+      const { data: targetTerm, error: termErr } = await supabase
+        .from("academic_terms")
+        .select("academic_year, semester, status")
+        .match({ academic_year: academicYear, semester })
+        .maybeSingle();
+
+      if (termErr || !targetTerm) {
+        return NextResponse.json(
+          { error: "Academic term not found." },
+          { status: 404 },
+        );
+      }
+
+      if (
+        targetTerm.status === "Archived" ||
+        (targetTerm.status as string) === "Completed"
+      ) {
+        return NextResponse.json(
+          { error: "Academic term is already archived." },
+          { status: 400 },
+        );
+      }
+
+      const { error: archiveError } = await supabase
+        .from("academic_terms")
+        .update({
+          status: "Archived",
+          updated_at: new Date().toISOString(),
+        })
+        .match({ academic_year: academicYear, semester });
+
+      if (archiveError) {
+        return NextResponse.json(
+          {
+            error: "Failed to archive academic term",
+            details: archiveError.message,
+          },
+          { status: 500 },
+        );
+      }
+
+      try {
+        const { data: assignments } = await supabase
+          .from("faculty_program_assignments")
+          .select("id")
+          .eq("academic_year", academicYear)
+          .ilike("term", `%${semester}%`);
+
+        if (assignments && assignments.length > 0) {
+          const assignmentIds = assignments
+            .map((a: any) => a.id)
+            .filter(Boolean);
+          await supabase
+            .from("submissions")
+            .update({ is_archived: true })
+            .in("faculty_assignment_id", assignmentIds);
+        }
+      } catch (termArchiveErr) {
+        console.warn("Failed to archive submissions:", termArchiveErr);
+      }
+
+      await supabase
+        .from("submission_windows")
+        .delete()
+        .eq("id", 1);
+
+      await supabase
+        .from("submission_window_terms")
+        .update({
+          start_date: null,
+          end_date: null,
+          start_time: null,
+          end_time: null,
+        })
+        .eq("academic_year", academicYear)
+        .eq("semester", semester);
+
+      void logTransactionEvent({
+        actorId: user.id,
+        action: "academic_term.archive",
+        entityType: "academic_term",
+        entityId: user.id,
+        metadata: { academic_year: academicYear, semester },
+      });
+
+      return NextResponse.json({
+        success: true,
+        archived: true,
+        message: `Successfully archived S.Y. ${academicYear} (${semester}).`,
+      });
     }
 
     const supabase = getServiceRoleClient();

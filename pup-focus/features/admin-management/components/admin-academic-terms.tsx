@@ -102,6 +102,8 @@ export function AdminAcademicTerms({
   const [termToDelete, setTermToDelete] = useState<AcademicTermItem | null>(
     null,
   );
+  const [termToArchive, setTermToArchive] =
+    useState<AcademicTermItem | null>(null);
   const [historyModalData, setHistoryModalData] = useState<{
     isOpen: boolean;
     academicYear?: string;
@@ -127,7 +129,7 @@ export function AdminAcademicTerms({
 
   // 10-second countdown timer for action confirmation modals
   useEffect(() => {
-    if (!termToSetCurrent && !termToDelete) {
+    if (!termToSetCurrent && !termToDelete && !termToArchive) {
       setCountdown(10);
       return;
     }
@@ -138,7 +140,7 @@ export function AdminAcademicTerms({
     }, 1000);
 
     return () => clearInterval(timer);
-  }, [termToSetCurrent, termToDelete]);
+  }, [termToSetCurrent, termToDelete, termToArchive]);
 
   // Progression calculation: find current active term & immediate next upcoming term
   const currentTermItem = useMemo(
@@ -498,6 +500,57 @@ export function AdminAcademicTerms({
     }
   }
 
+  function handleArchiveClick(term: AcademicTermItem) {
+    if (term.status === "Archived" || (term.status as string) === "Completed") return;
+    setTermToArchive(term);
+  }
+
+  async function confirmArchiveTerm() {
+    if (!termToArchive) {
+      return;
+    }
+
+    setIsSaving(true);
+    setError(null);
+    setSuccess(null);
+
+    try {
+      const response = await fetch(
+        `/api/staff/academic-terms?academicYear=${encodeURIComponent(
+          termToArchive.academicYear,
+        )}&semester=${encodeURIComponent(termToArchive.semester)}&action=archive`,
+        {
+          method: "PATCH",
+          credentials: "include",
+        },
+      );
+      const data = await response.json();
+
+      if (!response.ok) {
+        setError(
+          data?.error ||
+            `Failed to archive academic term (HTTP ${response.status})`,
+        );
+        return;
+      }
+
+      setSuccess(
+        `Archived ${termToArchive.academicYear} ${termToArchive.semester}. Moved to Archived & Closed Terms.`,
+      );
+      setTermToArchive(null);
+      await loadTerms({ silent: true });
+      emitRealtimeSync({ source: "academic-term-archived", timestamp: Date.now() });
+    } catch (archiveError) {
+      setError(
+        archiveError instanceof Error
+          ? archiveError.message
+          : "Failed to archive academic term",
+      );
+    } finally {
+      setIsSaving(false);
+    }
+  }
+
   function handleDeleteClick(term: AcademicTermItem) {
     if (term.status === "Current" || !term.canDelete) return;
     setTermToDelete(term);
@@ -773,6 +826,19 @@ export function AdminAcademicTerms({
 
                         {renderSetCurrentAction(term)}
 
+                        {activeAndUpcomingTerms.length === 1 && (
+                          <button
+                            type="button"
+                            onClick={() => handleArchiveClick(term)}
+                            disabled={isLoading || isSaving}
+                            title="Archive and close this academic term"
+                            className="inline-flex items-center gap-1 bg-[#0b5336] hover:bg-[#073d2a] text-white border border-[#08412a] text-xs font-semibold px-2.5 py-1 rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer shadow-2xs"
+                          >
+                            <AppIcon icon={Archive} size="xs" color="inherit" />
+                            <span>Archive</span>
+                          </button>
+                        )}
+
                         {term.status !== "Current" && (
                           <button
                             type="button"
@@ -874,20 +940,17 @@ export function AdminAcademicTerms({
 
                         {renderSetCurrentAction(term)}
 
-                        <button
-                          type="button"
-                          onClick={() => handleDeleteClick(term)}
-                          disabled={!term.canDelete || isLoading || isSaving}
-                          title={
-                            term.deleteReason ||
-                            (!term.canDelete
-                              ? "Cannot delete term with existing data"
-                              : "Delete academic term")
-                          }
-                          className="bg-[#780000] hover:bg-[#5e0000] text-white border border-[#5e0000] text-xs font-semibold px-3 py-1 rounded-lg transition-all disabled:opacity-30 disabled:hover:bg-[#780000] disabled:cursor-not-allowed cursor-pointer shadow-2xs"
-                        >
-                          Delete
-                        </button>
+                        {term.canDelete ? (
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteClick(term)}
+                            disabled={isLoading || isSaving}
+                            title={term.deleteReason || "Delete academic term"}
+                            className="bg-[#780000] hover:bg-[#5e0000] text-white border border-[#5e0000] text-xs font-semibold px-3 py-1 rounded-lg transition-all disabled:opacity-30 disabled:hover:bg-[#780000] disabled:cursor-not-allowed cursor-pointer shadow-2xs"
+                          >
+                            Delete
+                          </button>
+                        ) : null}
                       </div>
                     </td>
                   </tr>
@@ -1059,6 +1122,71 @@ export function AdminAcademicTerms({
                     `Confirm Switch (${countdown}s)`
                   ) : (
                     "Confirm Switch"
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {/* Modal: Confirm Archive Academic Term with Safety Timed Countdown */}
+      {termToArchive ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4 py-6 backdrop-blur-sm">
+          <div className="w-full max-w-md rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 shadow-2xl text-slate-900 dark:text-slate-100 overflow-hidden flex flex-col">
+            <ModalHeader
+              title="Archive Academic Term"
+              subtitle="Close and archive completed academic period"
+              icon={Archive}
+            />
+            <div className="p-6 space-y-4">
+              <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
+                Are you sure you want to archive{" "}
+                <strong className="text-slate-900 dark:text-slate-100 font-semibold">
+                  {termToArchive.academicYear} ({termToArchive.semester})
+                </strong>
+                ? This will mark the academic term as completed, close active submission schedules, and move it to Archived &amp; Closed Terms.
+              </p>
+
+              <div className="flex items-center justify-end gap-2.5 pt-2 border-t border-slate-100 dark:border-slate-800/80">
+                <button
+                  type="button"
+                  onClick={() => setTermToArchive(null)}
+                  disabled={isSaving}
+                  className={`px-4 py-2 rounded-xl text-xs font-semibold transition-all shadow-xs ${
+                    isSaving
+                      ? "bg-[#780000] text-white/80 border border-[#5e0000] cursor-not-allowed pointer-events-none brightness-90"
+                      : "bg-[#780000] hover:bg-[#5e0000] text-white border border-[#5e0000] cursor-pointer"
+                  }`}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={() => void confirmArchiveTerm()}
+                  disabled={isSaving || countdown > 0}
+                  className={`inline-flex items-center justify-center font-semibold px-4 py-2 rounded-xl text-xs transition-all shadow-sm ${
+                    isSaving
+                      ? "bg-[#0b5336] text-white border border-[#08412a] cursor-wait"
+                      : countdown > 0
+                      ? "bg-[#0b5336]/80 text-white/80 border border-[#08412a]/80 cursor-not-allowed"
+                      : "bg-[#0b5336] hover:bg-[#073d2a] text-white border border-[#08412a] cursor-pointer"
+                  }`}
+                >
+                  {isSaving ? (
+                    <>
+                      <AppIcon
+                        icon={SystemRestart}
+                        size="xs"
+                        color="inherit"
+                        className="animate-spin mr-1.5 shrink-0"
+                      />
+                      <span>Archiving...</span>
+                    </>
+                  ) : countdown > 0 ? (
+                    `Confirm Archive (${countdown}s)`
+                  ) : (
+                    "Confirm Archive"
                   )}
                 </button>
               </div>
