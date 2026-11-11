@@ -775,13 +775,13 @@ export async function getActiveRequirementTemplates(
   supabase: SupabaseClient,
 ): Promise<ActiveRequirementTemplate[]> {
   try {
-    const { data: templates } = await supabase
+    const { data: templates, error } = await supabase
       .from("requirement_templates")
       .select("code, title")
       .eq("is_active", true)
       .order("title", { ascending: true });
 
-    if (Array.isArray(templates) && templates.length > 0) {
+    if (!error && Array.isArray(templates)) {
       return templates as ActiveRequirementTemplate[];
     }
   } catch {

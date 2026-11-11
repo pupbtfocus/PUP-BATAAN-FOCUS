@@ -4212,14 +4212,12 @@ function FacultySubmissionPanelContent({
               </div>
             ) : null}
             {activeView === "dashboard" && (
-              <article className="space-y-5 p-2 sm:p-4 md:p-5">
-                {/* Solid Amber Card Header */}
-                <div className="relative overflow-hidden rounded-2xl border-2 border-amber-500 bg-amber-400 p-5 sm:p-6 shadow-md shadow-amber-500/10 space-y-3 transition-colors mb-6">
+              <article className="space-y-6 p-2 sm:p-4 md:p-5">
+                {/* Solid Amber Card Header matching Admin Dashboard */}
+                <div className="relative overflow-hidden rounded-2xl border-2 border-amber-500 bg-amber-400 p-5 sm:p-6 shadow-md shadow-amber-500/10 flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
                   <div>
-                    <div className="flex items-center gap-2.5 flex-wrap">
-                      <h1 className="text-2xl sm:text-3xl font-black text-slate-950 tracking-tight">
-                        Dashboard
-                      </h1>
+                    <h1 className="text-2xl sm:text-3xl font-black text-slate-950 tracking-tight flex items-center gap-2.5 flex-wrap">
+                      <span>Dashboard</span>
                       {isAllValidated && (
                         <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#0b5336] text-white text-xs font-bold shadow-xs">
                           <AppIcon
@@ -4230,172 +4228,318 @@ function FacultySubmissionPanelContent({
                           Done All for This Semester
                         </span>
                       )}
-                    </div>
-                    <p className="mt-1 text-xs sm:text-sm text-amber-950/90 dark:text-amber-200/90 font-medium leading-relaxed">
-                      Track your requirements, submissions, and deadlines.
+                    </h1>
+                    <p className="mt-1.5 text-sm sm:text-base text-amber-950/90 font-medium leading-relaxed">
+                      {hasActiveAcademicTerm && activeAY
+                        ? `Track your compliance requirements, class submissions, and upcoming deadlines for A.Y. ${activeAY} • ${activeSem}.`
+                        : "Track your compliance requirements, class submissions, and upcoming deadlines."}
                     </p>
                   </div>
-
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-0.5">
-                    <p className="text-xs sm:text-sm text-amber-950 dark:text-amber-300 font-semibold">
-                      {hasActiveAcademicTerm && activeAY ? (
-                        <>
-                          A.Y. {activeAY} • {activeSem}
-                          {hasActiveGracePeriod && !isAllValidated ? (
-                            <span className="ml-2 font-semibold">
-                              • (Personal Schedule Active)
-                            </span>
-                          ) : isWindowNotConfigured &&
-                            !isAllValidated &&
-                            !isEffectivelyOpen ? (
-                            <span className="ml-2 font-semibold">
-                              • (Awaiting Schedule)
-                            </span>
-                          ) : isWindowClosed &&
-                            !isAllValidated &&
-                            !isEffectivelyOpen ? (
-                            <span className="ml-2 font-semibold">
-                              • (Submission Window Closed)
-                            </span>
-                          ) : null}
-                        </>
-                      ) : (
-                        <span>No Active Academic Term Configured</span>
-                      )}
-                    </p>
-
-                    <div className="flex flex-wrap items-center justify-end gap-2.5 shrink-0 sm:ml-auto w-full sm:w-auto">
-                      <button
-                        type="button"
-                        onClick={() => void handleManualRefresh()}
-                        disabled={isRefreshing}
-                        title="Refresh dashboard"
-                        className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white hover:bg-slate-50 dark:bg-slate-800 dark:hover:bg-slate-750 text-slate-700 dark:text-slate-200 px-3.5 py-2 sm:py-1.5 text-xs font-semibold transition-all disabled:opacity-50 cursor-pointer shadow-xs active:scale-[0.98]"
-                      >
-                        <Refresh
-                          className={`h-3.5 w-3.5 ${isRefreshing ? "animate-spin" : ""}`}
-                        />
-                        <span>
-                          {isRefreshing ? "Refreshing..." : "Refresh"}
-                        </span>
-                      </button>
-                    </div>
+                  <div className="flex items-center gap-2 w-full sm:w-auto shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => void handleManualRefresh()}
+                      disabled={isRefreshing}
+                      title="Refresh dashboard"
+                      className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white hover:bg-slate-50 dark:bg-slate-800 dark:hover:bg-slate-750 text-slate-700 dark:text-slate-200 px-3.5 py-2 sm:py-1.5 text-xs font-semibold transition-all disabled:opacity-50 cursor-pointer shadow-xs active:scale-[0.98]"
+                    >
+                      <Refresh
+                        className={`h-3.5 w-3.5 ${isRefreshing ? "animate-spin" : ""}`}
+                      />
+                      <span>{isRefreshing ? "Refreshing..." : "Refresh"}</span>
+                    </button>
                   </div>
                 </div>
 
-                {/* Clean Status Counts with Legend */}
-                {displayedStatusCounts && !isLoadingStatuses && (
-                  <div className="flex flex-wrap items-center gap-3 sm:gap-4 text-xs sm:text-sm text-slate-600 dark:text-slate-400 font-medium pt-1">
-                    <span
-                      className="inline-flex items-center gap-1.5"
-                      title="Validated: Requirements verified and approved"
-                    >
-                      <span className="inline-flex items-center justify-center h-5 w-5 rounded-full bg-[#0b5336] text-white border border-[#08412a] shrink-0 shadow-2xs">
-                        <AppIcon icon={Check} size="xs" color="white" />
-                      </span>
-                      <span>
-                        <strong className="text-slate-900 dark:text-slate-100 font-semibold">
-                          {displayedStatusCounts.validated}
-                        </strong>{" "}
-                        Validated
-                      </span>
-                    </span>
-                    <span
-                      className="inline-flex items-center gap-1.5"
-                      title="Pending: Uploaded document awaiting review or verification"
-                    >
-                      <span className="inline-flex items-center justify-center h-5 w-5 rounded-full bg-amber-500 text-slate-950 border border-amber-600 shrink-0 shadow-2xs">
-                        <AppIcon icon={Hourglass} size="xs" color="inherit" />
-                      </span>
-                      <span>
-                        <strong className="text-slate-900 dark:text-slate-100 font-semibold">
-                          {isAllValidated ? 0 : displayedStatusCounts.pending}
-                        </strong>{" "}
-                        Pending
-                      </span>
-                    </span>
-                    <span
-                      className="inline-flex items-center gap-1.5"
-                      title="Needs Revision: Correction requested by reviewer"
-                    >
-                      <span className="inline-flex items-center justify-center h-5 w-5 rounded-full bg-[#780000] text-white border border-[#5e0000] shrink-0 shadow-2xs">
-                        <AppIcon icon={Xmark} size="xs" color="white" />
-                      </span>
-                      <span>
-                        <strong className="text-slate-900 dark:text-slate-100 font-semibold">
-                          {isAllValidated ? 0 : displayedStatusCounts.rejected}
-                        </strong>{" "}
-                        Needs Revision
-                      </span>
-                    </span>
-                    <span
-                      className="inline-flex items-center gap-1.5"
-                      title="Not Submitted: Requirement has not been submitted yet"
-                    >
-                      <span className="inline-flex items-center justify-center h-5 w-5 rounded-full bg-slate-500 text-white border border-slate-600 shrink-0 shadow-2xs">
-                        <AppIcon icon={Minus} size="xs" color="white" />
-                      </span>
-                      <span>
-                        <strong className="text-slate-900 dark:text-slate-100 font-semibold">
+                {/* Top Stat Summary Grid (3 Cards) matching Admin Dashboard */}
+                <section className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                  {/* Card 1: Overall Compliance */}
+                  <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-xs space-y-3 transition-colors flex flex-col justify-between">
+                    <div className="space-y-2.5">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+                          Overall Compliance
+                        </span>
+                        <CheckCircle className="h-5 w-5 text-slate-400" strokeWidth={2} />
+                      </div>
+
+                      <div className="flex items-baseline justify-between gap-2">
+                        <h3 className="text-xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">
+                          {mandatoryValidatedCount} of {mandatoryTemplates.length} Validated
+                        </h3>
+                        <span
+                          className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider ${
+                            isAllValidated
+                              ? "bg-[#0b5336] text-white border border-[#08412a]"
+                              : "bg-amber-500 text-white border border-amber-600"
+                          }`}
+                        >
                           {isAllValidated
-                            ? 0
-                            : displayedStatusCounts.notSubmitted}
-                        </strong>{" "}
-                        Not Submitted
-                      </span>
-                    </span>
-                    <span
-                      className="inline-flex items-center gap-1.5"
-                      title="Overdue: Past deadline and no file submitted"
-                    >
-                      <span className="inline-flex items-center justify-center h-5 w-5 rounded-full bg-[#780000] text-white border border-[#5e0000] shrink-0 shadow-2xs">
-                        <AppIcon
-                          icon={ClockRotateRight}
-                          size="xs"
-                          color="white"
+                            ? 100
+                            : Math.round(
+                                (mandatoryValidatedCount /
+                                  (mandatoryTemplates.length || 1)) *
+                                  100,
+                              )}
+                          % Complete
+                        </span>
+                      </div>
+
+                      <div className="h-1.5 w-full overflow-hidden rounded-full bg-slate-200 dark:bg-slate-800">
+                        <div
+                          className="h-full rounded-full bg-[#0b5336] transition-all duration-500"
+                          style={{
+                            width: `${isAllValidated ? 100 : Math.min(100, Math.round((mandatoryValidatedCount / (mandatoryTemplates.length || 1)) * 100))}%`,
+                          }}
                         />
-                      </span>
-                      <span>
-                        <strong className="text-slate-900 dark:text-slate-100 font-semibold">
-                          {isAllValidated ? 0 : displayedStatusCounts.overdue}
-                        </strong>{" "}
-                        Overdue
-                      </span>
-                    </span>
-                    {displayedStatusCounts.extended > 0 && !isAllValidated && (
-                      <span
-                        className="inline-flex items-center gap-1.5"
-                        title="Extended: Extension request approved"
+                      </div>
+                    </div>
+
+                    <div className="pt-1.5 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between gap-2 mt-auto">
+                      <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate">
+                        {isAllValidated
+                          ? `All ${mandatoryTemplates.length} requirements approved`
+                          : `${mandatoryTemplates.length - mandatoryValidatedCount} left to complete`}
+                      </p>
+                      <button
+                        type="button"
+                        onClick={() => navigateToView("status")}
+                        className="inline-flex items-center gap-1 text-xs font-bold text-[#800000] dark:text-amber-400 hover:underline cursor-pointer shrink-0"
                       >
-                        <span className="inline-flex items-center justify-center h-5 w-5 rounded-full bg-indigo-600 text-white border border-indigo-700 shrink-0 shadow-2xs">
-                          <AppIcon icon={Hourglass} size="xs" color="white" />
-                        </span>
-                        <span>
-                          <strong className="text-slate-900 dark:text-slate-100 font-semibold">
-                            {displayedStatusCounts.extended}
-                          </strong>{" "}
-                          Extended
-                        </span>
-                      </span>
-                    )}
-                    {displayedStatusCounts.exempted > 0 && (
-                      <span
-                        className="inline-flex items-center gap-1.5"
-                        title="Exempted: Requirement not applicable / excused"
-                      >
-                        <span className="inline-flex items-center justify-center h-5 w-5 rounded-full bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 border border-slate-300 dark:border-slate-600 shrink-0 shadow-2xs">
-                          <AppIcon icon={Minus} size="xs" color="inherit" />
-                        </span>
-                        <span>
-                          <strong className="text-slate-900 dark:text-slate-100 font-semibold">
-                            {displayedStatusCounts.exempted}
-                          </strong>{" "}
-                          Exempted
-                        </span>
-                      </span>
-                    )}
+                        <span>View documents</span>
+                        <NavArrowRight className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
                   </div>
-                )}
+
+                  {/* Card 2: Submission Schedule */}
+                  <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-xs space-y-3 transition-colors flex flex-col justify-between">
+                    <div className="space-y-2.5">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+                          Submission Schedule
+                        </span>
+                        <Calendar className="h-5 w-5 text-slate-400" strokeWidth={2} />
+                      </div>
+
+                      <div className="flex items-baseline justify-between gap-2">
+                        <h3 className="text-xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">
+                          {hasActiveGracePeriod
+                            ? "Personal Schedule"
+                            : isWindowNotConfigured
+                              ? "Schedule Not Set"
+                              : isWindowClosed
+                                ? "Window Closed"
+                                : "Submissions Open"}
+                        </h3>
+                        <span
+                          className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider ${
+                            hasActiveGracePeriod
+                              ? "bg-[#0b5336] text-white border border-[#08412a]"
+                              : isWindowClosed
+                                ? "bg-[#780000] text-white border border-[#5e0000]"
+                                : isWindowNotConfigured
+                                  ? "bg-slate-600 text-white border border-slate-500"
+                                  : "bg-[#0b5336] text-white border border-[#08412a]"
+                          }`}
+                        >
+                          {hasActiveGracePeriod
+                            ? "Extended"
+                            : isWindowClosed
+                              ? "Closed"
+                              : isWindowNotConfigured
+                                ? "Pending"
+                                : "Active"}
+                        </span>
+                      </div>
+
+                      <div className="h-1.5 w-full overflow-hidden rounded-full bg-slate-200 dark:bg-slate-800">
+                        <div
+                          className={`h-full rounded-full transition-all duration-500 ${
+                            hasActiveGracePeriod || (hasActiveSchedule && !isWindowClosed)
+                              ? "bg-[#0b5336]"
+                              : isWindowClosed
+                                ? "bg-[#780000]"
+                                : "bg-slate-400"
+                          }`}
+                          style={{ width: "100%" }}
+                        />
+                      </div>
+                    </div>
+
+                    <div className="pt-1.5 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between gap-2 mt-auto">
+                      <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate">
+                        {hasActiveGracePeriod && personalDeadlineFormatted
+                          ? `Due: ${personalDeadlineFormatted}`
+                          : windowDeadlineDisplay
+                            ? `Deadline: ${windowDeadlineDisplay}`
+                            : "Waiting for admin schedule"}
+                      </p>
+                      {hasLackings && !isEffectivelyOpen && !hasActiveGracePeriod ? (
+                        <button
+                          type="button"
+                          onClick={() => openExtensionRequestModal()}
+                          className="inline-flex items-center gap-1 text-xs font-bold text-[#800000] dark:text-amber-400 hover:underline cursor-pointer shrink-0"
+                        >
+                          <span>Request extension</span>
+                          <NavArrowRight className="h-3.5 w-3.5" />
+                        </button>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => navigateToView("status")}
+                          className="inline-flex items-center gap-1 text-xs font-bold text-[#800000] dark:text-amber-400 hover:underline cursor-pointer shrink-0"
+                        >
+                          <span>View schedule</span>
+                          <NavArrowRight className="h-3.5 w-3.5" />
+                        </button>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Card 3: Action Items */}
+                  <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-xs space-y-3 transition-colors flex flex-col justify-between">
+                    <div className="space-y-2.5">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+                          Action Items
+                        </span>
+                        <TaskList className="h-5 w-5 text-slate-400" strokeWidth={2} />
+                      </div>
+
+                      <div className="flex items-baseline justify-between gap-2">
+                        <h3 className="text-xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">
+                          {isAllValidated
+                            ? "All Caught Up"
+                            : `${lackingRequirements.length} ${lackingRequirements.length === 1 ? "Item" : "Items"} Left`}
+                        </h3>
+                        <span
+                          className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider ${
+                            isAllValidated
+                              ? "bg-[#0b5336] text-white border border-[#08412a]"
+                              : lackingRequirements.filter((r) => r.status === "Overdue").length > 0
+                                ? "bg-[#780000] text-white border border-[#5e0000]"
+                                : "bg-amber-500 text-white border border-amber-600"
+                          }`}
+                        >
+                          {isAllValidated
+                            ? "Done"
+                            : lackingRequirements.filter((r) => r.status === "Overdue").length > 0
+                              ? "Overdue"
+                              : "To Submit"}
+                        </span>
+                      </div>
+
+                      <div className="h-1.5 w-full overflow-hidden rounded-full bg-slate-200 dark:bg-slate-800">
+                        <div
+                          className={`h-full rounded-full transition-all duration-500 ${
+                            isAllValidated
+                              ? "bg-[#0b5336]"
+                              : lackingRequirements.filter((r) => r.status === "Overdue").length > 0
+                                ? "bg-[#780000]"
+                                : "bg-amber-500"
+                          }`}
+                          style={{
+                            width: `${Math.min(100, Math.max(10, (lackingRequirements.length / (mandatoryTemplates.length || 1)) * 100))}%`,
+                          }}
+                        />
+                      </div>
+                    </div>
+
+                    <div className="pt-1.5 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between gap-2 mt-auto">
+                      <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate">
+                        {isAllValidated
+                          ? "No action needed"
+                          : `${displayedStatusCounts.notSubmitted} to submit • ${displayedStatusCounts.pending} in review`}
+                      </p>
+                      <button
+                        type="button"
+                        onClick={() => navigateToView("status")}
+                        className="inline-flex items-center gap-1 text-xs font-bold text-[#800000] dark:text-amber-400 hover:underline cursor-pointer shrink-0"
+                      >
+                        <span>{isAllValidated ? "View summary" : "Upload now"}</span>
+                        <NavArrowRight className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
+                  </div>
+                </section>
+
+                {/* 4 Status Blocks matching SuperAdmin Compliance Analytics */}
+                <section className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 mb-6">
+                  {/* Validated */}
+                  <div className="rounded-2xl bg-[#0b5336] text-white border border-[#08412a] p-4 sm:p-4.5 shadow-xs space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-bold text-white">Validated</span>
+                      <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-white/20 text-white">
+                        {isAllValidated
+                          ? (totalRequirements || mandatoryTemplates.length)
+                          : displayedStatusCounts.validated}
+                      </span>
+                    </div>
+                    <p className="text-2xl font-black text-white tracking-tight">
+                      {isAllValidated
+                        ? "100%"
+                        : `${Math.round(((displayedStatusCounts.validated || 0) / Math.max(totalRequirements || mandatoryTemplates.length, 1)) * 100)}%`}
+                    </p>
+                    <p className="text-[11px] text-emerald-100/90 font-medium truncate">
+                      Verified &amp; approved
+                    </p>
+                  </div>
+
+                  {/* In Review / Pending */}
+                  <div className="rounded-2xl bg-amber-500 text-white border border-amber-600 p-4 sm:p-4.5 shadow-xs space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-bold text-white">In Review</span>
+                      <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-white/20 text-white">
+                        {isAllValidated ? 0 : displayedStatusCounts.pending}
+                      </span>
+                    </div>
+                    <p className="text-2xl font-black text-white tracking-tight">
+                      {isAllValidated
+                        ? "0%"
+                        : `${Math.round(((displayedStatusCounts.pending || 0) / Math.max(totalRequirements || mandatoryTemplates.length, 1)) * 100)}%`}
+                    </p>
+                    <p className="text-[11px] text-amber-100 font-medium truncate">
+                      Awaiting verification
+                    </p>
+                  </div>
+
+                  {/* Needs Revision */}
+                  <div className="rounded-2xl bg-[#780000] text-white border border-[#5e0000] p-4 sm:p-4.5 shadow-xs space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-bold text-white">Needs Revision</span>
+                      <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-white/20 text-white">
+                        {isAllValidated ? 0 : displayedStatusCounts.rejected}
+                      </span>
+                    </div>
+                    <p className="text-2xl font-black text-white tracking-tight">
+                      {isAllValidated
+                        ? "0%"
+                        : `${Math.round(((displayedStatusCounts.rejected || 0) / Math.max(totalRequirements || mandatoryTemplates.length, 1)) * 100)}%`}
+                    </p>
+                    <p className="text-[11px] text-red-200 font-medium truncate">
+                      Corrections requested
+                    </p>
+                  </div>
+
+                  {/* Not Submitted */}
+                  <div className="rounded-2xl bg-slate-600 dark:bg-slate-800 text-white border border-slate-500 dark:border-slate-700 p-4 sm:p-4.5 shadow-xs space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-bold text-white">Not Submitted</span>
+                      <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-white/20 text-white">
+                        {isAllValidated ? 0 : displayedStatusCounts.notSubmitted}
+                      </span>
+                    </div>
+                    <p className="text-2xl font-black text-white tracking-tight">
+                      {isAllValidated
+                        ? "0%"
+                        : `${Math.round(((displayedStatusCounts.notSubmitted || 0) / Math.max(totalRequirements || mandatoryTemplates.length, 1)) * 100)}%`}
+                    </p>
+                    <p className="text-[11px] text-slate-300 font-medium truncate">
+                      No document uploaded yet
+                    </p>
+                  </div>
+                </section>
 
                 {/* Extension Request Feedback Toast in Dashboard */}
                 <AlertPopup
@@ -4404,527 +4548,7 @@ function FacultySubmissionPanelContent({
                   onClose={() => setExtensionRequestToast(null)}
                 />
 
-                {/* Top Stat Summary Grid (3 Cards) */}
-                <section className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-5">
-                  {/* Card 1: Overall Progress */}
-                  <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs p-5 sm:p-6 space-y-3 transition-colors">
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-                        Overall Progress
-                      </span>
-                      <CheckCircle
-                        className="h-5 w-5 text-emerald-600 dark:text-emerald-400"
-                        strokeWidth={2}
-                      />
-                    </div>
-                    <div>
-                      <div className="flex items-baseline justify-between">
-                        <h3 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">
-                          {`${mandatoryValidatedCount} of ${mandatoryTemplates.length} Validated`}
-                        </h3>
-                        <span className="text-xs sm:text-sm font-bold text-emerald-600 dark:text-emerald-400">
-                          {isAllValidated
-                            ? 100
-                            : Math.round(
-                                (mandatoryValidatedCount /
-                                  (mandatoryTemplates.length || 1)) *
-                                  100,
-                              )}
-                          %
-                        </span>
-                      </div>
-                      <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1 font-medium">
-                        {isAllValidated
-                          ? `All ${mandatoryTemplates.length} requirements approved`
-                          : `${mandatoryTemplates.length - mandatoryValidatedCount} left to complete`}
-                      </p>
-                    </div>
-                    <div className="h-2.5 w-full overflow-hidden rounded-full bg-slate-200 dark:bg-slate-800/90 border border-slate-300 dark:border-slate-700">
-                      <div
-                        className="h-full bg-emerald-500 transition-all duration-500 rounded-full"
-                        style={{
-                          width: `${isAllValidated ? 100 : Math.min(100, Math.round((mandatoryValidatedCount / (mandatoryTemplates.length || 1)) * 100))}%`,
-                        }}
-                      />
-                    </div>
-                  </div>
 
-                  {/* Card 2: Schedule */}
-                  <div
-                    className={`rounded-2xl ${
-                      hasActiveGracePeriod
-                        ? "border-2 border-emerald-400 dark:border-emerald-500/60"
-                        : "border border-slate-200 dark:border-slate-800"
-                    } bg-white dark:bg-slate-900 shadow-xs p-5 sm:p-6 space-y-3 transition-colors`}
-                  >
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-                        Schedule
-                      </span>
-                      {hasActiveGracePeriod ? (
-                        <Check
-                          className="h-5 w-5 text-emerald-500"
-                          strokeWidth={2.5}
-                        />
-                      ) : isWindowNotConfigured ||
-                        (hasActiveSchedule && !isWindowClosed) ? (
-                        <Calendar
-                          className="h-5 w-5 text-slate-400"
-                          strokeWidth={2}
-                        />
-                      ) : (
-                        <Hourglass
-                          className="h-5 w-5 text-slate-400"
-                          strokeWidth={2}
-                        />
-                      )}
-                    </div>
-                    <div>
-                      <h3
-                        className={`text-xl sm:text-2xl font-bold tracking-tight ${
-                          hasActiveGracePeriod
-                            ? "text-emerald-700 dark:text-emerald-400"
-                            : "text-slate-900 dark:text-slate-100"
-                        }`}
-                      >
-                        {hasActiveGracePeriod
-                          ? "Extended Deadline"
-                          : isWindowNotConfigured
-                            ? "Schedule Not Set"
-                            : isWindowClosed
-                              ? "Window Closed"
-                              : "Submissions Open"}
-                      </h3>
-                      <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1 font-medium">
-                        {hasActiveGracePeriod && personalDeadlineFormatted
-                          ? `Due: ${personalDeadlineFormatted}`
-                          : windowDeadlineDisplay
-                            ? `Deadline: ${windowDeadlineDisplay}${windowDaysRemaining !== null ? ` (${windowDaysRemaining === 0 ? "Due today" : `${windowDaysRemaining}d left`})` : ""}`
-                            : "Waiting for admin schedule"}
-                      </p>
-                    </div>
-                    <p className="text-xs text-slate-500 dark:text-slate-400">
-                      {isAllValidated
-                        ? "All done for this term"
-                        : hasActiveGracePeriod
-                          ? "Uploads unlocked"
-                          : isSubmissionAvailable
-                            ? "Uploads enabled"
-                            : isWindowNotConfigured
-                              ? "Opens when scheduled"
-                              : "Uploads closed"}
-                    </p>
-                  </div>
-
-                  {/* Card 3: To-Do */}
-                  <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs p-5 sm:p-6 space-y-3 transition-colors">
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-                        To-Do
-                      </span>
-                      <TaskList
-                        className="h-5 w-5 text-slate-400"
-                        strokeWidth={2}
-                      />
-                    </div>
-                    <div>
-                      <h3 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">
-                        {isAllValidated
-                          ? "All Done"
-                          : `${lackingRequirements.length} ${lackingRequirements.length === 1 ? "Item" : "Items"}`}
-                      </h3>
-                      <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1 font-medium">
-                        {isAllValidated
-                          ? "No pending items"
-                          : `${lackingRequirements.filter((r) => r.status === "Overdue").length > 0 ? `${lackingRequirements.filter((r) => r.status === "Overdue").length} Overdue • ` : ""}${lackingRequirements.filter((r) => r.status === "Pending" || r.status === "Not Submitted").length} to submit${lackingRequirements.filter((r) => r.status === "Rejected").length > 0 ? ` • ${lackingRequirements.filter((r) => r.status === "Rejected").length} needs fix` : ""}`}
-                      </p>
-                    </div>
-                    <p className="text-xs text-slate-500 dark:text-slate-400">
-                      {isAllValidated
-                        ? "You are all caught up for this term"
-                        : (displayedStatusCounts?.pending ?? 0) > 0
-                          ? `${displayedStatusCounts?.pending} item(s) awaiting review`
-                          : "Ready to upload"}
-                    </p>
-                  </div>
-                </section>
-
-                {/* Analytics & Recent Activity Section */}
-                <section className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-5 items-stretch">
-                  {/* Left Card: Document Status Analytics */}
-                  <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs p-5 sm:p-6 space-y-4 transition-colors">
-                    <div className="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-slate-800">
-                      <div>
-                        <h3 className="text-base sm:text-lg font-bold text-slate-900 dark:text-slate-100 tracking-tight flex items-center gap-2">
-                          <Reports
-                            className="h-5 w-5 text-[#800000] dark:text-amber-400"
-                            strokeWidth={2}
-                          />
-                          <span>Document Status</span>
-                        </h3>
-                        <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                          Your {totalRequirements || mandatoryTemplates.length}{" "}
-                          requirements this term
-                        </p>
-                      </div>
-                      <span className="inline-flex items-center px-2.5 py-1 rounded-lg bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30 text-xs font-bold shrink-0">
-                        {isAllValidated
-                          ? "100% Done"
-                          : `${Math.round((mandatoryValidatedCount / (mandatoryTemplates.length || 1)) * 100)}% Done`}
-                      </span>
-                    </div>
-
-                    {(() => {
-                      const total = Math.max(
-                        totalRequirements || mandatoryTemplates.length,
-                        1,
-                      );
-                      const valCount = isAllValidated
-                        ? total
-                        : (displayedStatusCounts?.validated ?? 0);
-                      const pendCount = isAllValidated
-                        ? 0
-                        : (displayedStatusCounts?.pending ?? 0);
-                      const revCount = isAllValidated
-                        ? 0
-                        : (displayedStatusCounts?.rejected ?? 0);
-                      const unsubCount = isAllValidated
-                        ? 0
-                        : (displayedStatusCounts?.notSubmitted ?? 0);
-                      const overCount = isAllValidated
-                        ? 0
-                        : (displayedStatusCounts?.overdue ?? 0);
-
-                      const metrics = [
-                        {
-                          label: "Validated",
-                          count: valCount,
-                          pct: Math.round((valCount / total) * 100),
-                          barColor: "bg-[#0b5336]",
-                          badgeBg:
-                            "bg-[#0b5336]/10 text-[#0b5336] dark:bg-emerald-500/15 dark:text-emerald-300",
-                        },
-                        {
-                          label: "In Review",
-                          count: pendCount,
-                          pct: Math.round((pendCount / total) * 100),
-                          barColor: "bg-amber-500",
-                          badgeBg:
-                            "bg-amber-500/15 text-amber-800 dark:text-amber-300",
-                        },
-                        {
-                          label: "Needs Fix",
-                          count: revCount,
-                          pct: Math.round((revCount / total) * 100),
-                          barColor: "bg-[#780000]",
-                          badgeBg:
-                            "bg-[#780000]/10 text-[#780000] dark:bg-rose-500/15 dark:text-rose-300",
-                        },
-                        {
-                          label: "Not Submitted",
-                          count: unsubCount,
-                          pct: Math.round((unsubCount / total) * 100),
-                          barColor: "bg-slate-400 dark:bg-slate-600",
-                          badgeBg:
-                            "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300",
-                        },
-                        {
-                          label: "Overdue",
-                          count: overCount,
-                          pct: Math.round((overCount / total) * 100),
-                          barColor: "bg-rose-600",
-                          badgeBg:
-                            "bg-rose-500/10 text-rose-700 dark:text-rose-300",
-                        },
-                      ];
-
-                      return (
-                        <div className="space-y-3">
-                          {/* Stacked Multi-Segment Progress Bar */}
-                          <div className="h-3 w-full rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden flex border border-slate-200 dark:border-slate-700">
-                            {metrics.map((m) =>
-                              m.count > 0 ? (
-                                <div
-                                  key={m.label}
-                                  className={`${m.barColor} h-full transition-all duration-500`}
-                                  style={{
-                                    width: `${Math.max(4, (m.count / total) * 100)}%`,
-                                  }}
-                                  title={`${m.label}: ${m.count} (${m.pct}%)`}
-                                />
-                              ) : null,
-                            )}
-                          </div>
-
-                          {/* Individual Metric Bars */}
-                          <div className="space-y-2.5 pt-1">
-                            {metrics.map((m) => (
-                              <div key={m.label} className="space-y-1">
-                                <div className="flex items-center justify-between text-xs">
-                                  <span className="font-semibold text-slate-700 dark:text-slate-300">
-                                    {m.label}
-                                  </span>
-                                  <div className="flex items-center gap-2">
-                                    <span className="font-bold text-slate-900 dark:text-slate-100">
-                                      {m.count} / {total}
-                                    </span>
-                                    <span
-                                      className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${m.badgeBg}`}
-                                    >
-                                      {m.pct}%
-                                    </span>
-                                  </div>
-                                </div>
-                                <div className="h-1.5 w-full rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden">
-                                  <div
-                                    className={`h-full rounded-full transition-all duration-500 ${m.barColor}`}
-                                    style={{ width: `${m.pct}%` }}
-                                  />
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      );
-                    })()}
-                  </div>
-
-                  {/* Middle Card: My Classes */}
-                  <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs p-5 sm:p-6 space-y-4 transition-colors flex flex-col justify-between">
-                    <div className="space-y-4">
-                      <div className="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-slate-800">
-                        <div>
-                          <h3 className="text-base sm:text-lg font-bold text-slate-900 dark:text-slate-100 tracking-tight flex items-center gap-2">
-                            <Activity
-                              className="h-5 w-5 text-[#800000] dark:text-amber-400"
-                              strokeWidth={2}
-                            />
-                            <span>My Classes</span>
-                          </h3>
-                          <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                            Progress per subject for {activeAY} • {activeSem}
-                          </p>
-                        </div>
-                        <button
-                          type="button"
-                          onClick={() => navigateToView("status")}
-                          className="text-xs font-semibold text-[#800000] dark:text-amber-400 hover:underline cursor-pointer shrink-0"
-                        >
-                          Manage Classes
-                        </button>
-                      </div>
-
-                      {(() => {
-                        const activeClassList = facultyClasses.filter(
-                          (c) => !c.is_archived,
-                        );
-                        const normActiveAY = normalizeAcademicYear(activeAY);
-                        const normActiveSem = normalizeSemester(activeSem);
-                        const mandatoryCodes = mandatoryTemplates.map(
-                          (t) => t.code,
-                        );
-                        const totalMandatory = Math.max(
-                          mandatoryCodes.length,
-                          1,
-                        );
-
-                        if (activeClassList.length === 0) {
-                          return (
-                            <div className="rounded-xl border border-dashed border-slate-300 dark:border-slate-800 p-6 text-center space-y-2">
-                              <p className="text-xs sm:text-sm font-semibold text-slate-700 dark:text-slate-300">
-                                No active class loads registered yet
-                              </p>
-                              <p className="text-xs text-slate-500 dark:text-slate-400">
-                                Add your assigned subjects and sections in
-                                Documents to be Submitted to track per-class
-                                analytics.
-                              </p>
-                            </div>
-                          );
-                        }
-
-                        return (
-                          <div className="space-y-3 max-h-56 overflow-y-auto pr-1">
-                            {activeClassList.map((cls) => {
-                              const validatedForClass = mandatoryCodes.filter(
-                                (code) => {
-                                  const inPast = pastSubmissions.some((s) => {
-                                    if (
-                                      s.requirementCode !== code ||
-                                      s.status !== "Validated"
-                                    )
-                                      return false;
-                                    const matchTerm =
-                                      normalizeSemester(s.semester) ===
-                                        normActiveSem &&
-                                      normalizeAcademicYear(s.academicYear) ===
-                                        normActiveAY;
-                                    if (!matchTerm) return false;
-                                    const sClass =
-                                      (s as any).classId || (s as any).class_id;
-                                    return sClass === cls.id;
-                                  });
-                                  if (inPast) return true;
-                                  const inLive = requirementStatuses.some(
-                                    (r) => {
-                                      if (r.code !== code) return false;
-                                      if (
-                                        r.status !== "Validated" &&
-                                        r.status !== "Exempted"
-                                      )
-                                        return false;
-                                      const rClass =
-                                        (r as any).classId ||
-                                        (r as any).class_id;
-                                      return rClass === cls.id;
-                                    },
-                                  );
-                                  if (inLive) return true;
-                                  const cached =
-                                    classStatusesCacheRef.current[cls.id] || [];
-                                  return cached.some((r) => {
-                                    if (r.code !== code) return false;
-                                    return (
-                                      r.status === "Validated" ||
-                                      r.status === "Exempted"
-                                    );
-                                  });
-                                },
-                              ).length;
-
-                              const classPct = Math.round(
-                                (validatedForClass / totalMandatory) * 100,
-                              );
-                              const isClassComplete =
-                                validatedForClass >= mandatoryCodes.length &&
-                                mandatoryCodes.length > 0;
-
-                              return (
-                                <div
-                                  key={cls.id}
-                                  onClick={() => {
-                                    setSelectedClassId(cls.id);
-                                    navigateToView("status");
-                                  }}
-                                  className="p-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/70 hover:bg-slate-100/80 dark:bg-slate-950/50 dark:hover:bg-slate-950 transition cursor-pointer space-y-2"
-                                >
-                                  <div className="flex items-center justify-between gap-2">
-                                    <div className="min-w-0">
-                                      <p className="text-xs sm:text-sm font-bold text-slate-900 dark:text-slate-100 truncate">
-                                        {cls.subject_code} • {cls.section_code}
-                                      </p>
-                                      <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate">
-                                        {cls.description} ({cls.units} units)
-                                      </p>
-                                    </div>
-                                    <span
-                                      className={`px-2 py-0.5 rounded-full text-[11px] font-bold shrink-0 ${
-                                        isClassComplete
-                                          ? "bg-[#0b5336] text-white"
-                                          : "bg-amber-500/20 text-amber-900 dark:text-amber-300"
-                                      }`}
-                                    >
-                                      {validatedForClass}/
-                                      {mandatoryCodes.length} ({classPct}%)
-                                    </span>
-                                  </div>
-                                  <div className="h-1.5 w-full rounded-full bg-slate-200 dark:bg-slate-800 overflow-hidden">
-                                    <div
-                                      className={`h-full rounded-full transition-all duration-500 ${
-                                        isClassComplete
-                                          ? "bg-emerald-500"
-                                          : "bg-amber-500"
-                                      }`}
-                                      style={{ width: `${classPct}%` }}
-                                    />
-                                  </div>
-                                </div>
-                              );
-                            })}
-                          </div>
-                        );
-                      })()}
-                    </div>
-
-                    <div className="pt-3 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
-                      <span>
-                        Classes:{" "}
-                        <strong className="text-slate-900 dark:text-slate-100">
-                          {facultyClasses.filter((c) => !c.is_archived).length}
-                        </strong>
-                      </span>
-                      <span>
-                        Total Units:{" "}
-                        <strong className="text-slate-900 dark:text-slate-100">
-                          {facultyClasses
-                            .filter((c) => !c.is_archived)
-                            .reduce(
-                              (sum, c) => sum + (Number(c.units) || 0),
-                              0,
-                            )}
-                        </strong>
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Right Card: Recent Activity */}
-                  <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs p-5 sm:p-6 space-y-4 transition-colors flex flex-col">
-                    <div className="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-slate-800">
-                      <div>
-                        <h3 className="text-base sm:text-lg font-bold text-slate-900 dark:text-slate-100 tracking-tight">
-                          Recent Activity
-                        </h3>
-                        <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                          Latest submissions
-                        </p>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={openHistoryModal}
-                        className="text-xs font-semibold text-[#800000] dark:text-amber-400 hover:underline transition cursor-pointer shrink-0"
-                      >
-                        View all
-                      </button>
-                    </div>
-                    {deduplicatedRecentActivities.length > 0 ? (
-                      <div className="space-y-2.5 max-h-64 overflow-y-auto pr-1">
-                        {deduplicatedRecentActivities.map((sub) => (
-                          <div
-                            key={sub.id}
-                            className="flex items-start gap-3 p-3 rounded-xl bg-slate-50/70 hover:bg-slate-100/80 dark:bg-slate-950/60 dark:hover:bg-slate-950/90 border border-slate-200 dark:border-slate-800 transition-colors"
-                          >
-                            <div className="mt-0.5 shrink-0">
-                              {renderStatusIconBadge(sub.status)}
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <p className="text-xs sm:text-sm font-semibold text-slate-900 dark:text-slate-100 truncate">
-                                {getRequirementTitle(sub.requirementCode)}
-                              </p>
-                              <p className="text-[11px] text-slate-600 dark:text-slate-400 mt-0.5">
-                                Status:{" "}
-                                <span
-                                  className={getStatusTextColor(sub.status)}
-                                >
-                                  {getStatusText(sub.status)}
-                                </span>
-                              </p>
-                              <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
-                                {formatSubmittedDateTime(sub.submittedAt) ??
-                                  sub.submittedAt}
-                              </p>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <div className="flex-1 flex items-center justify-center rounded-xl border border-dashed border-slate-300 dark:border-slate-800 p-6 text-center">
-                        <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400">
-                          No submissions yet.
-                        </p>
-                      </div>
-                    )}
-                  </div>
-                </section>
               </article>
             )}
             {activeView === "submit" && (

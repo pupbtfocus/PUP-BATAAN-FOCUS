@@ -293,13 +293,7 @@ export async function GET(request: NextRequest) {
       is_mandatory: boolean;
       max_size_mb: number;
       allowed_formats: string[];
-    }> = DEFAULT_REQUIREMENTS.map((code) => ({
-      code,
-      title: (REQUIREMENT_LABEL as Record<string, string>)[code] || code,
-      is_mandatory: true,
-      max_size_mb: 10,
-      allowed_formats: ["PDF", "DOCX", "XLSX"],
-    }));
+    }> = [];
 
     try {
       const isCurrentTerm = Boolean(
@@ -308,13 +302,13 @@ export async function GET(request: NextRequest) {
           (!requestedSemester || normalizeSemester(requestedSemester) === normalizeSemester(dbCurrentTerm.semester))
       );
 
-      const { data: dbTemplates } = await supabase
+      const { data: dbTemplates, error: dbTemplatesError } = await supabase
         .from("requirement_templates")
         .select("code, title, is_mandatory, max_size_mb, allowed_formats, is_active")
         .order("is_mandatory", { ascending: false })
         .order("created_at", { ascending: true });
 
-      if (dbTemplates && dbTemplates.length > 0) {
+      if (!dbTemplatesError && Array.isArray(dbTemplates)) {
         activeTemplateRows = dbTemplates
           .filter((t: any) => {
             if (isCurrentTerm) {
@@ -329,9 +323,23 @@ export async function GET(request: NextRequest) {
             max_size_mb: t.max_size_mb ? Number(t.max_size_mb) : 10,
             allowed_formats: Array.isArray(t.allowed_formats) && t.allowed_formats.length > 0 ? t.allowed_formats : ["PDF", "DOCX", "XLSX", "PNG", "JPG", "ZIP"],
           }));
+      } else {
+        activeTemplateRows = DEFAULT_REQUIREMENTS.map((code) => ({
+          code,
+          title: (REQUIREMENT_LABEL as Record<string, string>)[code] || code,
+          is_mandatory: true,
+          max_size_mb: 10,
+          allowed_formats: ["PDF", "DOCX", "XLSX"],
+        }));
       }
     } catch {
-      // Keep defaults
+      activeTemplateRows = DEFAULT_REQUIREMENTS.map((code) => ({
+        code,
+        title: (REQUIREMENT_LABEL as Record<string, string>)[code] || code,
+        is_mandatory: true,
+        max_size_mb: 10,
+        allowed_formats: ["PDF", "DOCX", "XLSX"],
+      }));
     }
 
     function matchRequirementCode(

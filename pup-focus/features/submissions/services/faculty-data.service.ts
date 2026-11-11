@@ -255,13 +255,7 @@ export async function getFacultyInitialData(
   const normActiveSem = activeSemester ? normalizeSemester(activeSemester) : "";
 
   // Requirement Templates
-  let activeTemplates: RequirementTemplateData[] = DEFAULT_REQUIREMENTS.map((code) => ({
-    code,
-    title: (REQUIREMENT_LABEL as Record<string, string>)[code] || code,
-    is_mandatory: true,
-    max_size_mb: 10,
-    allowed_formats: ["PDF", "DOCX", "XLSX"],
-  }));
+  let activeTemplates: RequirementTemplateData[] = [];
 
   const isCurrentTerm = Boolean(
     dbCurrentTerm &&
@@ -269,9 +263,10 @@ export async function getFacultyInitialData(
       (!requestedSemester || normalizeSemester(requestedSemester) === normalizeSemester(dbCurrentTerm.semester))
   );
 
-  const allDbTemplates = (templatesRes.data && templatesRes.data.length > 0 ? templatesRes.data : []) as any[];
+  const hasDbTemplates = Array.isArray(templatesRes.data);
+  const allDbTemplates = (hasDbTemplates ? templatesRes.data : []) as any[];
 
-  if (allDbTemplates.length > 0) {
+  if (hasDbTemplates) {
     activeTemplates = allDbTemplates
       .filter((t: any) => {
         if (isCurrentTerm) {
@@ -290,6 +285,14 @@ export async function getFacultyInitialData(
             ? t.allowed_formats
             : ["PDF", "DOCX", "XLSX", "PNG", "JPG", "ZIP"],
       }));
+  } else {
+    activeTemplates = DEFAULT_REQUIREMENTS.map((code) => ({
+      code,
+      title: (REQUIREMENT_LABEL as Record<string, string>)[code] || code,
+      is_mandatory: true,
+      max_size_mb: 10,
+      allowed_formats: ["PDF", "DOCX", "XLSX"],
+    }));
   }
 
   // Faculty Profile IDs & Avatar Metadata
