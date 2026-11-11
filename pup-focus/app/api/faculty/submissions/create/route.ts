@@ -870,6 +870,27 @@ export async function POST(request: NextRequest) {
           ? new Date(`${windowState.endDate}T${windowState.endTime || "23:59:59"}`).toISOString()
           : new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
 
+      // Ensure any past-term unarchived submissions for this faculty, requirement, and class load
+      // are marked is_archived = true so they do not collide with the current term's unique constraint
+      try {
+        let archivePastQuery = supabaseAdmin
+          .from("submissions")
+          .update({ is_archived: true })
+          .eq("faculty_profile_id", profile.id)
+          .eq("requirement_code", payload.requirementCode)
+          .eq("is_archived", false);
+
+        if (facultyAssignmentId) {
+          archivePastQuery = archivePastQuery.neq("faculty_assignment_id", facultyAssignmentId);
+        }
+        if (payload.classId) {
+          archivePastQuery = archivePastQuery.eq("class_id", payload.classId);
+        }
+        await archivePastQuery;
+      } catch (archiveErr) {
+        console.warn("Failed to archive past-term active submission:", archiveErr);
+      }
+
       const submissionPayload: Record<string, any> = {
         id: targetSubmissionId,
         faculty_profile_id: profile.id,
@@ -896,6 +917,36 @@ export async function POST(request: NextRequest) {
         .select()
         .single();
 
+      // If duplicate key / unique conflict occurs on active submission, update the existing row preserving class_id
+      if (
+        submissionError &&
+        (submissionError.code === "23505" ||
+          submissionError.message?.toLowerCase().includes("duplicate key") ||
+          submissionError.message?.toLowerCase().includes("unique"))
+      ) {
+        let updateQuery = supabaseAdmin
+          .from("submissions")
+          .update(submissionPayload)
+          .eq("faculty_profile_id", profile.id)
+          .eq("requirement_code", payload.requirementCode)
+          .eq("is_archived", false);
+
+        if (payload.classId) {
+          updateQuery = updateQuery.eq("class_id", payload.classId);
+        } else {
+          updateQuery = updateQuery.is("class_id", null);
+        }
+
+        const { data: updatedSub, error: updateErr } = await updateQuery
+          .select()
+          .maybeSingle();
+
+        if (!updateErr && updatedSub) {
+          newSub = updatedSub;
+          submissionError = null;
+        }
+      }
+
       if (submissionError) {
         const fallbackPayload: Record<string, any> = {
           id: targetSubmissionId,
@@ -903,6 +954,11 @@ export async function POST(request: NextRequest) {
           requirement_code: payload.requirementCode,
           status: "uploaded",
           submitted_at: submissionPayload.submitted_at,
+          class_id: payload.classId || null,
+          storage_path: storagePath || null,
+          file_name: fileName || null,
+          mime_type: fileMimeType || null,
+          size_bytes: fileBufferLength || null,
         };
 
         if (!isMissingRemarksColumnError(submissionError) && trimmedRemarks) {
@@ -921,34 +977,6 @@ export async function POST(request: NextRequest) {
           .insert(fallbackPayload)
           .select()
           .single());
-      }
-
-      if (
-        submissionError &&
-        (submissionError.code === "23505" ||
-          submissionError.message?.toLowerCase().includes("duplicate key") ||
-          submissionError.message?.toLowerCase().includes("unique"))
-      ) {
-        // Unique conflict detected: update the existing active row instead of failing
-        let updateQuery = supabaseAdmin
-          .from("submissions")
-          .update(submissionPayload)
-          .eq("faculty_profile_id", profile.id)
-          .eq("requirement_code", payload.requirementCode)
-          .eq("is_archived", false);
-
-        if (payload.classId) {
-          updateQuery = updateQuery.eq("class_id", payload.classId);
-        }
-
-        const { data: updatedSub, error: updateErr } = await updateQuery
-          .select()
-          .maybeSingle();
-
-        if (!updateErr && updatedSub) {
-          newSub = updatedSub;
-          submissionError = null;
-        }
       }
 
       if (submissionError) {

@@ -810,6 +810,27 @@ export async function PATCH(request: NextRequest) {
       );
     }
 
+    // Archive previous term submissions so new term starts with a clean slate and avoids unique active submission collisions
+    if (currentTerm?.academic_year) {
+      try {
+        const { data: prevAssignments } = await supabase
+          .from("faculty_program_assignments")
+          .select("id")
+          .eq("academic_year", currentTerm.academic_year)
+          .ilike("term", `%${currentTerm.semester}%`);
+
+        if (prevAssignments && prevAssignments.length > 0) {
+          const prevAssignmentIds = prevAssignments.map((a: any) => a.id).filter(Boolean);
+          await supabase
+            .from("submissions")
+            .update({ is_archived: true })
+            .in("faculty_assignment_id", prevAssignmentIds);
+        }
+      } catch (termArchiveErr) {
+        console.warn("Failed to archive previous term submissions:", termArchiveErr);
+      }
+    }
+
     const { error: updateError } = await supabase
       .from("academic_terms")
       .update({ status: "Current", updated_at: new Date().toISOString() })

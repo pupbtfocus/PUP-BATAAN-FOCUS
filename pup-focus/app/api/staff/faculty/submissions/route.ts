@@ -347,6 +347,17 @@ export async function GET(request: NextRequest) {
         return true;
       })
       .map((s: any) => {
+        // Auto-heal: If submission has no class_id but faculty has registered class load(s),
+        // link the submission to the active class load so it displays within the subject rather than generating an orphaned General Requirements card
+        if (!s.class_id && facultyClassesList.length > 0) {
+          const matchedClass = facultyClassesList[0];
+          s.class_id = matchedClass.id;
+          void supabase
+            .from("submissions")
+            .update({ class_id: matchedClass.id })
+            .eq("id", s.id);
+        }
+
         const docs = docVersionsMap.get(s.id) || [];
       if (
         docs.length === 0 &&

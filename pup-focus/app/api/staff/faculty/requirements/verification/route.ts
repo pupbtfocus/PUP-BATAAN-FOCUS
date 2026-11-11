@@ -573,7 +573,9 @@ export async function GET(request: NextRequest) {
       }
 
       const classProgressList = facultyClassesData.map((cls: any) => {
-        const classSubs = facultySubmissions.filter((s: any) => s.class_id === cls.id);
+        const classSubs = facultySubmissions.filter(
+          (s: any) => s.class_id === cls.id || (!s.class_id && facultyClassesData.length === 1),
+        );
         const validatedReqs = new Set<string>();
         for (const s of classSubs) {
           if (toRequirementStatus(s.status) === "validated") {
