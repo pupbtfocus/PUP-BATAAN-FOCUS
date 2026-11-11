@@ -130,7 +130,7 @@ export function BackupArchivePanel() {
     null,
   );
   const [inspectedTerm, setInspectedTerm] =
-    useState<ArchivedTermSummary | null>(null);
+    useState<ArchivedTermSummary | AvailableAcademicTerm | null>(null);
   const [backupToDelete, setBackupToDelete] = useState<SystemBackup | null>(
     null,
   );
@@ -1419,6 +1419,16 @@ export function BackupArchivePanel() {
                           <div className="inline-flex items-center gap-1.5 justify-end">
                             <button
                               type="button"
+                              onClick={() => setInspectedTerm(term)}
+                              className="px-2.5 py-1 text-xs font-semibold rounded-lg bg-[#780000] hover:bg-[#5e0000] text-white border border-[#5e0000] transition cursor-pointer flex items-center gap-1 shrink-0 shadow-2xs active:scale-[0.98]"
+                              title="View archived term details"
+                            >
+                              <AppIcon icon={Eye} size="xs" color="white" />
+                              <span>View</span>
+                            </button>
+
+                            <button
+                              type="button"
                               disabled={Boolean(exportingTermKey)}
                               onClick={() =>
                                 void handleDownloadZip(
@@ -1426,7 +1436,7 @@ export function BackupArchivePanel() {
                                   term.semester,
                                 )
                               }
-                              className="px-3 py-1.5 text-xs font-bold rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-900 border border-amber-600 transition cursor-pointer inline-flex items-center gap-1.5 shadow-xs disabled:opacity-50 shrink-0"
+                              className="px-2.5 py-1 text-xs font-semibold rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-900 border border-amber-600 transition cursor-pointer flex items-center gap-1 shadow-xs disabled:opacity-50 shrink-0"
                               title="Download faculty files archive (.ZIP)"
                             >
                               {isRowExporting ? (
@@ -1753,7 +1763,9 @@ export function BackupArchivePanel() {
                     Date Archived:
                   </span>
                   <span className="text-slate-700 dark:text-slate-300">
-                    {formatDateTime(inspectedTerm.archived_at)}
+                    {"archived_at" in inspectedTerm && inspectedTerm.archived_at
+                      ? formatDateTime(inspectedTerm.archived_at)
+                      : "Preserved in Vault"}
                   </span>
                 </div>
               </div>
