@@ -1144,6 +1144,8 @@ export function SuperAdminDashboard({
             if (current.semester) {
               setCurrentSemester(current.semester);
             }
+          } else {
+            setCurrentAcademicYear("");
           }
           if (Array.isArray(data.terms) && typeof window !== "undefined") {
             try {
@@ -1173,6 +1175,7 @@ export function SuperAdminDashboard({
   useRealtimeSync(() => {
     void loadFacultyFromDatabase(true);
     void loadAdminAccounts(true);
+    void loadCurrentTerm();
   });
 
   useEffect(() => {

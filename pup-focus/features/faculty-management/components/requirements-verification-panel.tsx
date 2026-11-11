@@ -4987,19 +4987,19 @@ export function RequirementsPanel({
 
   // Sync initial term props when parent finishes loading them
   useEffect(() => {
-    if (initialAcademicYear && !activeTermAy) {
-      setActiveTermAy(initialAcademicYear);
+    if (initialAcademicYear !== undefined) {
+      setActiveTermAy(initialAcademicYear || "");
       if (activePanelTab === "current") {
-        setAcademicYear(initialAcademicYear);
+        setAcademicYear(initialAcademicYear || "");
       }
     }
-    if (initialSemester && !activeTermAy) {
+    if (initialSemester) {
       setActiveTermSem(initialSemester);
       if (activePanelTab === "current") {
         setSemester(initialSemester);
       }
     }
-  }, [initialAcademicYear, initialSemester, activeTermAy, activePanelTab]);
+  }, [initialAcademicYear, initialSemester, activePanelTab]);
 
   const [facultyStatuses, setFacultyStatuses] = useState<
     Record<string, Record<string, RequirementStatus>>
@@ -5338,10 +5338,16 @@ export function RequirementsPanel({
         }
 
         if (options?.syncActiveTerm) {
-          const resolvedAy =
-            data.currentAcademicYear || data.selectedAcademicYear || "";
+          const isTermConfigured = Boolean(
+            data.currentTermConfigured && data.currentAcademicYear,
+          );
+          const resolvedAy = isTermConfigured
+            ? (data.currentAcademicYear || "")
+            : "";
           const resolvedSem: SemesterOption =
-            data.currentSemester || data.selectedSemester || "1st Semester";
+            isTermConfigured && data.currentSemester
+              ? data.currentSemester
+              : (data.selectedSemester || "1st Semester");
 
           setActiveTermAy(resolvedAy);
           setActiveTermSem(resolvedSem);
@@ -5910,6 +5916,7 @@ export function RequirementsPanel({
                     silent:
                       Boolean(cached) ||
                       Object.keys(facultyStatuses).length > 0,
+                    syncActiveTerm: true,
                   });
                 }}
                 className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer ${
