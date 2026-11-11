@@ -786,6 +786,12 @@ function FacultySubmissionPanelContent({
     () =>
       (initialData?.requirementTemplates as RequirementTemplateData[]) || [],
   );
+  const [isTemplatesFetched, setIsTemplatesFetched] = useState<boolean>(
+    () =>
+      Boolean(
+        initialData && Array.isArray(initialData.requirementTemplates),
+      ),
+  );
   const [previewSubmission, setPreviewSubmission] =
     useState<SubmissionPreview | null>(null);
   const [viewedSubmissionIds, setViewedSubmissionIds] = useState<Set<string>>(
@@ -1211,11 +1217,9 @@ function FacultySubmissionPanelContent({
           setRequirementStatuses(statuses);
           setStatusCounts(data.counts || null);
         }
-        if (
-          Array.isArray(data.requirementTemplates) &&
-          data.requirementTemplates.length > 0
-        ) {
+        if (Array.isArray(data.requirementTemplates)) {
           setRequirementTemplates(data.requirementTemplates);
+          setIsTemplatesFetched(true);
         }
         if (data.academicYear) setStatusAcademicYear(data.academicYear);
         if (data.semester) setStatusSemester(data.semester);
@@ -1441,13 +1445,10 @@ function FacultySubmissionPanelContent({
     return () => window.removeEventListener("popstate", handlePopState);
   }, []);
   useEffect(() => {
-    if (
-      initialData?.requirementTemplates &&
-      initialData.requirementTemplates.length > 0
-    ) {
+    if (initialData?.requirementTemplates !== undefined) {
       return;
     }
-    fetch("/api/staff/requirement-templates?active=true", { cache: "no-store" })
+    fetch("/api/staff/requirement-templates", { cache: "no-store" })
       .then((res) => res.json())
       .then((data) => {
         const list = Array.isArray(data)
@@ -1457,20 +1458,22 @@ function FacultySubmissionPanelContent({
             : Array.isArray(data?.requirementTemplates)
               ? data.requirementTemplates
               : [];
-        if (list.length > 0) {
-          setRequirementTemplates(
-            list.map((t: any) => ({
+        setRequirementTemplates(
+          list
+            .filter((t: any) => t.is_active !== false)
+            .map((t: any) => ({
               code: t.code,
               title: t.title,
               is_mandatory: t.is_mandatory !== false,
+              is_active: t.is_active !== false,
               max_size_mb: t.max_size_mb ? Number(t.max_size_mb) : 50,
               allowed_formats:
                 Array.isArray(t.allowed_formats) && t.allowed_formats.length > 0
                   ? t.allowed_formats
                   : ["PDF", "DOCX", "XLSX", "PNG", "JPG", "ZIP"],
             })),
-          );
-        }
+        );
+        setIsTemplatesFetched(true);
       })
       .catch(() => {});
   }, [initialData?.requirementTemplates]);
@@ -1637,8 +1640,13 @@ function FacultySubmissionPanelContent({
   );
 
   const activeTemplates = useMemo<RequirementTemplateData[]>(() => {
-    if (requirementTemplates && requirementTemplates.length > 0) {
-      return requirementTemplates;
+    if (
+      isTemplatesFetched ||
+      (requirementTemplates && requirementTemplates.length > 0)
+    ) {
+      return (requirementTemplates || []).filter(
+        (t: any) => t.is_active !== false,
+      );
     }
     return DEFAULT_REQUIREMENTS.map((code) => ({
       code,
@@ -1647,7 +1655,7 @@ function FacultySubmissionPanelContent({
       max_size_mb: 50,
       allowed_formats: ["PDF", "DOCX", "XLSX", "PNG", "JPG", "ZIP"],
     }));
-  }, [requirementTemplates]);
+  }, [requirementTemplates, isTemplatesFetched]);
 
   const templateTitleMap = useMemo(() => {
     const map = new Map<string, string>();
@@ -2851,7 +2859,7 @@ function FacultySubmissionPanelContent({
     setDirectUploadMessage(null);
 
     // Refresh active templates immediately so any recent change in admin is active
-    fetch("/api/staff/requirement-templates?active=true", { cache: "no-store" })
+    fetch("/api/staff/requirement-templates", { cache: "no-store" })
       .then((res) => res.json())
       .then((data) => {
         const list = Array.isArray(data)
@@ -2861,20 +2869,22 @@ function FacultySubmissionPanelContent({
             : Array.isArray(data?.requirementTemplates)
               ? data.requirementTemplates
               : [];
-        if (list.length > 0) {
-          setRequirementTemplates(
-            list.map((t: any) => ({
+        setRequirementTemplates(
+          list
+            .filter((t: any) => t.is_active !== false)
+            .map((t: any) => ({
               code: t.code,
               title: t.title,
               is_mandatory: t.is_mandatory !== false,
+              is_active: t.is_active !== false,
               max_size_mb: t.max_size_mb ? Number(t.max_size_mb) : 50,
               allowed_formats:
                 Array.isArray(t.allowed_formats) && t.allowed_formats.length > 0
                   ? t.allowed_formats
                   : ["PDF", "DOCX", "XLSX", "PNG", "JPG", "ZIP"],
             })),
-          );
-        }
+        );
+        setIsTemplatesFetched(true);
       })
       .catch(() => {});
   }
@@ -6451,8 +6461,25 @@ function FacultySubmissionPanelContent({
                                 </tr>
                               </thead>
                               <tbody className="divide-y divide-slate-200 dark:divide-slate-800/60">
-                                {displayedRequirementStatuses.map(
-                                  (req, index) => (
+                                {displayedRequirementStatuses.length === 0 ? (
+                                  <tr>
+                                    <td
+                                      colSpan={5}
+                                      className="px-6 py-12 text-center text-xs text-slate-500 dark:text-slate-400 font-medium"
+                                    >
+                                      <div className="flex flex-col items-center justify-center gap-1.5">
+                                        <p className="font-bold text-slate-700 dark:text-slate-300 text-sm">
+                                          No Active Documents Required
+                                        </p>
+                                        <p className="text-xs text-slate-400 dark:text-slate-500">
+                                          All compliance document requirements are currently hidden or not active for this term.
+                                        </p>
+                                      </div>
+                                    </td>
+                                  </tr>
+                                ) : (
+                                  displayedRequirementStatuses.map(
+                                    (req, index) => (
                                     <tr
                                       key={req.code}
                                       id={`requirement-${req.code}`}
@@ -7013,7 +7040,8 @@ function FacultySubmissionPanelContent({
                                       </td>
                                     </tr>
                                   ),
-                                )}
+                                )
+                              )}
                               </tbody>
                             </table>
                           </div>

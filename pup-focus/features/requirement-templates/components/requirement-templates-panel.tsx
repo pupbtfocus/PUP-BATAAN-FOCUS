@@ -611,7 +611,7 @@ export function RequirementTemplatesPanel({
               <strong className="text-slate-900 dark:text-slate-100">
                 &ldquo;{hideTarget.title}&rdquo;
               </strong>{" "}
-              ({hideTarget.code}) {!hideTarget.is_active ? "for faculty submission?" : "from faculty submission lists?"}
+              {!hideTarget.is_active ? "for faculty submission?" : "from faculty submission lists?"}
             </p>
             <div className="mt-6 flex items-center justify-end gap-2.5">
               <button
@@ -659,8 +659,8 @@ export function RequirementTemplatesPanel({
                 Are you sure you want to permanently delete{" "}
                 <strong className="text-slate-900 dark:text-slate-100">
                   "{templateToDelete.title}"
-                </strong>{" "}
-                ({templateToDelete.code})?
+                </strong>
+                ?
               </p>
 
               <div className="rounded-xl border border-amber-600 bg-amber-500 p-3 text-xs text-slate-950 space-y-1 shadow-xs">

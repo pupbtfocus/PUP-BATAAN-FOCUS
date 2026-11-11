@@ -375,7 +375,7 @@ export async function GET(request: NextRequest) {
         .order("academic_year", { ascending: false }),
       supabase
         .from("requirement_templates")
-        .select("code, title, is_mandatory, max_size_mb, allowed_formats, is_active, description")
+        .select("code, title, is_mandatory, max_size_mb, allowed_formats, is_active")
         .order("is_mandatory", { ascending: false })
         .order("created_at", { ascending: true }),
       supabase

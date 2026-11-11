@@ -310,7 +310,7 @@ export async function GET(request: NextRequest) {
 
       const { data: dbTemplates } = await supabase
         .from("requirement_templates")
-        .select("code, title, is_mandatory, max_size_mb, allowed_formats, is_active, description")
+        .select("code, title, is_mandatory, max_size_mb, allowed_formats, is_active")
         .order("is_mandatory", { ascending: false })
         .order("created_at", { ascending: true });
 

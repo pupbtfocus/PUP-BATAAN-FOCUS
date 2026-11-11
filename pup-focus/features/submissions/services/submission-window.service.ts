@@ -777,7 +777,7 @@ export async function getActiveRequirementTemplates(
   try {
     const { data: templates } = await supabase
       .from("requirement_templates")
-      .select("code, title, description")
+      .select("code, title")
       .eq("is_active", true)
       .order("title", { ascending: true });
 
