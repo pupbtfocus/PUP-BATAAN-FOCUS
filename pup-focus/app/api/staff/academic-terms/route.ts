@@ -545,6 +545,175 @@ export async function PATCH(request: NextRequest) {
         );
       }
 
+      // Guard 0: Check pending requirement reviews before archiving
+      const { data: currentAssignments } = await supabase
+        .from("faculty_program_assignments")
+        .select("id, faculty_profile_id")
+        .eq("academic_year", academicYear)
+        .ilike("term", `%${semester}%`);
+
+      const currentAssignmentIds = (currentAssignments || []).map((a: any) => a.id).filter(Boolean);
+      const currentProfileIds = Array.from(
+        new Set((currentAssignments || []).map((a: any) => a.faculty_profile_id).filter(Boolean)),
+      );
+
+      let currentClassIds: string[] = [];
+      try {
+        const { data: currentClasses } = await supabase
+          .from("faculty_classes")
+          .select("id")
+          .eq("academic_year", academicYear)
+          .ilike("semester", `%${semester}%`);
+        if (currentClasses) {
+          currentClassIds = currentClasses.map((c: any) => c.id).filter(Boolean);
+        }
+      } catch {}
+
+      const orConditions: string[] = [];
+      if (currentAssignmentIds.length > 0) {
+        orConditions.push(`faculty_assignment_id.in.(${currentAssignmentIds.join(",")})`);
+      }
+      if (currentClassIds.length > 0) {
+        orConditions.push(`class_id.in.(${currentClassIds.join(",")})`);
+      }
+      if (currentProfileIds.length > 0) {
+        orConditions.push(`faculty_profile_id.in.(${currentProfileIds.join(",")})`);
+      }
+
+      let pendingSubmissionsCount = 0;
+      if (orConditions.length > 0) {
+        const { data: termSubmissions, error: subQueryErr } = await supabase
+          .from("submissions")
+          .select("id, status, submitted_at, faculty_assignment_id, class_id, faculty_profile_id")
+          .or(orConditions.join(","))
+          .limit(3000);
+
+        if (!subQueryErr && termSubmissions) {
+          const reviewedStatuses = new Set([
+            "validated",
+            "approved",
+            "rejected",
+            "needs_revision",
+            "returned",
+            "revision_required",
+            "revision",
+            "exempted",
+            "exempt",
+            "draft",
+            "not_submitted",
+          ]);
+
+          for (const sub of termSubmissions) {
+            const isDirectAssignment = sub.faculty_assignment_id && currentAssignmentIds.includes(sub.faculty_assignment_id);
+            const isDirectClass = sub.class_id && currentClassIds.includes(sub.class_id);
+            const isAssignedProfile = sub.faculty_profile_id && currentProfileIds.includes(sub.faculty_profile_id);
+
+            if (!isDirectAssignment && !isDirectClass && !isAssignedProfile) {
+              continue;
+            }
+
+            const rawStatus = (sub.status || "").toLowerCase().trim();
+            if (reviewedStatuses.has(rawStatus)) {
+              continue;
+            }
+
+            if (
+              rawStatus === "uploaded" ||
+              rawStatus === "submitted" ||
+              rawStatus === "pending" ||
+              rawStatus === "under_review" ||
+              rawStatus === "pending_review" ||
+              Boolean(sub.submitted_at)
+            ) {
+              pendingSubmissionsCount++;
+            }
+          }
+        }
+      }
+
+      if (pendingSubmissionsCount > 0) {
+        return NextResponse.json(
+          {
+            error: "Pending Requirement Reviews Required",
+            details: `Cannot archive academic term: There ${pendingSubmissionsCount === 1 ? "is" : "are"} ${pendingSubmissionsCount} submitted requirement${pendingSubmissionsCount !== 1 ? "s" : ""} pending review in S.Y. ${academicYear} (${semester}). Please review all submitted requirements before you can archive or close this academic term.`,
+            pendingReviews: true,
+            pendingCount: pendingSubmissionsCount,
+            academicYear,
+            semester,
+          },
+          { status: 400 },
+        );
+      }
+
+      // Guard 1: Strictly prevent archiving if no backup exists specifically for this semester
+      const targetAy = academicYear.trim().toLowerCase();
+      const targetSem = normalizeSemester(semester).toLowerCase();
+
+      const { data: backupRows } = await supabase
+        .from("system_backups")
+        .select("id, backup_name, academic_year, metadata, status")
+        .eq("status", "completed");
+
+      const hasSemesterBackup = (backupRows ?? []).some((b: any) => {
+        if (!b) return false;
+        if (b.status && b.status !== "completed") return false;
+
+        const meta = b.metadata ?? {};
+        const metaScope =
+          typeof meta.scope === "object" && meta.scope !== null ? meta.scope : {};
+
+        const rawAy = b.academic_year || meta.academic_year || metaScope.academic_year;
+        if (!rawAy || typeof rawAy !== "string" || rawAy.trim().toLowerCase() === "all") {
+          return false;
+        }
+        if (rawAy.trim().toLowerCase() !== targetAy) {
+          return false;
+        }
+
+        const rawSem = meta.semester || metaScope.semester;
+        if (rawSem && typeof rawSem === "string" && rawSem.trim().toLowerCase() !== "all") {
+          const normBSem = normalizeSemester(rawSem).toLowerCase();
+          if (normBSem === targetSem) {
+            return true;
+          }
+        }
+
+        const name = (b.backup_name || "").toLowerCase();
+        const safeAY = targetAy.replace(/[^a-zA-Z0-9]/g, "_");
+        const safeSem = targetSem.replace(/[^a-zA-Z0-9]/g, "_");
+
+        if (name.includes(safeAY) && name.includes(safeSem)) {
+          return true;
+        }
+
+        if (name.includes(safeAY)) {
+          if (targetSem.includes("1st") && (name.includes("1st_sem") || name.includes("first_sem"))) {
+            return true;
+          }
+          if (targetSem.includes("2nd") && (name.includes("2nd_sem") || name.includes("second_sem"))) {
+            return true;
+          }
+          if (targetSem.includes("summer") && name.includes("summer")) {
+            return true;
+          }
+        }
+
+        return false;
+      });
+
+      if (!hasSemesterBackup) {
+        return NextResponse.json(
+          {
+            error: "Semester Backup Required",
+            details: `A backup of S.Y. ${academicYear} (${semester}) must be created in Backup & Archive before you can archive or close this academic term. Backups are required per semester.`,
+            missingBackup: true,
+            academicYear,
+            semester,
+          },
+          { status: 400 },
+        );
+      }
+
       const { error: archiveError } = await supabase
         .from("academic_terms")
         .update({
