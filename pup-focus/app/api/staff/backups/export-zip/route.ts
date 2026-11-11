@@ -602,7 +602,7 @@ export async function GET(request: NextRequest) {
 
     // Standardized Naming Convention: Backup_[AY]_[Semester]_[Timestamp].zip
     const zipName = `Backup_${safeAY}_${safeSem}_${dateStr}.zip`;
-    const backupName = `Backup_${safeAY}_${safeSem}_${dateStr}`;
+    const backupName = zipName;
 
     const archiveBuffer = archive.buffer.slice(
       archive.byteOffset,
