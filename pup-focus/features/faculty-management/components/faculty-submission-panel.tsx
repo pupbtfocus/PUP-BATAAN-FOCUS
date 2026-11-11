@@ -2508,40 +2508,23 @@ function FacultySubmissionPanelContent({
     ? isSelectedClassAllValidated
     : isAllClassesValidated;
 
-  // True when the global window is off but this specific faculty has an active grace period / personal deadline
+  // True strictly when the API explicitly reports an active personal deadline or grace period
   const now = Date.now();
   const hasActiveGracePeriod =
-    Boolean(submissionWindow?.isGracePeriod) ||
-    Boolean(submissionWindow?.isPersonalDeadline) ||
-    displayedRequirementStatuses.some((r) => {
-      const isPersonalOverride =
-        Boolean((r as any).isGracePeriod) ||
-        Boolean((r as any).isPersonalDeadline) ||
-        Boolean((r as any).isExtended) ||
-        (Boolean((r as any).remarks) &&
-          !(r as any).remarks.includes("[origin:CLOSED]") &&
-          !(r as any).remarks.includes("closed by admin") &&
-          !(r as any).remarks.includes("NEW_FACULTY_STANDARD") &&
-          ((r as any).remarks.includes("NEW_FACULTY_GRACE") ||
-            (r as any).remarks.includes("NEW_FACULTY_CUSTOM") ||
-            (r as any).remarks.includes("Extra time granted") ||
-            (r as any).remarks.includes("EXTENDED")));
-      if (!isPersonalOverride) return false;
-      const due = (r as any).due_at || (r as any).customDueDate;
-      if (!due) return false;
-      const dueIso = due.includes("T") ? due : `${due}T23:59:59+08:00`;
-      const dueMs = new Date(dueIso).getTime();
-      return !Number.isNaN(dueMs) && now <= dueMs;
-    });
+    Boolean(submissionWindow?.isGracePeriod) &&
+    Boolean(submissionWindow?.isPersonalDeadline) &&
+    Boolean(submissionWindow?.isOpen);
 
   const isWindowConfigured =
     Boolean(submissionWindow?.isConfigured) || hasActiveGracePeriod;
   const isSubmissionAvailable =
-    (!isLoadingSubmissionWindow && Boolean(submissionWindow?.isOpen)) ||
-    hasActiveGracePeriod;
-  // Only considered closed if a schedule was actually configured in the database and no personal deadline
+    !isLoadingSubmissionWindow &&
+    (Boolean(submissionWindow?.isOpen) || hasActiveGracePeriod);
+  // Only considered closed if a schedule was actually configured in the database and not open
   const isWindowClosed =
-    isWindowConfigured && !isSubmissionAvailable && !hasActiveGracePeriod;
+    Boolean(submissionWindow?.isConfigured) &&
+    !Boolean(submissionWindow?.isOpen) &&
+    !hasActiveGracePeriod;
   // True when admin has not configured any schedule (e.g. schedules deleted from database) and no personal deadline
   const isWindowNotConfigured =
     !isLoadingSubmissionWindow && !isWindowConfigured && !hasActiveGracePeriod;
@@ -2713,15 +2696,24 @@ function FacultySubmissionPanelContent({
           let isPending = Boolean(data.hasPendingRequest);
           let pendingReq = data.pendingRequest;
 
-          // If the global schedule was opened/updated after the request was created, it is no longer pending
-          if (isPending && pendingReq && submissionWindow?.startDate) {
+          // If the global schedule was opened/updated after the request was created, or if the window has now expired/closed
+          if (isPending && pendingReq) {
             const reqTime = pendingReq.created_at
               ? new Date(pendingReq.created_at).getTime()
               : 0;
-            const windowStartTime = new Date(
-              `${submissionWindow.startDate}T00:00:00+08:00`,
-            ).getTime();
-            if (reqTime > 0 && windowStartTime > 0 && reqTime < windowStartTime) {
+            const windowStartTime = submissionWindow?.startDate
+              ? new Date(`${submissionWindow.startDate}T00:00:00+08:00`).getTime()
+              : 0;
+            const windowEndTime = submissionWindow?.endDate
+              ? new Date(
+                  `${submissionWindow.endDate}T${submissionWindow.endTime || "23:59:59"}+08:00`,
+                ).getTime()
+              : 0;
+
+            if (
+              (windowStartTime > 0 && reqTime < windowStartTime) ||
+              (windowEndTime > 0 && Date.now() >= windowEndTime && reqTime <= windowEndTime)
+            ) {
               isPending = false;
               pendingReq = null;
             }
@@ -2754,6 +2746,9 @@ function FacultySubmissionPanelContent({
     activeSem,
     refetchSubmissionWindow,
     submissionWindow?.startDate,
+    submissionWindow?.endDate,
+    submissionWindow?.endTime,
+    submissionWindow?.isOpen,
   ]);
 
   useEffect(() => {
@@ -7457,14 +7452,18 @@ function FacultySubmissionPanelContent({
                               ? "bg-emerald-500 text-white"
                               : pendingExtensionData.status === "rejected"
                                 ? "bg-[#780000] text-white"
-                                : "bg-amber-500 text-slate-950"
+                                : pendingExtensionData.status === "superseded"
+                                  ? "bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300"
+                                  : "bg-amber-500 text-slate-950"
                           } shadow-xs`}
                         >
                           {pendingExtensionData.status === "approved"
                             ? "Approved"
                             : pendingExtensionData.status === "rejected"
                               ? "Declined"
-                              : "Pending Admin Review"}
+                              : pendingExtensionData.status === "superseded"
+                                ? "Superseded"
+                                : "Pending Admin Review"}
                         </span>
                       </div>
 

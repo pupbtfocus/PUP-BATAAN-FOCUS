@@ -350,7 +350,7 @@ export async function PUT(request: NextRequest) {
         })
         .eq("academic_year", academicYear)
         .eq("semester", semester)
-        .eq("status", "pending");
+        .in("status", ["pending", "approved"]);
     } catch {}
 
     if (status.isOpen) {
@@ -366,12 +366,25 @@ export async function PUT(request: NextRequest) {
           })
           .eq("academic_year", academicYear)
           .eq("semester", semester)
-          .like("remarks", "%[origin:CLOSED]%");
+          .or("remarks.ilike.%EXTENDED%,remarks.ilike.%[origin:CLOSED]%,remarks.ilike.%NEW_FACULTY_GRACE%");
       } catch (autoResolveErr) {
         logger.warn("auto_resolve_extension_requests_failed", {
           error: autoResolveErr instanceof Error ? autoResolveErr.message : String(autoResolveErr),
         });
       }
+    } else {
+      // If admin manually saved an end date/time that is already closed
+      try {
+        await supabase
+          .from("submissions")
+          .update({
+            remarks: "[origin:CLOSED] Closed by administrator",
+            updated_at: new Date().toISOString(),
+          })
+          .eq("academic_year", academicYear)
+          .eq("semester", semester)
+          .in("status", ["pending", "unsubmitted"]);
+      } catch {}
     }
 
     const { data: facultyRoles } = await supabase
@@ -638,11 +651,26 @@ export async function DELETE() {
 
         await supabase
           .from("submissions")
-          .update({ due_at: null, updated_at: new Date().toISOString() })
+          .update({
+            due_at: null,
+            remarks: "[origin:CLOSED] Closed by administrator",
+            updated_at: new Date().toISOString(),
+          })
           .eq("academic_year", term.ay)
           .eq("semester", term.sem)
           .in("status", ["pending", "unsubmitted"])
           .is("submitted_at", null);
+
+        await supabase
+          .from("extension_requests")
+          .update({
+            status: "superseded",
+            admin_remarks: "Submission schedule was closed by administrator",
+            updated_at: new Date().toISOString(),
+          })
+          .eq("academic_year", term.ay)
+          .eq("semester", term.sem)
+          .in("status", ["pending", "approved"]);
       } catch (clearErr) {
         logger.warn("submission_window_terms_clear_failed", {
           error: clearErr instanceof Error ? clearErr.message : String(clearErr),

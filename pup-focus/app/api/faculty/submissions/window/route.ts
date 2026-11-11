@@ -51,7 +51,43 @@ export async function GET() {
       void checkAndSend3DayDeadlineReminders(supabase).catch(() => {});
     }
 
-    // 3. Check for active personal deadline first
+    // 3. Global schedule takes absolute priority when configured
+    // If global schedule is OPEN, return global window. Never show personal extension banner.
+    if (status.isConfigured && status.isOpen) {
+      return NextResponse.json({
+        ...status,
+        startTimeLabel: status.startTime
+          ? format24HourTo12Hour(status.startTime)
+          : null,
+        endTimeLabel: status.endTime
+          ? format24HourTo12Hour(status.endTime)
+          : null,
+        currentTimeLabel: format24HourTo12Hour(status.currentTime),
+        isPersonalDeadline: false,
+        isGracePeriod: false,
+      });
+    }
+
+    // If global schedule is CLOSED (admin manually closed the date or window expired):
+    // Must respect admin's closure and close portal for all faculty.
+    if (status.isConfigured && !status.isOpen) {
+      return NextResponse.json({
+        ...status,
+        isOpen: false,
+        status: "Closed",
+        startTimeLabel: status.startTime
+          ? format24HourTo12Hour(status.startTime)
+          : null,
+        endTimeLabel: status.endTime
+          ? format24HourTo12Hour(status.endTime)
+          : null,
+        currentTimeLabel: format24HourTo12Hour(status.currentTime),
+        isPersonalDeadline: false,
+        isGracePeriod: false,
+      });
+    }
+
+    // 4. Fallback: Only check personal deadline if no active global window was configured
     const personalDeadline = await getFacultyPersonalDeadline(supabase, user.id);
     if (personalDeadline) {
       return NextResponse.json({
@@ -74,22 +110,6 @@ export async function GET() {
         effectiveDeadline: personalDeadline.effectiveDeadline,
         formattedDueAt: personalDeadline.formattedDueAt,
         badgeLabel: "Schedule Extension Active",
-      });
-    }
-
-    // 4. Fallback to Global Submission Window
-    if (status.isConfigured && status.isOpen) {
-      return NextResponse.json({
-        ...status,
-        startTimeLabel: status.startTime
-          ? format24HourTo12Hour(status.startTime)
-          : null,
-        endTimeLabel: status.endTime
-          ? format24HourTo12Hour(status.endTime)
-          : null,
-        currentTimeLabel: format24HourTo12Hour(status.currentTime),
-        isPersonalDeadline: false,
-        isGracePeriod: false,
       });
     }
 

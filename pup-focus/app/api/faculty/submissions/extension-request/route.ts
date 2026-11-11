@@ -107,11 +107,19 @@ export async function GET(request: NextRequest) {
       if (winData) {
         const winUpdatedMs = winData.updated_at ? new Date(winData.updated_at).getTime() : 0;
         const winStartMs = winData.start_date ? new Date(`${winData.start_date}T00:00:00+08:00`).getTime() : 0;
+        const winEndMs = winData.end_date
+          ? new Date(`${winData.end_date}T${winData.end_time || "23:59:59"}+08:00`).getTime()
+          : 0;
+        const nowMs = Date.now();
 
         for (const r of requests) {
           if (r.status === "pending") {
             const reqTime = r.created_at ? new Date(r.created_at).getTime() : 0;
-            if ((winUpdatedMs > 0 && reqTime < winUpdatedMs) || (winStartMs > 0 && reqTime < winStartMs)) {
+            if (
+              (winUpdatedMs > 0 && reqTime <= winUpdatedMs) ||
+              (winStartMs > 0 && reqTime < winStartMs) ||
+              (winEndMs > 0 && nowMs >= winEndMs && reqTime <= winEndMs)
+            ) {
               r.status = "superseded";
               void supabase
                 .from("extension_requests")
