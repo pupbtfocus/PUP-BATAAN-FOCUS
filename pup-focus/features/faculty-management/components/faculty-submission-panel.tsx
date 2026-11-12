@@ -872,10 +872,14 @@ function FacultySubmissionPanelContent({
     }
   }, [initialData]);
   const [selectedAcademicYear, setSelectedAcademicYear] = useState<string>(
-    academicYears[0] ?? "",
+    () => initialData?.academicYear || academicYears[0] || "",
   );
   const [selectedSemester, setSelectedSemester] =
-    useState<(typeof SEMESTER_OPTIONS)[number]>("1st Semester");
+    useState<(typeof SEMESTER_OPTIONS)[number]>(
+      () =>
+        (initialData?.semester as (typeof SEMESTER_OPTIONS)[number]) ||
+        "Summer Semester",
+    );
   const [selectedRequirementForUpload, setSelectedRequirementForUpload] =
     useState<RequirementCode | string | null>(null);
   const [isRevisionUpload, setIsRevisionUpload] = useState(false);
@@ -1196,11 +1200,13 @@ function FacultySubmissionPanelContent({
       const params = new URLSearchParams();
       const targetYear =
         year ||
+        activeAY ||
         (submissionWindow?.academicYear
           ? submissionWindow.academicYear
           : statusAcademicYear);
       const targetSem =
         sem ||
+        activeSem ||
         (submissionWindow?.semester
           ? submissionWindow.semester
           : statusSemester);
@@ -1228,6 +1234,9 @@ function FacultySubmissionPanelContent({
         const statuses: RequirementStatus[] = data.requirementStatuses || [];
         if (targetClassId) {
           classStatusesCacheRef.current[targetClassId] = statuses;
+          if (targetYear && targetSem) {
+            classStatusesCacheRef.current[`${targetClassId}_${targetYear}_${targetSem}`] = statuses;
+          }
         }
         if ((targetClassId || null) === (selectedClassIdRef.current || null)) {
           setRequirementStatuses(statuses);
@@ -1237,8 +1246,12 @@ function FacultySubmissionPanelContent({
           setRequirementTemplates(data.requirementTemplates);
           setIsTemplatesFetched(true);
         }
-        if (data.academicYear) setStatusAcademicYear(data.academicYear);
-        if (data.semester) setStatusSemester(data.semester);
+        if (data.academicYear && !currentAcademicTerm?.academic_year) {
+          setStatusAcademicYear(data.academicYear);
+        }
+        if (data.semester && !currentAcademicTerm?.semester) {
+          setStatusSemester(data.semester);
+        }
         if (typeof data.hasActiveSchedule === "boolean") {
           setHasActiveSchedule(data.hasActiveSchedule);
         }
@@ -1307,10 +1320,10 @@ function FacultySubmissionPanelContent({
     void fetchStatuses(undefined, undefined, undefined, { silent: true });
   }, [refetchSubmissionWindow]);
   useEffect(() => {
+    void refetchSubmissionWindow({ silent: Boolean(initialData) });
     if (!initialData) {
       void fetchHistory();
       void fetchStatuses();
-      void refetchSubmissionWindow();
     } else {
       void fetchHistory({ silent: true });
     }
@@ -1499,20 +1512,26 @@ function FacultySubmissionPanelContent({
   const hasHydratedInitialStatusesRef = useRef(
     Boolean(initialData?.requirementStatuses),
   );
+  const lastFetchedWindowKeyRef = useRef<string>("");
   useEffect(() => {
     if (hasHydratedInitialStatusesRef.current) {
       hasHydratedInitialStatusesRef.current = false;
       return;
     }
-    if (submissionWindow?.academicYear && submissionWindow?.semester) {
+    const winAy = submissionWindow?.academicYear;
+    const winSem = submissionWindow?.semester;
+    if (winAy && winSem) {
+      const key = `${winAy}_${winSem}`;
+      if (lastFetchedWindowKeyRef.current === key) return;
+      lastFetchedWindowKeyRef.current = key;
       void fetchStatuses(
-        submissionWindow.academicYear,
-        submissionWindow.semester,
+        winAy,
+        winSem,
         undefined,
         { silent: true },
       );
     }
-  }, [submissionWindow]);
+  }, [submissionWindow?.academicYear, submissionWindow?.semester]);
   useEffect(() => {
     if (isHistoryModalOpen) {
       void fetchHistory({ silent: pastSubmissions.length > 0 });
@@ -1625,30 +1644,30 @@ function FacultySubmissionPanelContent({
     return (
       currentAcademicTerm?.academic_year ||
       submissionWindow?.academicYear ||
-      statusAcademicYear ||
       initialData?.academicYear ||
+      statusAcademicYear ||
       ""
     );
   }, [
     currentAcademicTerm?.academic_year,
     submissionWindow?.academicYear,
-    statusAcademicYear,
     initialData?.academicYear,
+    statusAcademicYear,
   ]);
 
   const activeSem = useMemo(() => {
     return (
       currentAcademicTerm?.semester ||
       submissionWindow?.semester ||
-      statusSemester ||
       initialData?.semester ||
+      statusSemester ||
       ""
     );
   }, [
     currentAcademicTerm?.semester,
     submissionWindow?.semester,
-    statusSemester,
     initialData?.semester,
+    statusSemester,
   ]);
 
   const hasActiveAcademicTerm = Boolean(
@@ -1775,9 +1794,11 @@ function FacultySubmissionPanelContent({
   }, [isMounted, fetchFacultyClasses]);
 
   useEffect(() => {
-    if (!isMounted || facultyClasses.length === 0) return;
+    if (!isMounted || facultyClasses.length === 0 || !activeAY || !activeSem) return;
     for (const cls of facultyClasses) {
-      if (!classStatusesCacheRef.current[cls.id]) {
+      const cacheKey = `${cls.id}_${activeAY}_${activeSem}`;
+      if (!classStatusesCacheRef.current[cacheKey]) {
+        classStatusesCacheRef.current[cacheKey] = [];
         void fetchStatuses(activeAY, activeSem, cls.id, { silent: true });
       }
     }
@@ -2504,7 +2525,10 @@ function FacultySubmissionPanelContent({
         });
         if (hasValidatedInLive) return true;
 
-        const cached = classStatusesCacheRef.current[cls.id] || [];
+        const cached =
+          classStatusesCacheRef.current[`${cls.id}_${activeAY}_${activeSem}`] ||
+          classStatusesCacheRef.current[cls.id] ||
+          [];
         return cached.some((r) => {
           if (r.code !== code) return false;
           return r.status === "Validated" || r.status === "Exempted";
@@ -2532,14 +2556,15 @@ function FacultySubmissionPanelContent({
     Boolean(submissionWindow?.isOpen);
 
   const isWindowConfigured =
-    Boolean(submissionWindow?.isConfigured) || hasActiveGracePeriod;
+    Boolean(submissionWindow?.isConfigured) || hasActiveSchedule || hasActiveGracePeriod;
   const isSubmissionAvailable =
     !isLoadingSubmissionWindow &&
-    (Boolean(submissionWindow?.isOpen) || hasActiveGracePeriod);
+    (Boolean(submissionWindow?.isOpen) || hasActiveSchedule || hasActiveGracePeriod);
   // Only considered closed if a schedule was actually configured in the database and not open
   const isWindowClosed =
-    Boolean(submissionWindow?.isConfigured) &&
+    isWindowConfigured &&
     !Boolean(submissionWindow?.isOpen) &&
+    !hasActiveSchedule &&
     !hasActiveGracePeriod;
   // True when admin has not configured any schedule (e.g. schedules deleted from database) and no personal deadline
   const isWindowNotConfigured =
@@ -2634,6 +2659,21 @@ function FacultySubmissionPanelContent({
       };
     }
     if (!submissionWindow || !submissionWindow.isConfigured) {
+      if (hasActiveSchedule) {
+        return {
+          isConfigured: true,
+          isOpen: true,
+          status: "Open" as const,
+          today: getTodayInManila(),
+          currentTime: getCurrentTimeInManila(),
+          startDate: getTodayInManila(),
+          endDate: getTodayInManila(),
+          startTime: "00:00:00",
+          endTime: "23:59:59",
+          academicYear: statusAcademicYear || null,
+          semester: (statusSemester || null) as any,
+        };
+      }
       return {
         isConfigured: false,
         isOpen: false,
@@ -2744,9 +2784,10 @@ function FacultySubmissionPanelContent({
             Array.isArray(data.requests) ? data.requests : [],
           );
           if (
-            data.isApproved ||
-            data.latestApprovedRequest ||
-            data.latestRequest?.status === "approved"
+            (data.isApproved ||
+              data.latestApprovedRequest ||
+              data.latestRequest?.status === "approved") &&
+            !submissionWindow?.isOpen
           ) {
             void refetchSubmissionWindow();
           }

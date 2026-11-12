@@ -1017,6 +1017,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       requirementStatuses,
       requirementTemplates: activeTemplateRows,
+      submissionWindow: windowState,
       counts,
       academicYear: activeAcademicYear,
       semester: normalizedSemLabel,
