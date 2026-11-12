@@ -242,7 +242,10 @@ export function normalizeSemester(
     normalized === "summer term" ||
     normalized === "summer sem" ||
     normalized === "summer" ||
-    normalized.includes("summer")
+    normalized.includes("summer") ||
+    normalized.includes("3rd") ||
+    normalized.includes("third") ||
+    normalized === "3"
   ) {
     return "Summer Semester";
   }

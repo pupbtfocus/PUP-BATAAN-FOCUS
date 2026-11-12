@@ -18,6 +18,7 @@ import {
   getSubmissionWindow,
   normalizeTime24Hour,
   parseSubmissionOrigin,
+  type SubmissionWindowSemester,
 } from "@/features/submissions/services/submission-window.service";
 
 type RequirementStatus = {
@@ -112,9 +113,9 @@ function isMissingRemarksColumnError(
 function normalizeSemester(sem?: string | null): string {
   if (!sem) return "";
   const s = sem.toLowerCase().trim().replace(/[-_]/g, " ");
+  if (s.includes("summer") || s.includes("midyear") || s.includes("3") || s.includes("third") || s.includes("3rd")) return "summer semester";
   if (s.includes("1") || s.includes("first") || s.includes("1st")) return "1st semester";
   if (s.includes("2") || s.includes("second") || s.includes("2nd")) return "2nd semester";
-  if (s.includes("3") || s.includes("third") || s.includes("3rd") || s.includes("summer")) return "3rd semester";
   return s;
 }
 
@@ -218,7 +219,14 @@ export async function GET(request: NextRequest) {
       dbTerm?.academic_year ||
       "2026-2027";
 
-    const activeSemester = normalizeSemester(
+    function toWindowSemester(sem?: string | null): SubmissionWindowSemester {
+      const norm = normalizeSemester(sem);
+      if (norm.includes("2")) return "2nd Semester";
+      if (norm.includes("summer") || norm.includes("3")) return "Summer Semester";
+      return "1st Semester";
+    }
+
+    const activeSemester = toWindowSemester(
       requestedSemester ||
       dbTerm?.semester ||
       "1st Semester"
@@ -270,20 +278,29 @@ export async function GET(request: NextRequest) {
 
     function toAcademicYearAndSemester(dateInput: string | null | undefined): {
       academicYear: string;
-      semester: "1st Semester" | "2nd Semester";
+      semester: "1st Semester" | "2nd Semester" | "Summer Semester";
     } {
       const sourceDate = dateInput ? new Date(dateInput) : new Date();
       const date = Number.isNaN(sourceDate.getTime()) ? new Date() : sourceDate;
       const month = date.getMonth() + 1;
       const year = date.getFullYear();
-      const startsSchoolYear = month >= 6;
 
-      return {
-        academicYear: startsSchoolYear
-          ? `${year}-${year + 1}`
-          : `${year - 1}-${year}`,
-        semester: startsSchoolYear ? "1st Semester" : "2nd Semester",
-      };
+      if (month >= 6 && month <= 10) {
+        return {
+          academicYear: `${year}-${year + 1}`,
+          semester: "1st Semester",
+        };
+      } else if (month >= 11 || month <= 3) {
+        return {
+          academicYear: month >= 11 ? `${year}-${year + 1}` : `${year - 1}-${year}`,
+          semester: "2nd Semester",
+        };
+      } else {
+        return {
+          academicYear: `${year - 1}-${year}`,
+          semester: "Summer Semester",
+        };
+      }
     }
 
     // 2.1 Fetch active requirement templates
@@ -296,12 +313,6 @@ export async function GET(request: NextRequest) {
     }> = [];
 
     try {
-      const isCurrentTerm = Boolean(
-        dbCurrentTerm &&
-          (!requestedAcademicYear || requestedAcademicYear === dbCurrentTerm.academic_year) &&
-          (!requestedSemester || normalizeSemester(requestedSemester) === normalizeSemester(dbCurrentTerm.semester))
-      );
-
       const { data: dbTemplates, error: dbTemplatesError } = await supabase
         .from("requirement_templates")
         .select("code, title, is_mandatory, max_size_mb, allowed_formats, is_active")
@@ -310,12 +321,7 @@ export async function GET(request: NextRequest) {
 
       if (!dbTemplatesError && Array.isArray(dbTemplates)) {
         activeTemplateRows = dbTemplates
-          .filter((t: any) => {
-            if (isCurrentTerm) {
-              return t.is_active !== false;
-            }
-            return !isTemplateHiddenForTerm(t, activeAcademicYear, activeSemester, false);
-          })
+          .filter((t: any) => t.is_active !== false)
           .map((t) => ({
             code: t.code,
             title: t.title,
@@ -978,12 +984,7 @@ export async function GET(request: NextRequest) {
       ).length,
     };
 
-    const normalizedSemLabel =
-      activeSemester === "1st semester"
-        ? "1st Semester"
-        : activeSemester === "2nd semester"
-          ? "2nd Semester"
-          : activeSemester;
+    const normalizedSemLabel = activeSemester;
 
     const globalWindowLocked = !windowState.isOpen || !windowState.isConfigured;
 

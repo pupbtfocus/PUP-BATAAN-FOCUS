@@ -87,7 +87,20 @@ export function SuperAdminComplianceAnalytics({
   );
 
   const summary = useMemo(() => {
-    const totalRequired = DEFAULT_REQUIREMENTS.length;
+    const allRequirementCodes = new Set<string>();
+    for (const faculty of activeFaculty) {
+      if (faculty.requirementStatus) {
+        for (const k of Object.keys(faculty.requirementStatus)) {
+          allRequirementCodes.add(k);
+        }
+      }
+    }
+    const requiredCodes =
+      allRequirementCodes.size > 0
+        ? Array.from(allRequirementCodes)
+        : (DEFAULT_REQUIREMENTS as readonly string[]);
+
+    const totalRequired = requiredCodes.length;
     const totalActive = activeFaculty.length;
 
     let completedFaculty = 0;
@@ -102,13 +115,13 @@ export function SuperAdminComplianceAnalytics({
 
     for (const faculty of activeFaculty) {
       const statusMap =
-        faculty.requirementStatus || ({} as Record<RequirementCode, RequirementStatus>);
+        faculty.requirementStatus || ({} as Record<string, RequirementStatus>);
       let validatedCount = 0;
       let uploadedCount = 0;
       let revisionCount = 0;
 
-      for (const code of DEFAULT_REQUIREMENTS) {
-        const rawStatus = statusMap[code] || "not_submitted";
+      for (const code of requiredCodes) {
+        const rawStatus = statusMap[code as RequirementCode] || "not_submitted";
         if (rawStatus === "validated") {
           validatedCount += 1;
         } else if (rawStatus === "uploaded") {
@@ -263,60 +276,27 @@ export function SuperAdminComplianceAnalytics({
     },
   ];
 
-  const pieSlices = useMemo(() => {
+  const donutRadius = 66;
+  const donutCircumference = 2 * Math.PI * donutRadius;
+
+  const donutSegments = useMemo(() => {
     if (total === 0) return [];
-    const activeCategories = categories.filter((c) => c.count > 0);
-    if (activeCategories.length === 0) return [];
+    let accumulatedOffset = 0;
 
-    const cx = 90;
-    const cy = 90;
-    const r = 80;
+    return categories
+      .filter((cat) => cat.count > 0)
+      .map((cat) => {
+        const strokeLength = (cat.count / total) * donutCircumference;
+        const strokeDashoffset = -accumulatedOffset;
+        accumulatedOffset += strokeLength;
 
-    if (activeCategories.length === 1) {
-      return [
-        {
-          ...activeCategories[0],
-          isFull: true,
-          d: "",
-          labelX: cx,
-          labelY: cy,
-          showLabel: true,
-        },
-      ];
-    }
-
-    let currentAngle = -Math.PI / 2; // Start at 12 o'clock
-
-    return activeCategories.map((cat) => {
-      const sliceAngle = (cat.count / total) * 2 * Math.PI;
-      const startAngle = currentAngle;
-      const endAngle = currentAngle + sliceAngle;
-      currentAngle = endAngle;
-
-      const x1 = cx + r * Math.cos(startAngle);
-      const y1 = cy + r * Math.sin(startAngle);
-      const x2 = cx + r * Math.cos(endAngle);
-      const y2 = cy + r * Math.sin(endAngle);
-      const largeArcFlag = sliceAngle > Math.PI ? 1 : 0;
-
-      const d = `M ${cx} ${cy} L ${x1.toFixed(3)} ${y1.toFixed(3)} A ${r} ${r} 0 ${largeArcFlag} 1 ${x2.toFixed(3)} ${y2.toFixed(3)} Z`;
-
-      const midAngle = startAngle + sliceAngle / 2;
-      const labelRadius = r * 0.65;
-      const labelX = cx + labelRadius * Math.cos(midAngle);
-      const labelY = cy + labelRadius * Math.sin(midAngle);
-      const showLabel = cat.pct >= 7;
-
-      return {
-        ...cat,
-        isFull: false,
-        d,
-        labelX,
-        labelY,
-        showLabel,
-      };
-    });
-  }, [categories, total]);
+        return {
+          ...cat,
+          strokeLength,
+          strokeDashoffset,
+        };
+      });
+  }, [categories, total, donutCircumference]);
 
   return (
     <section className="mb-6">
@@ -383,79 +363,55 @@ export function SuperAdminComplianceAnalytics({
           </div>
         </div>
 
-        {/* Visual Analytics: Pie Chart or Bar Graph */}
+        {/* Visual Analytics: Pie/Donut Chart or Bar Graph */}
         {chartView === "pie" ? (
           <div className="flex flex-col lg:flex-row items-center gap-6 pt-1">
-            {/* Left: Solid Pie Chart with in-slice percentage labels */}
-            <div className="flex flex-col items-center justify-center shrink-0">
-              <svg className="w-48 h-48 sm:w-56 sm:h-56 drop-shadow-md" viewBox="0 0 180 180">
-                {total === 0 || pieSlices.length === 0 ? (
+            {/* Left: Donut Chart with overall submission rate in center */}
+            <div className="relative flex items-center justify-center shrink-0">
+              <svg className="w-48 h-48 sm:w-56 sm:h-56 -rotate-90 drop-shadow-sm" viewBox="0 0 180 180">
+                <circle
+                  cx="90"
+                  cy="90"
+                  r={donutRadius}
+                  fill="transparent"
+                  stroke="currentColor"
+                  strokeWidth="22"
+                  className="text-slate-100 dark:text-slate-800"
+                />
+                {total === 0 ? (
                   <circle
                     cx="90"
                     cy="90"
-                    r="80"
-                    fill="#e2e8f0"
-                    className="dark:fill-slate-800"
+                    r={donutRadius}
+                    fill="transparent"
+                    stroke="#cbd5e1"
+                    strokeWidth="22"
+                    className="dark:stroke-slate-700"
                   />
                 ) : (
-                  pieSlices.map((slice) =>
-                    slice.isFull ? (
-                      <g key={slice.id}>
-                        <circle
-                          cx="90"
-                          cy="90"
-                          r="80"
-                          fill={slice.color}
-                          stroke="#ffffff"
-                          strokeWidth="2.5"
-                          className="dark:stroke-slate-900"
-                        />
-                        <text
-                          x={slice.labelX}
-                          y={slice.labelY}
-                          textAnchor="middle"
-                          dominantBaseline="central"
-                          fill="#ffffff"
-                          className="text-sm sm:text-base font-black select-none pointer-events-none"
-                          style={{ filter: "drop-shadow(0px 1px 2px rgba(0,0,0,0.7))" }}
-                        >
-                          100%
-                        </text>
-                      </g>
-                    ) : (
-                      <g key={slice.id}>
-                        <path
-                          d={slice.d}
-                          fill={slice.color}
-                          stroke="#ffffff"
-                          strokeWidth="2.5"
-                          className="dark:stroke-slate-900 transition-all duration-300 hover:opacity-90 cursor-pointer"
-                        >
-                          <title>{slice.label}: {slice.count} ({slice.pct}%)</title>
-                        </path>
-                        {slice.showLabel && (
-                          <text
-                            x={slice.labelX}
-                            y={slice.labelY}
-                            textAnchor="middle"
-                            dominantBaseline="central"
-                            fill="#ffffff"
-                            className="text-xs sm:text-[13px] font-black select-none pointer-events-none"
-                            style={{ filter: "drop-shadow(0px 1px 2px rgba(0,0,0,0.7))" }}
-                          >
-                            {slice.pct}%
-                          </text>
-                        )}
-                      </g>
-                    )
-                  )
+                  donutSegments.map((seg) => (
+                    <circle
+                      key={seg.id}
+                      cx="90"
+                      cy="90"
+                      r={donutRadius}
+                      fill="transparent"
+                      stroke={seg.color}
+                      strokeWidth="22"
+                      strokeDasharray={`${seg.strokeLength} ${donutCircumference}`}
+                      strokeDashoffset={seg.strokeDashoffset}
+                      className="transition-all duration-700 ease-out cursor-pointer hover:opacity-90"
+                    >
+                      <title>{seg.label}: {seg.count} ({seg.pct}%)</title>
+                    </circle>
+                  ))
                 )}
               </svg>
-              <div className="mt-2.5 inline-flex items-center gap-1.5 rounded-full bg-slate-100 dark:bg-slate-800/80 px-2.5 py-0.5 border border-slate-200/80 dark:border-slate-700/60 shadow-2xs">
-                <span className="text-xs font-black text-slate-900 dark:text-slate-100">
+              <div className="absolute inset-0 flex flex-col items-center justify-center text-center pointer-events-none">
+                <span className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-slate-100 leading-none">
                   {summary.overallSubmissionRate}%
                 </span>
-                <span className="text-[10px] font-semibold text-slate-500 dark:text-slate-400">
+                <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 mt-1">
                   Turned In
                 </span>
               </div>

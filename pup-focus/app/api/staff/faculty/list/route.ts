@@ -28,13 +28,30 @@ type SubmissionRow = {
   document_versions?: Array<{ id: string }> | null;
 };
 
-function buildInitialRequirementStatus() {
-  return DEFAULT_REQUIREMENTS.reduce(
+function matchRequirementCode(
+  rawCode: string | null | undefined,
+  requirementId: string | null | undefined,
+  templates: Array<{ id?: string; code: string }>,
+): string | null {
+  if (requirementId) {
+    const byId = templates.find((t) => t.id === requirementId);
+    if (byId) return byId.code;
+  }
+  if (!rawCode) return null;
+  const normalized = rawCode.trim().toLowerCase();
+  const byCode = templates.find((t) => t.code.trim().toLowerCase() === normalized);
+  if (byCode) return byCode.code;
+  return rawCode;
+}
+
+function buildInitialRequirementStatus(activeCodes?: readonly string[]) {
+  const codes = activeCodes && activeCodes.length > 0 ? activeCodes : DEFAULT_REQUIREMENTS;
+  return codes.reduce(
     (acc, requirementCode) => {
       acc[requirementCode] = "not_submitted";
       return acc;
     },
-    {} as Record<(typeof DEFAULT_REQUIREMENTS)[number], RequirementStatus>,
+    {} as Record<string, RequirementStatus>,
   );
 }
 
@@ -229,6 +246,7 @@ export async function GET(request: NextRequest) {
       { data: allAssignments, error: assignmentsError },
       { data: allProfiles, error: profilesError },
       { data: allPrograms, error: programsError },
+      { data: allTemplates },
     ] = await Promise.all([
       supabase
         .from("user_roles")
@@ -244,6 +262,10 @@ export async function GET(request: NextRequest) {
         .from("profiles")
         .select("id, user_id, full_name, email, created_at"),
       supabase.from("programs").select("id, code, name"),
+      supabase
+        .from("requirement_templates")
+        .select("id, code, title, is_mandatory, is_active")
+        .order("created_at", { ascending: true }),
     ]);
 
     if (userRolesError) {
@@ -429,21 +451,31 @@ export async function GET(request: NextRequest) {
       validated: 2,
     };
 
+    const activeTemplates = (allTemplates && allTemplates.length > 0)
+      ? allTemplates.filter((t: any) => t.is_active !== false)
+      : null;
+
+    const activeRequirementCodes: readonly string[] =
+      activeTemplates && activeTemplates.length > 0
+        ? activeTemplates.map((t: any) => t.code)
+        : DEFAULT_REQUIREMENTS;
+
     const requirementStatusByProfileId = new Map<
       string,
-      Record<(typeof DEFAULT_REQUIREMENTS)[number], RequirementStatus>
+      Record<string, RequirementStatus>
     >();
 
     for (const profileId of profileIds) {
       requirementStatusByProfileId.set(
         profileId,
-        buildInitialRequirementStatus(),
+        buildInitialRequirementStatus(activeRequirementCodes),
       );
     }
 
     function normalizeSemester(sem?: string | null): string {
       if (!sem) return "";
       const s = sem.toLowerCase().trim();
+      if (s.includes("summer") || s.includes("midyear")) return "summer semester";
       if (s.includes("1") || s.includes("first") || s.includes("1st")) return "1st semester";
       if (s.includes("2") || s.includes("second") || s.includes("2nd")) return "2nd semester";
       return s;
@@ -456,20 +488,29 @@ export async function GET(request: NextRequest) {
 
     function toAcademicYearAndSemester(dateInput: string | null | undefined): {
       academicYear: string;
-      semester: "1st Semester" | "2nd Semester";
+      semester: "1st Semester" | "2nd Semester" | "Summer Semester";
     } {
       const sourceDate = dateInput ? new Date(dateInput) : new Date();
       const date = Number.isNaN(sourceDate.getTime()) ? new Date() : sourceDate;
       const month = date.getMonth() + 1;
       const year = date.getFullYear();
-      const startsSchoolYear = month >= 6;
 
-      return {
-        academicYear: startsSchoolYear
-          ? `${year}-${year + 1}`
-          : `${year - 1}-${year}`,
-        semester: startsSchoolYear ? "1st Semester" : "2nd Semester",
-      };
+      if (month >= 6 && month <= 10) {
+        return {
+          academicYear: `${year}-${year + 1}`,
+          semester: "1st Semester",
+        };
+      } else if (month >= 11 || month <= 3) {
+        return {
+          academicYear: month >= 11 ? `${year}-${year + 1}` : `${year - 1}-${year}`,
+          semester: "2nd Semester",
+        };
+      } else {
+        return {
+          academicYear: `${year - 1}-${year}`,
+          semester: "Summer Semester",
+        };
+      }
     }
 
     const { data: activeTerm } = await supabase
@@ -495,16 +536,23 @@ export async function GET(request: NextRequest) {
         .map((a: any) => a.id),
     );
 
-    for (const row of (submissionRows ?? []) as (SubmissionRow & { faculty_assignment_id?: string | null })[]) {
+    for (const row of (submissionRows ?? []) as (SubmissionRow & { faculty_assignment_id?: string | null; requirement_id?: string | null })[]) {
       const profileId = row.faculty_profile_id;
-      const requirementCode = row.requirement_code as
-        | (typeof DEFAULT_REQUIREMENTS)[number]
-        | undefined;
+      let requirementCode = row.requirement_code;
+
+      if (allTemplates && allTemplates.length > 0) {
+        const matched = matchRequirementCode(
+          row.requirement_code,
+          row.requirement_id,
+          allTemplates,
+        );
+        if (matched) requirementCode = matched;
+      }
 
       if (
         !profileId ||
         !requirementCode ||
-        !DEFAULT_REQUIREMENTS.includes(requirementCode)
+        !activeRequirementCodes.includes(requirementCode)
       ) {
         continue;
       }
@@ -516,14 +564,6 @@ export async function GET(request: NextRequest) {
       if (activeAY && activeSem) {
         if (row.faculty_assignment_id && activeAssignmentIdSet.size > 0) {
           if (!activeAssignmentIdSet.has(row.faculty_assignment_id)) {
-            continue;
-          }
-        } else if (row.submitted_at) {
-          const subTerm = toAcademicYearAndSemester(row.submitted_at);
-          if (
-            normalizeAcademicYear(subTerm.academicYear) !== activeAY ||
-            normalizeSemester(subTerm.semester) !== activeSem
-          ) {
             continue;
           }
         }

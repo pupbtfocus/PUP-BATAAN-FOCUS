@@ -268,13 +268,7 @@ export async function getFacultyInitialData(
 
   if (hasDbTemplates) {
     activeTemplates = allDbTemplates
-      .filter((t: any) => {
-        if (isCurrentTerm) {
-          return t.is_active !== false;
-        }
-        // Past term: only hide if it was explicitly marked hidden for that past term
-        return !isTemplateHiddenForTerm(t, activeAcademicYear, activeSemester, false);
-      })
+      .filter((t: any) => t.is_active !== false)
       .map((t) => ({
         code: t.code,
         title: t.title,

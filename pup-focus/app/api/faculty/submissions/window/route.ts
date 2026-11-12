@@ -5,6 +5,7 @@ import {
   getFacultyPersonalDeadline,
   getSubmissionWindow,
   normalizeSemester,
+  type SubmissionWindowSemester,
 } from "@/features/submissions/services/submission-window.service";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { getServiceRoleClient } from "@/lib/supabase/service-role";
@@ -35,7 +36,12 @@ export async function GET() {
 
     const activeAY = currentTerm?.academic_year || "2026-2027";
     const rawSem = currentTerm?.semester ? normalizeSemester(currentTerm.semester) : "1st Semester";
-    const activeSem: "1st Semester" | "2nd Semester" = rawSem.includes("2") ? "2nd Semester" : "1st Semester";
+    const activeSem: SubmissionWindowSemester =
+      rawSem.includes("summer") || rawSem.includes("3")
+        ? "Summer Semester"
+        : rawSem.includes("2")
+        ? "2nd Semester"
+        : "1st Semester";
 
     // 2. Evaluate schedule strictly for active term
     const config = await getSubmissionWindow(supabase, {

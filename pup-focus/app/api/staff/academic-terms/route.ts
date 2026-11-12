@@ -9,6 +9,8 @@ import {
   getTodayInManila,
   getCurrentTimeInManila,
   normalizeTime24Hour,
+  isValid12HourTimeInput,
+  convert12HourTo24Hour,
 } from "@/features/submissions/services/submission-window.service";
 import { logTransactionEvent } from "@/features/transaction-logs/services/transaction-log.service";
 
@@ -1111,147 +1113,41 @@ export async function PATCH(request: NextRequest) {
       );
     }
 
-    // If changing academic term and there's currently an open schedule, auto-close for the next term
-    if (hasCurrentlyOpenSchedule) {
-      // 1. Immediately delete the active window so no submission window remains open
-      await supabase.from("submission_windows").delete().eq("id", 1);
+    // Sync the active submission window for the newly activated term
+    const { data: targetTermSchedule } = await supabase
+      .from("submission_window_terms")
+      .select("start_date, end_date, start_time, end_time")
+      .eq("academic_year", academicYear)
+      .eq("semester", semester)
+      .maybeSingle();
 
-      // 2. Clear/close the previous term's schedule in submission_window_terms
-      if (currentTerm?.academic_year && currentTerm?.semester) {
-        await supabase
-          .from("submission_window_terms")
-          .update({
-            start_date: null,
-            end_date: null,
-            start_time: null,
-            end_time: null,
-          })
-          .eq("academic_year", currentTerm.academic_year)
-          .eq("semester", currentTerm.semester);
+    if (targetTermSchedule?.start_date && targetTermSchedule?.end_date) {
+      const rawStart = targetTermSchedule.start_time || "09:00:00";
+      const rawEnd = targetTermSchedule.end_time || "17:00:00";
+      const startTime24 = isValid12HourTimeInput(rawStart)
+        ? convert12HourTo24Hour(rawStart)
+        : normalizeTime24Hour(rawStart) || "09:00:00";
+      const endTime24 = isValid12HourTimeInput(rawEnd)
+        ? convert12HourTo24Hour(rawEnd)
+        : normalizeTime24Hour(rawEnd) || "17:00:00";
 
-        await supabase.from("submission_window_terms").upsert(
-          {
-            academic_year: currentTerm.academic_year,
-            semester: currentTerm.semester,
-            start_date: null,
-            end_date: null,
-            start_time: null,
-            end_time: null,
-            created_by: user.id,
-          },
-          { onConflict: "academic_year,semester" },
-        );
-      }
-
-      // 3. Ensure the newly activated next term is also closed (clear any pre-existing open schedule for it)
-      const { data: nextTermSchedule } = await supabase
-        .from("submission_window_terms")
-        .select("start_date, end_date, start_time, end_time")
-        .eq("academic_year", academicYear)
-        .eq("semester", semester)
-        .maybeSingle();
-
-      if (nextTermSchedule?.start_date && nextTermSchedule?.end_date) {
-        const nextStartIso = `${nextTermSchedule.start_date}T${normalizeTime24Hour(nextTermSchedule.start_time || "00:00:00")}`;
-        const nextEndIso = `${nextTermSchedule.end_date}T${normalizeTime24Hour(nextTermSchedule.end_time || "23:59:59")}`;
-        if (nowDateTime >= nextStartIso && nowDateTime <= nextEndIso) {
-          await supabase
-            .from("submission_window_terms")
-            .update({
-              start_date: null,
-              end_date: null,
-              start_time: null,
-              end_time: null,
-            })
-            .eq("academic_year", academicYear)
-            .eq("semester", semester);
-
-          await supabase.from("submission_window_terms").upsert(
-            {
-              academic_year: academicYear,
-              semester,
-              start_date: null,
-              end_date: null,
-              start_time: null,
-              end_time: null,
-              created_by: user.id,
-            },
-            { onConflict: "academic_year,semester" },
-          );
-        }
-      }
-
-      // 4. Log the auto-closure audit event and transaction
-      void logTransactionEvent({
-        actorId: user.id,
-        action: "submission_window.close",
-        entityType: "submission_window",
-        entityId: user.id,
-        metadata: {
-          previous_academic_year: currentTerm?.academic_year,
-          previous_semester: currentTerm?.semester,
-          new_academic_year: academicYear,
-          new_semester: semester,
-          reason: "Auto-closed on academic term transition",
+      // The newly activated term has a configured schedule: activate it in submission_windows id=1
+      await supabase.from("submission_windows").upsert(
+        {
+          id: 1,
+          start_date: targetTermSchedule.start_date,
+          end_date: targetTermSchedule.end_date,
+          start_time: startTime24,
+          end_time: endTime24,
+          academic_year: academicYear,
+          semester,
+          updated_at: new Date().toISOString(),
         },
-      });
-
-      try {
-        let actorName = "Administrator";
-        const { data: prof } = await supabase
-          .from("profiles")
-          .select("full_name, email")
-          .eq("user_id", user.id)
-          .maybeSingle();
-        if (prof?.full_name || prof?.email) {
-          actorName = prof.full_name || prof.email;
-        }
-
-        await supabase.from("submission_window_logs").insert({
-          action_type: "SCHEDULE_CLOSE",
-          extended_by: user.id,
-          extended_by_name: actorName,
-          old_end_date: existingWin?.end_date || null,
-          old_end_time: existingWin?.end_time || null,
-          new_end_date: todayManila,
-          new_end_time: timeManila,
-          scope: "global",
-          scope_target: `${currentTerm?.academic_year || academicYear} • ${currentTerm?.semester || semester}`,
-          reason: "Academic Term Changed",
-          reason_details: `Submission schedule was automatically closed upon changing active academic term to S.Y. ${academicYear} (${semester})`,
-          notified_faculty: true,
-        });
-      } catch (logErr) {
-        console.warn("Failed to insert submission_window_logs record on term change:", logErr);
-      }
+        { onConflict: "id" },
+      );
     } else {
-      // If there was no currently open schedule, synchronize schedule strictly for this newly activated term:
-      const { data: termSchedule } = await supabase
-        .from("submission_window_terms")
-        .select("start_date, end_date, start_time, end_time")
-        .eq("academic_year", academicYear)
-        .eq("semester", semester)
-        .maybeSingle();
-
-      if (termSchedule?.start_date && termSchedule?.end_date) {
-        await supabase
-          .from("submission_windows")
-          .upsert(
-            {
-              id: 1,
-              start_date: termSchedule.start_date,
-              end_date: termSchedule.end_date,
-              start_time: termSchedule.start_time || "09:00:00",
-              end_time: termSchedule.end_time || "17:00:00",
-              academic_year: academicYear,
-              semester,
-              updated_at: new Date().toISOString(),
-            },
-            { onConflict: "id" },
-          );
-      } else {
-        await supabase.from("submission_windows").delete().eq("id", 1);
-      }
+      // No schedule configured yet for this term: remove row 1 so it correctly shows as unconfigured
+      await supabase.from("submission_windows").delete().eq("id", 1);
     }
 
     void logTransactionEvent({

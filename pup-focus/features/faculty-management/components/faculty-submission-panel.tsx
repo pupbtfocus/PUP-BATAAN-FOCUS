@@ -236,7 +236,11 @@ export const getFileBrand = (
     badgeBg: "bg-slate-800 text-white dark:bg-slate-700 dark:text-slate-100",
   };
 };
-const SEMESTER_OPTIONS = ["1st Semester", "2nd Semester"] as const;
+const SEMESTER_OPTIONS = [
+  "1st Semester",
+  "2nd Semester",
+  "Summer Semester",
+] as const;
 const REQUIREMENT_DESCRIPTIONS: Record<string, string> = {
   grade_sheet: "Official signed grade sheets for assigned course sections.",
   enhanced_syllabus:
@@ -360,28 +364,33 @@ function toAcademicYearAndSemester(dateInput: string | null | undefined) {
   const date = Number.isNaN(sourceDate.getTime()) ? new Date() : sourceDate;
   const month = date.getMonth() + 1;
   const year = date.getFullYear();
-  const startsSchoolYear = month >= 6;
-  return {
-    academicYear: startsSchoolYear
-      ? `${year}-${year + 1}`
-      : `${year - 1}-${year}`,
-    semester: startsSchoolYear ? "1st Semester" : "2nd Semester",
-  } as const;
+
+  if (month >= 6 && month <= 10) {
+    return {
+      academicYear: `${year}-${year + 1}`,
+      semester: "1st Semester" as const,
+    };
+  } else if (month >= 11 || month <= 3) {
+    return {
+      academicYear: month >= 11 ? `${year}-${year + 1}` : `${year - 1}-${year}`,
+      semester: "2nd Semester" as const,
+    };
+  } else {
+    return {
+      academicYear: `${year - 1}-${year}`,
+      semester: "Summer Semester" as const,
+    };
+  }
 }
 function normalizeSemester(sem?: string | null): string {
   if (!sem) return "";
   const s = sem.toLowerCase().trim();
+  if (s.includes("summer") || s.includes("midyear") || s.includes("3") || s.includes("third") || s.includes("3rd"))
+    return "summer semester";
   if (s.includes("1") || s.includes("first") || s.includes("1st"))
     return "1st semester";
   if (s.includes("2") || s.includes("second") || s.includes("2nd"))
     return "2nd semester";
-  if (
-    s.includes("3") ||
-    s.includes("third") ||
-    s.includes("3rd") ||
-    s.includes("summer")
-  )
-    return "3rd semester";
   return s;
 }
 function normalizeAcademicYear(ay?: string | null): string {
@@ -1455,7 +1464,10 @@ function FacultySubmissionPanelContent({
     if (initialData?.requirementTemplates !== undefined) {
       return;
     }
-    fetch("/api/staff/requirement-templates", { cache: "no-store" })
+    fetch("/api/staff/requirement-templates?active=true", {
+      cache: "no-store",
+      credentials: "include",
+    })
       .then((res) => res.json())
       .then((data) => {
         const list = Array.isArray(data)
@@ -1647,22 +1659,26 @@ function FacultySubmissionPanelContent({
   );
 
   const activeTemplates = useMemo<RequirementTemplateData[]>(() => {
+    if (requirementTemplates && requirementTemplates.length > 0) {
+      return requirementTemplates.filter((t: any) => t.is_active !== false);
+    }
+    if (isTemplatesFetched) {
+      return [];
+    }
     if (
-      isTemplatesFetched ||
-      (requirementTemplates && requirementTemplates.length > 0)
+      initialData?.requirementTemplates &&
+      initialData.requirementTemplates.length > 0
     ) {
-      return (requirementTemplates || []).filter(
+      return initialData.requirementTemplates.filter(
         (t: any) => t.is_active !== false,
       );
     }
-    return DEFAULT_REQUIREMENTS.map((code) => ({
-      code,
-      title: REQUIREMENT_LABEL[code] || code,
-      is_mandatory: true,
-      max_size_mb: 50,
-      allowed_formats: ["PDF", "DOCX", "XLSX", "PNG", "JPG", "ZIP"],
-    }));
-  }, [requirementTemplates, isTemplatesFetched]);
+    return [];
+  }, [
+    requirementTemplates,
+    isTemplatesFetched,
+    initialData?.requirementTemplates,
+  ]);
 
   const templateTitleMap = useMemo(() => {
     const map = new Map<string, string>();
@@ -2884,7 +2900,10 @@ function FacultySubmissionPanelContent({
     setDirectUploadMessage(null);
 
     // Refresh active templates immediately so any recent change in admin is active
-    fetch("/api/staff/requirement-templates", { cache: "no-store" })
+    fetch("/api/staff/requirement-templates?active=true", {
+      cache: "no-store",
+      credentials: "include",
+    })
       .then((res) => res.json())
       .then((data) => {
         const list = Array.isArray(data)

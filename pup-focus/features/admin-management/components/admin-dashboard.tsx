@@ -474,6 +474,15 @@ export function SuperAdminDashboard({
     const inactive = total - active;
     const activePct = total > 0 ? Math.round((active / total) * 100) : 0;
 
+    const allKeys = new Set<string>();
+    for (const f of facultyAccounts) {
+      if (f.requirementStatus) {
+        for (const k of Object.keys(f.requirementStatus)) allKeys.add(k);
+      }
+    }
+    const reqCodes = allKeys.size > 0 ? Array.from(allKeys) : (DEFAULT_REQUIREMENTS as readonly string[]);
+    const totalRequired = reqCodes.length;
+
     let completed = 0;
     let started = 0;
     let notStarted = 0;
@@ -482,11 +491,11 @@ export function SuperAdminDashboard({
       if (!f.is_active) continue;
       const statusMap = f.requirementStatus || {};
       let turnedIn = 0;
-      for (const code of DEFAULT_REQUIREMENTS) {
+      for (const code of reqCodes) {
         const s = statusMap[code];
         if (s === "validated" || s === "uploaded") turnedIn += 1;
       }
-      if (turnedIn === DEFAULT_REQUIREMENTS.length && DEFAULT_REQUIREMENTS.length > 0) {
+      if (turnedIn === totalRequired && totalRequired > 0) {
         completed += 1;
       } else if (turnedIn > 0) {
         started += 1;

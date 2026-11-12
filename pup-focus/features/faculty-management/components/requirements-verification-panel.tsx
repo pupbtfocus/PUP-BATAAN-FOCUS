@@ -534,7 +534,10 @@ export function FacultyVerificationDrawer({
     let isCancelled = false;
     async function loadTemplates() {
       try {
-        const res = await fetch("/api/staff/requirement-templates");
+        const res = await fetch("/api/staff/requirement-templates?active=true", {
+          cache: "no-store",
+          credentials: "include",
+        });
         if (res.ok && !isCancelled) {
           const data = await res.json();
           if (Array.isArray(data.templates) && data.templates.length > 0) {
@@ -801,18 +804,19 @@ export function FacultyVerificationDrawer({
     }> = [];
     const seenCodes = new Set<string>();
 
-    const templateSource =
+    const activeFromProp =
       requirementTemplatesProp && requirementTemplatesProp.length > 0
-        ? requirementTemplatesProp
-        : dbTemplates.length > 0
-        ? dbTemplates
-        : DEFAULT_REQUIREMENTS.map((code) => ({
-            code,
-            title: REQUIREMENT_LABEL[code] || code,
-            is_mandatory: true,
-          }));
+        ? requirementTemplatesProp.filter((t: any) => t.is_active !== false)
+        : null;
+    const activeFromDb =
+      dbTemplates && dbTemplates.length > 0
+        ? dbTemplates.filter((t: any) => t.is_active !== false)
+        : null;
+
+    const templateSource = activeFromProp ?? activeFromDb ?? [];
 
     for (const tpl of templateSource) {
+      if ((tpl as any).is_active === false) continue;
       const canonicalCode = matchRequirementCode(tpl.code) || tpl.code;
       if (!seenCodes.has(canonicalCode)) {
         items.push({
@@ -827,34 +831,21 @@ export function FacultyVerificationDrawer({
       }
     }
 
-    if (
-      (!requirementTemplatesProp || requirementTemplatesProp.length === 0) &&
-      dbTemplates.length === 0
-    ) {
-      for (const code of DEFAULT_REQUIREMENTS) {
-        if (!seenCodes.has(code)) {
+    if (initialTab === "history") {
+      const relevantSubmissions = [...submissions, ...historySubmissions];
+      for (const sub of relevantSubmissions) {
+        const rawCode = sub.requirement_code;
+        const canonicalCode = matchRequirementCode(rawCode) || rawCode;
+        if (canonicalCode && !seenCodes.has(canonicalCode)) {
           items.push({
-            code,
-            title: REQUIREMENT_LABEL[code] || getFriendlyRequirementName(code),
-            isMandatory: true,
+            code: canonicalCode,
+            title:
+              (REQUIREMENT_LABEL as Record<string, string>)[canonicalCode] ||
+              getFriendlyRequirementName(canonicalCode),
+            isMandatory: false,
           });
-          seenCodes.add(code);
+          seenCodes.add(canonicalCode);
         }
-      }
-    }
-
-    for (const sub of [...submissions, ...historySubmissions]) {
-      const rawCode = sub.requirement_code;
-      const canonicalCode = matchRequirementCode(rawCode) || rawCode;
-      if (canonicalCode && !seenCodes.has(canonicalCode)) {
-        items.push({
-          code: canonicalCode,
-          title:
-            (REQUIREMENT_LABEL as Record<string, string>)[canonicalCode] ||
-            getFriendlyRequirementName(canonicalCode),
-          isMandatory: false,
-        });
-        seenCodes.add(canonicalCode);
       }
     }
 
@@ -867,7 +858,15 @@ export function FacultyVerificationDrawer({
     });
 
     return items;
-  }, [requirementTemplatesProp, dbTemplates, submissions, historySubmissions]);
+  }, [
+    requirementTemplatesProp,
+    dbTemplates,
+    submissions,
+    historySubmissions,
+    initialTab,
+    academicYear,
+    semester,
+  ]);
 
   interface SubmissionClassGroup {
     key: string;
@@ -5191,8 +5190,9 @@ export function RequirementsPanel({
 
   const loadTemplates = useCallback(async () => {
     try {
-      const res = await fetch("/api/staff/requirement-templates", {
+      const res = await fetch("/api/staff/requirement-templates?active=true", {
         cache: "no-store",
+        credentials: "include",
       });
       if (res.ok) {
         const data = await res.json();
@@ -5502,6 +5502,7 @@ export function RequirementsPanel({
 
   // Load active term, templates, and all faculty statuses in a single batched request on mount
   useEffect(() => {
+    void loadTemplates();
     if (facultyAccounts.length === 0) {
       setIsLoadingStatuses(false);
       return;
@@ -5563,18 +5564,10 @@ export function RequirementsPanel({
     const activeTemplates =
       requirementTemplates.length > 0
         ? requirementTemplates.filter((t) => t.is_active !== false)
-        : DEFAULT_REQUIREMENTS.map((code) => ({
-            code,
-            title: REQUIREMENT_LABEL[code] || code,
-            is_mandatory: true,
-            is_active: true,
-          }));
+        : [];
 
     const mandatoryTemplates = activeTemplates.filter((t) => t.is_mandatory);
-    const totalMandatoryCount =
-      mandatoryTemplates.length > 0
-        ? mandatoryTemplates.length
-        : DEFAULT_REQUIREMENTS.length;
+    const totalMandatoryCount = mandatoryTemplates.length;
 
     for (const faculty of facultyAccounts) {
       const statusRecord = facultyStatuses[faculty.id];
@@ -5897,7 +5890,9 @@ export function RequirementsPanel({
           initialRequirementCode={
             openedFromRowFlag ? null : initialRequirementCode
           }
-          requirementTemplates={requirementTemplates}
+          requirementTemplates={requirementTemplates.filter(
+            (t) => t.is_active !== false,
+          )}
           initialClasses={
             submissionsCache[reviewingFaculty.id]?.classes ??
             facultyClassProgress[reviewingFaculty.id]
