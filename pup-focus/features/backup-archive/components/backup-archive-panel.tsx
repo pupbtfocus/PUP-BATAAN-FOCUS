@@ -142,14 +142,15 @@ export function BackupArchivePanel() {
     academic_year: string;
     semester: string;
   } | null>(null);
-  const [cleanMode, setCleanMode] = useState<"files_only" | "full_reset">(
-    "files_only",
-  );
   const [cleanPreview, setCleanPreview] = useState<{
     submissionsCount: number;
     storageFilesCount: number;
+    orphanedFilesCount?: number;
     totalSizeBytes: number;
+    orphanedSizeBytes?: number;
     classesCount: number;
+    transactionLogsCount?: number;
+    notificationsCount?: number;
     isBackedUp: boolean;
   } | null>(null);
   const [isLoadingCleanPreview, setIsLoadingCleanPreview] = useState(false);
@@ -833,7 +834,6 @@ export function BackupArchivePanel() {
       setError("Select a specific Academic Year and Semester to clean.");
       return;
     }
-    setCleanMode("files_only");
     setCleanPreview(null);
     setCleanTermTarget({ academic_year: ay, semester: sem });
     setIsLoadingCleanPreview(true);
@@ -864,7 +864,9 @@ export function BackupArchivePanel() {
         body: JSON.stringify({
           academic_year: cleanTermTarget.academic_year,
           semester: cleanTermTarget.semester,
-          mode: cleanMode,
+          mode: "files_only",
+          clean_logs_and_notifications: true,
+          include_orphan_storage: true,
         }),
       });
       const data = await res.json();
@@ -2044,18 +2046,11 @@ export function BackupArchivePanel() {
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                     <div>
                       <span className="text-[10px] uppercase tracking-wider text-slate-500 block">
-                        Submissions
-                      </span>
-                      <span className="font-bold text-sm text-slate-900 dark:text-slate-100">
-                        {cleanPreview.submissionsCount}
-                      </span>
-                    </div>
-                    <div>
-                      <span className="text-[10px] uppercase tracking-wider text-slate-500 block">
                         Uploaded Files
                       </span>
                       <span className="font-bold text-sm text-slate-900 dark:text-slate-100">
-                        {cleanPreview.storageFilesCount}
+                        {cleanPreview.storageFilesCount +
+                          (cleanPreview.orphanedFilesCount || 0)}
                       </span>
                     </div>
                     <div>
@@ -2063,15 +2058,26 @@ export function BackupArchivePanel() {
                         Storage Used
                       </span>
                       <span className="font-bold text-sm text-slate-900 dark:text-slate-100">
-                        {formatBytesReadable(cleanPreview.totalSizeBytes)}
+                        {formatBytesReadable(
+                          cleanPreview.totalSizeBytes +
+                            (cleanPreview.orphanedSizeBytes || 0),
+                        )}
                       </span>
                     </div>
                     <div>
                       <span className="text-[10px] uppercase tracking-wider text-slate-500 block">
-                        Class Loads
+                        Transaction Logs
                       </span>
                       <span className="font-bold text-sm text-slate-900 dark:text-slate-100">
-                        {cleanPreview.classesCount}
+                        {cleanPreview.transactionLogsCount ?? 0}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-[10px] uppercase tracking-wider text-slate-500 block">
+                        Notifications
+                      </span>
+                      <span className="font-bold text-sm text-slate-900 dark:text-slate-100">
+                        {cleanPreview.notificationsCount ?? 0}
                       </span>
                     </div>
                   </div>
@@ -2107,62 +2113,25 @@ export function BackupArchivePanel() {
                 </div>
               )}
 
-              {/* Cleanup Mode Options */}
-              <div className="space-y-2">
-                <p className="font-bold uppercase tracking-wider text-[11px] text-slate-500 dark:text-slate-400">
-                  Choose Cleanup Scope
+              {/* Single Simplified Cleanup Summary */}
+              <div className="rounded-xl border border-[#780000]/30 bg-red-50/50 dark:bg-red-950/20 p-3.5 space-y-2">
+                <p className="font-bold text-slate-900 dark:text-slate-100">
+                  Deletes for this semester only (tables &amp; accounts stay intact):
                 </p>
-
-                <label
-                  className={`flex items-start gap-2.5 p-3 rounded-xl border cursor-pointer transition ${
-                    cleanMode === "files_only"
-                      ? "border-[#780000] bg-red-50/50 dark:bg-red-950/20"
-                      : "border-slate-200 dark:border-slate-800 hover:border-slate-300"
-                  }`}
-                >
-                  <input
-                    type="radio"
-                    name="cleanMode"
-                    checked={cleanMode === "files_only"}
-                    onChange={() => setCleanMode("files_only")}
-                    className="mt-0.5 accent-[#780000]"
-                  />
-                  <div>
-                    <span className="font-bold text-slate-900 dark:text-slate-100 block">
-                      Clean Uploaded Files Only (Recommended)
-                    </span>
-                    <span className="text-[11px] text-slate-600 dark:text-slate-400 leading-relaxed block mt-0.5">
-                      Deletes uploaded PDFs/documents from Storage to free up your 1 GB limit.{" "}
-                      <strong>Keeps Verification History</strong> (validated status, dates, remarks) and{" "}
-                      <strong>all accounts</strong>.
-                    </span>
-                  </div>
-                </label>
-
-                <label
-                  className={`flex items-start gap-2.5 p-3 rounded-xl border cursor-pointer transition ${
-                    cleanMode === "full_reset"
-                      ? "border-[#780000] bg-red-50/50 dark:bg-red-950/20"
-                      : "border-slate-200 dark:border-slate-800 hover:border-slate-300"
-                  }`}
-                >
-                  <input
-                    type="radio"
-                    name="cleanMode"
-                    checked={cleanMode === "full_reset"}
-                    onChange={() => setCleanMode("full_reset")}
-                    className="mt-0.5 accent-[#780000]"
-                  />
-                  <div>
-                    <span className="font-bold text-slate-900 dark:text-slate-100 block">
-                      Full Semester Cleanup (Files + Submissions &amp; Classes)
-                    </span>
-                    <span className="text-[11px] text-slate-600 dark:text-slate-400 leading-relaxed block mt-0.5">
-                      Deletes uploaded files, submissions, review decisions, and class loads for this semester.{" "}
-                      <strong>All faculty/admin accounts</strong>, programs, and templates stay intact; Verification History for this semester will be cleared.
-                    </span>
-                  </div>
-                </label>
+                <ul className="list-disc pl-4 space-y-1 text-[11px] text-slate-700 dark:text-slate-300">
+                  <li>
+                    <strong>Uploaded Storage Files</strong> for this semester (keeps account avatars)
+                  </li>
+                  <li>
+                    <strong>Notifications</strong> for this semester
+                  </li>
+                  <li>
+                    <strong>Transaction Logs</strong> for this semester
+                  </li>
+                </ul>
+                <p className="text-[11px] text-slate-600 dark:text-slate-400 pt-1">
+                  <strong>Preserved:</strong> all faculty/staff/admin accounts, Verification History, programs, and database tables.
+                </p>
               </div>
 
               {cleanCountdown > 0 ? (

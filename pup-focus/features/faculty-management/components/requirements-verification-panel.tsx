@@ -1853,6 +1853,17 @@ export function FacultyVerificationDrawer({
     }
   }
 
+  function hasActiveStorageFile(
+    subs: Array<{ document_versions?: Array<{ storage_path?: string | null }> | null }>,
+  ): boolean {
+    return subs.some((s) =>
+      (s.document_versions ?? []).some(
+        (d) =>
+          Boolean(d.storage_path) && !d.storage_path!.startsWith("__cleaned__"),
+      ),
+    );
+  }
+
   // 1. "Download All as ZIP" Action
   async function handleDownloadZip() {
     setIsDownloadingZip(true);
@@ -1872,7 +1883,7 @@ export function FacultyVerificationDrawer({
         : submissions;
       const uploadedSubmissions = targetSubmissions.filter((s) => {
         const matchesTerm = doesSubmissionMatchTerm(s, academicYear, semester);
-        return matchesTerm && Boolean(s.id);
+        return matchesTerm && Boolean(s.id) && hasActiveStorageFile([s]);
       });
 
       if (uploadedSubmissions.length === 0) {
@@ -1998,9 +2009,8 @@ export function FacultyVerificationDrawer({
         ? selectedHistoryGroup.submissions
         : historySubmissions;
 
-      const historySubmissionsWithDocs = targetHistorySubs.filter(
-        (s) =>
-          Array.isArray(s.document_versions) && s.document_versions.length > 0,
+      const historySubmissionsWithDocs = targetHistorySubs.filter((s) =>
+        hasActiveStorageFile([s]),
       );
 
       if (historySubmissionsWithDocs.length === 0) {
@@ -2306,9 +2316,25 @@ export function FacultyVerificationDrawer({
 
           <button
             type="button"
-            disabled={isDownloadingZip}
+            disabled={
+              isDownloadingZip ||
+              !hasActiveStorageFile(
+                (selectedGroup ? selectedGroup.submissions : submissions).filter(
+                  (s) => doesSubmissionMatchTerm(s, academicYear, semester),
+                ),
+              )
+            }
             onClick={handleDownloadZip}
-            className="inline-flex items-center gap-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 border border-amber-600 px-3.5 py-2 text-xs font-semibold whitespace-nowrap shadow-2xs transition cursor-pointer disabled:opacity-50"
+            title={
+              hasActiveStorageFile(
+                (selectedGroup ? selectedGroup.submissions : submissions).filter(
+                  (s) => doesSubmissionMatchTerm(s, academicYear, semester),
+                ),
+              )
+                ? "Download All (ZIP)"
+                : "No downloadable files available (files cleaned or empty)"
+            }
+            className="inline-flex items-center gap-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 border border-amber-600 px-3.5 py-2 text-xs font-semibold whitespace-nowrap shadow-2xs transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-amber-500"
           >
             <AppIcon
               icon={Download}
@@ -3005,9 +3031,25 @@ export function FacultyVerificationDrawer({
 
                     <button
                       type="button"
-                      disabled={isDownloadingZip}
+                      disabled={
+                        isDownloadingZip ||
+                        !hasActiveStorageFile(
+                          selectedGroup.submissions.filter((s) =>
+                            doesSubmissionMatchTerm(s, academicYear, semester),
+                          ),
+                        )
+                      }
                       onClick={handleDownloadZip}
-                      className="inline-flex items-center gap-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 border border-amber-600 px-3 py-1.5 text-xs font-semibold whitespace-nowrap shadow-2xs transition cursor-pointer disabled:opacity-50"
+                      title={
+                        hasActiveStorageFile(
+                          selectedGroup.submissions.filter((s) =>
+                            doesSubmissionMatchTerm(s, academicYear, semester),
+                          ),
+                        )
+                          ? "Download ZIP"
+                          : "No downloadable files available (files cleaned or empty)"
+                      }
+                      className="inline-flex items-center gap-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 border border-amber-600 px-3 py-1.5 text-xs font-semibold whitespace-nowrap shadow-2xs transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-amber-500"
                     >
                       <AppIcon
                         icon={Download}
@@ -3310,14 +3352,14 @@ export function FacultyVerificationDrawer({
                                       </div>
                                     </div>
                                   ) : isCleanedFile ? (
-                                    <div className="space-y-1 min-w-0">
+                                    <div className="flex flex-col items-start gap-1.5 min-w-0">
                                       <span
-                                        className="font-medium text-slate-700 dark:text-slate-300 truncate block text-xs leading-snug"
+                                        className="font-medium text-slate-700 dark:text-slate-300 break-words text-xs leading-snug"
                                         title={rawFileName}
                                       >
                                         {fileName}
                                       </span>
-                                      <span className="inline-flex items-center gap-1 rounded-md border border-amber-300 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/30 px-2 py-0.5 text-[10px] font-semibold text-amber-800 dark:text-amber-300">
+                                      <span className="inline-flex items-center gap-1 rounded-md border border-amber-600 bg-amber-500 px-2.5 py-0.5 text-[10px] font-bold text-slate-950 shadow-2xs">
                                         Cleaned (Archived to ZIP)
                                       </span>
                                     </div>
@@ -3590,24 +3632,40 @@ export function FacultyVerificationDrawer({
                 </div>
 
                 <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    disabled={isDownloadingHistoryZip}
-                    onClick={handleDownloadHistoryZip}
-                    className="inline-flex items-center gap-2 rounded-xl bg-[#780000] hover:bg-[#5e0000] active:scale-[0.98] text-white border border-[#5e0000] text-xs font-bold px-3.5 py-1.5 shadow-xs hover:shadow transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed shrink-0"
-                  >
-                    {isDownloadingHistoryZip ? (
-                      <>
-                        <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white/30 border-t-white shrink-0" />
-                        <span>Zipping...</span>
-                      </>
-                    ) : (
-                      <>
-                        <AppIcon icon={Download} size="sm" color="inherit" />
-                        <span>Download History ZIP</span>
-                      </>
-                    )}
-                  </button>
+                  {(() => {
+                    const targetHistorySubs = selectedHistoryGroup
+                      ? selectedHistoryGroup.submissions
+                      : historySubmissions;
+                    const hasDownloadableHistory =
+                      hasActiveStorageFile(targetHistorySubs);
+                    return (
+                      <button
+                        type="button"
+                        disabled={
+                          isDownloadingHistoryZip || !hasDownloadableHistory
+                        }
+                        onClick={handleDownloadHistoryZip}
+                        title={
+                          hasDownloadableHistory
+                            ? "Download History ZIP"
+                            : "Files have been cleaned (archived to ZIP backup)"
+                        }
+                        className="inline-flex items-center gap-2 rounded-xl bg-[#780000] hover:bg-[#5e0000] active:scale-[0.98] text-white border border-[#5e0000] text-xs font-bold px-3.5 py-1.5 shadow-xs hover:shadow transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-[#780000] disabled:active:scale-100 shrink-0"
+                      >
+                        {isDownloadingHistoryZip ? (
+                          <>
+                            <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white/30 border-t-white shrink-0" />
+                            <span>Zipping...</span>
+                          </>
+                        ) : (
+                          <>
+                            <AppIcon icon={Download} size="sm" color="inherit" />
+                            <span>Download History ZIP</span>
+                          </>
+                        )}
+                      </button>
+                    );
+                  })()}
                 </div>
               </div>
 
@@ -3944,7 +4002,7 @@ export function FacultyVerificationDrawer({
                                 className="hover:bg-slate-50/70 dark:hover:bg-slate-800/40 transition-colors"
                               >
                                 {/* Requirement */}
-                                <td className="px-4 py-3.5 align-top">
+                                <td className="px-4 py-3.5 align-middle">
                                   <div className="space-y-1 min-w-0">
                                     <span className="font-semibold text-slate-900 dark:text-slate-100 text-xs block leading-snug">
                                       {reqLabel}
@@ -3977,9 +4035,9 @@ export function FacultyVerificationDrawer({
                                 </td>
 
                                 {/* File Versions */}
-                                <td className="px-4 py-3.5 align-top">
+                                <td className="px-4 py-3.5 align-middle">
                                   {docs.length > 0 ? (
-                                    <div className="space-y-1.5 min-w-0">
+                                    <div className="space-y-1.5 min-w-0 flex flex-col justify-center">
                                       {docs.map((doc, idx) => {
                                         const isCleanedDoc = Boolean(
                                           doc.storage_path?.startsWith(
@@ -4000,10 +4058,25 @@ export function FacultyVerificationDrawer({
                                               doc.storage_path,
                                             )}`;
 
-                                        return (
+                                        return isCleanedDoc ? (
                                           <div
                                             key={doc.id || idx}
-                                            className="flex items-center justify-between gap-2 rounded-lg border border-slate-200/80 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-950/60 px-2.5 py-1 text-xs"
+                                            className="flex flex-col items-center justify-center gap-1.5 rounded-lg border border-slate-200/80 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-950/60 px-3 py-2 text-center text-xs"
+                                          >
+                                            <span
+                                              className="font-medium text-slate-800 dark:text-slate-200 text-xs break-words leading-snug max-w-full"
+                                              title={rawName}
+                                            >
+                                              {fileName}
+                                            </span>
+                                            <span className="shrink-0 rounded-md border border-amber-600 bg-amber-500 px-2.5 py-0.5 text-[10px] font-bold text-slate-950 shadow-2xs">
+                                              Cleaned (Archived)
+                                            </span>
+                                          </div>
+                                        ) : (
+                                          <div
+                                            key={doc.id || idx}
+                                            className="flex items-center justify-between gap-2 rounded-lg border border-slate-200/80 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-950/60 px-2.5 py-1.5 text-xs"
                                           >
                                             <div className="flex items-center gap-1.5 min-w-0">
                                               <span
@@ -4012,19 +4085,14 @@ export function FacultyVerificationDrawer({
                                               >
                                                 {fileName}
                                               </span>
-                                              {fileSize && !isCleanedDoc ? (
+                                              {fileSize ? (
                                                 <span className="text-[10px] text-slate-400 shrink-0 font-mono">
                                                   ({fileSize})
                                                 </span>
                                               ) : null}
                                             </div>
 
-                                            {isCleanedDoc ? (
-                                              <span className="shrink-0 rounded-md border border-amber-300 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/30 px-2 py-0.5 text-[10px] font-semibold text-amber-800 dark:text-amber-300">
-                                                Cleaned (Archived)
-                                              </span>
-                                            ) : (
-                                              <div className="flex items-center gap-1 shrink-0">
+                                            <div className="flex items-center gap-1 shrink-0">
                                               <button
                                                 type="button"
                                                 onClick={() => {
@@ -4114,8 +4182,7 @@ export function FacultyVerificationDrawer({
                                                   color="inherit"
                                                 />
                                               </button>
-                                              </div>
-                                            )}
+                                            </div>
                                           </div>
                                         );
                                       })}
@@ -4203,7 +4270,11 @@ export function FacultyVerificationDrawer({
 
                                 {/* Action */}
                                 <td className="px-3 py-3.5 align-middle text-center whitespace-nowrap">
-                                  {docs.length > 0 && docs[0]?.storage_path ? (
+                                  {docs.length > 0 &&
+                                  docs[0]?.storage_path &&
+                                  !docs[0].storage_path.startsWith(
+                                    "__cleaned__",
+                                  ) ? (
                                     <div className="flex items-center justify-center">
                                       <button
                                         type="button"
