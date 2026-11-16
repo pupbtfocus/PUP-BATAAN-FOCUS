@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { createClient } from "@supabase/supabase-js";
 import { ROLE } from "@/config/roles";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { getServiceRoleClient } from "@/lib/supabase/service-role";
@@ -433,6 +434,28 @@ async function resolveTermScope(
     .filter((n) => isSingleTermSystem || isInTermDateWindow(n.created_at))
     .map((n) => n.id);
 
+  let matchedExtensionIds: string[] = [];
+  try {
+    const { data: extRows, error: extErr } = await supabase
+      .from("extension_requests")
+      .select("id, academic_year, semester, created_at");
+
+    if (!extErr && Array.isArray(extRows)) {
+      matchedExtensionIds = extRows
+        .filter((r) => {
+          const rAy = normalizeAcademicYear(r.academic_year);
+          const rSem = normalizeSemester(r.semester);
+          if (rAy && rSem) {
+            return rAy === targetAyNorm && rSem === targetSemNorm;
+          }
+          return isSingleTermSystem || isInTermDateWindow(r.created_at);
+        })
+        .map((r) => r.id);
+    }
+  } catch {
+    // extension_requests table optional
+  }
+
   const termBytes = termStorageFiles.reduce((acc, f) => acc + f.sizeBytes, 0);
   const orphanBytes = orphanedStorageFiles.reduce((acc, f) => acc + f.sizeBytes, 0);
 
@@ -470,6 +493,7 @@ async function resolveTermScope(
     txLogTable,
     matchedTxIds,
     matchedNotifIds,
+    matchedExtensionIds,
     isBackedUp,
   };
 }
@@ -510,6 +534,7 @@ export async function GET(request: NextRequest) {
       classesCount: scope.matchingClassIds.length,
       transactionLogsCount: scope.matchedTxIds.length,
       notificationsCount: scope.matchedNotifIds.length,
+      extensionRequestsCount: scope.matchedExtensionIds.length,
       isBackedUp: scope.isBackedUp,
     });
   } catch (error) {
@@ -535,6 +560,45 @@ export async function POST(request: NextRequest) {
     const mode = body.mode === "full_reset" ? "full_reset" : "files_only";
     const includeOrphanStorage = body.include_orphan_storage !== false;
     const cleanLogsAndNotifications = body.clean_logs_and_notifications !== false;
+    const confirmText = String(body.confirm_text || "").trim().toLowerCase();
+    const adminPassword = String(body.password || "");
+
+    if (confirmText !== "delete") {
+      return NextResponse.json(
+        { error: 'Please type "delete" to confirm.' },
+        { status: 400 },
+      );
+    }
+
+    if (!adminPassword) {
+      return NextResponse.json(
+        { error: "Admin password is required." },
+        { status: 400 },
+      );
+    }
+
+    if (!user.email) {
+      return NextResponse.json(
+        { error: "Unable to verify admin account email." },
+        { status: 400 },
+      );
+    }
+
+    const authCheckClient = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      { auth: { persistSession: false, autoRefreshToken: false } },
+    );
+    const { error: pwErr } = await authCheckClient.auth.signInWithPassword({
+      email: user.email,
+      password: adminPassword,
+    });
+    if (pwErr) {
+      return NextResponse.json(
+        { error: "Incorrect admin password." },
+        { status: 401 },
+      );
+    }
 
     if (
       !academicYear ||
@@ -578,6 +642,7 @@ export async function POST(request: NextRequest) {
     let classesRemoved = 0;
     let txLogsRemoved = 0;
     let notificationsRemoved = 0;
+    let extensionsRemoved = 0;
     const subIds = scope.submissionIds;
 
     if (mode === "files_only") {
@@ -648,7 +713,7 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // 3. Delete semester transaction_logs and notifications rows if requested (tables preserved)
+    // 3. Delete semester transaction_logs, notifications, and extension_requests rows (tables preserved)
     if (cleanLogsAndNotifications) {
       for (let i = 0; i < scope.matchedTxIds.length; i += 200) {
         const chunk = scope.matchedTxIds.slice(i, i + 200);
@@ -666,6 +731,15 @@ export async function POST(request: NextRequest) {
           .delete()
           .in("id", chunk);
         if (!notifDelErr) notificationsRemoved += chunk.length;
+      }
+
+      for (let i = 0; i < scope.matchedExtensionIds.length; i += 200) {
+        const chunk = scope.matchedExtensionIds.slice(i, i + 200);
+        const { error: extDelErr } = await supabase
+          .from("extension_requests")
+          .delete()
+          .in("id", chunk);
+        if (!extDelErr) extensionsRemoved += chunk.length;
       }
     }
 
@@ -685,12 +759,13 @@ export async function POST(request: NextRequest) {
         classes_removed: classesRemoved,
         transaction_logs_removed: txLogsRemoved,
         notifications_removed: notificationsRemoved,
+        extension_requests_removed: extensionsRemoved,
         freed_bytes: freedBytes,
       },
     });
 
     const extraSummary = cleanLogsAndNotifications
-      ? ` Cleared ${txLogsRemoved} transaction log(s) and ${notificationsRemoved} notification(s).`
+      ? ` Cleared ${txLogsRemoved} log(s), ${notificationsRemoved} notification(s), and ${extensionsRemoved} extension request(s).`
       : "";
 
     const summaryText =
@@ -706,6 +781,7 @@ export async function POST(request: NextRequest) {
       classesRemoved,
       transactionLogsRemoved: txLogsRemoved,
       notificationsRemoved,
+      extensionRequestsRemoved: extensionsRemoved,
       freedBytes,
       message: summaryText,
     });

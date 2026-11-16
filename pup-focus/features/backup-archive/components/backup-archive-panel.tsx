@@ -151,11 +151,15 @@ export function BackupArchivePanel() {
     classesCount: number;
     transactionLogsCount?: number;
     notificationsCount?: number;
+    extensionRequestsCount?: number;
     isBackedUp: boolean;
   } | null>(null);
   const [isLoadingCleanPreview, setIsLoadingCleanPreview] = useState(false);
   const [isCleaningTerm, setIsCleaningTerm] = useState(false);
-  const [cleanCountdown, setCleanCountdown] = useState<number>(5);
+  const [cleanCountdown, setCleanCountdown] = useState<number>(15);
+  const [cleanConfirmText, setCleanConfirmText] = useState("");
+  const [cleanAdminPassword, setCleanAdminPassword] = useState("");
+  const [cleanModalError, setCleanModalError] = useState<string | null>(null);
 
   const loadBackupData = async (options?: { silent?: boolean }) => {
     const showLoading = !options?.silent && !hasLoadedRef.current;
@@ -265,13 +269,13 @@ export function BackupArchivePanel() {
     return () => clearInterval(timer);
   }, [backupToDelete]);
 
-  // 5-second countdown timer for semester cleanup confirmation
+  // 15-second countdown timer for semester cleanup confirmation
   useEffect(() => {
     if (!cleanTermTarget) {
-      setCleanCountdown(5);
+      setCleanCountdown(15);
       return;
     }
-    setCleanCountdown(5);
+    setCleanCountdown(15);
     const timer = setInterval(() => {
       setCleanCountdown((prev) => (prev > 0 ? prev - 1 : 0));
     }, 1000);
@@ -835,6 +839,9 @@ export function BackupArchivePanel() {
       return;
     }
     setCleanPreview(null);
+    setCleanConfirmText("");
+    setCleanAdminPassword("");
+    setCleanModalError(null);
     setCleanTermTarget({ academic_year: ay, semester: sem });
     setIsLoadingCleanPreview(true);
     try {
@@ -855,8 +862,17 @@ export function BackupArchivePanel() {
 
   const handleConfirmCleanTerm = async () => {
     if (!cleanTermTarget) return;
+    if (cleanConfirmText.trim().toLowerCase() !== "delete") {
+      setCleanModalError('Type "delete" to continue.');
+      return;
+    }
+    if (!cleanAdminPassword) {
+      setCleanModalError("Enter your admin password.");
+      return;
+    }
     try {
       setIsCleaningTerm(true);
+      setCleanModalError(null);
       setError(null);
       const res = await fetch("/api/staff/backups/clean-term", {
         method: "POST",
@@ -867,6 +883,8 @@ export function BackupArchivePanel() {
           mode: "files_only",
           clean_logs_and_notifications: true,
           include_orphan_storage: true,
+          confirm_text: cleanConfirmText.trim(),
+          password: cleanAdminPassword,
         }),
       });
       const data = await res.json();
@@ -875,14 +893,16 @@ export function BackupArchivePanel() {
       }
       setSuccess(
         data.message ||
-          `Cleaned semester storage for A.Y. ${cleanTermTarget.academic_year} (${cleanTermTarget.semester}).`,
+          `Cleaned ${cleanTermTarget.academic_year} (${cleanTermTarget.semester}).`,
       );
       setTimeout(() => setSuccess(null), 6000);
       setCleanTermTarget(null);
+      setCleanConfirmText("");
+      setCleanAdminPassword("");
       emitRealtimeSync();
       await loadBackupData({ silent: true });
     } catch (err) {
-      setError(
+      setCleanModalError(
         err instanceof Error ? err.message : "Failed to clean semester storage",
       );
     } finally {
@@ -2030,23 +2050,23 @@ export function BackupArchivePanel() {
             <ModalHeader
               icon={Trash}
               title={`Clean Semester · A.Y. ${cleanTermTarget.academic_year}`}
-              subtitle={`${cleanTermTarget.semester} — Free up storage while keeping all accounts`}
+              subtitle={`${cleanTermTarget.semester} — Clear old data for the next sem`}
               className="-mx-6 -mt-6 mb-4 rounded-t-2xl"
             />
 
-            <div className="space-y-4 text-xs">
+            <div className="space-y-3.5 text-xs">
               {/* Term Storage Summary */}
               <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/60 p-3.5">
                 {isLoadingCleanPreview ? (
                   <div className="flex items-center gap-2 text-slate-500">
                     <Refresh className="h-3.5 w-3.5 animate-spin" />
-                    <span>Scanning semester files &amp; records...</span>
+                    <span>Checking sem data...</span>
                   </div>
                 ) : cleanPreview ? (
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                  <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
                     <div>
-                      <span className="text-[10px] uppercase tracking-wider text-slate-500 block">
-                        Uploaded Files
+                      <span className="text-[10px] uppercase tracking-wider text-slate-500 block whitespace-nowrap">
+                        Files
                       </span>
                       <span className="font-bold text-sm text-slate-900 dark:text-slate-100">
                         {cleanPreview.storageFilesCount +
@@ -2054,8 +2074,8 @@ export function BackupArchivePanel() {
                       </span>
                     </div>
                     <div>
-                      <span className="text-[10px] uppercase tracking-wider text-slate-500 block">
-                        Storage Used
+                      <span className="text-[10px] uppercase tracking-wider text-slate-500 block whitespace-nowrap">
+                        Storage
                       </span>
                       <span className="font-bold text-sm text-slate-900 dark:text-slate-100">
                         {formatBytesReadable(
@@ -2065,36 +2085,44 @@ export function BackupArchivePanel() {
                       </span>
                     </div>
                     <div>
-                      <span className="text-[10px] uppercase tracking-wider text-slate-500 block">
-                        Transaction Logs
+                      <span className="text-[10px] uppercase tracking-wider text-slate-500 block whitespace-nowrap">
+                        Logs
                       </span>
                       <span className="font-bold text-sm text-slate-900 dark:text-slate-100">
                         {cleanPreview.transactionLogsCount ?? 0}
                       </span>
                     </div>
                     <div>
-                      <span className="text-[10px] uppercase tracking-wider text-slate-500 block">
-                        Notifications
+                      <span className="text-[10px] uppercase tracking-wider text-slate-500 block whitespace-nowrap">
+                        Notifs
                       </span>
                       <span className="font-bold text-sm text-slate-900 dark:text-slate-100">
                         {cleanPreview.notificationsCount ?? 0}
                       </span>
                     </div>
+                    <div>
+                      <span className="text-[10px] uppercase tracking-wider text-slate-500 block whitespace-nowrap">
+                        Extensions
+                      </span>
+                      <span className="font-bold text-sm text-slate-900 dark:text-slate-100">
+                        {cleanPreview.extensionRequestsCount ?? 0}
+                      </span>
+                    </div>
                   </div>
                 ) : (
                   <p className="text-slate-500">
-                    Ready to clean data for {cleanTermTarget.academic_year} ({cleanTermTarget.semester}).
+                    Ready to clean {cleanTermTarget.academic_year} ({cleanTermTarget.semester}).
                   </p>
                 )}
               </div>
 
               {/* Backup Warning */}
               {cleanPreview && !cleanPreview.isBackedUp && (
-                <div className="rounded-xl border border-amber-500 bg-amber-50 dark:bg-amber-950/30 p-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-amber-900 dark:text-amber-200">
+                <div className="rounded-xl border border-amber-600 bg-amber-500 p-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-slate-950 shadow-xs">
                   <div>
-                    <p className="font-bold">No .ZIP backup found for this semester</p>
-                    <p className="text-[11px] opacity-90">
-                      Download a backup first so you still have copies of submitted files.
+                    <p className="font-bold">No .ZIP backup yet for this sem</p>
+                    <p className="text-[11px] font-medium">
+                      Download a backup first if you still need copies of the files.
                     </p>
                   </div>
                   <button
@@ -2106,64 +2134,107 @@ export function BackupArchivePanel() {
                         cleanTermTarget.semester,
                       )
                     }
-                    className="px-3 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-900 font-bold text-[11px] border border-amber-600 shrink-0 cursor-pointer"
+                    className="px-3 py-1.5 rounded-lg bg-[#780000] hover:bg-[#5e0000] text-white font-bold text-[11px] border border-[#5e0000] shrink-0 cursor-pointer"
                   >
-                    Download .ZIP First
+                    Download .ZIP
                   </button>
                 </div>
               )}
 
-              {/* Single Simplified Cleanup Summary */}
-              <div className="rounded-xl border border-[#780000]/30 bg-red-50/50 dark:bg-red-950/20 p-3.5 space-y-2">
-                <p className="font-bold text-slate-900 dark:text-slate-100">
-                  Deletes for this semester only (tables &amp; accounts stay intact):
+              {/* Solid Color Summary Card */}
+              <div className="rounded-xl border border-amber-600 bg-amber-500 p-3.5 text-slate-950 space-y-2 shadow-xs">
+                <p className="font-bold">
+                  Deletes for this sem only:
                 </p>
-                <ul className="list-disc pl-4 space-y-1 text-[11px] text-slate-700 dark:text-slate-300">
-                  <li>
-                    <strong>Uploaded Storage Files</strong> for this semester (keeps account avatars)
-                  </li>
-                  <li>
-                    <strong>Notifications</strong> for this semester
-                  </li>
-                  <li>
-                    <strong>Transaction Logs</strong> for this semester
-                  </li>
+                <ul className="list-disc pl-4 space-y-0.5 text-[11px] font-semibold">
+                  <li>Uploaded files (profile photos stay)</li>
+                  <li>Notifications for this sem</li>
+                  <li>Transaction logs for this sem</li>
+                  <li>Extension requests for this sem</li>
                 </ul>
-                <p className="text-[11px] text-slate-600 dark:text-slate-400 pt-1">
-                  <strong>Preserved:</strong> all faculty/staff/admin accounts, Verification History, programs, and database tables.
+                <p className="text-[11px] font-semibold pt-1 border-t border-amber-600/40">
+                  Stays untouched: all accounts, verification history, programs, and tables.
                 </p>
               </div>
 
+              {/* Safety Confirmation Inputs */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <label className="text-[11px] font-bold text-slate-700 dark:text-slate-300 block">
+                    Type <span className="font-mono text-[#780000] dark:text-amber-400">delete</span> to confirm
+                  </label>
+                  <input
+                    type="text"
+                    value={cleanConfirmText}
+                    onChange={(e) => {
+                      setCleanConfirmText(e.target.value);
+                      if (cleanModalError) setCleanModalError(null);
+                    }}
+                    placeholder="delete"
+                    autoComplete="off"
+                    className="w-full h-9 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-3 text-xs text-slate-900 dark:text-slate-100 outline-none focus:border-[#780000]"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-[11px] font-bold text-slate-700 dark:text-slate-300 block">
+                    Admin password
+                  </label>
+                  <input
+                    type="password"
+                    value={cleanAdminPassword}
+                    onChange={(e) => {
+                      setCleanAdminPassword(e.target.value);
+                      if (cleanModalError) setCleanModalError(null);
+                    }}
+                    placeholder="Enter password"
+                    autoComplete="current-password"
+                    className="w-full h-9 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-3 text-xs text-slate-900 dark:text-slate-100 outline-none focus:border-[#780000]"
+                  />
+                </div>
+              </div>
+
+              {cleanModalError ? (
+                <div className="rounded-xl bg-[#780000] border border-[#5e0000] px-3 py-2 text-[11px] font-semibold text-white">
+                  {cleanModalError}
+                </div>
+              ) : null}
+
               {cleanCountdown > 0 ? (
-                <p className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">
-                  Safety lock active. Confirmation enabled in{" "}
-                  <span className="font-bold text-slate-800 dark:text-slate-200">
+                <p className="text-[11px] text-slate-600 dark:text-slate-400 font-medium">
+                  Safety timer:{" "}
+                  <span className="font-bold text-slate-900 dark:text-slate-100">
                     {cleanCountdown}s
-                  </span>
-                  .
+                  </span>{" "}
+                  left before you can delete.
                 </p>
               ) : null}
             </div>
 
-            <div className="mt-6 flex items-center justify-end gap-2.5">
+            <div className="mt-5 flex items-center justify-end gap-2.5">
               <button
                 type="button"
                 onClick={() => setCleanTermTarget(null)}
-                className="px-4 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 text-xs font-semibold hover:bg-slate-50 transition cursor-pointer"
+                className="px-4 py-2 rounded-xl border border-amber-600 bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-bold transition cursor-pointer shadow-xs"
               >
                 Cancel
               </button>
               <button
                 type="button"
-                disabled={isCleaningTerm || cleanCountdown > 0}
+                disabled={
+                  isCleaningTerm ||
+                  cleanCountdown > 0 ||
+                  cleanConfirmText.trim().toLowerCase() !== "delete" ||
+                  !cleanAdminPassword
+                }
                 onClick={() => void handleConfirmCleanTerm()}
-                className="bg-[#780000] hover:bg-[#5e0000] text-white border border-[#5e0000] text-xs font-semibold px-4 py-2 rounded-xl transition disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer shadow-xs"
+                className="bg-[#780000] hover:bg-[#5e0000] text-white border border-[#5e0000] text-xs font-bold px-4 py-2 rounded-xl transition disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer shadow-xs"
               >
                 {isCleaningTerm
                   ? "Cleaning..."
                   : cleanCountdown > 0
-                    ? `Confirm Clean (${cleanCountdown}s)`
-                    : "Confirm Clean"}
+                    ? `Delete (${cleanCountdown}s)`
+                    : "Delete"}
               </button>
             </div>
           </div>
