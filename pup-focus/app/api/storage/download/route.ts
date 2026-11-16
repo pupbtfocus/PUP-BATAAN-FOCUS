@@ -71,6 +71,16 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "path is required" }, { status: 400 });
     }
 
+    if (path.startsWith("__cleaned__")) {
+      return NextResponse.json(
+        {
+          error:
+            "This file was cleaned from storage to save space. Download the archived .ZIP backup in Backups & Archive.",
+        },
+        { status: 410 },
+      );
+    }
+
     const supabase = getStorageAdminClient();
     const options =
       download === "true" || filename

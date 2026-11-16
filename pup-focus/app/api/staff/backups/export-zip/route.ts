@@ -467,11 +467,15 @@ export async function GET(request: NextRequest) {
       const versions = docVersionsMap.get(sub.id) || [];
       const storageCandidates: Array<{ path: string; name?: string }> = [];
 
-      if (sub.storage_path) {
+      if (sub.storage_path && !sub.storage_path.startsWith("__cleaned__")) {
         storageCandidates.push({ path: sub.storage_path, name: sub.file_name });
       }
       for (const v of versions) {
-        if (v.storage_path && !storageCandidates.some(c => c.path === v.storage_path)) {
+        if (
+          v.storage_path &&
+          !v.storage_path.startsWith("__cleaned__") &&
+          !storageCandidates.some((c) => c.path === v.storage_path)
+        ) {
           storageCandidates.push({ path: v.storage_path, name: v.file_name });
         }
       }
@@ -591,7 +595,7 @@ export async function GET(request: NextRequest) {
         `"${sub.status || "Submitted"}"`,
         `"${dateSub}"`,
         `"${fName.replace(/"/g, '""')}"`,
-        `"${sub.storage_path ? "Yes" : "Metadata Recorded"}"`,
+        `"${sub.storage_path?.startsWith("__cleaned__") ? "Cleaned (Archived)" : sub.storage_path ? "Yes" : "Metadata Recorded"}"`,
       ]);
     }
 

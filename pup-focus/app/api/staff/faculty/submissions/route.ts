@@ -376,8 +376,9 @@ export async function GET(request: NextRequest) {
           id: s.id,
           submission_id: s.id,
           version_number: 1,
-          storage_path:
-            s.storage_path || `faculty-submissions/${facultyProfileId}/${s.id}`,
+          storage_path: s.storage_path?.startsWith("__cleaned__")
+            ? s.storage_path
+            : s.storage_path || `faculty-submissions/${facultyProfileId}/${s.id}`,
           mime_type: s.mime_type || "application/pdf",
           size_bytes: s.size_bytes ?? null,
           created_at: s.submitted_at || s.created_at,

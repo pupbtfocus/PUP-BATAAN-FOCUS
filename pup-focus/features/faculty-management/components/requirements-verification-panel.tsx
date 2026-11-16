@@ -1912,7 +1912,7 @@ export function FacultyVerificationDrawer({
 
         for (const doc of docs) {
           if (zipAbortControllerRef.current?.signal.aborted) return;
-          if (!doc.storage_path) continue;
+          if (!doc.storage_path || doc.storage_path.startsWith("__cleaned__")) continue;
           processedCount++;
           setZipProgressData({
             status: "zipping",
@@ -2040,7 +2040,7 @@ export function FacultyVerificationDrawer({
 
         for (const doc of docs) {
           if (zipAbortControllerRef.current?.signal.aborted) return;
-          if (!doc.storage_path) continue;
+          if (!doc.storage_path || doc.storage_path.startsWith("__cleaned__")) continue;
           processedCount++;
           setZipProgressData({
             status: "zipping",
@@ -3123,9 +3123,13 @@ export function FacultyVerificationDrawer({
                                   ? 2
                                   : 1);
 
+                            const isCleanedFile = Boolean(
+                              firstDoc?.storage_path?.startsWith("__cleaned__"),
+                            );
                             const hasFile =
                               documents.length > 0 &&
-                              Boolean(firstDoc?.storage_path);
+                              Boolean(firstDoc?.storage_path) &&
+                              !isCleanedFile;
                             const fileDownloadUrl = hasFile
                               ? `/api/storage/download?path=${encodeURIComponent(
                                   firstDoc!.storage_path,
@@ -3304,6 +3308,18 @@ export function FacultyVerificationDrawer({
                                           <span>Download</span>
                                         </button>
                                       </div>
+                                    </div>
+                                  ) : isCleanedFile ? (
+                                    <div className="space-y-1 min-w-0">
+                                      <span
+                                        className="font-medium text-slate-700 dark:text-slate-300 truncate block text-xs leading-snug"
+                                        title={rawFileName}
+                                      >
+                                        {fileName}
+                                      </span>
+                                      <span className="inline-flex items-center gap-1 rounded-md border border-amber-300 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/30 px-2 py-0.5 text-[10px] font-semibold text-amber-800 dark:text-amber-300">
+                                        Cleaned (Archived to ZIP)
+                                      </span>
                                     </div>
                                   ) : (
                                     <div className="pt-0.5">
@@ -3965,6 +3981,11 @@ export function FacultyVerificationDrawer({
                                   {docs.length > 0 ? (
                                     <div className="space-y-1.5 min-w-0">
                                       {docs.map((doc, idx) => {
+                                        const isCleanedDoc = Boolean(
+                                          doc.storage_path?.startsWith(
+                                            "__cleaned__",
+                                          ),
+                                        );
                                         const rawName =
                                           doc.storage_path?.split("/").pop() ||
                                           "Document";
@@ -3973,9 +3994,11 @@ export function FacultyVerificationDrawer({
                                         const fileSize = formatBytes(
                                           doc.size_bytes,
                                         );
-                                        const downloadUrl = `/api/storage/download?path=${encodeURIComponent(
-                                          doc.storage_path,
-                                        )}`;
+                                        const downloadUrl = isCleanedDoc
+                                          ? ""
+                                          : `/api/storage/download?path=${encodeURIComponent(
+                                              doc.storage_path,
+                                            )}`;
 
                                         return (
                                           <div
@@ -3989,14 +4012,19 @@ export function FacultyVerificationDrawer({
                                               >
                                                 {fileName}
                                               </span>
-                                              {fileSize ? (
+                                              {fileSize && !isCleanedDoc ? (
                                                 <span className="text-[10px] text-slate-400 shrink-0 font-mono">
                                                   ({fileSize})
                                                 </span>
                                               ) : null}
                                             </div>
 
-                                            <div className="flex items-center gap-1 shrink-0">
+                                            {isCleanedDoc ? (
+                                              <span className="shrink-0 rounded-md border border-amber-300 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/30 px-2 py-0.5 text-[10px] font-semibold text-amber-800 dark:text-amber-300">
+                                                Cleaned (Archived)
+                                              </span>
+                                            ) : (
+                                              <div className="flex items-center gap-1 shrink-0">
                                               <button
                                                 type="button"
                                                 onClick={() => {
@@ -4086,7 +4114,8 @@ export function FacultyVerificationDrawer({
                                                   color="inherit"
                                                 />
                                               </button>
-                                            </div>
+                                              </div>
+                                            )}
                                           </div>
                                         );
                                       })}

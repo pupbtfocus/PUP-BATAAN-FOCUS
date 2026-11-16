@@ -66,19 +66,21 @@ export async function GET(request: NextRequest) {
 
       if (!error && data) {
         termsRows = data;
+      } else if (error) {
+        const { data: fallbackData, error: fallbackError } = await supabase
+          .from("academic_terms")
+          .select("academic_year, semester, status")
+          .order("academic_year", { ascending: false });
+
+        if (!fallbackError && fallbackData) {
+          termsRows = fallbackData.map((row) => ({
+            ...row,
+            is_archived: row.status === "Archived",
+          }));
+        }
       }
     } catch (err) {
       console.warn("Error querying academic_terms:", err);
-    }
-
-    // If no terms in DB, fallback to standard defaults
-    if (termsRows.length === 0) {
-      termsRows = [
-        { academic_year: "2025-2026", semester: "2nd Semester", status: "Current", is_archived: false },
-        { academic_year: "2025-2026", semester: "1st Semester", status: "Archived", is_archived: true },
-        { academic_year: "2024-2025", semester: "2nd Semester", status: "Archived", is_archived: true },
-        { academic_year: "2024-2025", semester: "1st Semester", status: "Archived", is_archived: true },
-      ];
     }
 
     // 3. Fetch submissions counts per term
@@ -289,10 +291,6 @@ export async function GET(request: NextRequest) {
           .filter((ay): ay is string => Boolean(ay && ay.trim()))
       )
     ).sort((a, b) => b.localeCompare(a));
-
-    if (academicYears.length === 0) {
-      academicYears.push("2026-2027", "2025-2026", "2024-2025");
-    }
 
     // Compute stats
     const uniqueArchivedAYs = new Set(archivedTerms.map((t) => t.academic_year));

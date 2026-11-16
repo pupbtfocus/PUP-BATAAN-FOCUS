@@ -56,6 +56,7 @@ const ACTION_CATEGORY_FILTERS: Record<string, string[]> = {
     "backup.download",
     "backup.export_zip",
     "backup.delete",
+    "backup.clean_term",
   ],
 };
 

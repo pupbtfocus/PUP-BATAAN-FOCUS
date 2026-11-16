@@ -23,7 +23,7 @@ import {
 import { AppIcon } from "@/components/ui/app-icon";
 import { ModalHeader } from "@/components/ui/modal-header";
 import { AlertPopup } from "@/components/ui/alert-popup";
-import { useRealtimeSync } from "@/lib/realtime";
+import { emitRealtimeSync, useRealtimeSync } from "@/lib/realtime";
 import type {
   SystemBackup,
   ArchivedTermSummary,
@@ -93,7 +93,7 @@ export function BackupArchivePanel() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
-  // Scope filter states — always default to active operational term
+  // Scope filter states — default to active operational term when present
   const [selectedAcademicYear, setSelectedAcademicYear] = useState<string>(
     () => {
       if (cachedBackupData?.availableTerms) {
@@ -102,7 +102,7 @@ export function BackupArchivePanel() {
         );
         if (cur) return cur.academic_year;
       }
-      return "2026-2027";
+      return "all";
     },
   );
   const [selectedSemester, setSelectedSemester] = useState<string>(() => {
@@ -112,7 +112,7 @@ export function BackupArchivePanel() {
       );
       if (cur) return cur.semester;
     }
-    return "1st Semester";
+    return "all";
   });
   const [selectedFacultyId, setSelectedFacultyId] = useState<string>("all");
   const [backupSearchQuery, setBackupSearchQuery] = useState("");
@@ -136,6 +136,25 @@ export function BackupArchivePanel() {
   );
   const [isDeleting, setIsDeleting] = useState(false);
   const [deleteCountdown, setDeleteCountdown] = useState<number>(10);
+
+  // Semester cleanup modal state
+  const [cleanTermTarget, setCleanTermTarget] = useState<{
+    academic_year: string;
+    semester: string;
+  } | null>(null);
+  const [cleanMode, setCleanMode] = useState<"files_only" | "full_reset">(
+    "files_only",
+  );
+  const [cleanPreview, setCleanPreview] = useState<{
+    submissionsCount: number;
+    storageFilesCount: number;
+    totalSizeBytes: number;
+    classesCount: number;
+    isBackedUp: boolean;
+  } | null>(null);
+  const [isLoadingCleanPreview, setIsLoadingCleanPreview] = useState(false);
+  const [isCleaningTerm, setIsCleaningTerm] = useState(false);
+  const [cleanCountdown, setCleanCountdown] = useState<number>(5);
 
   const loadBackupData = async (options?: { silent?: boolean }) => {
     const showLoading = !options?.silent && !hasLoadedRef.current;
@@ -164,6 +183,9 @@ export function BackupArchivePanel() {
           setSelectedSemester((prev) =>
             !prev || prev === "all" ? current.semester : prev,
           );
+        } else if (data.availableTerms.length === 0) {
+          setSelectedAcademicYear("all");
+          setSelectedSemester("all");
         }
       }
 
@@ -241,6 +263,19 @@ export function BackupArchivePanel() {
     }, 1000);
     return () => clearInterval(timer);
   }, [backupToDelete]);
+
+  // 5-second countdown timer for semester cleanup confirmation
+  useEffect(() => {
+    if (!cleanTermTarget) {
+      setCleanCountdown(5);
+      return;
+    }
+    setCleanCountdown(5);
+    const timer = setInterval(() => {
+      setCleanCountdown((prev) => (prev > 0 ? prev - 1 : 0));
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [cleanTermTarget]);
 
   // Handle click outside to close searchable faculty dropdown
   useEffect(() => {
@@ -787,6 +822,72 @@ export function BackupArchivePanel() {
     return `${(kb / 1024).toFixed(2)} MB`;
   };
 
+  const formatBytesReadable = (bytes: number) => {
+    if (!bytes || bytes <= 0) return "0 MB";
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+    return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
+  };
+
+  const openCleanTermModal = async (ay: string, sem: string) => {
+    if (!ay || ay === "all" || !sem || sem === "all") {
+      setError("Select a specific Academic Year and Semester to clean.");
+      return;
+    }
+    setCleanMode("files_only");
+    setCleanPreview(null);
+    setCleanTermTarget({ academic_year: ay, semester: sem });
+    setIsLoadingCleanPreview(true);
+    try {
+      const params = new URLSearchParams({ academic_year: ay, semester: sem });
+      const res = await fetch(
+        `/api/staff/backups/clean-term?${params.toString()}`,
+      );
+      if (res.ok) {
+        const data = await res.json();
+        setCleanPreview(data);
+      }
+    } catch {
+      // preview is optional
+    } finally {
+      setIsLoadingCleanPreview(false);
+    }
+  };
+
+  const handleConfirmCleanTerm = async () => {
+    if (!cleanTermTarget) return;
+    try {
+      setIsCleaningTerm(true);
+      setError(null);
+      const res = await fetch("/api/staff/backups/clean-term", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          academic_year: cleanTermTarget.academic_year,
+          semester: cleanTermTarget.semester,
+          mode: cleanMode,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || "Failed to clean semester storage");
+      }
+      setSuccess(
+        data.message ||
+          `Cleaned semester storage for A.Y. ${cleanTermTarget.academic_year} (${cleanTermTarget.semester}).`,
+      );
+      setTimeout(() => setSuccess(null), 6000);
+      setCleanTermTarget(null);
+      emitRealtimeSync();
+      await loadBackupData({ silent: true });
+    } catch (err) {
+      setError(
+        err instanceof Error ? err.message : "Failed to clean semester storage",
+      );
+    } finally {
+      setIsCleaningTerm(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* Top 3 Stat Cards */}
@@ -981,13 +1082,13 @@ export function BackupArchivePanel() {
             </select>
           </div>
 
-          {/* Primary Action Button: Documents Archive */}
-          <div className="md:col-span-6 flex items-center justify-end">
+          {/* Primary Action Buttons: Documents Archive & Clean Semester */}
+          <div className="md:col-span-6 flex flex-col sm:flex-row items-stretch sm:items-center justify-end gap-2">
             <button
               type="button"
               disabled={Boolean(exportingTermKey) || isGeneratingBackup}
               onClick={() => void handleDownloadZip()}
-              className="w-full h-10 flex items-center justify-center gap-2 bg-amber-500 hover:bg-amber-400 text-slate-900 border border-amber-600 font-bold rounded-xl text-xs sm:text-sm px-4 transition shadow-xs cursor-pointer active:scale-[0.98] disabled:opacity-50"
+              className="flex-1 h-10 flex items-center justify-center gap-2 bg-amber-500 hover:bg-amber-400 text-slate-900 border border-amber-600 font-bold rounded-xl text-xs sm:text-sm px-4 transition shadow-xs cursor-pointer active:scale-[0.98] disabled:opacity-50"
               title="Download all faculty submitted requirement documents as a verified ZIP vault"
             >
               {exportingTermKey ===
@@ -1002,6 +1103,28 @@ export function BackupArchivePanel() {
                   <span>Generate &amp; Download Backup (.ZIP)</span>
                 </>
               )}
+            </button>
+
+            <button
+              type="button"
+              disabled={
+                selectedAcademicYear === "all" ||
+                selectedSemester === "all" ||
+                isCleaningTerm ||
+                Boolean(exportingTermKey)
+              }
+              onClick={() =>
+                void openCleanTermModal(selectedAcademicYear, selectedSemester)
+              }
+              className="h-10 flex items-center justify-center gap-2 bg-[#780000] hover:bg-[#5e0000] text-white border border-[#5e0000] font-bold rounded-xl text-xs sm:text-sm px-4 transition shadow-xs cursor-pointer active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed shrink-0"
+              title={
+                selectedAcademicYear === "all" || selectedSemester === "all"
+                  ? "Select a specific Academic Year & Semester first"
+                  : "Clean uploaded files or semester records (keeps all accounts)"
+              }
+            >
+              <AppIcon icon={Trash} size="sm" color="white" />
+              <span>Clean Semester</span>
             </button>
           </div>
         </div>
@@ -1455,6 +1578,22 @@ export function BackupArchivePanel() {
                                 </>
                               )}
                             </button>
+
+                            <button
+                              type="button"
+                              disabled={isCleaningTerm}
+                              onClick={() =>
+                                void openCleanTermModal(
+                                  term.academic_year,
+                                  term.semester,
+                                )
+                              }
+                              className="px-2.5 py-1 text-xs font-semibold rounded-lg bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 dark:bg-red-950/30 dark:hover:bg-red-950/60 dark:text-red-300 dark:border-red-900/60 transition cursor-pointer flex items-center gap-1 shadow-2xs disabled:opacity-50 shrink-0"
+                              title="Clean uploaded files or semester records (keeps accounts)"
+                            >
+                              <AppIcon icon={Trash} size="xs" color="inherit" />
+                              <span>Clean</span>
+                            </button>
                           </div>
                         </td>
                       </tr>
@@ -1876,6 +2015,186 @@ export function BackupArchivePanel() {
                   : deleteCountdown > 0
                     ? `Confirm Delete (${deleteCountdown}s)`
                     : "Confirm Delete"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Clean Semester Storage Modal */}
+      {cleanTermTarget && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4 backdrop-blur-sm">
+          <div className="w-full max-w-lg rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-2xl text-slate-900 dark:text-slate-100">
+            <ModalHeader
+              icon={Trash}
+              title={`Clean Semester · A.Y. ${cleanTermTarget.academic_year}`}
+              subtitle={`${cleanTermTarget.semester} — Free up storage while keeping all accounts`}
+              className="-mx-6 -mt-6 mb-4 rounded-t-2xl"
+            />
+
+            <div className="space-y-4 text-xs">
+              {/* Term Storage Summary */}
+              <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/60 p-3.5">
+                {isLoadingCleanPreview ? (
+                  <div className="flex items-center gap-2 text-slate-500">
+                    <Refresh className="h-3.5 w-3.5 animate-spin" />
+                    <span>Scanning semester files &amp; records...</span>
+                  </div>
+                ) : cleanPreview ? (
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                    <div>
+                      <span className="text-[10px] uppercase tracking-wider text-slate-500 block">
+                        Submissions
+                      </span>
+                      <span className="font-bold text-sm text-slate-900 dark:text-slate-100">
+                        {cleanPreview.submissionsCount}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-[10px] uppercase tracking-wider text-slate-500 block">
+                        Uploaded Files
+                      </span>
+                      <span className="font-bold text-sm text-slate-900 dark:text-slate-100">
+                        {cleanPreview.storageFilesCount}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-[10px] uppercase tracking-wider text-slate-500 block">
+                        Storage Used
+                      </span>
+                      <span className="font-bold text-sm text-slate-900 dark:text-slate-100">
+                        {formatBytesReadable(cleanPreview.totalSizeBytes)}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-[10px] uppercase tracking-wider text-slate-500 block">
+                        Class Loads
+                      </span>
+                      <span className="font-bold text-sm text-slate-900 dark:text-slate-100">
+                        {cleanPreview.classesCount}
+                      </span>
+                    </div>
+                  </div>
+                ) : (
+                  <p className="text-slate-500">
+                    Ready to clean data for {cleanTermTarget.academic_year} ({cleanTermTarget.semester}).
+                  </p>
+                )}
+              </div>
+
+              {/* Backup Warning */}
+              {cleanPreview && !cleanPreview.isBackedUp && (
+                <div className="rounded-xl border border-amber-500 bg-amber-50 dark:bg-amber-950/30 p-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-amber-900 dark:text-amber-200">
+                  <div>
+                    <p className="font-bold">No .ZIP backup found for this semester</p>
+                    <p className="text-[11px] opacity-90">
+                      Download a backup first so you still have copies of submitted files.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    disabled={Boolean(exportingTermKey)}
+                    onClick={() =>
+                      void handleDownloadZip(
+                        cleanTermTarget.academic_year,
+                        cleanTermTarget.semester,
+                      )
+                    }
+                    className="px-3 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-900 font-bold text-[11px] border border-amber-600 shrink-0 cursor-pointer"
+                  >
+                    Download .ZIP First
+                  </button>
+                </div>
+              )}
+
+              {/* Cleanup Mode Options */}
+              <div className="space-y-2">
+                <p className="font-bold uppercase tracking-wider text-[11px] text-slate-500 dark:text-slate-400">
+                  Choose Cleanup Scope
+                </p>
+
+                <label
+                  className={`flex items-start gap-2.5 p-3 rounded-xl border cursor-pointer transition ${
+                    cleanMode === "files_only"
+                      ? "border-[#780000] bg-red-50/50 dark:bg-red-950/20"
+                      : "border-slate-200 dark:border-slate-800 hover:border-slate-300"
+                  }`}
+                >
+                  <input
+                    type="radio"
+                    name="cleanMode"
+                    checked={cleanMode === "files_only"}
+                    onChange={() => setCleanMode("files_only")}
+                    className="mt-0.5 accent-[#780000]"
+                  />
+                  <div>
+                    <span className="font-bold text-slate-900 dark:text-slate-100 block">
+                      Clean Uploaded Files Only (Recommended)
+                    </span>
+                    <span className="text-[11px] text-slate-600 dark:text-slate-400 leading-relaxed block mt-0.5">
+                      Deletes uploaded PDFs/documents from Storage to free up your 1 GB limit.{" "}
+                      <strong>Keeps Verification History</strong> (validated status, dates, remarks) and{" "}
+                      <strong>all accounts</strong>.
+                    </span>
+                  </div>
+                </label>
+
+                <label
+                  className={`flex items-start gap-2.5 p-3 rounded-xl border cursor-pointer transition ${
+                    cleanMode === "full_reset"
+                      ? "border-[#780000] bg-red-50/50 dark:bg-red-950/20"
+                      : "border-slate-200 dark:border-slate-800 hover:border-slate-300"
+                  }`}
+                >
+                  <input
+                    type="radio"
+                    name="cleanMode"
+                    checked={cleanMode === "full_reset"}
+                    onChange={() => setCleanMode("full_reset")}
+                    className="mt-0.5 accent-[#780000]"
+                  />
+                  <div>
+                    <span className="font-bold text-slate-900 dark:text-slate-100 block">
+                      Full Semester Cleanup (Files + Submissions &amp; Classes)
+                    </span>
+                    <span className="text-[11px] text-slate-600 dark:text-slate-400 leading-relaxed block mt-0.5">
+                      Deletes uploaded files, submissions, review decisions, and class loads for this semester.{" "}
+                      <strong>All faculty/admin accounts</strong>, programs, and templates stay intact; Verification History for this semester will be cleared.
+                    </span>
+                  </div>
+                </label>
+              </div>
+
+              {cleanCountdown > 0 ? (
+                <p className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">
+                  Safety lock active. Confirmation enabled in{" "}
+                  <span className="font-bold text-slate-800 dark:text-slate-200">
+                    {cleanCountdown}s
+                  </span>
+                  .
+                </p>
+              ) : null}
+            </div>
+
+            <div className="mt-6 flex items-center justify-end gap-2.5">
+              <button
+                type="button"
+                onClick={() => setCleanTermTarget(null)}
+                className="px-4 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 text-xs font-semibold hover:bg-slate-50 transition cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={isCleaningTerm || cleanCountdown > 0}
+                onClick={() => void handleConfirmCleanTerm()}
+                className="bg-[#780000] hover:bg-[#5e0000] text-white border border-[#5e0000] text-xs font-semibold px-4 py-2 rounded-xl transition disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer shadow-xs"
+              >
+                {isCleaningTerm
+                  ? "Cleaning..."
+                  : cleanCountdown > 0
+                    ? `Confirm Clean (${cleanCountdown}s)`
+                    : "Confirm Clean"}
               </button>
             </div>
           </div>

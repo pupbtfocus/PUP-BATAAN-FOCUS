@@ -268,9 +268,18 @@ export async function GET(request: NextRequest) {
     // 1. Unconditional Service-Role Lookup in submissions
     let { data: sub } = await adminClient
       .from("submissions")
-      .select("id, requirement_code, status, faculty_profile_id")
+      .select("id, requirement_code, status, faculty_profile_id, storage_path")
       .eq("id", submissionId)
       .maybeSingle();
+
+    if ((sub as { storage_path?: string | null } | null)?.storage_path?.startsWith("__cleaned__")) {
+      const cleanedMsg =
+        "This semester's uploaded file was cleaned from storage to save space. Download the archived .ZIP from Backups & Archive to view the document.";
+      if (asJson) {
+        return NextResponse.json({ error: cleanedMsg }, { status: 410 });
+      }
+      return renderNoFileHtml(cleanedMsg);
+    }
 
     // 2. Dual-Table Storage Path Resolution in document_versions
     let docVer: {
@@ -312,7 +321,7 @@ export async function GET(request: NextRequest) {
       if (!sub && docVer?.submission_id) {
         const { data: parentSub } = await adminClient
           .from("submissions")
-          .select("id, requirement_code, status, faculty_profile_id")
+          .select("id, requirement_code, status, faculty_profile_id, storage_path")
           .eq("id", docVer.submission_id)
           .maybeSingle();
         sub = parentSub;
@@ -361,6 +370,15 @@ export async function GET(request: NextRequest) {
         .eq("id", submissionId)
         .maybeSingle();
       embeddedPath = (embedded as { storage_path?: string | null } | null)?.storage_path ?? null;
+    }
+
+    if (embeddedPath?.startsWith("__cleaned__") || docVer?.storage_path?.startsWith("__cleaned__")) {
+      const cleanedMsg =
+        "This semester's uploaded file was cleaned from storage to save space. Download the archived .ZIP from Backups & Archive to view the document.";
+      if (asJson) {
+        return NextResponse.json({ error: cleanedMsg }, { status: 410 });
+      }
+      return renderNoFileHtml(cleanedMsg);
     }
 
     // 4. Discover & Sign File in Storage
