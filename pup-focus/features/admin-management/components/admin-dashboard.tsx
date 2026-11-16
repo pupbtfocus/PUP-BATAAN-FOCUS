@@ -9,6 +9,7 @@ import { emitRealtimeSync, useRealtimeSync } from "@/lib/realtime";
 import { isValidEmailAddress } from "@/lib/validation/email";
 import { ROLE, ROLE_LABEL, type AppRole, canManageAdminAccount } from "@/config/roles";
 import { TransactionLogsPanel } from "@/features/transaction-logs/components/transaction-logs-panel";
+import { SystemHeartbeatSection } from "@/features/transaction-logs/components/system-heartbeat-section";
 import { Activity, CheckCircle, ClockRotateRight, EditPencil, Eye, EyeClosed, Group, Key, Menu, NavArrowRight, Page, Refresh, SendMail, Shield, User, UserPlus, Xmark } from "iconoir-react";
 import { AppIcon } from "@/components/ui/app-icon";
 import { ModalHeader } from "@/components/ui/modal-header";
@@ -338,6 +339,7 @@ export function SuperAdminDashboard({
     }
   };
 
+  const [auditLogTab, setAuditLogTab] = useState<"transactions" | "keepalive">("transactions");
   const [settingsFullName, setSettingsFullName] = useState("");
   const [settingsEmail, setSettingsEmail] = useState("");
   const [activeSettingsOption, setActiveSettingsOption] =
@@ -489,10 +491,10 @@ export function SuperAdminDashboard({
 
     for (const f of facultyAccounts) {
       if (!f.is_active) continue;
-      const statusMap = f.requirementStatus || {};
+      const statusMap = f.requirementStatus as Record<string, string | undefined> | undefined;
       let turnedIn = 0;
       for (const code of reqCodes) {
-        const s = statusMap[code];
+        const s = statusMap?.[code];
         if (s === "validated" || s === "uploaded") turnedIn += 1;
       }
       if (turnedIn === totalRequired && totalRequired > 0) {
@@ -2473,7 +2475,40 @@ export function SuperAdminDashboard({
                   </div>
                 </div>
 
-                <TransactionLogsPanel />
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
+                  <div className="flex flex-wrap items-center gap-2 p-1.5 bg-slate-100 dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800">
+                    <button
+                      type="button"
+                      onClick={() => setAuditLogTab("transactions")}
+                      className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer ${
+                        auditLogTab === "transactions"
+                          ? "bg-[#780000] text-white border border-[#5e0000] shadow-xs"
+                          : "bg-white dark:bg-slate-800/80 text-slate-700 dark:text-slate-300 border border-slate-300 dark:border-slate-700 hover:border-slate-400 dark:hover:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-750 shadow-2xs"
+                      }`}
+                    >
+                      <AppIcon icon={Page} size="xs" color="inherit" />
+                      <span>Transaction Logs</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setAuditLogTab("keepalive")}
+                      className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer ${
+                        auditLogTab === "keepalive"
+                          ? "bg-[#780000] text-white border border-[#5e0000] shadow-xs"
+                          : "bg-white dark:bg-slate-800/80 text-slate-700 dark:text-slate-300 border border-slate-300 dark:border-slate-700 hover:border-slate-400 dark:hover:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-750 shadow-2xs"
+                      }`}
+                    >
+                      <AppIcon icon={Activity} size="xs" color="inherit" />
+                      <span>Database Keep-Alive</span>
+                    </button>
+                  </div>
+                </div>
+
+                {auditLogTab === "transactions" ? (
+                  <TransactionLogsPanel />
+                ) : (
+                  <SystemHeartbeatSection />
+                )}
               </article>
             ) : null}
 
