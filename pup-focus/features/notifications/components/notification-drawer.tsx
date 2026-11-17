@@ -607,17 +607,17 @@ export function NotificationDrawer() {
             />
 
             {/* Slide-out Sheet Panel */}
-            <div className="fixed inset-y-0 right-0 z-[100] flex h-full w-full sm:max-w-md md:max-w-lg flex-col p-0 bg-white text-slate-900 border-l border-slate-200 dark:bg-slate-950 dark:text-slate-100 dark:border-slate-800 shadow-2xl animate-in slide-in-from-right duration-250 overflow-x-hidden">
+            <div className="fixed inset-y-0 right-0 z-[100] flex h-full w-[86%] sm:w-full sm:max-w-md md:max-w-lg flex-col p-0 bg-white text-slate-900 border-l border-slate-200 dark:bg-slate-950 dark:text-slate-100 dark:border-slate-800 shadow-2xl animate-in slide-in-from-right duration-250 overflow-x-hidden">
               
               {/* TOP HEADER BAR */}
-              <div className="flex items-center justify-between border-b-4 border-amber-500 bg-[#800000] text-white px-4 sm:px-5 py-3.5 shrink-0 shadow-xs">
+              <div className="flex items-center justify-between gap-2 border-b-4 border-amber-500 bg-[#800000] text-white px-3.5 sm:px-5 py-3 sm:py-3.5 shrink-0 shadow-xs">
                 {selectedNotification ? (
                   /* Detail Mode Header: Back Button + Close */
                   <div className="flex items-center justify-between w-full gap-2">
                     <button
                       type="button"
                       onClick={() => setSelectedNotification(null)}
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-slate-950 hover:text-slate-950 bg-amber-500 hover:bg-amber-600 border border-amber-600 transition-all cursor-pointer shadow-2xs active:scale-95"
+                      className="inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-bold text-slate-950 hover:text-slate-950 bg-amber-500 hover:bg-amber-600 border border-amber-600 transition-all cursor-pointer shadow-2xs active:scale-95"
                       aria-label="Back to notification list"
                     >
                       <AppIcon icon={NavArrowLeft} size="sm" color="inherit" />
@@ -639,16 +639,16 @@ export function NotificationDrawer() {
                 ) : (
                   /* List Mode Header: Bell + Title + Unread Badge + Close */
                   <>
-                    <div className="flex items-center gap-2.5 min-w-0">
+                    <div className="flex items-center gap-2 sm:gap-2.5 min-w-0">
                       <div className="p-1.5 rounded-lg bg-white/10 text-rose-100 border border-white/20 shrink-0">
                         <AppIcon icon={Bell} size="md" color="inherit" />
                       </div>
-                      <div className="flex items-center gap-2 min-w-0">
-                        <h3 className="text-base font-extrabold text-white tracking-tight truncate">
+                      <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 min-w-0">
+                        <h3 className="text-sm sm:text-base font-extrabold text-white tracking-tight truncate">
                           Notifications
                         </h3>
                         {unreadCount > 0 && (
-                          <span className="inline-flex items-center gap-1.5 rounded-full bg-white/10 border border-white/20 px-2.5 py-0.5 text-xs font-bold text-rose-100 whitespace-nowrap shadow-xs">
+                          <span className="inline-flex items-center gap-1.5 rounded-full bg-white/10 border border-white/20 px-2 py-0.5 text-[11px] sm:text-xs font-bold text-rose-100 whitespace-nowrap shadow-xs">
                             <span className="h-1.5 w-1.5 rounded-full bg-amber-400 animate-pulse" />
                             {unreadCount} unread
                           </span>
@@ -670,14 +670,14 @@ export function NotificationDrawer() {
 
               {/* LIST MODE: TOOLBAR */}
               {!selectedNotification && (
-                <div className="flex items-center justify-between gap-2 px-4 sm:px-5 py-2.5 border-b border-slate-200/70 bg-slate-50/70 text-xs shrink-0 overflow-x-hidden">
+                <div className="flex flex-wrap items-center justify-between gap-2 px-3.5 sm:px-5 py-2.5 border-b border-slate-200/70 bg-slate-50/70 text-xs shrink-0">
                   {/* Filter Tabs */}
                   <div className="flex items-center gap-1 bg-slate-200/60 p-0.5 rounded-lg shrink-0">
                     <button
                       type="button"
                       onClick={() => setFilterTab("all")}
                       className={cn(
-                        "px-2.5 py-1 rounded-md font-semibold text-xs transition cursor-pointer whitespace-nowrap",
+                        "px-2 sm:px-2.5 py-1 rounded-md font-semibold text-[11px] sm:text-xs transition cursor-pointer whitespace-nowrap",
                         filterTab === "all"
                           ? "bg-slate-100 text-slate-700 font-bold shadow-sm"
                           : "font-medium text-slate-600 hover:text-slate-900"
@@ -689,7 +689,7 @@ export function NotificationDrawer() {
                       type="button"
                       onClick={() => setFilterTab("unread")}
                       className={cn(
-                        "px-2.5 py-1 rounded-md font-semibold text-xs transition cursor-pointer whitespace-nowrap",
+                        "px-2 sm:px-2.5 py-1 rounded-md font-semibold text-[11px] sm:text-xs transition cursor-pointer whitespace-nowrap",
                         filterTab === "unread"
                           ? "bg-slate-100 text-slate-700 font-bold shadow-sm"
                           : "font-medium text-slate-600 hover:text-slate-900"
@@ -700,7 +700,7 @@ export function NotificationDrawer() {
                   </div>
 
                   {/* Bulk Actions */}
-                  <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+                  <div className="flex items-center gap-1.5 sm:gap-2 shrink-0 ml-auto">
                     {unreadCount > 0 && (
                       <button
                         type="button"
@@ -886,7 +886,7 @@ export function NotificationDrawer() {
                                 <AppIcon icon={Page} size="xs" color="inherit" />
                                 <span>Attached Document</span>
                               </h4>
-                              <div className="flex items-center justify-between gap-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/90 dark:bg-slate-900 p-3.5 shadow-2xs">
+                              <div className="flex flex-wrap sm:flex-nowrap items-center justify-between gap-2.5 sm:gap-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/90 dark:bg-slate-900 p-3 sm:p-3.5 shadow-2xs">
                                 <div className="flex items-center gap-2.5 min-w-0">
                                   <div className="p-2 rounded-lg bg-[#800000] text-white border border-amber-500/60 shrink-0 shadow-2xs">
                                     <AppIcon icon={Page} size="md" color="inherit" />
@@ -904,7 +904,7 @@ export function NotificationDrawer() {
                                   href={fileInfo.fileUrl}
                                   target="_blank"
                                   rel="noopener noreferrer"
-                                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-amber-500 hover:bg-amber-600 text-slate-950 transition-colors shadow-xs shrink-0 cursor-pointer"
+                                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-amber-500 hover:bg-amber-600 text-slate-950 transition-colors shadow-xs shrink-0 cursor-pointer ml-auto sm:ml-0"
                                 >
                                   <span>Open File</span>
                                   <AppIcon icon={OpenNewWindow} size="xs" color="inherit" />
@@ -1090,14 +1090,14 @@ export function NotificationDrawer() {
                               )}
 
                               {/* Item Footer Action Buttons */}
-                              <div className="mt-3 flex items-center justify-between gap-2 pt-2 border-t border-slate-100 dark:border-slate-850">
+                              <div className="mt-3 flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-slate-100 dark:border-slate-850">
                                 <button
                                   type="button"
                                   onClick={(e) => {
                                     e.stopPropagation();
                                     handleNavigateToTarget(notification);
                                   }}
-                                  className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold bg-amber-500 hover:bg-amber-600 text-slate-950 shadow-sm transition-colors cursor-pointer active:scale-95"
+                                  className="inline-flex items-center gap-1 px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-bold bg-amber-500 hover:bg-amber-600 text-slate-950 shadow-sm transition-colors cursor-pointer active:scale-95"
                                   title="View requirement in dashboard"
                                 >
                                   <span>View requirement</span>

@@ -91,38 +91,38 @@ export function PUPNotificationDrawer({
       />
 
       {/* Drawer */}
-      <aside className="relative flex h-full w-full max-w-md flex-col bg-white shadow-2xl">
+      <aside className="relative flex h-full w-[86%] sm:w-full max-w-md flex-col bg-white shadow-2xl">
         {/* ── Header ─────────────────────────────────────────────── */}
-        <header className="shrink-0 border-b-4 border-amber-500 bg-[#800000] px-5 py-4">
-          <div className="flex items-start justify-between gap-3">
-            <div className="flex items-center gap-3">
-              <span className="flex h-10 w-10 items-center justify-center rounded-xl border border-white/20 bg-white/10 text-rose-100">
+        <header className="shrink-0 border-b-4 border-amber-500 bg-[#800000] px-3.5 sm:px-5 py-3.5 sm:py-4">
+          <div className="flex items-start justify-between gap-2 sm:gap-3">
+            <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
+              <span className="flex h-9 w-9 sm:h-10 sm:w-10 shrink-0 items-center justify-center rounded-xl border border-white/20 bg-white/10 text-rose-100">
                 <Icon icon="solar:bell-line-duotone" className="h-5 w-5" />
               </span>
-              <div>
-                <div className="flex items-center gap-2">
-                  <h2 className="text-base font-extrabold tracking-tight text-white">
+              <div className="min-w-0">
+                <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
+                  <h2 className="text-sm sm:text-base font-extrabold tracking-tight text-white">
                     Notifications
                   </h2>
                   {unreadCount > 0 && (
-                    <span className="rounded-full border border-white/20 bg-white/10 px-2 py-0.5 text-[11px] font-bold text-rose-100">
+                    <span className="rounded-full border border-white/20 bg-white/10 px-2 py-0.5 text-[11px] font-bold text-rose-100 whitespace-nowrap">
                       {unreadCount} unread
                     </span>
                   )}
                 </div>
-                <p className="mt-0.5 text-xs text-rose-100/80">
+                <p className="mt-0.5 text-xs text-rose-100/80 truncate">
                   Faculty submissions &amp; compliance alerts
                 </p>
               </div>
             </div>
 
-            <div className="flex items-center gap-1.5">
+            <div className="flex items-center gap-1.5 shrink-0">
               <button
                 type="button"
                 onClick={onRefresh}
                 disabled={isLoading}
                 title="Refresh notifications"
-                className="flex h-9 w-9 items-center justify-center rounded-lg bg-amber-500 text-slate-950 transition hover:bg-amber-600 disabled:opacity-50"
+                className="flex h-8 w-8 sm:h-9 sm:w-9 items-center justify-center rounded-lg bg-amber-500 text-slate-950 transition hover:bg-amber-600 disabled:opacity-50"
               >
                 <Icon
                   icon="solar:refresh-circle-line-duotone"
@@ -133,7 +133,7 @@ export function PUPNotificationDrawer({
                 type="button"
                 onClick={onClose}
                 title="Close notifications"
-                className="flex h-9 w-9 items-center justify-center rounded-lg bg-amber-500 text-slate-950 transition hover:bg-amber-600"
+                className="flex h-8 w-8 sm:h-9 sm:w-9 items-center justify-center rounded-lg bg-amber-500 text-slate-950 transition hover:bg-amber-600"
               >
                 <Icon icon="solar:close-circle-line-duotone" className="h-5 w-5" />
               </button>
@@ -142,8 +142,8 @@ export function PUPNotificationDrawer({
         </header>
 
         {/* ── Filter & Controls ──────────────────────────────────── */}
-        <div className="flex shrink-0 flex-wrap items-center justify-between gap-3 border-b border-slate-200/70 bg-slate-50/70 px-5 py-3">
-          <div className="flex items-center gap-1.5">
+        <div className="flex shrink-0 flex-wrap items-center justify-between gap-2 sm:gap-3 border-b border-slate-200/70 bg-slate-50/70 px-3.5 sm:px-5 py-3">
+          <div className="flex flex-wrap items-center gap-1.5">
             {(
               [
                 { key: "all", label: `All (${notifications.length})` },
@@ -156,7 +156,7 @@ export function PUPNotificationDrawer({
                 type="button"
                 onClick={() => onFilterChange(tab.key)}
                 className={cn(
-                  "rounded-lg px-3 py-1.5 text-xs transition",
+                  "rounded-lg px-2.5 sm:px-3 py-1.5 text-[11px] sm:text-xs transition",
                   filter === tab.key
                     ? "bg-amber-500 font-bold text-slate-950 shadow-sm"
                     : "font-medium text-slate-600 hover:text-slate-900",
@@ -167,7 +167,7 @@ export function PUPNotificationDrawer({
             ))}
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 ml-auto">
             {unreadCount > 0 && (
               <button
                 type="button"
@@ -217,23 +217,23 @@ export function PUPNotificationDrawer({
                 <article
                   key={notification.id}
                   className={cn(
-                    "flex items-start gap-3.5 border-l-4 px-5 py-4 transition",
+                    "flex items-start gap-2.5 sm:gap-3.5 border-l-4 px-3.5 sm:px-5 py-3.5 sm:py-4 transition",
                     isUnread
                       ? "border-l-transparent bg-white hover:bg-slate-50"
                       : "border-l-transparent bg-white hover:bg-slate-50",
                   )}
                 >
                   {/* Icon badge */}
-                  <span className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-slate-100 text-slate-500">
+                  <span className="mt-0.5 flex h-9 w-9 sm:h-10 sm:w-10 shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-slate-100 text-slate-500">
                     <Icon icon="solar:upload-minimalistic-line-duotone" className="h-5 w-5" />
                   </span>
 
                   <div className="min-w-0 flex-1">
                     {/* Title + time */}
-                    <div className="flex items-start justify-between gap-3">
+                    <div className="flex items-start justify-between gap-2 sm:gap-3">
                       <h3
                         className={cn(
-                          "text-sm leading-snug text-slate-900",
+                          "text-xs sm:text-sm leading-snug text-slate-900 break-words",
                           isUnread ? "font-extrabold" : "font-semibold",
                         )}
                       >
@@ -255,19 +255,19 @@ export function PUPNotificationDrawer({
                         {notification.category}
                       </span>
                       {notification.documentTitle && (
-                        <span className="max-w-[240px] truncate rounded-md border border-slate-200 bg-white px-2 py-0.5 text-[10px] font-bold text-slate-600">
+                        <span className="max-w-full sm:max-w-[240px] truncate rounded-md border border-slate-200 bg-white px-2 py-0.5 text-[10px] font-bold text-slate-600">
                           {notification.documentTitle}
                         </span>
                       )}
                     </div>
 
                     {/* Message */}
-                    <p className="mt-1.5 line-clamp-2 text-xs leading-relaxed text-slate-600">
+                    <p className="mt-1.5 line-clamp-2 text-xs leading-relaxed text-slate-600 break-words">
                       {notification.message}
                     </p>
 
                     {/* Footer */}
-                    <div className="mt-3 flex items-center justify-between gap-2 border-t border-slate-100 pt-2.5">
+                    <div className="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-slate-100 pt-2.5">
                       <div className="flex min-w-0 items-center gap-1.5 text-slate-500">
                         <Icon icon="solar:user-rounded-line-duotone" className="h-3.5 w-3.5 shrink-0" />
                         <span className="truncate text-xs font-medium">
@@ -275,7 +275,7 @@ export function PUPNotificationDrawer({
                         </span>
                       </div>
 
-                      <div className="flex shrink-0 items-center gap-1.5">
+                      <div className="flex shrink-0 items-center gap-1.5 ml-auto">
                         {onReview && (
                           <button
                             type="button"

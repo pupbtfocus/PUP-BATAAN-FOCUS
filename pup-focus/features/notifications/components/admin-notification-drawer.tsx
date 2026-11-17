@@ -588,17 +588,17 @@ export function AdminNotificationDrawer({
             />
 
             {/* Sheet Drawer */}
-            <div className="fixed inset-y-0 right-0 z-[100] flex h-full w-full sm:max-w-lg md:max-w-xl flex-col bg-white dark:bg-slate-950 border-l border-slate-200 dark:border-slate-800 shadow-2xl animate-in slide-in-from-right duration-250 overflow-x-hidden">
+            <div className="fixed inset-y-0 right-0 z-[100] flex h-full w-[86%] sm:w-full sm:max-w-lg md:max-w-xl flex-col bg-white dark:bg-slate-950 border-l border-slate-200 dark:border-slate-800 shadow-2xl animate-in slide-in-from-right duration-250 overflow-x-hidden">
               
               {/* TOP HEADER BAR */}
-              <div className="flex items-center justify-between border-b-4 border-amber-500 bg-[#800000] text-white px-4 sm:px-5 py-3.5 shrink-0 shadow-xs">
+              <div className="flex items-center justify-between gap-2 border-b-4 border-amber-500 bg-[#800000] text-white px-3.5 sm:px-5 py-3 sm:py-3.5 shrink-0 shadow-xs">
                 {selectedNotification ? (
                   /* Detail Mode Header: Back Button + Close */
                   <div className="flex items-center justify-between w-full gap-2">
                     <button
                       type="button"
                       onClick={() => setSelectedNotification(null)}
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-slate-950 hover:text-slate-950 bg-amber-500 hover:bg-amber-600 border border-amber-600 transition-all cursor-pointer shadow-2xs active:scale-95"
+                      className="inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-bold text-slate-950 hover:text-slate-950 bg-amber-500 hover:bg-amber-600 border border-amber-600 transition-all cursor-pointer shadow-2xs active:scale-95"
                       aria-label="Back to notification list"
                     >
                       <AppIcon icon={NavArrowLeft} size="sm" color="inherit" />
@@ -620,17 +620,17 @@ export function AdminNotificationDrawer({
                 ) : (
                   /* List Mode Header: Bell + Title + Refresh + Close */
                   <>
-                    <div className="flex items-center gap-2.5 min-w-0">
+                    <div className="flex items-center gap-2 sm:gap-2.5 min-w-0">
                       <div className="p-1.5 rounded-lg bg-white/10 text-rose-100 border border-white/20 shrink-0">
                         <AppIcon icon={Bell} size="lg" color="inherit" />
                       </div>
                       <div className="min-w-0">
-                        <div className="flex items-center gap-2">
-                          <h3 className="text-base font-extrabold text-white tracking-tight truncate">
+                        <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
+                          <h3 className="text-sm sm:text-base font-extrabold text-white tracking-tight truncate">
                             Notifications
                           </h3>
                           {unreadCount > 0 && (
-                            <span className="inline-flex items-center gap-1.5 rounded-full bg-white/10 border border-white/20 px-2.5 py-0.5 text-xs font-bold text-rose-100 whitespace-nowrap shadow-xs">
+                            <span className="inline-flex items-center gap-1.5 rounded-full bg-white/10 border border-white/20 px-2 py-0.5 text-[11px] sm:text-xs font-bold text-rose-100 whitespace-nowrap shadow-xs">
                               <span className="h-1.5 w-1.5 rounded-full bg-amber-400 animate-pulse" />
                               {unreadCount} unread
                             </span>
@@ -647,11 +647,11 @@ export function AdminNotificationDrawer({
                         type="button"
                         onClick={() => void fetchNotifications()}
                         disabled={isLoading}
-                        className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-bold border border-amber-600 bg-amber-500 hover:bg-amber-600 text-slate-950 transition-all cursor-pointer disabled:opacity-50 shadow-2xs active:scale-95"
+                        className="inline-flex items-center gap-1.5 px-2 sm:px-2.5 py-1.5 rounded-lg text-xs font-bold border border-amber-600 bg-amber-500 hover:bg-amber-600 text-slate-950 transition-all cursor-pointer disabled:opacity-50 shadow-2xs active:scale-95"
                         title="Refresh notifications"
                       >
                         <Refresh className={`h-3.5 w-3.5 ${isLoading ? "animate-spin" : ""}`} />
-                        <span className="hidden xs:inline">{isLoading ? "Refreshing..." : "Refresh"}</span>
+                        <span className="hidden sm:inline">{isLoading ? "Refreshing..." : "Refresh"}</span>
                       </button>
 
                       <button
@@ -669,13 +669,13 @@ export function AdminNotificationDrawer({
 
               {/* LIST MODE: TOOLBAR */}
               {!selectedNotification && (
-                <div className="flex items-center justify-between gap-2 px-4 sm:px-5 py-2.5 border-b border-slate-200/70 bg-slate-50/70 text-xs shrink-0 overflow-x-hidden">
-                  <div className="flex items-center gap-1 bg-slate-200/60 p-0.5 rounded-lg shrink-0">
+                <div className="flex flex-wrap items-center justify-between gap-2 px-3.5 sm:px-5 py-2.5 border-b border-slate-200/70 bg-slate-50/70 text-xs shrink-0">
+                  <div className="flex flex-wrap items-center gap-1 bg-slate-200/60 p-0.5 rounded-lg max-w-full">
                     <button
                       type="button"
                       onClick={() => setFilterTab("all")}
                       className={cn(
-                        "px-2.5 py-1 rounded-md text-xs transition cursor-pointer whitespace-nowrap",
+                        "px-2 sm:px-2.5 py-1 rounded-md text-[11px] sm:text-xs transition cursor-pointer whitespace-nowrap",
                         filterTab === "all"
                           ? "bg-slate-100 text-slate-700 font-bold shadow-sm"
                           : "font-medium text-slate-600 hover:text-slate-900"
@@ -687,7 +687,7 @@ export function AdminNotificationDrawer({
                       type="button"
                       onClick={() => setFilterTab("submissions")}
                       className={cn(
-                        "px-2.5 py-1 rounded-md text-xs transition cursor-pointer whitespace-nowrap",
+                        "px-2 sm:px-2.5 py-1 rounded-md text-[11px] sm:text-xs transition cursor-pointer whitespace-nowrap",
                         filterTab === "submissions"
                           ? "bg-slate-100 text-slate-700 font-bold shadow-sm"
                           : "font-medium text-slate-600 hover:text-slate-900"
@@ -699,7 +699,7 @@ export function AdminNotificationDrawer({
                       type="button"
                       onClick={() => setFilterTab("unread")}
                       className={cn(
-                        "px-2.5 py-1 rounded-md text-xs transition cursor-pointer whitespace-nowrap",
+                        "px-2 sm:px-2.5 py-1 rounded-md text-[11px] sm:text-xs transition cursor-pointer whitespace-nowrap",
                         filterTab === "unread"
                           ? "bg-slate-100 text-slate-700 font-bold shadow-sm"
                           : "font-medium text-slate-600 hover:text-slate-900"
@@ -709,7 +709,7 @@ export function AdminNotificationDrawer({
                     </button>
                   </div>
 
-                  <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+                  <div className="flex items-center gap-1.5 sm:gap-2 shrink-0 ml-auto">
                     {unreadCount > 0 && (
                       <button
                         type="button"
@@ -893,7 +893,7 @@ export function AdminNotificationDrawer({
 
                                   {/* Details */}
                                   <div className="min-w-0 flex-1">
-                                    <div className="flex items-center justify-between gap-2">
+                                    <div className="flex flex-wrap items-center justify-between gap-1.5 sm:gap-2">
                                       <h3 className="text-xs sm:text-sm font-black text-slate-900 dark:text-slate-100 truncate">
                                         {selectedNotification.facultyName}
                                       </h3>
@@ -917,7 +917,7 @@ export function AdminNotificationDrawer({
                                       </button>
                                     </div>
 
-                                    <div className="flex items-center gap-2 mt-0.5 text-[11px] text-slate-600 dark:text-slate-400">
+                                    <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 mt-0.5 text-[11px] text-slate-600 dark:text-slate-400">
                                       <span className="truncate">
                                         {selectedNotification.facultyDepartment || metadata.department || metadata.program || "Faculty of Instruction"}
                                       </span>
@@ -1074,7 +1074,7 @@ export function AdminNotificationDrawer({
                                 <AppIcon icon={Page} size="xs" color="inherit" />
                                 <span>Attached Document</span>
                               </h4>
-                              <div className="flex items-center justify-between gap-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/90 dark:bg-slate-900 p-3.5 shadow-2xs">
+                              <div className="flex flex-wrap sm:flex-nowrap items-center justify-between gap-2.5 sm:gap-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/90 dark:bg-slate-900 p-3 sm:p-3.5 shadow-2xs">
                                 <div className="flex items-center gap-2.5 min-w-0">
                                   <div className="p-2 rounded-lg bg-[#800000] text-white border border-amber-500/60 shrink-0 shadow-2xs">
                                     <AppIcon icon={Page} size="md" color="inherit" />
@@ -1092,7 +1092,7 @@ export function AdminNotificationDrawer({
                                   href={fileUrl}
                                   target="_blank"
                                   rel="noopener noreferrer"
-                                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-amber-500 hover:bg-amber-600 text-slate-950 transition-colors shadow-xs shrink-0 cursor-pointer"
+                                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-amber-500 hover:bg-amber-600 text-slate-950 transition-colors shadow-xs shrink-0 cursor-pointer ml-auto sm:ml-0"
                                 >
                                   <span>Open File</span>
                                   <AppIcon icon={OpenNewWindow} size="xs" color="inherit" />
@@ -1191,99 +1191,99 @@ export function AdminNotificationDrawer({
                           <article
                             key={notif.id}
                             onClick={() => void handleOpenDetail(notif)}
-                            className={cn(
-                              "group relative flex items-start gap-3.5 px-4 sm:px-5 py-4 transition-all duration-150 cursor-pointer text-left overflow-x-hidden",
-                              isUnread
-                                ? "bg-white hover:bg-slate-50 dark:bg-slate-950 dark:hover:bg-slate-900/60 border-l-4 border-l-transparent"
-                                : "bg-white hover:bg-slate-50/90 dark:bg-slate-950 dark:hover:bg-slate-900/60 border-l-4 border-l-transparent"
-                            )}
-                          >
-                            {/* Icon Avatar */}
-                            <div className="mt-0.5 p-2 rounded-xl border border-slate-200 bg-slate-100 text-slate-500 shrink-0 flex items-center justify-center shadow-xs">
-                              <AppIcon icon={notifBadge.Icon} size="md" color="inherit" />
-                            </div>
-
-                            {/* Content */}
-                            <div className="flex-1 min-w-0">
-                              {/* Subject line + Time + Unread indicator */}
-                              <div className="flex items-start justify-between gap-3">
-                                <h4
-                                  className={cn(
-                                    "text-sm tracking-tight text-slate-900 dark:text-slate-100 group-hover:text-slate-700 dark:group-hover:text-slate-300 transition-colors leading-snug break-words",
-                                    isUnread ? "font-extrabold" : "font-semibold"
-                                  )}
-                                >
-                                  {notif.title}
-                                </h4>
-                                <div className="flex items-center gap-1.5 shrink-0 pt-0.5">
-                                  <span className="text-[11px] text-slate-400 dark:text-slate-500 whitespace-nowrap">
-                                    {formatRelativeTime(notif.createdAt)}
-                                  </span>
-                                  {isUnread && (
-                                    <span className="h-2 w-2 rounded-full bg-slate-400 shrink-0 shadow-xs ring-1 ring-slate-300/50" title="Unread" />
-                                  )}
-                                </div>
+                              className={cn(
+                                "group relative flex items-start gap-2.5 sm:gap-3.5 px-3.5 sm:px-5 py-3.5 sm:py-4 transition-all duration-150 cursor-pointer text-left overflow-x-hidden",
+                                isUnread
+                                  ? "bg-white hover:bg-slate-50 dark:bg-slate-950 dark:hover:bg-slate-900/60 border-l-4 border-l-transparent"
+                                  : "bg-white hover:bg-slate-50/90 dark:bg-slate-950 dark:hover:bg-slate-900/60 border-l-4 border-l-transparent"
+                              )}
+                            >
+                              {/* Icon Avatar */}
+                              <div className="mt-0.5 p-2 rounded-xl border border-slate-200 bg-slate-100 text-slate-500 shrink-0 flex items-center justify-center shadow-xs">
+                                <AppIcon icon={notifBadge.Icon} size="md" color="inherit" />
                               </div>
 
-                              {/* Requirement / Type Badges */}
-                              <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
-                                <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold border border-slate-200 bg-white text-slate-600 shadow-2xs">
-                                  {notifBadge.categoryLabel}
-                                </span>
-
-                                {reqLabel && (
-                                  <span className="rounded-md border border-slate-200 bg-white px-2 py-0.5 text-[10px] font-bold text-slate-600 shadow-2xs truncate max-w-[240px]">
-                                    {reqLabel}
-                                  </span>
-                                )}
-                              </div>
-
-                              {/* Message Body */}
-                              <p className="mt-1.5 text-xs text-slate-600 dark:text-slate-300 line-clamp-2 leading-relaxed break-words">
-                                {snippetText}
-                              </p>
-
-                              {/* Footer / Actions */}
-                              <div className="mt-3 flex items-center justify-between gap-2 pt-2 border-t border-slate-100 dark:border-slate-850">
-                                <div className="flex items-center gap-1.5 min-w-0 text-slate-500 dark:text-slate-400">
-                                  <AppIcon icon={isDbCapacityAlert ? Database : User} size="xs" color="muted" className="shrink-0" />
-                                  <span className="text-xs font-medium truncate">
-                                    {isDbCapacityAlert
-                                      ? "Storage Monitor"
-                                      : notif.facultyName
-                                      ? notif.facultyName
-                                      : "System Update"}
-                                  </span>
-                                </div>
-
-                                <div className="flex items-center gap-1.5 shrink-0">
-                                  <button
-                                    type="button"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      handleNavigateDirect(notif);
-                                    }}
-                                    className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold bg-amber-500 hover:bg-amber-600 text-slate-950 shadow-sm transition-colors cursor-pointer active:scale-95"
+                              {/* Content */}
+                              <div className="flex-1 min-w-0">
+                                {/* Subject line + Time + Unread indicator */}
+                                <div className="flex items-start justify-between gap-2 sm:gap-3">
+                                  <h4
+                                    className={cn(
+                                      "text-xs sm:text-sm tracking-tight text-slate-900 dark:text-slate-100 group-hover:text-slate-700 dark:group-hover:text-slate-300 transition-colors leading-snug break-words",
+                                      isUnread ? "font-extrabold" : "font-semibold"
+                                    )}
                                   >
-                                    <span>{isDbCapacityAlert ? "Storage" : "Review"}</span>
-                                    <AppIcon icon={NavArrowRight} size="xs" color="inherit" />
-                                  </button>
+                                    {notif.title}
+                                  </h4>
+                                  <div className="flex items-center gap-1.5 shrink-0 pt-0.5">
+                                    <span className="text-[11px] text-slate-400 dark:text-slate-500 whitespace-nowrap">
+                                      {formatRelativeTime(notif.createdAt)}
+                                    </span>
+                                    {isUnread && (
+                                      <span className="h-2 w-2 rounded-full bg-slate-400 shrink-0 shadow-xs ring-1 ring-slate-300/50" title="Unread" />
+                                    )}
+                                  </div>
+                                </div>
 
-                                  <button
-                                    type="button"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      void handleToggleSingleRead(notif.id, notif.isRead);
-                                    }}
-                                    className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-semibold rounded-lg transition-colors cursor-pointer active:scale-95 bg-[#800000] hover:bg-[#5e0000] text-white"
-                                    title={isUnread ? "Mark as read" : "Mark as unread"}
-                                  >
-                                    <AppIcon icon={DoubleCheck} size="xs" color="inherit" />
-                                    <span>{isUnread ? "Read" : "Unread"}</span>
-                                  </button>
+                                {/* Requirement / Type Badges */}
+                                <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
+                                  <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold border border-slate-200 bg-white text-slate-600 shadow-2xs">
+                                    {notifBadge.categoryLabel}
+                                  </span>
+
+                                  {reqLabel && (
+                                    <span className="rounded-md border border-slate-200 bg-white px-2 py-0.5 text-[10px] font-bold text-slate-600 shadow-2xs truncate max-w-full sm:max-w-[240px]">
+                                      {reqLabel}
+                                    </span>
+                                  )}
+                                </div>
+
+                                {/* Message Body */}
+                                <p className="mt-1.5 text-xs text-slate-600 dark:text-slate-300 line-clamp-2 leading-relaxed break-words">
+                                  {snippetText}
+                                </p>
+
+                                {/* Footer / Actions */}
+                                <div className="mt-3 flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-slate-100 dark:border-slate-850">
+                                  <div className="flex items-center gap-1.5 min-w-0 text-slate-500 dark:text-slate-400">
+                                    <AppIcon icon={isDbCapacityAlert ? Database : User} size="xs" color="muted" className="shrink-0" />
+                                    <span className="text-xs font-medium truncate">
+                                      {isDbCapacityAlert
+                                        ? "Storage Monitor"
+                                        : notif.facultyName
+                                        ? notif.facultyName
+                                        : "System Update"}
+                                    </span>
+                                  </div>
+
+                                  <div className="flex items-center gap-1.5 shrink-0 ml-auto">
+                                    <button
+                                      type="button"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleNavigateDirect(notif);
+                                      }}
+                                      className="inline-flex items-center gap-1 px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-bold bg-amber-500 hover:bg-amber-600 text-slate-950 shadow-sm transition-colors cursor-pointer active:scale-95"
+                                    >
+                                      <span>{isDbCapacityAlert ? "Storage" : "Review"}</span>
+                                      <AppIcon icon={NavArrowRight} size="xs" color="inherit" />
+                                    </button>
+
+                                    <button
+                                      type="button"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        void handleToggleSingleRead(notif.id, notif.isRead);
+                                      }}
+                                      className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-semibold rounded-lg transition-colors cursor-pointer active:scale-95 bg-[#800000] hover:bg-[#5e0000] text-white"
+                                      title={isUnread ? "Mark as read" : "Mark as unread"}
+                                    >
+                                      <AppIcon icon={DoubleCheck} size="xs" color="inherit" />
+                                      <span>{isUnread ? "Read" : "Unread"}</span>
+                                    </button>
+                                  </div>
                                 </div>
                               </div>
-                            </div>
                           </article>
                         );
                       })
