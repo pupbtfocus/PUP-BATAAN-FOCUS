@@ -142,14 +142,14 @@ export function RequirementTemplateModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4 backdrop-blur-sm">
-      <div className="w-full max-w-xl rounded-2xl border border-slate-300 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-2xl text-slate-900 dark:text-slate-100 max-h-[90vh] overflow-y-auto">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-3 sm:p-4 backdrop-blur-sm">
+      <div className="w-full max-w-xl rounded-2xl border border-slate-300 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 sm:p-6 shadow-2xl text-slate-900 dark:text-slate-100 max-h-[90dvh] overflow-y-auto">
         {/* Modal Header */}
         <ModalHeader
           icon={Page}
           title={isEditing ? "Edit Requirement Template" : "Add Requirement Template"}
           subtitle="Configure document compliance parameters, upload limits, and visibility."
-          className="-mx-6 -mt-6 mb-5 rounded-t-2xl"
+          className="-mx-4 -mt-4 sm:-mx-6 sm:-mt-6 mb-4 sm:mb-5 rounded-t-2xl"
         />
 
         <form className="flex flex-col gap-4" onSubmit={handleSubmit}>
@@ -276,18 +276,18 @@ export function RequirementTemplateModal({
           />
 
           {/* Modal Action Buttons */}
-          <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-slate-300 dark:border-slate-800 mt-2">
+          <div className="grid grid-cols-2 sm:flex sm:items-center sm:justify-end gap-2.5 pt-3 border-t border-slate-300 dark:border-slate-800 mt-2">
             <button
               type="button"
               onClick={onClose}
-              className="rounded-xl bg-[#780000] hover:bg-[#5e0000] text-white border border-[#5e0000] px-4 py-2 text-xs font-semibold transition cursor-pointer shadow-xs"
+              className="w-full sm:w-auto inline-flex items-center justify-center rounded-xl bg-[#780000] hover:bg-[#5e0000] text-white border border-[#5e0000] px-4 py-2 text-xs font-semibold transition cursor-pointer shadow-xs"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={isSubmitting}
-              className="bg-amber-500 hover:bg-amber-400 text-slate-950 border border-amber-600 font-semibold px-5 py-2 rounded-xl text-xs transition-all shadow-xs disabled:opacity-50 cursor-pointer"
+              className="w-full sm:w-auto inline-flex items-center justify-center bg-amber-500 hover:bg-amber-400 text-slate-950 border border-amber-600 font-semibold px-5 py-2 rounded-xl text-xs transition-all shadow-xs disabled:opacity-50 cursor-pointer"
             >
               {isSubmitting
                 ? "Saving..."

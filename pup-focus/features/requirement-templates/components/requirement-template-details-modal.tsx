@@ -36,7 +36,7 @@ export function RequirementTemplateDetailsModal({
       aria-labelledby="requirement-details-title"
       className="fixed inset-0 z-50 overflow-y-auto bg-slate-950/80 p-3 sm:p-4 flex min-h-full items-center justify-center backdrop-blur-sm animate-in fade-in duration-200"
     >
-      <div className="relative w-full max-w-2xl max-h-[90vh] flex flex-col rounded-2xl bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-800 shadow-2xl overflow-hidden my-auto animate-in zoom-in-95 duration-200">
+      <div className="relative w-full max-w-2xl max-h-[90dvh] flex flex-col rounded-2xl bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-800 shadow-2xl overflow-hidden my-auto animate-in zoom-in-95 duration-200">
         {/* Header */}
         <ModalHeader
           icon={Page}
@@ -45,17 +45,17 @@ export function RequirementTemplateDetailsModal({
         />
 
         {/* Scrollable Content Body */}
-        <div className="flex-1 overflow-y-auto p-5 sm:p-6 space-y-5 text-slate-800 dark:text-slate-200">
+        <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4 sm:space-y-5 text-slate-800 dark:text-slate-200">
           {/* Top Banner Overview Card */}
-          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 rounded-xl border border-slate-200/90 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/40 p-4 sm:p-5">
-            <div className="p-3 rounded-2xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 shrink-0 flex items-center justify-center">
+          <div className="flex items-center gap-3.5 sm:gap-4 rounded-xl border border-slate-200/90 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/40 p-3.5 sm:p-5">
+            <div className="p-2.5 sm:p-3 rounded-2xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 shrink-0 flex items-center justify-center">
               <AppIcon icon={Page} size="lg" color="default" />
             </div>
 
             <div className="flex-1 min-w-0">
               <h3
                 id="requirement-details-title"
-                className="text-base sm:text-lg font-bold text-slate-900 dark:text-slate-100"
+                className="text-base sm:text-lg font-bold text-slate-900 dark:text-slate-100 break-words"
               >
                 {template.title}
               </h3>
@@ -164,37 +164,37 @@ export function RequirementTemplateDetailsModal({
         </div>
 
         {/* Modal Footer Actions */}
-        <div className="border-t border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/80 px-5 py-3.5 flex flex-wrap items-center justify-between gap-2.5">
+        <div className="border-t border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/80 px-4 sm:px-5 py-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
           {/* Left Action: Quick Hide/Unhide toggle */}
-          <div>
-            {onToggleHide && (
-              <button
-                type="button"
-                disabled={isTogglingStatus}
-                onClick={() => void onToggleHide(template)}
-                className={`text-xs font-semibold rounded-lg px-3 py-2 transition-colors cursor-pointer inline-flex items-center gap-1.5 shadow-2xs ${
-                  template.is_active
-                    ? "bg-[#780000] hover:bg-[#5e0000] text-white border border-[#5e0000]"
-                    : "bg-[#0b5336] hover:bg-[#08412a] text-white border border-[#08412a]"
-                }`}
-              >
-                {template.is_active ? (
-                  <>
-                    <EyeClosed className="h-4 w-4" strokeWidth={2} />
-                    <span>Hide Requirement</span>
-                  </>
-                ) : (
-                  <>
-                    <Eye className="h-4 w-4" strokeWidth={2} />
-                    <span>Unhide Requirement</span>
-                  </>
-                )}
-              </button>
-            )}
-          </div>
+          {onToggleHide ? (
+            <button
+              type="button"
+              disabled={isTogglingStatus}
+              onClick={() => void onToggleHide(template)}
+              className={`w-full sm:w-auto justify-center text-xs font-semibold rounded-lg px-3 py-2 transition-colors cursor-pointer inline-flex items-center gap-1.5 shadow-2xs ${
+                template.is_active
+                  ? "bg-[#780000] hover:bg-[#5e0000] text-white border border-[#5e0000]"
+                  : "bg-[#0b5336] hover:bg-[#08412a] text-white border border-[#08412a]"
+              }`}
+            >
+              {template.is_active ? (
+                <>
+                  <EyeClosed className="h-4 w-4" strokeWidth={2} />
+                  <span>Hide Requirement</span>
+                </>
+              ) : (
+                <>
+                  <Eye className="h-4 w-4" strokeWidth={2} />
+                  <span>Unhide Requirement</span>
+                </>
+              )}
+            </button>
+          ) : (
+            <div />
+          )}
 
           {/* Right Actions: Edit & Close */}
-          <div className="flex items-center gap-2">
+          <div className={`grid ${onEdit ? "grid-cols-2" : "grid-cols-1"} sm:flex sm:items-center gap-2 w-full sm:w-auto`}>
             {onEdit && (
               <button
                 type="button"
@@ -202,7 +202,7 @@ export function RequirementTemplateDetailsModal({
                   onClose();
                   onEdit(template);
                 }}
-                className="bg-amber-500 hover:bg-amber-400 text-slate-900 border border-amber-600 text-xs font-semibold rounded-lg px-3.5 py-2 transition-colors cursor-pointer inline-flex items-center gap-1.5 shadow-2xs"
+                className="w-full sm:w-auto justify-center bg-amber-500 hover:bg-amber-400 text-slate-900 border border-amber-600 text-xs font-semibold rounded-lg px-3.5 py-2 transition-colors cursor-pointer inline-flex items-center gap-1.5 shadow-2xs"
               >
                 <EditPencil className="h-4 w-4" strokeWidth={2} />
                 <span>Edit Template</span>
@@ -211,7 +211,7 @@ export function RequirementTemplateDetailsModal({
             <button
               type="button"
               onClick={onClose}
-              className="bg-[#780000] hover:bg-[#5e0000] text-white border border-[#5e0000] text-xs font-semibold rounded-lg px-3.5 py-2 transition-colors cursor-pointer shadow-xs"
+              className="w-full sm:w-auto inline-flex items-center justify-center bg-[#780000] hover:bg-[#5e0000] text-white border border-[#5e0000] text-xs font-semibold rounded-lg px-3.5 py-2 transition-colors cursor-pointer shadow-xs"
             >
               Close
             </button>

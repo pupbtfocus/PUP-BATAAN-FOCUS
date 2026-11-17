@@ -277,9 +277,9 @@ export function RequirementTemplatesPanel({
   return (
     <div className="w-full space-y-4">
       {/* 3-Card Stat Summary Header matching AdminStatsCards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3 sm:gap-4 mb-4 sm:mb-6">
         {/* 1. TOTAL TEMPLATES */}
-        <div className="rounded-2xl bg-white text-slate-900 border border-slate-200 dark:border-slate-800 shadow-xs dark:bg-slate-900 dark:text-slate-100 p-5 transition-colors">
+        <div className="rounded-2xl bg-white text-slate-900 border border-slate-200 dark:border-slate-800 shadow-xs dark:bg-slate-900 dark:text-slate-100 p-4 sm:p-5 transition-colors">
           <div className="flex items-center justify-between">
             <span className="text-slate-500 dark:text-slate-400 text-xs font-medium uppercase tracking-wider">
               Total Templates
@@ -295,7 +295,7 @@ export function RequirementTemplatesPanel({
         </div>
 
         {/* 2. ACTIVE REQUIREMENTS */}
-        <div className="rounded-2xl bg-white text-slate-900 border border-slate-200 dark:border-slate-800 shadow-xs dark:bg-slate-900 dark:text-slate-100 p-5 transition-colors">
+        <div className="rounded-2xl bg-white text-slate-900 border border-slate-200 dark:border-slate-800 shadow-xs dark:bg-slate-900 dark:text-slate-100 p-4 sm:p-5 transition-colors">
           <div className="flex items-center justify-between">
             <span className="text-slate-500 dark:text-slate-400 text-xs font-medium uppercase tracking-wider">
               Active Requirements
@@ -311,7 +311,7 @@ export function RequirementTemplatesPanel({
         </div>
 
         {/* 3. HIDDEN REQUIREMENTS */}
-        <div className="rounded-2xl bg-white text-slate-900 border border-slate-200 dark:border-slate-800 shadow-xs dark:bg-slate-900 dark:text-slate-100 p-5 transition-colors">
+        <div className="rounded-2xl bg-white text-slate-900 border border-slate-200 dark:border-slate-800 shadow-xs dark:bg-slate-900 dark:text-slate-100 p-4 sm:p-5 transition-colors">
           <div className="flex items-center justify-between">
             <span className="text-slate-500 dark:text-slate-400 text-xs font-medium uppercase tracking-wider">
               Hidden Requirements
@@ -341,8 +341,8 @@ export function RequirementTemplatesPanel({
       />
 
       {/* Filter & Actions Bar matching AdminFilterBar */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-4 bg-white text-slate-900 border border-slate-300 shadow-xs dark:bg-slate-900 dark:text-slate-100 dark:border-slate-800 rounded-2xl mb-6 transition-colors">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2.5 w-full sm:w-auto flex-wrap">
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 p-3.5 sm:p-4 bg-white text-slate-900 border border-slate-300 shadow-xs dark:bg-slate-900 dark:text-slate-100 dark:border-slate-800 rounded-2xl mb-4 sm:mb-6 transition-colors">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 w-full sm:w-auto flex-wrap">
           <div className="relative w-full sm:w-64">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" strokeWidth={2} />
             <input
@@ -355,13 +355,13 @@ export function RequirementTemplatesPanel({
           </div>
 
           {/* Status Filter Tabs */}
-          <div className="flex items-center rounded-xl bg-slate-100 dark:bg-slate-800 p-1 border border-slate-200 dark:border-slate-700">
+          <div className="grid grid-cols-3 sm:flex items-center rounded-xl bg-slate-100 dark:bg-slate-800 p-1 border border-slate-200 dark:border-slate-700 w-full sm:w-auto">
             {(["all", "active", "hidden"] as const).map((st) => (
               <button
                 key={st}
                 type="button"
                 onClick={() => setStatusFilter(st)}
-                className={`px-3 py-1 text-xs font-semibold rounded-lg capitalize transition-all cursor-pointer ${
+                className={`px-3 py-1.5 sm:py-1 text-xs font-semibold rounded-lg capitalize transition-all cursor-pointer text-center ${
                   statusFilter === st
                     ? "bg-amber-500 text-slate-950 font-semibold shadow-xs border border-amber-600/30"
                     : "text-slate-600 hover:text-slate-900 hover:bg-slate-200/60 dark:text-slate-400 dark:hover:text-slate-100 dark:hover:bg-slate-800/60"
@@ -378,7 +378,7 @@ export function RequirementTemplatesPanel({
           <button
             type="button"
             onClick={handleOpenAddModal}
-            className="bg-amber-500 hover:bg-amber-400 text-slate-950 border border-amber-600 font-semibold px-4 py-2 rounded-xl text-xs transition-all shadow-xs cursor-pointer inline-flex items-center gap-1.5 whitespace-nowrap"
+            className="w-full sm:w-auto bg-amber-500 hover:bg-amber-400 text-slate-950 border border-amber-600 font-semibold px-4 py-2 rounded-xl text-xs transition-all shadow-xs cursor-pointer inline-flex items-center justify-center gap-1.5 whitespace-nowrap"
           >
             <Plus className="h-3.5 w-3.5" strokeWidth={2} />
             <span>Add Requirement Template</span>
@@ -386,8 +386,149 @@ export function RequirementTemplatesPanel({
         </div>
       </div>
 
-      {/* Main Data Table matching adaptive table standard */}
-      <div className="w-full overflow-x-auto rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs dark:shadow-none overflow-hidden transition-colors">
+      {/* Mobile Card View (< md) */}
+      <div className="md:hidden space-y-2.5">
+        {isLoading && filteredTemplates.length === 0 ? (
+          <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 py-10 px-4 text-center text-xs text-slate-500 dark:text-slate-400 shadow-xs">
+            <Refresh className="h-5 w-5 animate-spin mx-auto mb-2 text-amber-500" strokeWidth={2} />
+            Loading requirement templates...
+          </div>
+        ) : filteredTemplates.length === 0 ? (
+          <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 py-12 px-4 text-center text-xs text-slate-500 dark:text-slate-400 shadow-xs">
+            <Page className="h-8 w-8 mx-auto mb-2 text-slate-400 opacity-60" strokeWidth={2} />
+            <p className="font-semibold text-slate-700 dark:text-slate-300">No requirement templates found</p>
+            <p className="text-xs text-slate-500 mt-1">
+              {searchQuery
+                ? "Try modifying your search filter"
+                : "Get started by adding a requirement template or restoring defaults"}
+            </p>
+          </div>
+        ) : (
+          filteredTemplates.map((tpl, index) => (
+            <div
+              key={`mobile-${tpl.id}`}
+              className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-3.5 space-y-2.5 shadow-xs"
+            >
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div className="flex items-center gap-1.5">
+                  <span className="text-[11px] font-mono text-slate-400 dark:text-slate-500 bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded">
+                    #{index + 1}
+                  </span>
+                  {tpl.is_mandatory ? (
+                    <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-bold bg-amber-500 text-slate-950 border border-amber-600 shadow-2xs">
+                      Mandatory
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-semibold bg-slate-600 text-white border border-slate-700 shadow-2xs">
+                      Optional
+                    </span>
+                  )}
+                </div>
+
+                {tpl.is_active ? (
+                  <span className="bg-[#0b5336] text-white border border-[#08412a] px-2 py-0.5 text-xs font-semibold rounded-md inline-flex items-center gap-1.5 shadow-2xs shrink-0">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-300" />
+                    Active
+                  </span>
+                ) : (
+                  <span className="bg-[#780000] text-white border border-[#5e0000] px-2 py-0.5 text-xs font-semibold rounded-md inline-flex items-center gap-1.5 shadow-2xs shrink-0">
+                    <span className="w-1.5 h-1.5 rounded-full bg-rose-300" />
+                    Hidden
+                  </span>
+                )}
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setTemplateToView(tpl)}
+                className="text-left font-bold text-slate-900 dark:text-slate-100 hover:text-amber-600 dark:hover:text-amber-400 text-sm transition-colors cursor-pointer block break-words leading-snug"
+              >
+                {tpl.title}
+              </button>
+
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div className="flex flex-wrap items-center gap-1.5">
+                  {tpl.allowed_formats.map((fmt) => (
+                    <span
+                      key={fmt}
+                      className="inline-flex items-center gap-1 px-1.5 py-0.5 text-[11px] font-bold rounded-md bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 border border-slate-300 dark:border-slate-700 shadow-2xs whitespace-nowrap"
+                    >
+                      <FormatIcon format={fmt} className="h-3.5 w-3.5 shrink-0" />
+                      <span>{fmt}</span>
+                    </span>
+                  ))}
+                </div>
+                <span className="text-[11px] font-semibold text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-2 py-0.5 rounded-md shrink-0">
+                  Max: {tpl.max_size_mb} MB
+                </span>
+              </div>
+
+              <div className="pt-2.5 border-t border-slate-100 dark:border-slate-800 flex flex-wrap items-center justify-between gap-2">
+                <div className="flex flex-wrap items-center gap-1.5">
+                  <button
+                    type="button"
+                    onClick={() => setTemplateToView(tpl)}
+                    className="bg-amber-500 hover:bg-amber-400 text-slate-900 border border-amber-600 text-xs font-medium rounded-md px-2.5 py-1.5 transition-colors cursor-pointer inline-flex items-center gap-1 shadow-2xs"
+                    title="View requirement details"
+                  >
+                    <Eye className="h-3.5 w-3.5" strokeWidth={2} />
+                    <span>View</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => handleOpenEditModal(tpl)}
+                    className="bg-amber-500 hover:bg-amber-600 text-slate-900 border border-amber-600 text-xs font-medium rounded-md px-2.5 py-1.5 transition-colors cursor-pointer inline-flex items-center gap-1 shadow-2xs"
+                    title="Edit requirement template"
+                  >
+                    <EditPencil className="h-3.5 w-3.5" strokeWidth={2} />
+                    <span>Edit</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    disabled={isTogglingStatus === tpl.id}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setHideTarget(tpl);
+                    }}
+                    className={
+                      tpl.is_active
+                        ? "bg-[#780000] hover:bg-[#5e0000] text-white border border-[#5e0000] text-xs font-medium rounded-md px-2.5 py-1.5 transition-colors cursor-pointer inline-flex items-center gap-1 shadow-2xs"
+                        : "bg-[#0b5336] hover:bg-[#08412a] text-white border border-[#08412a] text-xs font-medium rounded-md px-2.5 py-1.5 transition-colors cursor-pointer inline-flex items-center gap-1 shadow-2xs"
+                    }
+                    title={tpl.is_active ? "Hide requirement from faculty" : "Unhide requirement for faculty"}
+                  >
+                    {tpl.is_active ? (
+                      <>
+                        <EyeClosed className="h-3.5 w-3.5" strokeWidth={2} />
+                        <span>Hide</span>
+                      </>
+                    ) : (
+                      <>
+                        <Eye className="h-3.5 w-3.5" strokeWidth={2} />
+                        <span>Unhide</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => setTemplateToDelete(tpl)}
+                  className="p-1.5 text-red-500 hover:bg-red-500/10 rounded-md transition cursor-pointer"
+                  title="Delete requirement template"
+                >
+                  <Trash className="h-4 w-4" strokeWidth={2} />
+                </button>
+              </div>
+            </div>
+          ))
+        )}
+      </div>
+
+      {/* Desktop Table View (>= md) */}
+      <div className="hidden md:block w-full overflow-x-auto rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs dark:shadow-none overflow-hidden transition-colors">
         <table className="w-full text-left border-collapse min-w-[700px]">
           <thead className="border-b border-slate-300 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/60 text-slate-700 dark:text-slate-300 text-[11px] font-bold uppercase tracking-wider">
             <tr>
@@ -598,13 +739,13 @@ export function RequirementTemplatesPanel({
 
       {/* ─── HIDE/UNHIDE REQUIREMENT CONFIRMATION MODAL ───────────────── */}
       {hideTarget && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4 backdrop-blur-sm">
-          <div className="w-full max-w-md rounded-2xl border border-slate-300 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-2xl text-slate-900 dark:text-slate-100" role="dialog" aria-modal="true">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-3 sm:p-4 backdrop-blur-sm">
+          <div className="w-full max-w-md max-h-[90dvh] rounded-2xl border border-slate-300 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 sm:p-6 shadow-2xl text-slate-900 dark:text-slate-100 overflow-y-auto" role="dialog" aria-modal="true">
             <ModalHeader
               icon={!hideTarget.is_active ? Eye : EyeClosed}
               title={!hideTarget.is_active ? "Unhide Requirement Template" : "Hide Requirement Template"}
               subtitle="Confirm Requirement Visibility Change"
-              className="-mx-6 -mt-6 mb-4 rounded-t-2xl"
+              className="-mx-4 -mt-4 sm:-mx-6 sm:-mt-6 mb-4 rounded-t-2xl"
             />
             <p className="text-xs text-slate-700 dark:text-slate-300 leading-relaxed">
               Are you sure you want to {!hideTarget.is_active ? "unhide" : "hide"}{" "}
@@ -613,11 +754,11 @@ export function RequirementTemplatesPanel({
               </strong>{" "}
               {!hideTarget.is_active ? "for faculty submission?" : "from faculty submission lists?"}
             </p>
-            <div className="mt-6 flex items-center justify-end gap-2.5">
+            <div className="mt-5 sm:mt-6 grid grid-cols-2 sm:flex sm:items-center sm:justify-end gap-2.5">
               <button
                 type="button"
                 onClick={() => setHideTarget(null)}
-                className="px-4 py-2 rounded-xl bg-[#780000] hover:bg-[#5e0000] text-white border border-[#5e0000] text-xs font-semibold transition cursor-pointer shadow-xs"
+                className="w-full sm:w-auto inline-flex items-center justify-center px-4 py-2 rounded-xl bg-[#780000] hover:bg-[#5e0000] text-white border border-[#5e0000] text-xs font-semibold transition cursor-pointer shadow-xs"
               >
                 Cancel
               </button>
@@ -628,11 +769,11 @@ export function RequirementTemplatesPanel({
                   setHideTarget(null);
                   await handleToggleHide(target);
                 }}
-                className={
+                className={`w-full sm:w-auto inline-flex items-center justify-center ${
                   !hideTarget.is_active
                     ? "bg-[#0b5336] hover:bg-[#08412a] text-white border border-[#08412a] text-xs font-semibold px-4 py-2 rounded-xl transition cursor-pointer shadow-xs"
                     : "bg-[#780000] hover:bg-[#5e0000] text-white border border-[#5e0000] text-xs font-semibold px-4 py-2 rounded-xl transition cursor-pointer shadow-xs"
-                }
+                }`}
               >
                 Confirm {!hideTarget.is_active ? "Unhide" : "Hide"}
               </button>
@@ -643,14 +784,14 @@ export function RequirementTemplatesPanel({
 
       {/* Delete Confirmation Modal with 10-Second Safety Timer */}
       {templateToDelete && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4 backdrop-blur-sm">
-          <div className="w-full max-w-md rounded-2xl border border-slate-300 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-2xl text-slate-900 dark:text-slate-100">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-3 sm:p-4 backdrop-blur-sm">
+          <div className="w-full max-w-md max-h-[90dvh] rounded-2xl border border-slate-300 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 sm:p-6 shadow-2xl text-slate-900 dark:text-slate-100 overflow-y-auto">
             {/* Modal Header */}
             <ModalHeader
               icon={Trash}
               title="Delete Requirement Template"
               subtitle="Confirm Permanent Template Deletion"
-              className="-mx-6 -mt-6 mb-4 rounded-t-2xl"
+              className="-mx-4 -mt-4 sm:-mx-6 sm:-mt-6 mb-4 rounded-t-2xl"
             />
 
             {/* Description & Warnings */}
@@ -699,11 +840,11 @@ export function RequirementTemplatesPanel({
             </div>
 
             {/* Footer Actions */}
-            <div className="mt-6 flex items-center justify-end gap-2.5">
+            <div className="mt-5 sm:mt-6 grid grid-cols-2 sm:flex sm:items-center sm:justify-end gap-2.5">
               <button
                 type="button"
                 onClick={() => setTemplateToDelete(null)}
-                className="px-4 py-2 rounded-xl bg-[#780000] hover:bg-[#5e0000] text-white border border-[#5e0000] text-xs font-semibold transition cursor-pointer shadow-xs"
+                className="w-full sm:w-auto inline-flex items-center justify-center px-4 py-2 rounded-xl bg-[#780000] hover:bg-[#5e0000] text-white border border-[#5e0000] text-xs font-semibold transition cursor-pointer shadow-xs"
               >
                 Cancel
               </button>
@@ -715,7 +856,7 @@ export function RequirementTemplatesPanel({
                   deleteConfirmationText.trim().toLowerCase() !== "delete"
                 }
                 onClick={() => void handleDeleteConfirm()}
-                className="bg-[#780000] hover:bg-[#5e0000] text-white border border-[#5e0000] text-xs font-semibold px-4 py-2 rounded-xl transition disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer shadow-xs"
+                className="w-full sm:w-auto inline-flex items-center justify-center bg-[#780000] hover:bg-[#5e0000] text-white border border-[#5e0000] text-xs font-semibold px-4 py-2 rounded-xl transition disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer shadow-xs"
               >
                 {isDeleting
                   ? "Deleting..."

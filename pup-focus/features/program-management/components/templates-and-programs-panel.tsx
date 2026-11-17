@@ -340,18 +340,18 @@ export function TemplatesAndProgramsPanel({
   };
 
   return (
-    <article className="space-y-6 p-2 sm:p-4 md:p-5">
+    <article className="space-y-4 sm:space-y-5">
       {/* Solid Amber Card Header */}
-      <div className="relative overflow-hidden rounded-2xl border-2 border-amber-500 bg-amber-400 p-5 sm:p-6 shadow-md shadow-amber-500/10 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl sm:text-3xl font-black text-slate-950 tracking-tight">
+      <div className="relative overflow-hidden rounded-2xl border-2 border-amber-500 bg-amber-400 p-4 sm:p-6 shadow-md shadow-amber-500/10 flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
+        <div className="min-w-0">
+          <h1 className="text-xl sm:text-3xl font-black text-slate-950 tracking-tight">
             Requirement Templates & Academic Programs
           </h1>
-          <p className="mt-1.5 text-sm sm:text-base text-amber-950/90 font-medium leading-relaxed max-w-3xl">
+          <p className="mt-1 sm:mt-1.5 text-xs sm:text-base text-amber-950/90 font-medium leading-relaxed max-w-3xl">
             Configure compliance submission document checklists and manage degree programs for PUP Bataan campus.
           </p>
         </div>
-        <div className="flex items-center gap-2 shrink-0">
+        <div className="flex items-center gap-2 w-full sm:w-auto shrink-0">
           <button
             type="button"
             disabled={isRefreshingPrograms}
@@ -372,24 +372,24 @@ export function TemplatesAndProgramsPanel({
       {/* Floating Feedback Alert */}
       {feedback && (
         <div
-          className={`flex items-center justify-between gap-3 p-4 rounded-xl border text-sm font-medium shadow-md transition-all ${
+          className={`flex items-center justify-between gap-3 p-3.5 sm:p-4 rounded-xl border text-xs sm:text-sm font-medium shadow-md transition-all ${
             feedback.type === "success"
               ? "bg-emerald-50 dark:bg-emerald-950/40 text-emerald-900 dark:text-emerald-200 border-emerald-300 dark:border-emerald-800"
               : "bg-rose-50 dark:bg-rose-950/40 text-rose-900 dark:text-rose-200 border-rose-300 dark:border-rose-800"
           }`}
         >
-          <div className="flex items-center gap-2.5">
+          <div className="flex items-center gap-2.5 min-w-0">
             {feedback.type === "success" ? (
-              <AppIcon icon={CheckCircle} size="sm" color="success" />
+              <AppIcon icon={CheckCircle} size="sm" color="success" className="shrink-0" />
             ) : (
-              <AppIcon icon={WarningCircle} size="sm" color="inherit" />
+              <AppIcon icon={WarningCircle} size="sm" color="inherit" className="shrink-0" />
             )}
-            <span>{feedback.message}</span>
+            <span className="break-words">{feedback.message}</span>
           </div>
           <button
             type="button"
             onClick={() => setFeedback(null)}
-            className="p-1 rounded hover:bg-black/10 dark:hover:bg-white/10 text-current cursor-pointer"
+            className="p-1 rounded hover:bg-black/10 dark:hover:bg-white/10 text-current cursor-pointer shrink-0"
           >
             <AppIcon icon={Xmark} size="xs" color="inherit" />
           </button>
@@ -397,11 +397,11 @@ export function TemplatesAndProgramsPanel({
       )}
 
       {/* Segmented Workspace Tabs */}
-      <div className="flex flex-wrap items-center gap-2 p-1.5 bg-slate-100 dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800">
+      <div className="grid grid-cols-1 sm:flex sm:flex-wrap items-center gap-2 p-1.5 bg-slate-100 dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800">
         <button
           type="button"
           onClick={() => setActiveTab("templates")}
-          className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer ${
+          className={`w-full sm:w-auto inline-flex items-center justify-center sm:justify-start gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer ${
             activeTab === "templates"
               ? "bg-[#780000] text-white border border-[#5e0000] shadow-xs"
               : "bg-white dark:bg-slate-800/80 text-slate-700 dark:text-slate-300 border border-slate-300 dark:border-slate-700 hover:border-slate-400 dark:hover:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-750 shadow-2xs"
@@ -414,7 +414,7 @@ export function TemplatesAndProgramsPanel({
         <button
           type="button"
           onClick={() => setActiveTab("programs")}
-          className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer ${
+          className={`w-full sm:w-auto inline-flex items-center justify-center sm:justify-start gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer ${
             activeTab === "programs"
               ? "bg-[#780000] text-white border border-[#5e0000] shadow-xs"
               : "bg-white dark:bg-slate-800/80 text-slate-700 dark:text-slate-300 border border-slate-300 dark:border-slate-700 hover:border-slate-400 dark:hover:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-750 shadow-2xs"
@@ -445,9 +445,9 @@ export function TemplatesAndProgramsPanel({
       {activeTab === "programs" && (
         <div className="w-full space-y-4">
           {/* 3-Card Stat Summary Header matching RequirementTemplatesPanel */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3 sm:gap-4 mb-4 sm:mb-6">
             {/* 1. TOTAL DEGREE PROGRAMS */}
-            <div className="rounded-2xl bg-white text-slate-900 border border-slate-200 dark:border-slate-800 shadow-xs dark:bg-slate-900 dark:text-slate-100 p-5 transition-colors">
+            <div className="rounded-2xl bg-white text-slate-900 border border-slate-200 dark:border-slate-800 shadow-xs dark:bg-slate-900 dark:text-slate-100 p-4 sm:p-5 transition-colors">
               <div className="flex items-center justify-between">
                 <span className="text-slate-500 dark:text-slate-400 text-xs font-medium uppercase tracking-wider">
                   Total Degree Programs
@@ -463,7 +463,7 @@ export function TemplatesAndProgramsPanel({
             </div>
 
             {/* 2. ACTIVE & VISIBLE */}
-            <div className="rounded-2xl bg-white text-slate-900 border border-slate-200 dark:border-slate-800 shadow-xs dark:bg-slate-900 dark:text-slate-100 p-5 transition-colors">
+            <div className="rounded-2xl bg-white text-slate-900 border border-slate-200 dark:border-slate-800 shadow-xs dark:bg-slate-900 dark:text-slate-100 p-4 sm:p-5 transition-colors">
               <div className="flex items-center justify-between">
                 <span className="text-slate-500 dark:text-slate-400 text-xs font-medium uppercase tracking-wider">
                   Active & Visible
@@ -479,7 +479,7 @@ export function TemplatesAndProgramsPanel({
             </div>
 
             {/* 3. HIDDEN OFFERINGS */}
-            <div className="rounded-2xl bg-white text-slate-900 border border-slate-200 dark:border-slate-800 shadow-xs dark:bg-slate-900 dark:text-slate-100 p-5 transition-colors">
+            <div className="rounded-2xl bg-white text-slate-900 border border-slate-200 dark:border-slate-800 shadow-xs dark:bg-slate-900 dark:text-slate-100 p-4 sm:p-5 transition-colors">
               <div className="flex items-center justify-between">
                 <span className="text-slate-500 dark:text-slate-400 text-xs font-medium uppercase tracking-wider">
                   Hidden Offerings
@@ -496,8 +496,8 @@ export function TemplatesAndProgramsPanel({
           </div>
 
           {/* Filter & Actions Bar matching RequirementTemplatesPanel */}
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-4 bg-white text-slate-900 border border-slate-300 shadow-xs dark:bg-slate-900 dark:text-slate-100 dark:border-slate-800 rounded-2xl mb-6 transition-colors">
-            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2.5 w-full sm:w-auto flex-wrap">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 p-3.5 sm:p-4 bg-white text-slate-900 border border-slate-300 shadow-xs dark:bg-slate-900 dark:text-slate-100 dark:border-slate-800 rounded-2xl mb-4 sm:mb-6 transition-colors">
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 w-full sm:w-auto flex-wrap">
               <div className="relative w-full sm:w-64">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" strokeWidth={2} />
                 <input
@@ -510,13 +510,13 @@ export function TemplatesAndProgramsPanel({
               </div>
 
               {/* Status Filter Tabs */}
-              <div className="flex items-center rounded-xl bg-slate-100 dark:bg-slate-800 p-1 border border-slate-200 dark:border-slate-700">
+              <div className="grid grid-cols-3 sm:flex items-center rounded-xl bg-slate-100 dark:bg-slate-800 p-1 border border-slate-200 dark:border-slate-700 w-full sm:w-auto">
                 {(["all", "active", "hidden"] as const).map((st) => (
                   <button
                     key={st}
                     type="button"
                     onClick={() => setVisibilityFilter(st)}
-                    className={`px-3 py-1 text-xs font-semibold rounded-lg capitalize transition-all cursor-pointer ${
+                    className={`px-3 py-1.5 sm:py-1 text-xs font-semibold rounded-lg capitalize transition-all cursor-pointer text-center ${
                       visibilityFilter === st
                         ? "bg-amber-500 text-slate-950 font-semibold shadow-xs border border-amber-600/30"
                         : "text-slate-600 hover:text-slate-900 hover:bg-slate-200/60 dark:text-slate-400 dark:hover:text-slate-100 dark:hover:bg-slate-800/60"
@@ -533,16 +533,117 @@ export function TemplatesAndProgramsPanel({
               <button
                 type="button"
                 onClick={handleOpenAddModal}
-                className="bg-amber-500 hover:bg-amber-400 text-slate-950 border border-amber-600 font-semibold px-4 py-2 rounded-xl text-xs transition-all shadow-xs cursor-pointer inline-flex items-center gap-1.5 whitespace-nowrap"
+                className="w-full sm:w-auto bg-amber-500 hover:bg-amber-400 text-slate-950 border border-amber-600 font-semibold px-4 py-2 rounded-xl text-xs transition-all shadow-xs cursor-pointer inline-flex items-center justify-center gap-1.5 whitespace-nowrap"
               >
                 <Plus className="h-3.5 w-3.5" strokeWidth={2} />
-                <span>+ Add Academic Program</span>
+                <span>Add Academic Program</span>
               </button>
             </div>
           </div>
 
-          {/* Main Data Table matching RequirementTemplatesPanel */}
-          <div className="w-full overflow-x-auto rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs dark:shadow-none overflow-hidden transition-colors">
+          {/* Mobile Card View (< md) */}
+          <div className="md:hidden space-y-2.5">
+            {isLoadingPrograms && filteredPrograms.length === 0 ? (
+              <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 py-10 px-4 text-center text-xs text-slate-500 dark:text-slate-400 shadow-xs">
+                <Refresh className="h-5 w-5 animate-spin mx-auto mb-2 text-amber-500" strokeWidth={2} />
+                Loading academic programs...
+              </div>
+            ) : filteredPrograms.length === 0 ? (
+              <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 py-12 px-4 text-center text-xs text-slate-500 dark:text-slate-400 shadow-xs">
+                <GraduationCap className="h-8 w-8 mx-auto mb-2 text-slate-400 opacity-60" strokeWidth={2} />
+                <p className="font-semibold text-slate-700 dark:text-slate-300">No academic programs found</p>
+                <p className="text-xs text-slate-500 mt-1">
+                  {searchQuery
+                    ? "Try modifying your search filter"
+                    : "Get started by adding an academic program using the button above"}
+                </p>
+              </div>
+            ) : (
+              filteredPrograms.map((prog, index) => (
+                <div
+                  key={`mobile-${prog.id}`}
+                  className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-3.5 space-y-2.5 shadow-xs"
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2">
+                      <span className="text-[11px] font-mono text-slate-400 dark:text-slate-500 bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded">
+                        #{index + 1}
+                      </span>
+                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-bold bg-amber-500 text-slate-950 border border-amber-600 shadow-2xs">
+                        {prog.code}
+                      </span>
+                    </div>
+                    {!prog.is_hidden ? (
+                      <span className="bg-[#0b5336] text-white border border-[#08412a] px-2 py-0.5 text-xs font-semibold rounded-md inline-flex items-center gap-1.5 shadow-2xs shrink-0">
+                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-300" />
+                        Active
+                      </span>
+                    ) : (
+                      <span className="bg-[#780000] text-white border border-[#5e0000] px-2 py-0.5 text-xs font-semibold rounded-md inline-flex items-center gap-1.5 shadow-2xs shrink-0">
+                        <span className="w-1.5 h-1.5 rounded-full bg-rose-300" />
+                        Hidden
+                      </span>
+                    )}
+                  </div>
+
+                  <p className="font-semibold text-slate-900 dark:text-slate-100 text-xs sm:text-sm break-words leading-snug">
+                    {prog.name}
+                  </p>
+
+                  <div className="pt-2.5 border-t border-slate-100 dark:border-slate-800 flex flex-wrap items-center justify-between gap-2">
+                    <div className="flex items-center gap-1.5">
+                      <button
+                        type="button"
+                        onClick={(e) => handleOpenEditModal(prog, e)}
+                        className="bg-amber-500 hover:bg-amber-600 text-slate-900 border border-amber-600 text-xs font-medium rounded-md px-2.5 py-1.5 transition-colors cursor-pointer inline-flex items-center gap-1 shadow-2xs"
+                        title="Edit program"
+                      >
+                        <EditPencil className="h-3.5 w-3.5" strokeWidth={2} />
+                        <span>Edit</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={(e) => { e.stopPropagation(); setHideTarget(prog); }}
+                        className={prog.is_hidden
+                          ? "bg-[#0b5336] hover:bg-[#08412a] text-white border border-[#08412a] text-xs font-medium rounded-md px-2.5 py-1.5 transition-colors cursor-pointer inline-flex items-center gap-1 shadow-2xs"
+                          : "bg-[#780000] hover:bg-[#5e0000] text-white border border-[#5e0000] text-xs font-medium rounded-md px-2.5 py-1.5 transition-colors cursor-pointer inline-flex items-center gap-1 shadow-2xs"
+                        }
+                        title={prog.is_hidden ? "Unhide program for faculty" : "Hide program from faculty"}
+                      >
+                        {!prog.is_hidden ? (
+                          <>
+                            <EyeClosed className="h-3.5 w-3.5" strokeWidth={2} />
+                            <span>Hide</span>
+                          </>
+                        ) : (
+                          <>
+                            <Eye className="h-3.5 w-3.5" strokeWidth={2} />
+                            <span>Unhide</span>
+                          </>
+                        )}
+                      </button>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setDeleteTarget(prog);
+                      }}
+                      className="p-1.5 text-red-500 hover:bg-red-500/10 rounded-md transition cursor-pointer"
+                      title="Delete program"
+                    >
+                      <Trash className="h-4 w-4" strokeWidth={2} />
+                    </button>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+
+          {/* Desktop Table View (>= md) */}
+          <div className="hidden md:block w-full overflow-x-auto rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs dark:shadow-none overflow-hidden transition-colors">
             <table className="w-full text-left border-collapse min-w-[700px]">
               <thead className="border-b border-slate-300 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/60 text-slate-700 dark:text-slate-300 text-[11px] font-bold uppercase tracking-wider">
                 <tr>
@@ -673,9 +774,9 @@ export function TemplatesAndProgramsPanel({
 
       {/* ─── ADD / EDIT PROGRAM MODAL ─────────────────────────────── */}
       {(isAddProgramOpen || editingProgram) && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-xs animate-in fade-in duration-200">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-950/60 backdrop-blur-xs animate-in fade-in duration-200">
           <div
-            className="w-full max-w-lg rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200"
+            className="w-full max-w-lg max-h-[90dvh] rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-2xl overflow-hidden flex flex-col animate-in zoom-in-95 duration-200"
             role="dialog"
             aria-modal="true"
           >
@@ -683,8 +784,9 @@ export function TemplatesAndProgramsPanel({
               icon={GraduationCap}
               title={editingProgram ? `Edit Program: ${editingProgram.code}` : "Add Academic Degree Program"}
               subtitle="PUP Bataan Campus degree program registry"
+              className="shrink-0"
             />
-            <form onSubmit={handleSubmitProgram} className="p-5 sm:p-6 space-y-4">
+            <form onSubmit={handleSubmitProgram} className="p-4 sm:p-6 space-y-4 overflow-y-auto">
               <div>
                 <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1">
                   Program Code <span className="text-rose-500">*</span>
@@ -713,7 +815,7 @@ export function TemplatesAndProgramsPanel({
                 />
               </div>
 
-              <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-slate-200 dark:border-slate-800">
+              <div className="grid grid-cols-2 sm:flex sm:items-center sm:justify-end gap-2.5 pt-3 border-t border-slate-200 dark:border-slate-800">
                 <button
                   type="button"
                   onClick={() => {
@@ -721,14 +823,14 @@ export function TemplatesAndProgramsPanel({
                     setEditingProgram(null);
                   }}
                   disabled={isSubmitting}
-                  className="px-4 py-2 rounded-xl bg-[#780000] hover:bg-[#5e0000] text-white border border-[#5e0000] text-xs font-semibold transition cursor-pointer shadow-xs"
+                  className="w-full sm:w-auto inline-flex items-center justify-center px-4 py-2 rounded-xl bg-[#780000] hover:bg-[#5e0000] text-white border border-[#5e0000] text-xs font-semibold transition cursor-pointer shadow-xs"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="inline-flex items-center justify-center gap-1.5 bg-[#0b5336] hover:bg-[#083e28] text-white font-bold px-5 py-2 rounded-xl text-xs shadow-xs transition-all cursor-pointer disabled:opacity-50"
+                  className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 bg-[#0b5336] hover:bg-[#083e28] text-white font-bold px-5 py-2 rounded-xl text-xs shadow-xs transition-all cursor-pointer disabled:opacity-50"
                 >
                   <AppIcon icon={Check} size="sm" color="white" />
                   <span>{isSubmitting ? "Saving..." : editingProgram ? "Update Program" : "Create Program"}</span>
@@ -739,15 +841,15 @@ export function TemplatesAndProgramsPanel({
         </div>
       )}
 
-{/* ─── HIDE/UNHIDE PROGRAM CONFIRMATION MODAL ───────────────── */}
+      {/* ─── HIDE/UNHIDE PROGRAM CONFIRMATION MODAL ───────────────── */}
       {hideTarget && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4 backdrop-blur-sm">
-          <div className="w-full max-w-md rounded-2xl border border-slate-300 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-2xl text-slate-900 dark:text-slate-100" role="dialog" aria-modal="true">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-3 sm:p-4 backdrop-blur-sm">
+          <div className="w-full max-w-md max-h-[90dvh] rounded-2xl border border-slate-300 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 sm:p-6 shadow-2xl text-slate-900 dark:text-slate-100 overflow-y-auto" role="dialog" aria-modal="true">
             <ModalHeader
               icon={hideTarget.is_hidden ? Eye : EyeClosed}
               title={hideTarget.is_hidden ? "Unhide Academic Program" : "Hide Academic Program"}
               subtitle="Confirm Program Visibility Change"
-              className="-mx-6 -mt-6 mb-4 rounded-t-2xl"
+              className="-mx-4 -mt-4 sm:-mx-6 sm:-mt-6 mb-4 rounded-t-2xl"
             />
             <p className="text-xs text-slate-700 dark:text-slate-300 leading-relaxed">
               Are you sure you want to {hideTarget.is_hidden ? "unhide" : "hide"}{" "}
@@ -756,11 +858,11 @@ export function TemplatesAndProgramsPanel({
               </strong>{" "}
               ({hideTarget.code}) {hideTarget.is_hidden ? "for faculty selection?" : "from faculty selection dropdowns?"}
             </p>
-            <div className="mt-6 flex items-center justify-end gap-2.5">
+            <div className="mt-5 sm:mt-6 grid grid-cols-2 sm:flex sm:items-center sm:justify-end gap-2.5">
               <button
                 type="button"
                 onClick={() => setHideTarget(null)}
-                className="px-4 py-2 rounded-xl bg-[#780000] hover:bg-[#5e0000] text-white border border-[#5e0000] text-xs font-semibold transition cursor-pointer shadow-xs"
+                className="w-full sm:w-auto inline-flex items-center justify-center px-4 py-2 rounded-xl bg-[#780000] hover:bg-[#5e0000] text-white border border-[#5e0000] text-xs font-semibold transition cursor-pointer shadow-xs"
               >
                 Cancel
               </button>
@@ -770,10 +872,11 @@ export function TemplatesAndProgramsPanel({
                   await handleToggleHideProgram(hideTarget);
                   setHideTarget(null);
                 }}
-                className={hideTarget.is_hidden
-                                  ? "bg-[#0b5336] hover:bg-[#08412a] text-white border border-[#08412a] text-xs font-semibold px-4 py-2 rounded-xl transition cursor-pointer shadow-xs"
-                                  : "bg-[#780000] hover:bg-[#5e0000] text-white border border-[#5e0000] text-xs font-semibold px-4 py-2 rounded-xl transition cursor-pointer shadow-xs"
-                                }
+                className={`w-full sm:w-auto inline-flex items-center justify-center ${
+                  hideTarget.is_hidden
+                    ? "bg-[#0b5336] hover:bg-[#08412a] text-white border border-[#08412a] text-xs font-semibold px-4 py-2 rounded-xl transition cursor-pointer shadow-xs"
+                    : "bg-[#780000] hover:bg-[#5e0000] text-white border border-[#5e0000] text-xs font-semibold px-4 py-2 rounded-xl transition cursor-pointer shadow-xs"
+                }`}
               >
                 Confirm {hideTarget.is_hidden ? "Unhide" : "Hide"}
               </button>
@@ -784,9 +887,9 @@ export function TemplatesAndProgramsPanel({
 
       {/* ─── DELETE PROGRAM CONFIRMATION MODAL ────────────────────── */}
       {deleteTarget && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4 backdrop-blur-sm">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-3 sm:p-4 backdrop-blur-sm">
           <div
-            className="w-full max-w-md rounded-2xl border border-slate-300 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-2xl text-slate-900 dark:text-slate-100"
+            className="w-full max-w-md max-h-[90dvh] rounded-2xl border border-slate-300 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 sm:p-6 shadow-2xl text-slate-900 dark:text-slate-100 overflow-y-auto"
             role="dialog"
             aria-modal="true"
           >
@@ -794,7 +897,7 @@ export function TemplatesAndProgramsPanel({
               icon={Trash}
               title="Delete Academic Program"
               subtitle="Confirm Permanent Program Deletion"
-              className="-mx-6 -mt-6 mb-4 rounded-t-2xl"
+              className="-mx-4 -mt-4 sm:-mx-6 sm:-mt-6 mb-4 rounded-t-2xl"
             />
 
             <div className="space-y-3">
@@ -824,12 +927,12 @@ export function TemplatesAndProgramsPanel({
               ) : null}
             </div>
 
-            <div className="mt-6 flex items-center justify-end gap-2.5">
+            <div className="mt-5 sm:mt-6 grid grid-cols-2 sm:flex sm:items-center sm:justify-end gap-2.5">
               <button
                 type="button"
                 onClick={() => setDeleteTarget(null)}
                 disabled={isSubmitting}
-                className="px-4 py-2 rounded-xl bg-[#780000] hover:bg-[#5e0000] text-white border border-[#5e0000] text-xs font-semibold transition cursor-pointer shadow-xs"
+                className="w-full sm:w-auto inline-flex items-center justify-center px-4 py-2 rounded-xl bg-[#780000] hover:bg-[#5e0000] text-white border border-[#5e0000] text-xs font-semibold transition cursor-pointer shadow-xs"
               >
                 Cancel
               </button>
@@ -837,7 +940,7 @@ export function TemplatesAndProgramsPanel({
                 type="button"
                 onClick={handleConfirmDelete}
                 disabled={isSubmitting || deleteCountdown > 0}
-                className="bg-[#780000] hover:bg-[#5e0000] text-white border border-[#5e0000] text-xs font-semibold px-4 py-2 rounded-xl transition disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer shadow-xs"
+                className="w-full sm:w-auto inline-flex items-center justify-center bg-[#780000] hover:bg-[#5e0000] text-white border border-[#5e0000] text-xs font-semibold px-4 py-2 rounded-xl transition disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer shadow-xs"
               >
                 {isSubmitting
                   ? "Deleting..."
