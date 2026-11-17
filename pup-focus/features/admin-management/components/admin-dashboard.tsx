@@ -2009,7 +2009,7 @@ export function SuperAdminDashboard({
         <button
           type="button"
           onClick={() => setIsMobileMenuOpen(true)}
-          className="fixed left-3 top-2 z-[55] md:hidden inline-flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 bg-slate-100 hover:bg-slate-200 text-slate-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 transition-all focus:outline-none focus:ring-2 focus:ring-amber-500/40 cursor-pointer shadow-2xs"
+          className="fixed left-3 top-2 z-[45] md:hidden inline-flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 bg-slate-100 hover:bg-slate-200 text-slate-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 transition-all focus:outline-none focus:ring-2 focus:ring-amber-500/40 cursor-pointer shadow-2xs"
           aria-label="Open Navigation Menu"
         >
           <AppIcon icon={Menu} size="lg" color="inherit" />
@@ -2432,14 +2432,14 @@ export function SuperAdminDashboard({
             ) : null}
 
             {activeSection === "terms" ? (
-              <article className="space-y-4 p-2 sm:p-4 md:p-5">
+              <article className="space-y-4 sm:space-y-5">
                 {/* Solid Amber Card Header */}
-                <div className="relative overflow-hidden rounded-2xl border-2 border-amber-500 bg-amber-400 p-5 sm:p-6 shadow-md shadow-amber-500/10 flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
-                  <div>
-                    <h1 className="text-2xl sm:text-3xl font-black text-slate-950 tracking-tight">
+                <div className="relative overflow-hidden rounded-2xl border-2 border-amber-500 bg-amber-400 p-4 sm:p-6 shadow-md shadow-amber-500/10 flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
+                  <div className="min-w-0">
+                    <h1 className="text-xl sm:text-3xl font-black text-slate-950 tracking-tight">
                       Academic Year and Semester
                     </h1>
-                    <p className="mt-1.5 text-sm sm:text-base text-amber-950/90 font-medium leading-relaxed">
+                    <p className="mt-1 sm:mt-1.5 text-xs sm:text-base text-amber-950/90 font-medium leading-relaxed">
                       Manage academic years, semester cycles, and activate the current operational term.
                     </p>
                   </div>

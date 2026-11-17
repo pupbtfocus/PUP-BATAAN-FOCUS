@@ -166,7 +166,7 @@ export function HistoricalSubmissionsModal({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex h-screen w-screen flex-col bg-white overflow-hidden dark:bg-slate-900 animate-in fade-in duration-200">
+    <div className="fixed inset-0 z-[70] flex h-dvh w-screen flex-col bg-white overflow-hidden dark:bg-slate-900 animate-in fade-in duration-200">
       <div className="flex h-full w-full flex-col overflow-hidden bg-white dark:bg-slate-900">
         <ModalHeader
           title={
@@ -183,13 +183,13 @@ export function HistoricalSubmissionsModal({
         />
 
         {/* Filter Toolbar */}
-        <div className="border-b border-slate-200 bg-slate-50/70 p-4 dark:border-slate-800 dark:bg-slate-950/40">
-          <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="border-b border-slate-200 bg-slate-50/70 p-3.5 sm:p-4 dark:border-slate-800 dark:bg-slate-950/40">
+          <div className="grid grid-cols-1 sm:flex sm:flex-wrap sm:items-center gap-2.5 sm:gap-3">
             {/* Term Selector */}
-            <div className="flex items-center gap-2">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2 min-w-0">
               <label
                 htmlFor="historicalTermSelect"
-                className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400"
+                className="text-[11px] sm:text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 shrink-0"
               >
                 Term:
               </label>
@@ -205,7 +205,7 @@ export function HistoricalSubmissionsModal({
                     setIsLoading(false);
                   }
                 }}
-                className="h-8 rounded-lg border border-slate-300 bg-white px-3 text-xs font-semibold text-slate-800 outline-none focus:border-amber-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
+                className="h-9 sm:h-8 w-full sm:w-auto min-w-0 max-w-full rounded-lg border border-slate-300 bg-white px-2.5 sm:px-3 text-xs font-semibold text-slate-800 outline-none focus:border-amber-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 truncate"
               >
                 <option value="all">All Terms (Archive & Current)</option>
                 {allTerms.map((t) => (
@@ -220,10 +220,10 @@ export function HistoricalSubmissionsModal({
             </div>
 
             {/* Status Selector */}
-            <div className="flex items-center gap-2">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2 min-w-0">
               <label
                 htmlFor="historicalStatusSelect"
-                className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400"
+                className="text-[11px] sm:text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 shrink-0"
               >
                 Status:
               </label>
@@ -239,7 +239,7 @@ export function HistoricalSubmissionsModal({
                     setIsLoading(false);
                   }
                 }}
-                className="h-8 rounded-lg border border-slate-300 bg-white px-3 text-xs font-semibold text-slate-800 outline-none focus:border-amber-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
+                className="h-9 sm:h-8 w-full sm:w-auto min-w-0 rounded-lg border border-slate-300 bg-white px-2.5 sm:px-3 text-xs font-semibold text-slate-800 outline-none focus:border-amber-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
               >
                 <option value="all">All Statuses</option>
                 <option value="validated">Validated</option>
@@ -248,53 +248,54 @@ export function HistoricalSubmissionsModal({
               </select>
             </div>
 
-            {/* Search Input */}
-            <div className="relative min-w-[200px] flex-1 max-w-xs">
-              <input
-                type="text"
-                placeholder="Search faculty or requirement..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="h-8 w-full rounded-lg border border-slate-300 bg-white pl-8 pr-3 text-xs text-slate-800 placeholder-slate-400 outline-none focus:border-amber-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
-              />
-              <Search className="absolute left-2.5 top-2 h-4 w-4 text-slate-400" />
-            </div>
+            {/* Search Input & Refresh */}
+            <div className="flex items-center gap-2 w-full sm:w-auto sm:flex-1 sm:max-w-sm">
+              <div className="relative flex-1 min-w-0">
+                <input
+                  type="text"
+                  placeholder="Search faculty or requirement..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="h-9 sm:h-8 w-full rounded-lg border border-slate-300 bg-white pl-8 pr-3 text-xs text-slate-800 placeholder-slate-400 outline-none focus:border-amber-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
+                />
+                <Search className="absolute left-2.5 top-2.5 sm:top-2 h-4 w-4 text-slate-400" />
+              </div>
 
-            {/* Refresh Button */}
-            <button
-              type="button"
-              onClick={() => void fetchSubmissions()}
-              disabled={isLoading}
-              className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-3 text-xs font-medium text-slate-700 hover:bg-slate-100 disabled:opacity-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-750 cursor-pointer"
-            >
-              <AppIcon icon={Refresh} size="xs" color="inherit" className={isLoading ? "animate-spin" : ""} />
-              <span>Refresh</span>
-            </button>
+              <button
+                type="button"
+                onClick={() => void fetchSubmissions()}
+                disabled={isLoading}
+                className="inline-flex h-9 sm:h-8 shrink-0 items-center justify-center gap-1.5 rounded-lg border border-slate-300 bg-white px-3 text-xs font-medium text-slate-700 hover:bg-slate-100 disabled:opacity-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-750 cursor-pointer"
+              >
+                <AppIcon icon={Refresh} size="xs" color="inherit" className={isLoading ? "animate-spin" : ""} />
+                <span>Refresh</span>
+              </button>
+            </div>
           </div>
 
           {/* Read-Only or Active Status Notice Badge */}
           <div
-            className={`mt-3 flex flex-wrap items-center justify-between gap-2 rounded-lg px-4 py-2 text-xs font-semibold shadow-xs ${
+            className={`mt-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2 rounded-lg px-3.5 sm:px-4 py-2.5 text-xs font-semibold shadow-xs ${
               isCurrentTerm
                 ? "bg-[#0b5336] text-white border border-[#08412a]"
                 : "bg-[#b45309] text-white border border-[#92400e]"
             }`}
           >
-            <span className="flex items-center gap-2">
+            <span className="flex items-start sm:items-center gap-2 min-w-0">
               {isCurrentTerm ? (
                 <>
-                  <span className="inline-block h-2 w-2 rounded-full bg-emerald-300 animate-pulse" />
-                  <span>
+                  <span className="inline-block h-2 w-2 rounded-full bg-emerald-300 animate-pulse shrink-0 mt-1 sm:mt-0" />
+                  <span className="leading-relaxed">
                     Current Active Term: Submissions can be actively reviewed and evaluated in Requirements Verification.
                   </span>
                 </>
               ) : (
-                <span>
+                <span className="leading-relaxed">
                   Read-Only Mode: Historical submissions are preserved for auditing and browsing.
                 </span>
               )}
             </span>
-            <div className="flex items-center gap-3">
+            <div className="flex flex-wrap items-center justify-between sm:justify-end gap-2 sm:gap-3 shrink-0">
               {isCurrentTerm && (
                 <a
                   href={
@@ -310,7 +311,7 @@ export function HistoricalSubmissionsModal({
                   <span style={{ color: "#fef08a" }} className="!text-amber-200 hover:!text-white">Go to Requirements Verification →</span>
                 </a>
               )}
-              <span className="font-bold bg-black/20 px-2.5 py-0.5 rounded-full text-white">
+              <span className="font-bold bg-black/20 px-2.5 py-0.5 rounded-full text-white shrink-0">
                 Total: {filteredSubmissions.length} records
               </span>
             </div>
@@ -318,7 +319,7 @@ export function HistoricalSubmissionsModal({
         </div>
 
         {/* Content Area */}
-        <div className="flex-1 overflow-y-auto p-4 sm:p-6 bg-white dark:bg-slate-900">
+        <div className="flex-1 overflow-y-auto p-3.5 sm:p-6 bg-white dark:bg-slate-900">
           {isLoading && filteredSubmissions.length === 0 ? (
             <div className="flex h-64 items-center justify-center text-slate-500 dark:text-slate-400">
               <AppIcon icon={SystemRestart} size="lg" color="inherit" className="animate-spin mr-2" />
@@ -335,7 +336,7 @@ export function HistoricalSubmissionsModal({
               />
             </div>
           ) : filteredSubmissions.length === 0 ? (
-            <div className="flex h-64 flex-col items-center justify-center text-slate-500 dark:text-slate-400">
+            <div className="flex h-64 flex-col items-center justify-center text-slate-500 dark:text-slate-400 px-4 text-center">
               <div
                 className={`flex h-14 w-14 items-center justify-center rounded-2xl mb-3 ${
                   isCurrentTerm
@@ -375,48 +376,45 @@ export function HistoricalSubmissionsModal({
               )}
             </div>
           ) : (
-            <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white shadow-xs dark:border-slate-800 dark:bg-slate-950">
-              <table className="w-full text-left text-xs table-auto">
-                <thead>
-                  <tr className="border-b border-slate-200 bg-slate-50 text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:border-slate-800 dark:bg-slate-900/70 dark:text-slate-400">
-                    <th className="px-4 py-3.5 whitespace-nowrap min-w-[220px]">Faculty Member</th>
-                    <th className="px-3 py-3.5 whitespace-nowrap min-w-[80px]">Program</th>
-                    <th className="px-4 py-3.5 min-w-[240px]">Requirement</th>
-                    <th className="px-3 py-3.5 whitespace-nowrap min-w-[130px]">Status</th>
-                    <th className="px-4 py-3.5 whitespace-nowrap min-w-[150px]">Submitted At</th>
-                    <th className="px-4 py-3.5 min-w-[160px]">Admin Remarks</th>
-                    <th className="px-4 py-3.5 min-w-[160px]">Faculty Remarks</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60">
-                  {filteredSubmissions.map((sub) => (
-                    <tr
-                      key={sub.id}
-                      className="hover:bg-slate-50/70 transition-colors dark:hover:bg-slate-900/50"
-                    >
-                      <td className="px-4 py-3">
-                        <p className="font-semibold text-slate-900 dark:text-slate-100">
+            <>
+              {/* Mobile Card View (< md) */}
+              <div className="md:hidden space-y-2.5">
+                {filteredSubmissions.map((sub) => (
+                  <div
+                    key={`mobile-${sub.id}`}
+                    className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 p-3.5 space-y-2.5 shadow-xs"
+                  >
+                    <div className="flex items-start justify-between gap-2.5">
+                      <div className="min-w-0">
+                        <p className="text-xs font-bold text-slate-900 dark:text-slate-100 truncate">
                           {sub.facultyName}
                         </p>
-                        <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                        <p className="text-[11px] text-slate-500 dark:text-slate-400 break-all">
                           {sub.facultyEmail}
                         </p>
-                      </td>
-                      <td className="px-3 py-3 text-slate-700 dark:text-slate-300 font-medium">
+                      </div>
+                      <span className="shrink-0 rounded-md border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 text-[11px] font-semibold text-slate-700 dark:text-slate-300">
                         {sub.programCode || "—"}
-                      </td>
-                      <td className="px-4 py-3">
-                        <p className="font-semibold text-slate-800 dark:text-slate-200">
+                      </span>
+                    </div>
+
+                    <div className="rounded-lg bg-slate-50 dark:bg-slate-900/60 border border-slate-200/70 dark:border-slate-800/80 p-2.5 flex items-start justify-between gap-2">
+                      <div className="min-w-0">
+                        <p className="text-xs font-semibold text-slate-800 dark:text-slate-200">
                           {sub.requirementTitle}
                         </p>
                         <p className="text-[10px] text-slate-400 font-mono">
                           {sub.requirementCode}
                         </p>
-                      </td>
-                      <td className="px-3 py-3">
+                      </div>
+                      <div className="shrink-0">
                         <SubmissionStatusBadge status={sub.status} />
-                      </td>
-                      <td className="px-4 py-3 text-slate-600 dark:text-slate-400 whitespace-nowrap">
+                      </div>
+                    </div>
+
+                    <div className="flex flex-wrap items-center justify-between gap-2 text-[11px] text-slate-500 dark:text-slate-400">
+                      <span>Submitted At:</span>
+                      <span className="font-medium text-slate-700 dark:text-slate-300">
                         {sub.submittedAt
                           ? new Date(sub.submittedAt).toLocaleDateString("en-PH", {
                               month: "short",
@@ -427,34 +425,111 @@ export function HistoricalSubmissionsModal({
                               hour12: true,
                             })
                           : "—"}
-                      </td>
-                      <td className="px-4 py-3 text-slate-500 dark:text-slate-400" title={sub.adminRemarks || ""}>
-                        {sub.adminRemarks || "—"}
-                      </td>
-                      <td className="px-4 py-3 text-slate-600 dark:text-slate-300" title={sub.facultyRemarks || ""}>
-                        {sub.facultyRemarks ? (
-                          <span className="italic">{sub.facultyRemarks}</span>
-                        ) : (
-                          <span className="text-slate-400">—</span>
+                      </span>
+                    </div>
+
+                    {(sub.adminRemarks || sub.facultyRemarks) && (
+                      <div className="pt-2 border-t border-slate-100 dark:border-slate-800/80 space-y-1 text-[11px]">
+                        {sub.adminRemarks && (
+                          <p className="text-slate-600 dark:text-slate-400">
+                            <span className="font-semibold text-slate-700 dark:text-slate-300">Admin:</span>{" "}
+                            {sub.adminRemarks}
+                          </p>
                         )}
-                      </td>
+                        {sub.facultyRemarks && (
+                          <p className="text-slate-600 dark:text-slate-300 italic">
+                            <span className="font-semibold not-italic text-slate-700 dark:text-slate-300">Faculty:</span>{" "}
+                            {sub.facultyRemarks}
+                          </p>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+
+              {/* Desktop Table View (>= md) */}
+              <div className="hidden md:block overflow-x-auto rounded-xl border border-slate-200 bg-white shadow-xs dark:border-slate-800 dark:bg-slate-950">
+                <table className="w-full text-left text-xs table-auto">
+                  <thead>
+                    <tr className="border-b border-slate-200 bg-slate-50 text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:border-slate-800 dark:bg-slate-900/70 dark:text-slate-400">
+                      <th className="px-4 py-3.5 whitespace-nowrap min-w-[220px]">Faculty Member</th>
+                      <th className="px-3 py-3.5 whitespace-nowrap min-w-[80px]">Program</th>
+                      <th className="px-4 py-3.5 min-w-[240px]">Requirement</th>
+                      <th className="px-3 py-3.5 whitespace-nowrap min-w-[130px]">Status</th>
+                      <th className="px-4 py-3.5 whitespace-nowrap min-w-[150px]">Submitted At</th>
+                      <th className="px-4 py-3.5 min-w-[160px]">Admin Remarks</th>
+                      <th className="px-4 py-3.5 min-w-[160px]">Faculty Remarks</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60">
+                    {filteredSubmissions.map((sub) => (
+                      <tr
+                        key={sub.id}
+                        className="hover:bg-slate-50/70 transition-colors dark:hover:bg-slate-900/50"
+                      >
+                        <td className="px-4 py-3">
+                          <p className="font-semibold text-slate-900 dark:text-slate-100">
+                            {sub.facultyName}
+                          </p>
+                          <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                            {sub.facultyEmail}
+                          </p>
+                        </td>
+                        <td className="px-3 py-3 text-slate-700 dark:text-slate-300 font-medium">
+                          {sub.programCode || "—"}
+                        </td>
+                        <td className="px-4 py-3">
+                          <p className="font-semibold text-slate-800 dark:text-slate-200">
+                            {sub.requirementTitle}
+                          </p>
+                          <p className="text-[10px] text-slate-400 font-mono">
+                            {sub.requirementCode}
+                          </p>
+                        </td>
+                        <td className="px-3 py-3">
+                          <SubmissionStatusBadge status={sub.status} />
+                        </td>
+                        <td className="px-4 py-3 text-slate-600 dark:text-slate-400 whitespace-nowrap">
+                          {sub.submittedAt
+                            ? new Date(sub.submittedAt).toLocaleDateString("en-PH", {
+                                month: "short",
+                                day: "numeric",
+                                year: "numeric",
+                                hour: "numeric",
+                                minute: "2-digit",
+                                hour12: true,
+                              })
+                            : "—"}
+                        </td>
+                        <td className="px-4 py-3 text-slate-500 dark:text-slate-400" title={sub.adminRemarks || ""}>
+                          {sub.adminRemarks || "—"}
+                        </td>
+                        <td className="px-4 py-3 text-slate-600 dark:text-slate-300" title={sub.facultyRemarks || ""}>
+                          {sub.facultyRemarks ? (
+                            <span className="italic">{sub.facultyRemarks}</span>
+                          ) : (
+                            <span className="text-slate-400">—</span>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </>
           )}
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-between border-t border-slate-200 bg-slate-50 px-6 py-3 dark:border-slate-800 dark:bg-slate-950">
-          <span className="text-xs text-slate-500 dark:text-slate-400">
+        <div className="flex items-center justify-between gap-3 border-t border-slate-200 bg-slate-50 px-4 sm:px-6 py-3 dark:border-slate-800 dark:bg-slate-950">
+          <span className="text-xs text-slate-500 dark:text-slate-400 truncate">
             {isCurrentTerm ? "Active Academic Term Records" : "Read-only Historical Term Archive"}
           </span>
           <button
             type="button"
             onClick={onClose}
-            className="rounded-lg bg-[#800000] hover:bg-[#6c0000] text-white px-5 py-1.5 text-xs font-semibold shadow-xs transition-colors cursor-pointer"
+            className="shrink-0 rounded-lg bg-[#800000] hover:bg-[#6c0000] text-white px-5 py-1.5 text-xs font-semibold shadow-xs transition-colors cursor-pointer"
           >
             Close
           </button>

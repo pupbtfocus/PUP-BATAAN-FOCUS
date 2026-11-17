@@ -763,11 +763,11 @@ export function AdminAcademicTerms({
   return (
     <div className="w-full space-y-4">
       {/* Top Header Actions */}
-      <div className="flex items-center justify-end gap-3 flex-wrap">
+      <div className="grid grid-cols-1 sm:flex sm:items-center sm:justify-end gap-2.5">
         <button
           type="button"
           onClick={() => setHistoryModalData({ isOpen: true })}
-          className="inline-flex items-center gap-1.5 bg-amber-500 hover:bg-amber-400 dark:bg-amber-500 dark:hover:bg-amber-400 text-slate-950 border border-amber-600 font-semibold px-3.5 py-2 rounded-xl text-xs transition-all cursor-pointer shadow-2xs"
+          className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 bg-amber-500 hover:bg-amber-400 dark:bg-amber-500 dark:hover:bg-amber-400 text-slate-950 border border-amber-600 font-semibold px-3.5 py-2.5 sm:py-2 rounded-xl text-xs transition-all cursor-pointer shadow-2xs"
           title="Browse read-only historical submissions from past inactive terms"
         >
           <AppIcon icon={Archive} size="xs" color="inherit" />
@@ -778,7 +778,7 @@ export function AdminAcademicTerms({
           type="button"
           onClick={() => setIsCreateModalOpen(true)}
           disabled={isLoading || isSaving}
-          className="bg-amber-500 hover:bg-amber-400 text-slate-950 border border-amber-600 font-semibold px-4 py-2 rounded-xl text-xs transition-all disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer shadow-sm"
+          className="w-full sm:w-auto inline-flex items-center justify-center bg-amber-500 hover:bg-amber-400 text-slate-950 border border-amber-600 font-semibold px-4 py-2.5 sm:py-2 rounded-xl text-xs transition-all disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer shadow-sm"
         >
           + Create Next Academic Year
         </button>
@@ -804,14 +804,14 @@ export function AdminAcademicTerms({
       ) : null}
 
       {/* Active & Upcoming Terms (Current on Top, Upcoming at Bottom) */}
-      <div className="space-y-2">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <span className="h-2 w-2 rounded-full bg-emerald-500" />
+      <div className="space-y-2.5">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div className="flex items-center gap-2 min-w-0">
+            <span className="h-2 w-2 rounded-full bg-emerald-500 shrink-0" />
             <h2 className="text-xs sm:text-sm font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
               Active & Upcoming Terms
             </h2>
-            <span className="text-[11px] bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 px-2 py-0.5 rounded-full font-semibold border border-slate-200 dark:border-slate-700">
+            <span className="text-[11px] bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 px-2 py-0.5 rounded-full font-semibold border border-slate-200 dark:border-slate-700 shrink-0">
               {activeAndUpcomingTerms.length}
             </span>
           </div>
@@ -820,7 +820,115 @@ export function AdminAcademicTerms({
           </span>
         </div>
 
-        <div className="w-full overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs dark:shadow-none overflow-hidden transition-colors">
+        {/* Mobile Card View (< md) */}
+        <div className="md:hidden space-y-2.5">
+          {isLoading && activeAndUpcomingTerms.length === 0 ? (
+            <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 text-center text-xs text-slate-500 dark:text-slate-400 shadow-xs">
+              Loading academic terms...
+            </div>
+          ) : activeAndUpcomingTerms.length === 0 ? (
+            <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 text-center text-xs text-slate-500 dark:text-slate-400 shadow-xs">
+              No active or upcoming academic terms found.
+            </div>
+          ) : (
+            activeAndUpcomingTerms.map((term) => (
+              <div
+                key={`mobile-${term.academicYear}-${term.semester}`}
+                className={`rounded-xl border p-3.5 space-y-3 shadow-xs transition-colors ${
+                  term.status === "Current"
+                    ? "border-emerald-300 dark:border-emerald-800/70 bg-emerald-50/40 dark:bg-emerald-950/20"
+                    : "border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900"
+                }`}
+              >
+                <div className="flex items-start justify-between gap-2.5">
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2">
+                      {term.status === "Current" && (
+                        <span className="flex h-2 w-2 rounded-full bg-emerald-500 shrink-0" />
+                      )}
+                      <p className="text-sm font-bold text-slate-900 dark:text-slate-100">
+                        {term.academicYear}
+                      </p>
+                    </div>
+                    <p className="mt-0.5 text-xs font-medium text-slate-600 dark:text-slate-400">
+                      {term.semester}
+                    </p>
+                  </div>
+                  <div className="shrink-0">{renderStatusBadge(term)}</div>
+                </div>
+
+                {term.status === "Current" && term.isBackedUp && (
+                  <div className="flex flex-wrap items-center gap-1.5">
+                    <span
+                      className="inline-flex items-center gap-1 bg-emerald-600 text-white border border-emerald-700 px-2.5 py-0.5 text-[11px] font-semibold rounded-md shadow-2xs"
+                      title="This current semester is backed up and can safely be changed"
+                    >
+                      <AppIcon icon={Check} size="xs" color="white" />
+                      <span>Backed Up · Safe to Change</span>
+                    </span>
+                  </div>
+                )}
+
+                <div className="pt-2.5 border-t border-slate-200/70 dark:border-slate-800 flex flex-wrap items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setHistoryModalData({
+                        isOpen: true,
+                        academicYear: term.academicYear,
+                        semester: term.semester,
+                      })
+                    }
+                    title={
+                      term.status === "Current"
+                        ? "View submissions for the current active academic term"
+                        : "Browse submissions from this academic term"
+                    }
+                    className="inline-flex items-center gap-1 bg-amber-500 hover:bg-amber-400 dark:bg-amber-500 dark:hover:bg-amber-400 text-slate-950 border border-amber-600 text-xs font-medium px-2.5 py-1.5 rounded-lg transition-all cursor-pointer shadow-2xs"
+                  >
+                    <AppIcon icon={Eye} size="xs" color="inherit" />
+                    <span>Submissions</span>
+                  </button>
+
+                  {renderSetCurrentAction(term)}
+
+                  {activeAndUpcomingTerms.length === 1 && (
+                    <button
+                      type="button"
+                      onClick={() => handleArchiveClick(term)}
+                      disabled={isLoading || isSaving}
+                      title="Archive and close this academic term"
+                      className="inline-flex items-center gap-1 bg-[#0b5336] hover:bg-[#073d2a] text-white border border-[#08412a] text-xs font-semibold px-2.5 py-1.5 rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer shadow-2xs"
+                    >
+                      <AppIcon icon={Archive} size="xs" color="inherit" />
+                      <span>Archive</span>
+                    </button>
+                  )}
+
+                  {term.status !== "Current" && (
+                    <button
+                      type="button"
+                      onClick={() => handleDeleteClick(term)}
+                      disabled={!term.canDelete || isLoading || isSaving}
+                      title={
+                        term.deleteReason ||
+                        (!term.canDelete
+                          ? "Cannot delete term with existing data"
+                          : "Delete academic term")
+                      }
+                      className="bg-[#780000] hover:bg-[#5e0000] text-white border border-[#5e0000] text-xs font-semibold px-3 py-1.5 rounded-lg transition-all disabled:opacity-30 disabled:hover:bg-[#780000] disabled:cursor-not-allowed cursor-pointer shadow-2xs"
+                    >
+                      Delete
+                    </button>
+                  )}
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+
+        {/* Desktop Table View (>= md) */}
+        <div className="hidden md:block w-full overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs dark:shadow-none overflow-hidden transition-colors">
           <table className="w-full text-left border-collapse min-w-[600px]">
             <thead className="border-b border-slate-300 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/60 text-slate-700 dark:text-slate-300 text-[11px] font-bold uppercase tracking-wider">
               <tr>
@@ -942,14 +1050,14 @@ export function AdminAcademicTerms({
       </div>
 
       {/* Archive Section: All Completed, Closed, and Archived Terms */}
-      <div className="space-y-2 pt-6">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <AppIcon icon={Archive} size="sm" className="text-slate-500 dark:text-slate-400" />
+      <div className="space-y-2.5 pt-4 sm:pt-6">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div className="flex items-center gap-2 min-w-0">
+            <AppIcon icon={Archive} size="sm" className="text-slate-500 dark:text-slate-400 shrink-0" />
             <h2 className="text-xs sm:text-sm font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
               Archived & Closed Terms
             </h2>
-            <span className="text-[11px] bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 px-2 py-0.5 rounded-full font-semibold border border-slate-200 dark:border-slate-700">
+            <span className="text-[11px] bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 px-2 py-0.5 rounded-full font-semibold border border-slate-200 dark:border-slate-700 shrink-0">
               {archivedTerms.length}
             </span>
           </div>
@@ -958,7 +1066,84 @@ export function AdminAcademicTerms({
           </span>
         </div>
 
-        <div className="w-full overflow-x-auto rounded-xl border border-slate-300 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs dark:shadow-none overflow-hidden transition-colors">
+        {/* Mobile Card View (< md) */}
+        <div className="md:hidden space-y-2.5">
+          {isLoading && archivedTerms.length === 0 ? (
+            <div className="rounded-xl border border-slate-300 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 text-center text-xs text-slate-500 dark:text-slate-400 shadow-xs">
+              Loading archived terms...
+            </div>
+          ) : archivedTerms.length === 0 ? (
+            <div className="rounded-xl border border-slate-300 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 text-center text-xs text-slate-500 dark:text-slate-400 shadow-xs">
+              No completed or archived terms found.
+            </div>
+          ) : (
+            archivedTerms.map((term) => (
+              <div
+                key={`mobile-archived-${term.academicYear}-${term.semester}`}
+                className="rounded-xl border border-slate-300 dark:border-slate-800 bg-white dark:bg-slate-900 p-3.5 space-y-3 shadow-xs transition-colors"
+              >
+                <div className="flex items-start justify-between gap-2.5">
+                  <div className="min-w-0">
+                    <p className="text-sm font-bold text-slate-800 dark:text-slate-200">
+                      {term.academicYear}
+                    </p>
+                    <p className="mt-0.5 text-xs font-medium text-slate-600 dark:text-slate-400">
+                      {term.semester}
+                    </p>
+                  </div>
+                  <div className="shrink-0">{renderStatusBadge(term)}</div>
+                </div>
+
+                {term.status === "Current" && term.isBackedUp && (
+                  <div className="flex flex-wrap items-center gap-1.5">
+                    <span
+                      className="inline-flex items-center gap-1 bg-emerald-600 text-white border border-emerald-700 px-2.5 py-0.5 text-[11px] font-semibold rounded-md shadow-2xs"
+                      title="This current semester is backed up and can safely be changed"
+                    >
+                      <AppIcon icon={Check} size="xs" color="white" />
+                      <span>Backed Up · Safe to Change</span>
+                    </span>
+                  </div>
+                )}
+
+                <div className="pt-2.5 border-t border-slate-200/70 dark:border-slate-800 flex flex-wrap items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setHistoryModalData({
+                        isOpen: true,
+                        academicYear: term.academicYear,
+                        semester: term.semester,
+                      })
+                    }
+                    title="Browse read-only historical submissions from this academic term"
+                    className="inline-flex items-center gap-1 bg-amber-500 hover:bg-amber-400 dark:bg-amber-500 dark:hover:bg-amber-400 text-slate-950 border border-amber-600 text-xs font-medium px-2.5 py-1.5 rounded-lg transition-all cursor-pointer shadow-2xs"
+                  >
+                    <AppIcon icon={Eye} size="xs" color="inherit" />
+                    <span>Submissions</span>
+                  </button>
+
+                  {renderSetCurrentAction(term)}
+
+                  {term.canDelete ? (
+                    <button
+                      type="button"
+                      onClick={() => handleDeleteClick(term)}
+                      disabled={isLoading || isSaving}
+                      title={term.deleteReason || "Delete academic term"}
+                      className="bg-[#780000] hover:bg-[#5e0000] text-white border border-[#5e0000] text-xs font-semibold px-3 py-1.5 rounded-lg transition-all disabled:opacity-30 disabled:hover:bg-[#780000] disabled:cursor-not-allowed cursor-pointer shadow-2xs"
+                    >
+                      Delete
+                    </button>
+                  ) : null}
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+
+        {/* Desktop Table View (>= md) */}
+        <div className="hidden md:block w-full overflow-x-auto rounded-xl border border-slate-300 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs dark:shadow-none overflow-hidden transition-colors">
           <table className="w-full text-left border-collapse min-w-[600px]">
             <thead className="border-b border-slate-200 dark:border-slate-800 bg-slate-100/70 dark:bg-slate-950/60 text-slate-600 dark:text-slate-400 text-[11px] font-bold uppercase tracking-wider">
               <tr>
@@ -1050,19 +1235,19 @@ export function AdminAcademicTerms({
 
       {/* Modal: Create Next Academic Year */}
       {isCreateModalOpen ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4 py-6 backdrop-blur-sm">
-          <div className="w-full max-w-xl rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 shadow-2xl text-slate-900 dark:text-slate-100 overflow-hidden flex flex-col">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-3 sm:px-4 py-4 sm:py-6 backdrop-blur-sm">
+          <div className="w-full max-w-xl max-h-[90dvh] rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 shadow-2xl text-slate-900 dark:text-slate-100 overflow-hidden flex flex-col">
             <ModalHeader
               title="Create Next Academic Year"
               subtitle="Automatically generate terms for the upcoming academic cycle."
               icon={Calendar}
             />
-            <div className="p-6">
-              <div className="rounded-xl border border-slate-200/80 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 p-4">
+            <div className="p-4 sm:p-6 overflow-y-auto">
+              <div className="rounded-xl border border-slate-200/80 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 p-3.5 sm:p-4">
                 <p className="text-[11px] font-bold uppercase tracking-wider text-amber-700 dark:text-amber-400/90">
                   Next Academic Year
                 </p>
-                <p className="mt-1 text-2xl font-bold text-slate-900 dark:text-slate-100">
+                <p className="mt-1 text-xl sm:text-2xl font-bold text-slate-900 dark:text-slate-100">
                   {computedNextAcademicYear}
                 </p>
 
@@ -1071,7 +1256,7 @@ export function AdminAcademicTerms({
                     <span className="flex h-7 w-7 items-center justify-center rounded-full bg-[#0b5336] text-white border border-[#08412a] shadow-xs shrink-0">
                       <Check className="h-4 w-4 text-white" strokeWidth={2.5} />
                     </span>
-                    <div>
+                    <div className="min-w-0">
                       <p className="text-xs font-semibold text-slate-900 dark:text-slate-200">
                         {computedNextAcademicYear} • 1st Semester
                       </p>
@@ -1084,7 +1269,7 @@ export function AdminAcademicTerms({
                     <span className="flex h-7 w-7 items-center justify-center rounded-full bg-[#0b5336] text-white border border-[#08412a] shadow-xs shrink-0">
                       <Check className="h-4 w-4 text-white" strokeWidth={2.5} />
                     </span>
-                    <div>
+                    <div className="min-w-0">
                       <p className="text-xs font-semibold text-slate-900 dark:text-slate-200">
                         {computedNextAcademicYear} • 2nd Semester
                       </p>
@@ -1097,7 +1282,7 @@ export function AdminAcademicTerms({
                     <span className="flex h-7 w-7 items-center justify-center rounded-full bg-[#0b5336] text-white border border-[#08412a] shadow-xs shrink-0">
                       <Check className="h-4 w-4 text-white" strokeWidth={2.5} />
                     </span>
-                    <div>
+                    <div className="min-w-0">
                       <p className="text-xs font-semibold text-slate-900 dark:text-slate-200">
                         {computedNextAcademicYear} • Summer Semester
                       </p>
@@ -1109,12 +1294,12 @@ export function AdminAcademicTerms({
                 </div>
               </div>
 
-              <div className="mt-6 flex items-center justify-end gap-2.5">
+              <div className="mt-5 sm:mt-6 flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-end gap-2.5">
                 <button
                   type="button"
                   onClick={() => setIsCreateModalOpen(false)}
                   disabled={isSaving}
-                  className={`px-4 py-2 rounded-xl text-xs font-semibold transition-all shadow-xs ${
+                  className={`w-full sm:w-auto inline-flex items-center justify-center px-4 py-2 rounded-xl text-xs font-semibold transition-all shadow-xs ${
                     isSaving
                       ? "bg-[#780000] text-white/80 border border-[#5e0000] cursor-not-allowed pointer-events-none brightness-90"
                       : "bg-[#780000] hover:bg-[#5e0000] text-white border border-[#5e0000] cursor-pointer"
@@ -1126,7 +1311,7 @@ export function AdminAcademicTerms({
                   type="button"
                   onClick={handleCreateNextAcademicYear}
                   disabled={isSaving}
-                  className={`inline-flex items-center justify-center font-semibold px-4 py-2 rounded-xl text-xs transition-all shadow-sm ${
+                  className={`w-full sm:w-auto inline-flex items-center justify-center font-semibold px-4 py-2 rounded-xl text-xs transition-all shadow-sm ${
                     isSaving
                       ? "bg-amber-500 text-slate-950 border border-amber-600 cursor-wait"
                       : "bg-amber-500 hover:bg-amber-400 text-slate-950 border border-amber-600 cursor-pointer"
@@ -1154,14 +1339,14 @@ export function AdminAcademicTerms({
 
       {/* Modal: Confirm Set Current with Safety Timed Countdown */}
       {termToSetCurrent ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4 py-6 backdrop-blur-sm">
-          <div className="w-full max-w-md rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 shadow-2xl text-slate-900 dark:text-slate-100 overflow-hidden flex flex-col">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-3 sm:px-4 py-4 sm:py-6 backdrop-blur-sm">
+          <div className="w-full max-w-md max-h-[90dvh] rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 shadow-2xl text-slate-900 dark:text-slate-100 overflow-hidden flex flex-col">
             <ModalHeader
               title="Set Current Academic Term"
               subtitle="Update active institutional academic period"
               icon={Calendar}
             />
-            <div className="p-6 space-y-4">
+            <div className="p-4 sm:p-6 space-y-4 overflow-y-auto">
               <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
                 Are you sure you want to set{" "}
                 <strong className="text-slate-900 dark:text-slate-100 font-semibold">
@@ -1170,12 +1355,12 @@ export function AdminAcademicTerms({
                 as the active term? This will update system submission parameters and active semester records.
               </p>
 
-              <div className="flex items-center justify-end gap-2.5 pt-2 border-t border-slate-100 dark:border-slate-800/80">
+              <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-end gap-2.5 pt-2 border-t border-slate-100 dark:border-slate-800/80">
                 <button
                   type="button"
                   onClick={() => setTermToSetCurrent(null)}
                   disabled={isSaving}
-                  className={`px-4 py-2 rounded-xl text-xs font-semibold transition-all shadow-xs ${
+                  className={`w-full sm:w-auto inline-flex items-center justify-center px-4 py-2 rounded-xl text-xs font-semibold transition-all shadow-xs ${
                     isSaving
                       ? "bg-[#780000] text-white/80 border border-[#5e0000] cursor-not-allowed pointer-events-none brightness-90"
                       : "bg-[#780000] hover:bg-[#5e0000] text-white border border-[#5e0000] cursor-pointer"
@@ -1187,7 +1372,7 @@ export function AdminAcademicTerms({
                   type="button"
                   onClick={() => void confirmSetCurrent()}
                   disabled={isSaving || countdown > 0}
-                  className={`inline-flex items-center justify-center font-semibold px-4 py-2 rounded-xl text-xs transition-all shadow-sm ${
+                  className={`w-full sm:w-auto inline-flex items-center justify-center font-semibold px-4 py-2 rounded-xl text-xs transition-all shadow-sm ${
                     isSaving
                       ? "bg-[#0b5336] text-white border border-[#08412a] cursor-wait"
                       : countdown > 0
@@ -1219,14 +1404,14 @@ export function AdminAcademicTerms({
 
       {/* Modal: Confirm Archive Academic Term with Safety Timed Countdown */}
       {termToArchive ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4 py-6 backdrop-blur-sm">
-          <div className="w-full max-w-md rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 shadow-2xl text-slate-900 dark:text-slate-100 overflow-hidden flex flex-col">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-3 sm:px-4 py-4 sm:py-6 backdrop-blur-sm">
+          <div className="w-full max-w-md max-h-[90dvh] rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 shadow-2xl text-slate-900 dark:text-slate-100 overflow-hidden flex flex-col">
             <ModalHeader
               title="Archive Academic Term"
               subtitle="Close and archive completed academic period"
               icon={Archive}
             />
-            <div className="p-6 space-y-4">
+            <div className="p-4 sm:p-6 space-y-4 overflow-y-auto">
               <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
                 Are you sure you want to archive{" "}
                 <strong className="text-slate-900 dark:text-slate-100 font-semibold">
@@ -1242,12 +1427,12 @@ export function AdminAcademicTerms({
                 </span>
               </div>
 
-              <div className="flex items-center justify-end gap-2.5 pt-2 border-t border-slate-100 dark:border-slate-800/80">
+              <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-end gap-2.5 pt-2 border-t border-slate-100 dark:border-slate-800/80">
                 <button
                   type="button"
                   onClick={() => setTermToArchive(null)}
                   disabled={isSaving}
-                  className={`px-4 py-2 rounded-xl text-xs font-semibold transition-all shadow-xs ${
+                  className={`w-full sm:w-auto inline-flex items-center justify-center px-4 py-2 rounded-xl text-xs font-semibold transition-all shadow-xs ${
                     isSaving
                       ? "bg-[#780000] text-white/80 border border-[#5e0000] cursor-not-allowed pointer-events-none brightness-90"
                       : "bg-[#780000] hover:bg-[#5e0000] text-white border border-[#5e0000] cursor-pointer"
@@ -1259,7 +1444,7 @@ export function AdminAcademicTerms({
                   type="button"
                   onClick={() => void confirmArchiveTerm()}
                   disabled={isSaving || countdown > 0}
-                  className={`inline-flex items-center justify-center font-semibold px-4 py-2 rounded-xl text-xs transition-all shadow-sm ${
+                  className={`w-full sm:w-auto inline-flex items-center justify-center font-semibold px-4 py-2 rounded-xl text-xs transition-all shadow-sm ${
                     isSaving
                       ? "bg-[#0b5336] text-white border border-[#08412a] cursor-wait"
                       : countdown > 0
@@ -1291,14 +1476,14 @@ export function AdminAcademicTerms({
 
       {/* Modal: Confirm Delete with Safety Timed Countdown */}
       {termToDelete ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4 py-6 backdrop-blur-sm">
-          <div className="w-full max-w-md rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 shadow-2xl text-slate-900 dark:text-slate-100 overflow-hidden flex flex-col">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-3 sm:px-4 py-4 sm:py-6 backdrop-blur-sm">
+          <div className="w-full max-w-md max-h-[90dvh] rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 shadow-2xl text-slate-900 dark:text-slate-100 overflow-hidden flex flex-col">
             <ModalHeader
               title="Delete Academic Term"
               subtitle="Permanently remove scheduled academic term"
               icon={WarningTriangle}
             />
-            <div className="p-6 space-y-4">
+            <div className="p-4 sm:p-6 space-y-4 overflow-y-auto">
               <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
                 Are you sure you want to permanently delete{" "}
                 <strong className="text-slate-900 dark:text-slate-100 font-semibold">
@@ -1312,12 +1497,12 @@ export function AdminAcademicTerms({
                 </p>
               ) : null}
 
-              <div className="flex items-center justify-end gap-2.5 pt-2 border-t border-slate-100 dark:border-slate-800/80">
+              <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-end gap-2.5 pt-2 border-t border-slate-100 dark:border-slate-800/80">
                 <button
                   type="button"
                   onClick={() => setTermToDelete(null)}
                   disabled={isSaving}
-                  className={`px-4 py-2 rounded-xl text-xs font-semibold transition-all shadow-xs ${
+                  className={`w-full sm:w-auto inline-flex items-center justify-center px-4 py-2 rounded-xl text-xs font-semibold transition-all shadow-xs ${
                     isSaving
                       ? "bg-[#780000] text-white/80 border border-[#5e0000] cursor-not-allowed pointer-events-none brightness-90"
                       : "bg-[#780000] hover:bg-[#5e0000] text-white border border-[#5e0000] cursor-pointer"
@@ -1329,7 +1514,7 @@ export function AdminAcademicTerms({
                   type="button"
                   onClick={confirmDeleteTerm}
                   disabled={isSaving || !termToDelete.canDelete || countdown > 0}
-                  className={`inline-flex items-center justify-center font-semibold px-4 py-2 rounded-xl text-xs transition-all shadow-sm ${
+                  className={`w-full sm:w-auto inline-flex items-center justify-center font-semibold px-4 py-2 rounded-xl text-xs transition-all shadow-sm ${
                     isSaving
                       ? "bg-[#780000] text-white border border-[#5e0000] cursor-wait"
                       : countdown > 0 || !termToDelete.canDelete
@@ -1361,15 +1546,15 @@ export function AdminAcademicTerms({
 
       {/* Modal: Backup Required (System Transition Guard) */}
       {warningModalData.isOpen ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4 py-6 backdrop-blur-sm animate-in fade-in">
-          <div className="w-full max-w-xl rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 shadow-2xl text-slate-900 dark:text-slate-100 overflow-hidden flex flex-col">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-3 sm:px-4 py-4 sm:py-6 backdrop-blur-sm animate-in fade-in">
+          <div className="w-full max-w-xl max-h-[90dvh] rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 shadow-2xl text-slate-900 dark:text-slate-100 overflow-hidden flex flex-col">
             <ModalHeader
               title={warningModalData.title || "Semester Backup Required"}
               subtitle="Each semester requires its own backup before changing terms"
               icon={WarningTriangle}
             />
 
-            <div className="p-6 space-y-4">
+            <div className="p-4 sm:p-6 space-y-4 overflow-y-auto">
               <div className="space-y-2.5">
                 <p className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
                   {warningModalData.hasPendingReviews
@@ -1378,8 +1563,8 @@ export function AdminAcademicTerms({
                 </p>
 
                 {/* Status Card */}
-                <div className="flex items-center justify-between gap-3 p-3.5 rounded-xl border border-slate-200/90 dark:border-slate-800 bg-white dark:bg-slate-900/60 shadow-2xs">
-                  <div className="flex items-center gap-3 min-w-0">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 rounded-xl border border-slate-200/90 dark:border-slate-800 bg-white dark:bg-slate-900/60 shadow-2xs">
+                  <div className="flex items-start sm:items-center gap-3 min-w-0">
                     <div className="h-9 w-9 rounded-xl flex items-center justify-center shrink-0 shadow-2xs bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700/60">
                       {warningModalData.hasPendingReviews ? (
                         <AppIcon icon={Hourglass} size="sm" color="default" />
@@ -1400,7 +1585,7 @@ export function AdminAcademicTerms({
                     </div>
                   </div>
                   <span
-                    className={`shrink-0 text-xs font-bold px-2.5 py-1 rounded-lg shadow-2xs ${
+                    className={`self-start sm:self-center shrink-0 text-xs font-bold px-2.5 py-1 rounded-lg shadow-2xs ${
                       warningModalData.hasPendingReviews || warningModalData.missingBackup
                         ? "bg-amber-500 text-slate-950 border border-amber-600"
                         : "bg-[#0b5336] text-white border border-[#08412a]"
@@ -1415,7 +1600,7 @@ export function AdminAcademicTerms({
                 </div>
 
                 {pendingTargetTerm && (
-                  <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-900/40 border border-slate-200 dark:border-slate-800 text-xs text-slate-600 dark:text-slate-400 flex items-center justify-between gap-2">
+                  <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-900/40 border border-slate-200 dark:border-slate-800 text-xs text-slate-600 dark:text-slate-400 flex flex-wrap items-center justify-between gap-2">
                     <span>Target term to activate:</span>
                     <span className="font-bold text-slate-900 dark:text-slate-200">
                       {pendingTargetTerm.academicYear} {pendingTargetTerm.semester}
@@ -1424,7 +1609,7 @@ export function AdminAcademicTerms({
                 )}
 
                 {pendingArchiveTerm && (
-                  <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-900/40 border border-slate-200 dark:border-slate-800 text-xs text-slate-600 dark:text-slate-400 flex items-center justify-between gap-2">
+                  <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-900/40 border border-slate-200 dark:border-slate-800 text-xs text-slate-600 dark:text-slate-400 flex flex-wrap items-center justify-between gap-2">
                     <span>Target term to archive:</span>
                     <span className="font-bold text-slate-900 dark:text-slate-200">
                       {pendingArchiveTerm.academicYear} {pendingArchiveTerm.semester}
@@ -1441,7 +1626,7 @@ export function AdminAcademicTerms({
               </div>
 
               {/* Action Buttons Footer */}
-              <div className="pt-4 border-t border-slate-100 dark:border-slate-800/80 flex flex-col-reverse sm:flex-row items-center justify-between gap-2.5">
+              <div className="pt-4 border-t border-slate-100 dark:border-slate-800/80 flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-between gap-2.5">
                 <button
                   type="button"
                   onClick={() => {
@@ -1452,12 +1637,12 @@ export function AdminAcademicTerms({
                     setIsConfirmBackupOpen(false);
                   }}
                   disabled={isModalBackingUp}
-                  className="w-full sm:w-auto px-4 py-2 rounded-xl bg-[#780000] hover:bg-[#5e0000] text-white border border-[#5e0000] text-xs font-semibold transition-all cursor-pointer shadow-xs disabled:opacity-50"
+                  className="w-full sm:w-auto inline-flex items-center justify-center px-4 py-2 rounded-xl bg-[#780000] hover:bg-[#5e0000] text-white border border-[#5e0000] text-xs font-semibold transition-all cursor-pointer shadow-xs disabled:opacity-50"
                 >
                   Cancel
                 </button>
 
-                <div className="w-full sm:w-auto flex flex-col sm:flex-row items-center gap-2">
+                <div className="w-full sm:w-auto flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
                   {warningModalData.hasPendingReviews ? (
                     <button
                       type="button"
@@ -1552,14 +1737,14 @@ export function AdminAcademicTerms({
 
       {/* Modal: Confirm Backup & Activate Term */}
       {isConfirmBackupOpen ? (
-        <div className="fixed inset-0 z-60 flex items-center justify-center bg-black/70 px-4 py-6 backdrop-blur-sm animate-in fade-in">
-          <div className="w-full max-w-md rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 shadow-2xl text-slate-900 dark:text-slate-100 overflow-hidden flex flex-col">
+        <div className="fixed inset-0 z-60 flex items-center justify-center bg-black/70 px-3 sm:px-4 py-4 sm:py-6 backdrop-blur-sm animate-in fade-in">
+          <div className="w-full max-w-md max-h-[90dvh] rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 shadow-2xl text-slate-900 dark:text-slate-100 overflow-hidden flex flex-col">
             <ModalHeader
               title="Confirm Semester Backup &amp; Activation"
               subtitle="Please confirm before proceeding"
               icon={Archive}
             />
-            <div className="p-6 space-y-4">
+            <div className="p-4 sm:p-6 space-y-4 overflow-y-auto">
               <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
                 Are you sure you want to download a backup of{" "}
                 <strong className="text-slate-900 dark:text-slate-100 font-semibold">
@@ -1600,12 +1785,12 @@ export function AdminAcademicTerms({
                 </div>
               )}
 
-              <div className="flex items-center justify-end gap-2.5 pt-2 border-t border-slate-100 dark:border-slate-800/80">
+              <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-end gap-2.5 pt-2 border-t border-slate-100 dark:border-slate-800/80">
                 <button
                   type="button"
                   onClick={() => setIsConfirmBackupOpen(false)}
                   disabled={isModalBackingUp}
-                  className="px-4 py-2 rounded-xl bg-[#780000] hover:bg-[#5e0000] text-white border border-[#5e0000] text-xs font-semibold transition-all cursor-pointer shadow-xs disabled:opacity-50"
+                  className="w-full sm:w-auto inline-flex items-center justify-center px-4 py-2 rounded-xl bg-[#780000] hover:bg-[#5e0000] text-white border border-[#5e0000] text-xs font-semibold transition-all cursor-pointer shadow-xs disabled:opacity-50"
                 >
                   Cancel
                 </button>
@@ -1613,7 +1798,7 @@ export function AdminAcademicTerms({
                   type="button"
                   onClick={() => void handleDirectSemesterBackup()}
                   disabled={isModalBackingUp}
-                  className="inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 border border-amber-600 font-semibold text-xs transition-all cursor-pointer shadow-xs active:scale-[0.98] disabled:opacity-50"
+                  className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 border border-amber-600 font-semibold text-xs transition-all cursor-pointer shadow-xs active:scale-[0.98] disabled:opacity-50"
                 >
                   {isModalBackingUp ? (
                     <>
