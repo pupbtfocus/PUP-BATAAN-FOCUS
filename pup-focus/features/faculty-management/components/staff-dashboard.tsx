@@ -108,6 +108,22 @@ export function AdminFacultyDashboard({
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
 
+  // Prevent background section scrolling & mobile scroll-chaining while mobile side panel is open
+  useEffect(() => {
+    if (!isMobileMenuOpen) return;
+    const prevHtmlOverflow = document.documentElement.style.overflow;
+    const prevBodyOverflow = document.body.style.overflow;
+    const prevBodyOverscroll = document.body.style.overscrollBehavior;
+    document.documentElement.style.overflow = "hidden";
+    document.body.style.overflow = "hidden";
+    document.body.style.overscrollBehavior = "none";
+    return () => {
+      document.documentElement.style.overflow = prevHtmlOverflow;
+      document.body.style.overflow = prevBodyOverflow;
+      document.body.style.overscrollBehavior = prevBodyOverscroll;
+    };
+  }, [isMobileMenuOpen]);
+
   // Restore stored tab within current session if no URL param was provided, then mark mounted
   useEffect(() => {
     const tabParam = searchParams?.get("tab") || searchParams?.get("section");
@@ -823,11 +839,14 @@ export function AdminFacultyDashboard({
         {/* Mobile Navigation Drawer / Sheet */}
         {isMobileMenuOpen && (
           <div
-            className="fixed inset-0 z-[60] bg-slate-950/80 backdrop-blur-sm md:hidden flex"
-            onClick={() => setIsMobileMenuOpen(false)}
+            className="fixed inset-0 h-dvh z-[60] md:hidden flex overflow-hidden overscroll-none"
           >
+            <div
+              className="fixed inset-0 h-lvh bg-slate-950/80 backdrop-blur-sm touch-none overscroll-none"
+              onClick={() => setIsMobileMenuOpen(false)}
+            />
             <aside
-              className="relative flex flex-col h-full w-72 max-w-[85%] bg-[#800000] text-amber-50 border-r-4 border-amber-500 p-4 shadow-2xl overflow-y-auto transition-colors duration-200"
+              className="relative z-10 flex flex-col h-dvh w-72 max-w-[85%] bg-[#800000] text-amber-50 border-r-4 border-amber-500 p-4 shadow-2xl overflow-y-auto overscroll-contain sidebar-scrollbar transition-colors duration-200"
               onClick={(e) => e.stopPropagation()}
             >
               <div className="flex items-center justify-between pb-3 border-b border-amber-400/50 mb-2">

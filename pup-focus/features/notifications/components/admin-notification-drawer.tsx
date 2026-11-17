@@ -274,10 +274,16 @@ export function AdminNotificationDrawer({
   // Prevent background body scrolling when drawer is open
   useEffect(() => {
     if (!isOpen) return;
-    const originalOverflow = document.body.style.overflow;
+    const prevHtmlOverflow = document.documentElement.style.overflow;
+    const prevBodyOverflow = document.body.style.overflow;
+    const prevBodyOverscroll = document.body.style.overscrollBehavior;
+    document.documentElement.style.overflow = "hidden";
     document.body.style.overflow = "hidden";
+    document.body.style.overscrollBehavior = "none";
     return () => {
-      document.body.style.overflow = originalOverflow;
+      document.documentElement.style.overflow = prevHtmlOverflow;
+      document.body.style.overflow = prevBodyOverflow;
+      document.body.style.overscrollBehavior = prevBodyOverscroll;
     };
   }, [isOpen]);
 
@@ -573,10 +579,10 @@ export function AdminNotificationDrawer({
       {isOpen &&
         mounted &&
         createPortal(
-          <div className="fixed inset-0 z-[100] overflow-hidden">
+          <div className="fixed inset-0 h-dvh z-[100] overflow-hidden overscroll-none">
             {/* Backdrop */}
             <div
-              className="fixed inset-0 bg-slate-950/70 backdrop-blur-sm transition-opacity animate-in fade-in duration-200"
+              className="fixed inset-0 h-lvh bg-slate-950/70 backdrop-blur-sm transition-opacity animate-in fade-in duration-200 touch-none overscroll-none"
               onClick={() => {
                 if (selectedNotification) {
                   setSelectedNotification(null);
@@ -588,7 +594,7 @@ export function AdminNotificationDrawer({
             />
 
             {/* Sheet Drawer */}
-            <div className="fixed inset-y-0 right-0 z-[100] flex h-full w-[86%] sm:w-full sm:max-w-lg md:max-w-xl flex-col bg-white dark:bg-slate-950 border-l border-slate-200 dark:border-slate-800 shadow-2xl animate-in slide-in-from-right duration-250 overflow-x-hidden">
+            <div className="fixed inset-y-0 right-0 z-[100] flex h-dvh w-[86%] sm:w-full sm:max-w-lg md:max-w-xl flex-col bg-white dark:bg-slate-950 border-l border-slate-200 dark:border-slate-800 shadow-2xl animate-in slide-in-from-right duration-250 overflow-x-hidden overscroll-contain">
               
               {/* TOP HEADER BAR */}
               <div className="flex items-center justify-between gap-2 border-b-4 border-amber-500 bg-[#800000] text-white px-3.5 sm:px-5 py-3 sm:py-3.5 shrink-0 shadow-xs">
@@ -766,7 +772,7 @@ export function AdminNotificationDrawer({
               )}
 
               {/* BODY CONTAINER */}
-              <div className="flex-1 overflow-y-auto overflow-x-hidden bg-white dark:bg-slate-950">
+              <div className="flex-1 overflow-y-auto overscroll-contain overflow-x-hidden bg-white dark:bg-slate-950">
                 {selectedNotification ? (
                   /* ================= DETAIL VIEW ================= */
                   <div className="p-5 sm:p-6 space-y-5 animate-in fade-in slide-in-from-right-2 duration-200">

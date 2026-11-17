@@ -81,17 +81,17 @@ export function PUPNotificationDrawer({
   });
 
   return (
-    <div className="fixed inset-0 z-[100] flex justify-end">
+    <div className="fixed inset-0 h-dvh z-[100] flex justify-end overscroll-none">
       {/* Backdrop */}
       <button
         type="button"
         aria-label="Close notifications"
         onClick={onClose}
-        className="absolute inset-0 bg-slate-950/40 backdrop-blur-sm"
+        className="fixed inset-0 h-lvh bg-slate-950/40 backdrop-blur-sm touch-none overscroll-none"
       />
 
       {/* Drawer */}
-      <aside className="relative flex h-full w-[86%] sm:w-full max-w-md flex-col bg-white shadow-2xl">
+      <aside className="relative flex h-dvh w-[86%] sm:w-full max-w-md flex-col bg-white shadow-2xl overscroll-contain">
         {/* ── Header ─────────────────────────────────────────────── */}
         <header className="shrink-0 border-b-4 border-amber-500 bg-[#800000] px-3.5 sm:px-5 py-3.5 sm:py-4">
           <div className="flex items-start justify-between gap-2 sm:gap-3">

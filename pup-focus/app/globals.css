@@ -43,6 +43,7 @@ html {
   min-height: 100%;
   width: 100%;
   overflow-x: clip;
+  background-color: var(--background);
 }
 
 body {
@@ -50,6 +51,7 @@ body {
   font-family: var(--font-geist-sans), sans-serif;
   position: relative;
   overflow-x: clip;
+  background-color: var(--background);
 }
 
 /* Campus photo backgrounds — scoped to public/auth routes via .campus-bg class */

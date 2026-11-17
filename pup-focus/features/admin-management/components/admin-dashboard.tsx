@@ -361,6 +361,22 @@ export function SuperAdminDashboard({
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
 
+  // Prevent background section scrolling & mobile scroll-chaining while mobile side panel is open
+  useEffect(() => {
+    if (!isMobileMenuOpen) return;
+    const prevHtmlOverflow = document.documentElement.style.overflow;
+    const prevBodyOverflow = document.body.style.overflow;
+    const prevBodyOverscroll = document.body.style.overscrollBehavior;
+    document.documentElement.style.overflow = "hidden";
+    document.body.style.overflow = "hidden";
+    document.body.style.overscrollBehavior = "none";
+    return () => {
+      document.documentElement.style.overflow = prevHtmlOverflow;
+      document.body.style.overflow = prevBodyOverflow;
+      document.body.style.overscrollBehavior = prevBodyOverscroll;
+    };
+  }, [isMobileMenuOpen]);
+
   // Restore stored tab within current session if no URL param was provided, then mark mounted
   useEffect(() => {
     const tabParam = searchParams?.get("tab") || searchParams?.get("section");
@@ -2038,12 +2054,12 @@ export function SuperAdminDashboard({
 
       {/* Mobile Navigation Drawer */}
       {isMobileMenuOpen && (
-        <div className="fixed inset-0 z-[60] md:hidden flex">
+        <div className="fixed inset-0 h-dvh z-[60] md:hidden flex overflow-hidden overscroll-none">
           <div
-            className="fixed inset-0 bg-black/70 backdrop-blur-sm"
+            className="fixed inset-0 h-lvh bg-black/70 backdrop-blur-sm touch-none overscroll-none"
             onClick={() => setIsMobileMenuOpen(false)}
           />
-          <aside className="relative w-72 max-w-[85%] bg-[#800000] text-amber-50 h-full p-4 border-r-4 border-amber-500 flex flex-col z-10 shadow-2xl overflow-y-auto sidebar-scrollbar transition-colors">
+          <aside className="relative w-72 max-w-[85%] bg-[#800000] text-amber-50 h-dvh p-4 border-r-4 border-amber-500 flex flex-col z-10 shadow-2xl overflow-y-auto overscroll-contain sidebar-scrollbar transition-colors">
             <div className="flex items-center justify-between pb-3 border-b border-white/10 mb-3">
               <div className="flex items-center gap-2.5 min-w-0 pr-2">
                 <BrandMark size={38} className="shrink-0" />
