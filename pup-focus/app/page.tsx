@@ -26,7 +26,6 @@ import { isValidEmailAddress } from "@/lib/validation/email";
 import { recordActiveSessionLogin } from "@/components/auth/single-session-enforcer";
 import { Lock, SystemRestart } from "iconoir-react";
 import { AppIcon } from "@/components/ui/app-icon";
-import { ModalHeader } from "@/components/ui/modal-header";
 import {
   isEphemeralSessionActive,
   markLoginPersistence,
@@ -1105,175 +1104,165 @@ export default function Home() {
           className="fixed inset-0 z-[70] h-dvh overflow-hidden overscroll-none flex items-center justify-center p-3 sm:p-4 animate-in fade-in duration-200"
         >
           <div
-            className="fixed inset-0 h-lvh bg-slate-950/80 backdrop-blur-sm touch-none overscroll-none"
+            className="fixed inset-0 h-lvh bg-black/75 backdrop-blur-sm touch-none overscroll-none"
             aria-hidden="true"
           />
           <div
-            className="relative z-10 w-full max-w-md max-h-[90dvh] flex flex-col rounded-2xl border border-amber-400/40 bg-white dark:bg-slate-900 shadow-2xl overflow-hidden text-slate-900 dark:text-slate-100"
+            className="relative z-10 w-full max-w-[400px] sm:max-w-[420px] max-h-[90dvh] overflow-y-auto overflow-x-hidden overscroll-contain rounded-2xl mx-auto animate-in zoom-in-95 duration-200"
             onClick={(e) => e.stopPropagation()}
           >
-            <ModalHeader
-              title="Two-Factor Authentication"
-              subtitle="Verify your identity with your Authenticator App"
-              icon={Lock}
-              onClose={() => {
-                if (isVerifyingMfa) return;
-                void (async () => {
-                  const supabase = createClient();
-                  await supabase.auth.signOut().catch(() => null);
-                  setMfaChallenge(null);
-                  setMfaCode("");
-                  setMfaError(null);
-                  turnstileRef.current?.reset();
-                  setCaptchaToken(null);
-                  pendingCredentialsRef.current = null;
-                })();
-              }}
-              className="shrink-0"
-            />
-            <form
-              onSubmit={async (e) => {
-                e.preventDefault();
-                if (!mfaChallenge) return;
-                const cleanCode = mfaCode.replace(/\s+/g, "");
-                if (!/^\d{6}$/.test(cleanCode)) {
-                  setMfaError("Enter the 6-digit code from your Authenticator app.");
-                  return;
-                }
-                setIsVerifyingMfa(true);
-                setMfaError(null);
-                try {
-                  const supabase = createClient();
-                  const { error: verifyErr } =
-                    await supabase.auth.mfa.challengeAndVerify({
-                      factorId: mfaChallenge.factorId,
-                      code: cleanCode,
-                    });
-                  if (verifyErr) {
-                    throw new Error(
-                      verifyErr.message || "Invalid authentication code.",
-                    );
-                  }
-
-                  try {
-                    if (mfaChallenge.rememberMe) {
-                      localStorage.setItem("pup_focus_remember_me", "true");
-                      localStorage.setItem(
-                        "pup_focus_remembered_email",
-                        mfaChallenge.email,
-                      );
-                    } else {
-                      localStorage.removeItem("pup_focus_remember_me");
-                      localStorage.removeItem("pup_focus_remembered_email");
-                    }
-                  } catch {}
-
-                  resetDashboardNavigationState();
-                  markLoginPersistence(mfaChallenge.rememberMe);
-                  recordActiveSessionLogin(
-                    mfaChallenge.loginTime,
-                    mfaChallenge.userId,
-                  );
-
-                  const target = mfaChallenge.nextTarget;
-                  const label = mfaChallenge.roleLabel;
-                  setMfaChallenge(null);
-                  setAuthModal({
-                    title: "Login Successful",
-                    message: `Two-factor authentication verified. Signing in as ${label}.`,
-                    variant: "success",
-                    redirectTo: target,
-                  });
-                } catch (err) {
-                  setMfaError(
-                    err instanceof Error
-                      ? err.message
-                      : "Verification failed. Check your code and try again.",
-                  );
-                } finally {
-                  setIsVerifyingMfa(false);
-                }
-              }}
-              className="flex-1 overflow-y-auto overflow-x-hidden overscroll-contain p-5 space-y-4"
-            >
-              <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300">
-                Enter the 6-digit code generated by your Authenticator app for{" "}
-                <span className="font-semibold text-slate-900 dark:text-white">
-                  {mfaChallenge.email}
-                </span>
-                .
-              </p>
-
-              {mfaError && (
-                <div className="rounded-xl border border-rose-300 dark:border-rose-900 bg-rose-50 dark:bg-rose-950/40 px-3.5 py-2.5 text-xs font-medium text-rose-700 dark:text-rose-300">
-                  {mfaError}
+            <section className="relative rounded-2xl border border-amber-400/50 bg-[#800000] p-6 sm:p-7 text-[#fff8e7] shadow-2xl">
+              <div className="mb-5 text-center">
+                <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-xl bg-[#630000] border border-amber-400/50 text-amber-300 shadow-xs">
+                  <AppIcon icon={Lock} size="md" color="inherit" />
                 </div>
-              )}
+                <h2 className="text-xl sm:text-2xl font-black tracking-wider text-amber-300 uppercase mb-1">
+                  Two-Factor Auth
+                </h2>
+                <p className="text-amber-100/90 text-xs sm:text-sm font-medium leading-relaxed max-w-[320px] mx-auto mt-2">
+                  Enter the 6-digit code from your Authenticator App for{" "}
+                  <span className="font-bold text-amber-300 break-all">
+                    {mfaChallenge.email}
+                  </span>
+                </p>
+              </div>
 
-              <div>
-                <label
-                  htmlFor="loginMfaCode"
-                  className="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1.5"
-                >
-                  6-Digit Code
-                </label>
-                <input
-                  id="loginMfaCode"
-                  type="text"
-                  inputMode="numeric"
-                  autoComplete="one-time-code"
-                  autoFocus
-                  maxLength={6}
-                  value={mfaCode}
-                  onChange={(e) =>
-                    setMfaCode(e.target.value.replace(/\D/g, ""))
+              <form
+                onSubmit={async (e) => {
+                  e.preventDefault();
+                  if (!mfaChallenge) return;
+                  const cleanCode = mfaCode.replace(/\s+/g, "");
+                  if (!/^\d{6}$/.test(cleanCode)) {
+                    setMfaError("Enter the 6-digit code from your Authenticator app.");
+                    return;
                   }
-                  placeholder="000000"
-                  className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 px-4 py-3 text-center font-mono text-xl font-bold tracking-[0.4em] text-slate-900 dark:text-white focus:border-amber-500 focus:ring-2 focus:ring-amber-500/40 outline-none"
-                />
-              </div>
+                  setIsVerifyingMfa(true);
+                  setMfaError(null);
+                  try {
+                    const supabase = createClient();
+                    const { error: verifyErr } =
+                      await supabase.auth.mfa.challengeAndVerify({
+                        factorId: mfaChallenge.factorId,
+                        code: cleanCode,
+                      });
+                    if (verifyErr) {
+                      throw new Error(
+                        verifyErr.message || "Invalid authentication code.",
+                      );
+                    }
 
-              <div className="flex items-center justify-end gap-2.5 pt-2">
-                <button
-                  type="button"
-                  disabled={isVerifyingMfa}
-                  onClick={() => {
-                    void (async () => {
-                      const supabase = createClient();
-                      await supabase.auth.signOut().catch(() => null);
-                      setMfaChallenge(null);
-                      setMfaCode("");
-                      setMfaError(null);
-                      turnstileRef.current?.reset();
-                      setCaptchaToken(null);
-                      pendingCredentialsRef.current = null;
-                    })();
-                  }}
-                  className="rounded-xl border border-slate-300 dark:border-slate-700 px-4 py-2 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer disabled:opacity-50"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={isVerifyingMfa || mfaCode.length !== 6}
-                  className="inline-flex items-center gap-2 rounded-xl bg-amber-500 hover:bg-amber-400 px-4 py-2 text-xs font-bold text-slate-950 shadow-sm cursor-pointer disabled:opacity-50"
-                >
-                  {isVerifyingMfa ? (
-                    <>
-                      <AppIcon
-                        icon={SystemRestart}
-                        size="xs"
-                        color="inherit"
-                        className="animate-spin"
-                      />
-                      <span>Verifying...</span>
-                    </>
-                  ) : (
-                    <span>Verify &amp; Sign In</span>
-                  )}
-                </button>
-              </div>
-            </form>
+                    try {
+                      if (mfaChallenge.rememberMe) {
+                        localStorage.setItem("pup_focus_remember_me", "true");
+                        localStorage.setItem(
+                          "pup_focus_remembered_email",
+                          mfaChallenge.email,
+                        );
+                      } else {
+                        localStorage.removeItem("pup_focus_remember_me");
+                        localStorage.removeItem("pup_focus_remembered_email");
+                      }
+                    } catch {}
+
+                    resetDashboardNavigationState();
+                    markLoginPersistence(mfaChallenge.rememberMe);
+                    recordActiveSessionLogin(
+                      mfaChallenge.loginTime,
+                      mfaChallenge.userId,
+                    );
+
+                    const target = mfaChallenge.nextTarget;
+                    const label = mfaChallenge.roleLabel;
+                    setMfaChallenge(null);
+                    setAuthModal({
+                      title: "Login Successful",
+                      message: `Two-factor authentication verified. Signing in as ${label}.`,
+                      variant: "success",
+                      redirectTo: target,
+                    });
+                  } catch (err) {
+                    setMfaError(
+                      err instanceof Error
+                        ? err.message
+                        : "Verification failed. Check your code and try again.",
+                    );
+                  } finally {
+                    setIsVerifyingMfa(false);
+                  }
+                }}
+                className="space-y-4"
+              >
+                {mfaError && (
+                  <div className="rounded-xl border border-amber-400/50 bg-[#520000] px-3.5 py-2.5 text-xs font-semibold text-amber-200 shadow-xs">
+                    {mfaError}
+                  </div>
+                )}
+
+                <div className="space-y-1.5 text-left">
+                  <label
+                    htmlFor="loginMfaCode"
+                    className="block text-[11px] uppercase font-bold tracking-wider text-amber-300"
+                  >
+                    6-Digit Authenticator Code
+                  </label>
+                  <input
+                    id="loginMfaCode"
+                    type="text"
+                    inputMode="numeric"
+                    autoComplete="one-time-code"
+                    autoFocus
+                    maxLength={6}
+                    value={mfaCode}
+                    onChange={(e) =>
+                      setMfaCode(e.target.value.replace(/\D/g, ""))
+                    }
+                    placeholder="000000"
+                    className="pup-login-input w-full rounded-xl border border-amber-400/50 bg-[#630000] px-4 py-3 text-center font-mono text-2xl font-bold tracking-[0.45em] text-amber-50 outline-none transition placeholder:text-amber-200/40 focus:border-amber-400 focus:ring-1 focus:ring-amber-400/50"
+                  />
+                </div>
+
+                <div className="flex gap-2.5 pt-1">
+                  <button
+                    type="button"
+                    disabled={isVerifyingMfa}
+                    onClick={() => {
+                      void (async () => {
+                        const supabase = createClient();
+                        await supabase.auth.signOut().catch(() => null);
+                        setMfaChallenge(null);
+                        setMfaCode("");
+                        setMfaError(null);
+                        turnstileRef.current?.reset();
+                        setCaptchaToken(null);
+                        pendingCredentialsRef.current = null;
+                      })();
+                    }}
+                    className="h-11 flex-1 rounded-xl border border-amber-400/60 bg-[#630000] hover:bg-[#500000] text-amber-200 hover:text-white font-bold uppercase text-xs tracking-wider transition-all cursor-pointer shadow-sm active:scale-95 disabled:opacity-50"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={isVerifyingMfa || mfaCode.length !== 6}
+                    className="h-11 flex-1 rounded-xl bg-amber-400 hover:bg-amber-300 font-extrabold text-[#3d0000] tracking-wider uppercase text-xs transition-all active:scale-95 cursor-pointer shadow-sm flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {isVerifyingMfa ? (
+                      <>
+                        <AppIcon
+                          icon={SystemRestart}
+                          size="sm"
+                          color="inherit"
+                          className="animate-spin"
+                        />
+                        <span>Verifying...</span>
+                      </>
+                    ) : (
+                      <span>Verify Code</span>
+                    )}
+                  </button>
+                </div>
+              </form>
+            </section>
           </div>
         </div>
       )}

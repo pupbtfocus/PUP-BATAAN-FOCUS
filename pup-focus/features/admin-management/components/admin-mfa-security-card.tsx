@@ -218,11 +218,11 @@ export function AdminMfaSecurityCard({
             </h2>
             {!isLoading &&
               (isEnabled ? (
-                <span className="bg-[#0b5336] text-white border border-[#08412a] px-2 py-0.5 text-[11px] font-bold rounded-md shadow-2xs">
+                <span className="bg-[#0b5336] text-white border border-[#08412a] px-2.5 py-0.5 text-[11px] font-bold rounded-md shadow-2xs">
                   Protected (2FA Active)
                 </span>
               ) : (
-                <span className="bg-amber-100 text-amber-900 dark:bg-amber-950/60 dark:text-amber-300 border border-amber-300 dark:border-amber-800 px-2 py-0.5 text-[11px] font-bold rounded-md">
+                <span className="bg-amber-500 text-slate-950 border border-amber-600 px-2.5 py-0.5 text-[11px] font-bold rounded-md shadow-2xs">
                   Recommended
                 </span>
               ))}
@@ -236,7 +236,7 @@ export function AdminMfaSecurityCard({
           type="button"
           onClick={() => void loadMfaFactors()}
           disabled={isLoading || isProcessing}
-          className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/70 px-3 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer disabled:opacity-50"
+          className="inline-flex items-center gap-1.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 px-3 py-1.5 text-xs font-semibold text-slate-800 dark:text-slate-100 transition cursor-pointer shadow-2xs disabled:opacity-50"
         >
           <AppIcon
             icon={Refresh}
@@ -250,20 +250,20 @@ export function AdminMfaSecurityCard({
 
       <div className="mt-4 space-y-4">
         {inlineError && (
-          <div className="rounded-xl border border-rose-300 dark:border-rose-900 bg-rose-50 dark:bg-rose-950/40 px-3.5 py-2.5 text-xs font-medium text-rose-800 dark:text-rose-300">
+          <div className="rounded-xl border border-[#5e0000] bg-[#780000] px-3.5 py-2.5 text-xs font-semibold text-white shadow-xs">
             {inlineError}
           </div>
         )}
 
         {isLoading ? (
-          <div className="h-14 rounded-xl bg-slate-100 dark:bg-slate-800/60 animate-pulse" />
+          <div className="h-14 rounded-xl bg-slate-100 dark:bg-slate-800 animate-pulse" />
         ) : pendingEnrollment ? (
           <form
             onSubmit={handleVerifyEnrollment}
-            className="rounded-xl border border-amber-300/70 dark:border-amber-800/60 bg-amber-50/40 dark:bg-amber-950/20 p-4 space-y-4"
+            className="rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 p-4 space-y-4 shadow-2xs"
           >
             <div className="grid gap-4 sm:grid-cols-[auto_1fr] items-center">
-              <div className="mx-auto sm:mx-0 rounded-xl bg-white p-2.5 border border-slate-200 shadow-xs">
+              <div className="mx-auto sm:mx-0 rounded-xl bg-white p-2.5 border border-slate-300 dark:border-slate-700 shadow-xs">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={pendingEnrollment.qrCode}
@@ -277,7 +277,7 @@ export function AdminMfaSecurityCard({
                 </p>
                 <p className="text-xs text-slate-600 dark:text-slate-400">
                   Or enter this setup key manually:{" "}
-                  <code className="rounded bg-slate-200/80 dark:bg-slate-800 px-1.5 py-0.5 font-mono text-[11px] font-bold text-slate-900 dark:text-amber-300 break-all">
+                  <code className="rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-2 py-0.5 font-mono text-[11px] font-bold text-slate-900 dark:text-amber-300 break-all">
                     {pendingEnrollment.secret}
                   </code>
                 </p>
@@ -300,12 +300,12 @@ export function AdminMfaSecurityCard({
                         setVerificationCode(e.target.value.replace(/\D/g, ""))
                       }
                       placeholder="000000"
-                      className="w-36 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-3 py-2 text-sm font-mono font-bold tracking-[0.25em] text-center text-slate-900 dark:text-slate-100 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/40 outline-none"
+                      className="w-36 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-2 text-sm font-mono font-bold tracking-[0.25em] text-center text-slate-900 dark:text-slate-100 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/40 outline-none"
                     />
                     <button
                       type="submit"
                       disabled={isProcessing || verificationCode.length !== 6}
-                      className="inline-flex items-center gap-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold px-4 py-2 rounded-xl text-xs shadow-xs cursor-pointer disabled:opacity-50"
+                      className="inline-flex items-center gap-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold px-4 py-2 rounded-xl text-xs shadow-xs cursor-pointer transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       {isProcessing ? (
                         <AppIcon
@@ -323,7 +323,7 @@ export function AdminMfaSecurityCard({
                       type="button"
                       onClick={() => void handleCancelEnrollment()}
                       disabled={isProcessing}
-                      className="inline-flex items-center px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer"
+                      className="inline-flex items-center px-3.5 py-2 rounded-xl border border-[#5e0000] bg-[#780000] hover:bg-[#5e0000] text-xs font-semibold text-white shadow-xs transition-colors cursor-pointer disabled:opacity-50"
                     >
                       Cancel
                     </button>
@@ -337,10 +337,10 @@ export function AdminMfaSecurityCard({
             {verifiedFactors.map((factor) => (
               <div
                 key={factor.id}
-                className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-emerald-200 dark:border-emerald-900/60 bg-emerald-50/50 dark:bg-emerald-950/20 px-4 py-3"
+                className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 px-4 py-3 shadow-2xs"
               >
                 <div className="flex items-center gap-2.5">
-                  <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#0b5336] text-white">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#0b5336] text-white shadow-2xs">
                     <AppIcon icon={Check} size="sm" color="inherit" />
                   </div>
                   <div>
@@ -359,7 +359,7 @@ export function AdminMfaSecurityCard({
                       type="button"
                       onClick={() => void handleDisableFactor(factor.id)}
                       disabled={isProcessing}
-                      className="inline-flex items-center gap-1 rounded-lg bg-[#780000] hover:bg-[#5e0000] px-3 py-1.5 text-xs font-semibold text-white cursor-pointer disabled:opacity-50"
+                      className="inline-flex items-center gap-1 rounded-xl border border-[#5e0000] bg-[#780000] hover:bg-[#5e0000] px-3 py-1.5 text-xs font-semibold text-white shadow-xs transition-colors cursor-pointer disabled:opacity-50"
                     >
                       Confirm Remove
                     </button>
@@ -367,7 +367,7 @@ export function AdminMfaSecurityCard({
                       type="button"
                       onClick={() => setConfirmDisableId(null)}
                       disabled={isProcessing}
-                      className="rounded-lg border border-slate-300 dark:border-slate-700 px-2.5 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-300 cursor-pointer"
+                      className="rounded-xl border border-slate-700 bg-slate-600 hover:bg-slate-700 px-3 py-1.5 text-xs font-semibold text-white shadow-xs transition-colors cursor-pointer"
                     >
                       Cancel
                     </button>
@@ -377,9 +377,9 @@ export function AdminMfaSecurityCard({
                     type="button"
                     onClick={() => setConfirmDisableId(factor.id)}
                     disabled={isProcessing}
-                    className="inline-flex items-center gap-1.5 rounded-lg border border-rose-200 dark:border-rose-900/60 bg-white dark:bg-slate-900 px-3 py-1.5 text-xs font-semibold text-rose-700 dark:text-rose-300 hover:bg-rose-50 dark:hover:bg-rose-950/40 cursor-pointer"
+                    className="inline-flex items-center gap-1.5 rounded-xl border border-[#5e0000] bg-[#780000] hover:bg-[#5e0000] px-3 py-1.5 text-xs font-semibold text-white shadow-xs transition-colors cursor-pointer"
                   >
-                    <AppIcon icon={Trash} size="xs" color="danger" />
+                    <AppIcon icon={Trash} size="xs" color="inherit" />
                     <span>Disable 2FA</span>
                   </button>
                 )}
@@ -387,7 +387,7 @@ export function AdminMfaSecurityCard({
             ))}
           </div>
         ) : (
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-xl border border-slate-200/80 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 p-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 p-4 shadow-2xs">
             <p className="text-xs text-slate-600 dark:text-slate-400 max-w-xl">
               2FA is not yet enabled on your account. Setting it up ensures a stolen password alone cannot access the Admin Dashboard.
             </p>
@@ -395,7 +395,7 @@ export function AdminMfaSecurityCard({
               type="button"
               onClick={() => void handleStartEnrollment()}
               disabled={isProcessing}
-              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold px-4 py-2.5 sm:py-2 rounded-xl text-xs shadow-sm cursor-pointer disabled:opacity-50 shrink-0"
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold px-4 py-2.5 sm:py-2 rounded-xl text-xs shadow-sm cursor-pointer transition-colors disabled:opacity-50 shrink-0"
             >
               {isProcessing ? (
                 <>
