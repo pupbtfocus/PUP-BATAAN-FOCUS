@@ -235,14 +235,14 @@ export function SubmissionScheduleLogsModal({
   };
 
   return (
-    <div className="fixed inset-0 z-[60] flex flex-col bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 animate-in fade-in duration-200 overflow-hidden w-screen h-screen">
+    <div className="fixed inset-0 z-[70] flex flex-col bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 animate-in fade-in duration-200 overflow-hidden w-screen h-dvh">
       <div className="w-full h-full flex flex-col overflow-hidden">
         {/* Modal Header */}
         <ModalHeader
           icon={ClockRotateRight}
           title="Submission Schedule Logs"
           subtitle="Audit record of submission deadlines, extensions, manual closures, and faculty grace period assignments"
-          className="border-b border-slate-200 dark:border-slate-800 px-6 py-4 shrink-0"
+          className="border-b border-slate-200 dark:border-slate-800 px-4 sm:px-6 py-3.5 sm:py-4 shrink-0"
         >
           <button
             type="button"
@@ -257,7 +257,7 @@ export function SubmissionScheduleLogsModal({
         </ModalHeader>
 
         {/* Filters & Search Toolbar */}
-        <div className="p-4 sm:p-6 pb-2 shrink-0">
+        <div className="p-3.5 sm:p-6 pb-2 shrink-0">
           <div className="flex flex-col sm:flex-row items-center gap-2.5">
             <div className="relative w-full sm:flex-1">
               <Search className="h-3.5 w-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
@@ -313,9 +313,150 @@ export function SubmissionScheduleLogsModal({
           </div>
         </div>
 
-        {/* Data Table */}
-        <div className="flex-1 min-h-0 overflow-y-auto px-4 sm:px-6 py-2">
-          <div className="w-full overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-800 bg-white text-slate-900 dark:bg-slate-900 dark:text-slate-100 shadow-xs overflow-hidden transition-colors">
+        {/* Data Content Area */}
+        <div className="flex-1 min-h-0 overflow-y-auto px-3.5 sm:px-6 py-2">
+          {/* Mobile Card View (< md) */}
+          <div className="md:hidden space-y-2.5">
+            {isLoading && logs.length === 0 ? (
+              <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-4 py-12 text-center text-xs text-slate-500 dark:text-slate-400">
+                <div className="flex flex-col items-center justify-center gap-2">
+                  <AppIcon icon={SystemRestart} size="lg" color="default" className="animate-spin text-amber-600" />
+                  <span>Loading submission schedule logs...</span>
+                </div>
+              </div>
+            ) : error ? (
+              <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-4 py-8 text-center text-xs text-rose-800 dark:text-rose-300">
+                <p className="font-semibold">{error}</p>
+                <button
+                  type="button"
+                  onClick={() => void fetchLogs()}
+                  className="mt-2 px-3 py-1.5 rounded-lg bg-white border border-rose-300 font-bold hover:bg-rose-50 cursor-pointer text-slate-900"
+                >
+                  Try Again
+                </button>
+              </div>
+            ) : filteredLogs.length === 0 ? (
+              <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-4 py-12 text-center text-xs text-slate-500 dark:text-slate-400">
+                <AppIcon icon={ClockRotateRight} size="lg" color="muted" className="mx-auto mb-2" />
+                <p className="font-medium text-slate-700 dark:text-slate-300">No schedule logs found</p>
+                <p className="text-[11px] text-slate-400 mt-1">
+                  {searchQuery || actionFilter !== "all"
+                    ? "Try clearing your filters or search terms."
+                    : "Changes to submission windows and faculty onboarding policies will be logged here."}
+                </p>
+              </div>
+            ) : (
+              paginatedLogs.map((log, index) => {
+                const itemIndex = (currentPage - 1) * itemsPerPage + index + 1;
+                const badge = getBadgeStyle(log.action_type);
+                const statusInfo = getLogStatus(log, currentSchedule);
+                const cleanReasonDetails =
+                  log.reason_details && !log.reason_details.startsWith("Dates set:")
+                    ? log.reason_details
+                    : null;
+
+                return (
+                  <div
+                    key={`mobile-${log.id}`}
+                    className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 p-3.5 space-y-2.5 shadow-xs"
+                  >
+                    <div className="flex flex-wrap items-start justify-between gap-2">
+                      <div className="flex flex-wrap items-center gap-1.5 min-w-0">
+                        <span className="text-[10px] font-mono font-semibold text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded">
+                          #{itemIndex}
+                        </span>
+                        <span
+                          className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[10px] font-bold border uppercase tracking-wider ${badge.bg}`}
+                        >
+                          {badge.icon}
+                          <span>{badge.label}</span>
+                        </span>
+                        {log.extension_preset ? (
+                          <span className="px-2 py-0.5 rounded bg-amber-500 text-slate-900 border border-amber-600 text-[10px] font-bold shadow-2xs">
+                            {log.extension_preset}
+                          </span>
+                        ) : null}
+                      </div>
+                      <span
+                        className={`${statusInfo.badgeClass} px-2 py-0.5 text-[11px] font-semibold rounded-md inline-flex items-center shadow-2xs shrink-0`}
+                      >
+                        {statusInfo.label}
+                      </span>
+                    </div>
+
+                    <div className="flex flex-wrap items-center gap-1.5 text-[11px]">
+                      <span className="bg-slate-100 text-slate-800 border border-slate-300 dark:bg-slate-800 dark:text-slate-200 dark:border-slate-700 px-2 py-0.5 font-semibold rounded-md">
+                        {log.scope === "global"
+                          ? "Global (All Faculty)"
+                          : `${log.scope.toUpperCase()}: ${log.scope_target || "All"}`}
+                      </span>
+                      {log.academic_year ? (
+                        <span className="text-slate-500 dark:text-slate-400 font-medium">
+                          {log.academic_year} {log.semester ? `• ${log.semester}` : ""}
+                        </span>
+                      ) : null}
+                    </div>
+
+                    {(log.start_date || log.new_end_date) && (
+                      <div className="rounded-lg bg-slate-50 dark:bg-slate-900/60 border border-slate-200/70 dark:border-slate-800 p-2.5 space-y-0.5 text-[11px] font-mono">
+                        {log.start_date ? (
+                          <div className="text-slate-600 dark:text-slate-400">
+                            Opens: <strong className="text-slate-900 dark:text-slate-100">{log.start_date} {log.start_time || ""}</strong>
+                          </div>
+                        ) : null}
+                        {log.old_end_date ? (
+                          <div className="text-slate-400 line-through text-[10px]">
+                            Was: {log.old_end_date} {log.old_end_time || ""}
+                          </div>
+                        ) : null}
+                        {log.new_end_date ? (
+                          <div className="text-amber-700 dark:text-amber-400 font-bold">
+                            Closes: {log.new_end_date} {log.new_end_time || ""}
+                          </div>
+                        ) : null}
+                      </div>
+                    )}
+
+                    <div className="text-xs space-y-0.5">
+                      <p className="font-bold text-slate-900 dark:text-slate-100">
+                        {log.actor_name || "Administrator"}
+                      </p>
+                      <p className="text-[11px] text-slate-600 dark:text-slate-300 font-medium break-words">
+                        {log.reason || "Schedule configured"}
+                      </p>
+                      {cleanReasonDetails && (
+                        <button
+                          type="button"
+                          onClick={() => setSelectedLogForDetails(log)}
+                          className="inline-flex items-center gap-1 text-[10px] font-bold text-amber-700 hover:text-amber-800 dark:text-amber-400 dark:hover:text-amber-300 underline cursor-pointer"
+                        >
+                          See remarks →
+                        </button>
+                      )}
+                    </div>
+
+                    <div className="pt-2 border-t border-slate-100 dark:border-slate-800/80 flex items-center justify-between gap-2">
+                      <span className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">
+                        {formatDate(log.created_at)}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => setSelectedLogForDetails(log)}
+                        className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-900 text-xs font-bold transition shadow-xs cursor-pointer active:scale-95"
+                        title="View log details"
+                      >
+                        <AppIcon icon={Eye} size="xs" color="inherit" />
+                        <span>View</span>
+                      </button>
+                    </div>
+                  </div>
+                );
+              })
+            )}
+          </div>
+
+          {/* Desktop Table View (>= md) */}
+          <div className="hidden md:block w-full overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-800 bg-white text-slate-900 dark:bg-slate-900 dark:text-slate-100 shadow-xs overflow-hidden transition-colors">
             <table className="w-full text-left border-collapse text-xs text-slate-800 dark:text-slate-300 min-w-[900px]">
               <thead className="border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/60 uppercase tracking-wider text-[10px] text-slate-600 dark:text-slate-400">
                 <tr>
@@ -482,20 +623,20 @@ export function SubmissionScheduleLogsModal({
         </div>
 
         {/* Modal Footer & Pagination */}
-        <div className="border-t border-slate-200 dark:border-slate-800 px-4 sm:px-6 py-3.5 flex flex-wrap items-center justify-between gap-3 bg-slate-50 dark:bg-slate-850 shrink-0">
-          <div className="text-xs text-slate-500 dark:text-slate-400">
+        <div className="border-t border-slate-200 dark:border-slate-800 px-4 sm:px-6 py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 bg-slate-50 dark:bg-slate-850 shrink-0">
+          <div className="text-xs text-slate-500 dark:text-slate-400 text-center sm:text-left">
             Showing {filteredLogs.length === 0 ? 0 : (currentPage - 1) * itemsPerPage + 1}–
             {Math.min(currentPage * itemsPerPage, filteredLogs.length)} of {filteredLogs.length} events
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center justify-between sm:justify-end gap-2 w-full sm:w-auto">
             {totalPages > 1 ? (
-              <div className="flex items-center gap-1 mr-2">
+              <div className="flex items-center gap-1 sm:mr-2">
                 <button
                   type="button"
                   onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
                   disabled={currentPage === 1}
-                  className="p-1 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 disabled:opacity-40 cursor-pointer"
+                  className="p-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 disabled:opacity-40 cursor-pointer"
                   aria-label="Previous page"
                 >
                   <NavArrowLeft className="h-3.5 w-3.5" />
@@ -507,7 +648,7 @@ export function SubmissionScheduleLogsModal({
                   type="button"
                   onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
                   disabled={currentPage === totalPages}
-                  className="p-1 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 disabled:opacity-40 cursor-pointer"
+                  className="p-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 disabled:opacity-40 cursor-pointer"
                   aria-label="Next page"
                 >
                   <NavArrowRight className="h-3.5 w-3.5" />
@@ -518,7 +659,7 @@ export function SubmissionScheduleLogsModal({
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 rounded-xl bg-[#780000] hover:bg-[#5e0000] text-white border border-[#5e0000] text-xs font-bold transition cursor-pointer shadow-xs active:scale-95"
+              className="ml-auto sm:ml-0 px-4 py-2 rounded-xl bg-[#780000] hover:bg-[#5e0000] text-white border border-[#5e0000] text-xs font-bold transition cursor-pointer shadow-xs active:scale-95"
             >
               Close
             </button>
@@ -528,18 +669,18 @@ export function SubmissionScheduleLogsModal({
 
       {/* Uncompressed Full Details Modal */}
       {selectedLogForDetails && (
-        <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/80 p-3 sm:p-4 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="w-full max-w-lg rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xl overflow-hidden flex flex-col">
+        <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/80 p-3 sm:p-4 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="w-full max-w-lg max-h-[90dvh] rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xl overflow-hidden flex flex-col">
             <ModalHeader
               icon={ClockRotateRight}
               title="Schedule Log Details"
               subtitle={`Audit record #${filteredLogs.findIndex((l) => l.id === selectedLogForDetails.id) + 1}`}
-              className="rounded-t-2xl border-b border-slate-200 dark:border-slate-800 px-6 py-4"
+              className="rounded-t-2xl border-b border-slate-200 dark:border-slate-800 px-4 sm:px-6 py-3.5 sm:py-4 shrink-0"
             />
 
-            <div className="p-6 space-y-4 text-xs overflow-y-auto max-h-[70vh]">
+            <div className="p-4 sm:p-6 space-y-4 text-xs overflow-y-auto flex-1">
               {/* Event & Status */}
-              <div className="flex items-center justify-between gap-2 p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60">
+              <div className="flex flex-wrap items-center justify-between gap-2 p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60">
                 <div>
                   <span className="text-[10px] uppercase font-bold text-slate-500 block mb-1">Action / Event</span>
                   <span
@@ -560,10 +701,10 @@ export function SubmissionScheduleLogsModal({
               </div>
 
               {/* Scope & Academic Term */}
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 sm:gap-3">
                 <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60">
                   <span className="text-[10px] uppercase font-bold text-slate-500 block mb-1">Scope</span>
-                  <span className="font-semibold text-slate-900 dark:text-slate-100">
+                  <span className="font-semibold text-slate-900 dark:text-slate-100 break-words">
                     {selectedLogForDetails.scope === "global"
                       ? "Global (All Faculty)"
                       : `${selectedLogForDetails.scope.toUpperCase()}: ${selectedLogForDetails.scope_target || "All"}`}
@@ -583,7 +724,7 @@ export function SubmissionScheduleLogsModal({
               <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 space-y-2">
                 <span className="text-[10px] uppercase font-bold text-slate-500 block">Submission Window</span>
                 {selectedLogForDetails.start_date && (
-                  <div className="flex justify-between font-mono">
+                  <div className="flex flex-wrap justify-between gap-2 font-mono">
                     <span className="text-slate-500">Opens:</span>
                     <span className="font-bold text-slate-900 dark:text-slate-100">
                       {selectedLogForDetails.start_date} {selectedLogForDetails.start_time || ""}
@@ -591,7 +732,7 @@ export function SubmissionScheduleLogsModal({
                   </div>
                 )}
                 {selectedLogForDetails.old_end_date && (
-                  <div className="flex justify-between font-mono">
+                  <div className="flex flex-wrap justify-between gap-2 font-mono">
                     <span className="text-slate-500">Previous Deadline:</span>
                     <span className="line-through text-slate-400">
                       {selectedLogForDetails.old_end_date} {selectedLogForDetails.old_end_time || ""}
@@ -599,7 +740,7 @@ export function SubmissionScheduleLogsModal({
                   </div>
                 )}
                 {selectedLogForDetails.new_end_date && (
-                  <div className="flex justify-between font-mono">
+                  <div className="flex flex-wrap justify-between gap-2 font-mono">
                     <span className="text-slate-500">Closes:</span>
                     <span className="font-bold text-amber-700 dark:text-amber-400">
                       {selectedLogForDetails.new_end_date} {selectedLogForDetails.new_end_time || ""}
@@ -609,7 +750,7 @@ export function SubmissionScheduleLogsModal({
               </div>
 
               {/* Configured By & Date */}
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 sm:gap-3">
                 <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60">
                   <span className="text-[10px] uppercase font-bold text-slate-500 block mb-1">Configured By</span>
                   <span className="font-semibold text-slate-900 dark:text-slate-100">
@@ -638,11 +779,11 @@ export function SubmissionScheduleLogsModal({
               </div>
             </div>
 
-            <div className="border-t border-slate-200 dark:border-slate-800 px-6 py-3 bg-slate-50 dark:bg-slate-850 flex justify-end">
+            <div className="border-t border-slate-200 dark:border-slate-800 px-4 sm:px-6 py-3 bg-slate-50 dark:bg-slate-850 flex justify-end shrink-0">
               <button
                 type="button"
                 onClick={() => setSelectedLogForDetails(null)}
-                className="px-4 py-2 rounded-xl bg-[#780000] hover:bg-[#5e0000] text-white border border-[#5e0000] text-xs font-bold transition cursor-pointer shadow-xs active:scale-95"
+                className="w-full sm:w-auto px-4 py-2 rounded-xl bg-[#780000] hover:bg-[#5e0000] text-white border border-[#5e0000] text-xs font-bold transition cursor-pointer shadow-xs active:scale-95"
               >
                 Close
               </button>
