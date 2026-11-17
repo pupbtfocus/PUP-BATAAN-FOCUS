@@ -2287,25 +2287,25 @@ export function FacultyVerificationDrawer({
   return (
     <div className="space-y-4">
       {/* Solid Amber Card Header matching Documents to be Submitted - Swapped to the top */}
-      <div className="relative overflow-hidden rounded-2xl border-2 border-amber-500 bg-amber-400 p-5 sm:p-6 shadow-md shadow-amber-500/10 flex flex-col sm:flex-row sm:items-center justify-between gap-4 transition-colors">
-        <div>
+      <div className="relative overflow-hidden rounded-2xl border-2 border-amber-500 bg-amber-400 p-4 sm:p-6 shadow-md shadow-amber-500/10 flex flex-col lg:flex-row lg:items-center justify-between gap-3.5 sm:gap-4 transition-colors">
+        <div className="min-w-0">
           <div className="flex items-center gap-2.5 flex-wrap">
-            <h1 className="text-2xl sm:text-3xl font-black text-slate-950 tracking-tight">
+            <h1 className="text-xl sm:text-3xl font-black text-slate-950 tracking-tight">
               Assigned Classes &amp; Subject Loads
             </h1>
           </div>
-          <p className="mt-1.5 text-sm sm:text-base text-amber-950/90 font-medium leading-relaxed">
+          <p className="mt-1 sm:mt-1.5 text-xs sm:text-base text-amber-950/90 font-medium leading-relaxed">
             Select a class load below to review and verify submitted
             requirements.
           </p>
         </div>
 
-        <div className="flex items-center gap-2 shrink-0">
+        <div className="grid grid-cols-2 sm:flex items-center gap-2 w-full lg:w-auto shrink-0">
           <button
             type="button"
             disabled={isRefreshing || isLoading}
             onClick={handleRefresh}
-            className="inline-flex items-center gap-1.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white hover:bg-slate-50 dark:bg-slate-800 dark:hover:bg-slate-750 text-slate-700 dark:text-slate-200 px-3.5 py-2 text-xs font-semibold transition-all disabled:opacity-50 cursor-pointer shadow-xs active:scale-[0.98] whitespace-nowrap"
+            className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white hover:bg-slate-50 dark:bg-slate-800 dark:hover:bg-slate-750 text-slate-700 dark:text-slate-200 px-3.5 py-2 text-xs font-semibold transition-all disabled:opacity-50 cursor-pointer shadow-xs active:scale-[0.98] whitespace-nowrap"
             title="Refresh current submissions"
           >
             <SystemRestart
@@ -2334,7 +2334,7 @@ export function FacultyVerificationDrawer({
                 ? "Download All (ZIP)"
                 : "No downloadable files available (files cleaned or empty)"
             }
-            className="inline-flex items-center gap-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 border border-amber-600 px-3.5 py-2 text-xs font-semibold whitespace-nowrap shadow-2xs transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-amber-500"
+            className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 border border-amber-600 px-3.5 py-2 text-xs font-semibold whitespace-nowrap shadow-2xs transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-amber-500"
           >
             <AppIcon
               icon={Download}
@@ -2357,7 +2357,7 @@ export function FacultyVerificationDrawer({
         />
         {/* Inline Section Header - Only visible when in Class Selection Step */}
         {selectedClassId === null ? (
-          <div className="border-b border-slate-200 dark:border-slate-800/80 p-5 sm:p-6 bg-slate-50/50 dark:bg-slate-950/30 rounded-t-2xl space-y-3">
+          <div className="border-b border-slate-200 dark:border-slate-800/80 p-4 sm:p-6 bg-slate-50/50 dark:bg-slate-950/30 rounded-t-2xl space-y-3">
             {/* Top row with Back button and PUP SIS style Faculty Name Header */}
             <div className="flex items-center justify-between gap-3 flex-wrap">
               <div className="flex items-center gap-3 flex-wrap">
@@ -2436,8 +2436,8 @@ export function FacultyVerificationDrawer({
         {activeTab === "current" &&
           selectedClassId === null &&
           classGroups.length > 0 && (
-            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 border-b border-slate-200 dark:border-slate-800/80 px-6 py-3 bg-white dark:bg-slate-900">
-              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2.5 w-full lg:w-auto">
+            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 border-b border-slate-200 dark:border-slate-800/80 px-4 sm:px-6 py-3 bg-white dark:bg-slate-900">
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 w-full lg:w-auto">
                 {/* Search Input */}
                 <input
                   type="text"
@@ -2522,11 +2522,11 @@ export function FacultyVerificationDrawer({
           )}
 
         {/* Body Content */}
-        <div className="px-6 py-5">
+        <div className="px-4 sm:px-6 py-4 sm:py-5">
           {activeTab === "current" ? (
             /* Tab 1: Current Submissions */
             isLoading ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5 pt-3">
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-5 pt-2">
                 {[1, 2, 3].map((i) => (
                   <div
                     key={i}
@@ -2856,7 +2856,7 @@ export function FacultyVerificationDrawer({
 
                   {/* Quick Dropdown Select */}
                   {classGroups.length > 1 && (
-                    <div className="flex items-center gap-2 shrink-0 sm:ml-auto">
+                    <div className="flex items-center gap-2 shrink-0 w-full sm:w-auto sm:ml-auto">
                       <label
                         htmlFor="quick-class-switcher"
                         className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 shrink-0"
@@ -2867,7 +2867,7 @@ export function FacultyVerificationDrawer({
                         id="quick-class-switcher"
                         value={selectedGroup.key}
                         onChange={(e) => setSelectedClassId(e.target.value)}
-                        className="rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-1.5 text-xs text-slate-900 dark:text-slate-100 font-semibold outline-none transition focus:border-amber-500 cursor-pointer shadow-2xs"
+                        className="flex-1 sm:flex-none rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-1.5 text-xs text-slate-900 dark:text-slate-100 font-semibold outline-none transition focus:border-amber-500 cursor-pointer shadow-2xs"
                       >
                         {classGroups.map((g) => (
                           <option key={g.key} value={g.key}>
@@ -2882,9 +2882,9 @@ export function FacultyVerificationDrawer({
                 </div>
 
                 {/* Scoped Filter Toolbar & Bulk Actions */}
-                <div className="flex items-center justify-between gap-2.5 rounded-2xl border border-slate-200 dark:border-slate-800/80 bg-slate-50/80 dark:bg-slate-950/40 p-2 sm:p-2.5 shadow-2xs overflow-x-auto">
+                <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-2.5 rounded-2xl border border-slate-200 dark:border-slate-800/80 bg-slate-50/80 dark:bg-slate-950/40 p-2.5 shadow-2xs">
                   {/* Filter Chips */}
-                  <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+                  <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
                     <button
                       type="button"
                       onClick={() => setFilterMode("all")}
@@ -3005,14 +3005,14 @@ export function FacultyVerificationDrawer({
                   </div>
 
                   {/* Bulk Actions */}
-                  <div className="flex items-center gap-2 shrink-0">
+                  <div className="grid grid-cols-1 sm:flex items-center gap-2 shrink-0 w-full xl:w-auto">
                     <button
                       type="button"
                       disabled={
                         isValidatingAll || selectedGroupPendingCount === 0
                       }
                       onClick={triggerValidateAllPendingModal}
-                      className="inline-flex items-center gap-1.5 rounded-xl bg-[#0b5336] hover:bg-[#073d2a] text-white border border-[#08412a] px-3 py-1.5 text-xs font-semibold whitespace-nowrap shadow-2xs transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 rounded-xl bg-[#0b5336] hover:bg-[#073d2a] text-white border border-[#08412a] px-3 py-2 sm:py-1.5 text-xs font-semibold whitespace-nowrap shadow-2xs transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       <span className="inline-flex items-center justify-center h-4 w-4 rounded-full bg-white/20 text-white border border-white/30 shrink-0 shadow-2xs [&>svg]:h-2.5 [&>svg]:w-2.5">
                         <AppIcon
@@ -3049,7 +3049,7 @@ export function FacultyVerificationDrawer({
                           ? "Download ZIP"
                           : "No downloadable files available (files cleaned or empty)"
                       }
-                      className="inline-flex items-center gap-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 border border-amber-600 px-3 py-1.5 text-xs font-semibold whitespace-nowrap shadow-2xs transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-amber-500"
+                      className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 border border-amber-600 px-3 py-2 sm:py-1.5 text-xs font-semibold whitespace-nowrap shadow-2xs transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-amber-500"
                     >
                       <AppIcon
                         icon={Download}
@@ -3084,7 +3084,346 @@ export function FacultyVerificationDrawer({
                     </div>
                   </div>
                 ) : (
-                  <div className="overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs">
+                  <>
+                    {/* Mobile Requirements Cards */}
+                    <div className="md:hidden space-y-3">
+                      {selectedGroupRequirements.map((req) => {
+                        const code = req.code;
+                        const reqLabel = req.title;
+                        const isMandatory = req.isMandatory;
+                        const matchingSubmission =
+                          selectedGroup.submissions.find((s) => {
+                            const codeMatched =
+                              matchRequirementCode(
+                                s.requirement_code,
+                                (s as { requirement_id?: string })
+                                  .requirement_id,
+                              ) === code || s.requirement_code === code;
+                            return (
+                              codeMatched &&
+                              doesSubmissionMatchTerm(s, academicYear, semester)
+                            );
+                          });
+
+                        const documents =
+                          matchingSubmission?.document_versions ?? [];
+                        const firstDoc = documents[0] ?? null;
+                        const rawStatus = matchingSubmission
+                          ? (matchingSubmission.status || "").toLowerCase()
+                          : "not_submitted";
+                        const isValidated =
+                          rawStatus === "validated" || rawStatus === "approved";
+                        const isRevisionRequested =
+                          rawStatus === "rejected" ||
+                          rawStatus === "needs_revision";
+                        const isPending =
+                          rawStatus === "uploaded" ||
+                          rawStatus === "pending" ||
+                          rawStatus === "submitted" ||
+                          rawStatus === "under_review" ||
+                          rawStatus === "pending_review";
+                        const hasPriorRejection = (
+                          matchingSubmission?.review_decisions || []
+                        ).some(
+                          (d) => (d.decision || "").toLowerCase() === "rejected",
+                        );
+                        const isRevisionUploaded =
+                          isPending &&
+                          (hasPriorRejection || documents.length > 1);
+                        const isCleanedFile = Boolean(
+                          firstDoc?.storage_path?.startsWith("__cleaned__"),
+                        );
+                        const hasFile =
+                          documents.length > 0 &&
+                          Boolean(firstDoc?.storage_path) &&
+                          !isCleanedFile;
+                        const fileDownloadUrl = hasFile
+                          ? `/api/storage/download?path=${encodeURIComponent(
+                              firstDoc!.storage_path,
+                            )}`
+                          : null;
+                        const rawFileName =
+                          firstDoc?.storage_path?.split("/").pop() ||
+                          `${reqLabel}.pdf`;
+                        const fileName = cleanDisplayFileName(rawFileName);
+                        const fileSize = formatBytes(firstDoc?.size_bytes);
+                        const submittedDateText = matchingSubmission
+                          ? formatFullDateTime(
+                              matchingSubmission.submitted_at ||
+                                matchingSubmission.created_at,
+                            )
+                          : null;
+                        const adminNote =
+                          matchingSubmission?.review_decisions?.[0]?.remarks ||
+                          matchingSubmission?.admin_remarks;
+                        const facultyNote =
+                          matchingSubmission?.notes ||
+                          matchingSubmission?.remarks ||
+                          null;
+                        const priorRejectionDecision = (
+                          matchingSubmission?.review_decisions || []
+                        ).find(
+                          (d) => (d.decision || "").toLowerCase() === "rejected",
+                        );
+                        const priorRejectionNote =
+                          priorRejectionDecision?.remarks ||
+                          (isRevisionRequested ? adminNote : null);
+
+                        return (
+                          <div
+                            key={`${selectedGroup.key}-mobile-${code}`}
+                            className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-3.5 shadow-xs space-y-3"
+                          >
+                            <div className="flex items-start justify-between gap-2">
+                              <div className="min-w-0 flex-1">
+                                <h4 className="font-bold text-slate-900 dark:text-slate-100 text-xs sm:text-sm leading-snug">
+                                  {reqLabel}
+                                </h4>
+                                {submittedDateText ? (
+                                  <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+                                    Submitted: {submittedDateText}
+                                  </p>
+                                ) : (
+                                  <p className="text-[11px] text-slate-400 dark:text-slate-500 italic mt-0.5">
+                                    Not submitted
+                                  </p>
+                                )}
+                              </div>
+                              {isMandatory ? (
+                                <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider bg-[#780000] text-white border border-[#5e0000] shrink-0">
+                                  Required
+                                </span>
+                              ) : (
+                                <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider bg-slate-700 text-white border border-slate-600 shrink-0">
+                                  Optional
+                                </span>
+                              )}
+                            </div>
+
+                            {hasFile && fileDownloadUrl ? (
+                              <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-950/50 p-2.5 space-y-2">
+                                <div className="flex items-center justify-between gap-2 text-xs">
+                                  <span
+                                    className="font-medium text-slate-900 dark:text-slate-100 truncate min-w-0"
+                                    title={rawFileName}
+                                  >
+                                    {fileName}
+                                  </span>
+                                  <span className="text-[10px] text-slate-500 font-mono shrink-0">
+                                    {fileSize}
+                                    {isRevisionUploaded ? " • Revised" : ""}
+                                  </span>
+                                </div>
+                                <div className="grid grid-cols-2 gap-2">
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      setPreviewSubmission({
+                                        code: code,
+                                        title: reqLabel,
+                                        fileName: fileName,
+                                        fileSize: firstDoc?.size_bytes || null,
+                                        storagePath: firstDoc?.storage_path,
+                                        fileUrl: fileDownloadUrl || undefined,
+                                        submittedAt:
+                                          matchingSubmission?.submitted_at ||
+                                          matchingSubmission?.created_at ||
+                                          undefined,
+                                        note: facultyNote,
+                                        notes: facultyNote,
+                                        remarks: facultyNote,
+                                        facultyNote: facultyNote,
+                                        feedback: adminNote,
+                                        admin_remarks: adminNote,
+                                        adminRemarks: adminNote,
+                                        reviewedAt:
+                                          matchingSubmission
+                                            ?.review_decisions?.[0]
+                                            ?.created_at ||
+                                          (matchingSubmission?.status ===
+                                          "validated"
+                                            ? matchingSubmission?.created_at
+                                            : undefined),
+                                        latestSubmissionId:
+                                          matchingSubmission?.id,
+                                        status: isRevisionRequested
+                                          ? "Needs Revision"
+                                          : isRevisionUploaded
+                                            ? "Revision Under Review"
+                                            : matchingSubmission?.status ||
+                                              "Pending",
+                                        academicYear: academicYear,
+                                        semester: semester,
+                                        facultyName: faculty.fullName,
+                                        isAdminView: true,
+                                        hasPriorRevision: Boolean(
+                                          priorRejectionDecision ||
+                                          isRevisionRequested,
+                                        ),
+                                        isRevision: isRevisionUploaded,
+                                      });
+                                    }}
+                                    className="inline-flex items-center justify-center gap-1 rounded-lg border border-slate-200 bg-white hover:bg-slate-100 text-slate-800 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 px-2.5 py-1.5 text-[11px] font-semibold transition cursor-pointer"
+                                  >
+                                    <AppIcon icon={Eye} size="sm" color="inherit" />
+                                    <span>Preview</span>
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() =>
+                                      handleSingleFileDownload(
+                                        firstDoc?.storage_path,
+                                        fileName,
+                                      )
+                                    }
+                                    className="inline-flex items-center justify-center gap-1 rounded-lg border border-slate-200 bg-white hover:bg-slate-100 text-slate-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 px-2.5 py-1.5 text-[11px] font-semibold transition cursor-pointer"
+                                  >
+                                    <AppIcon icon={Download} size="sm" color="inherit" />
+                                    <span>Download</span>
+                                  </button>
+                                </div>
+                              </div>
+                            ) : isCleanedFile ? (
+                              <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-950/50 p-2.5 flex items-center justify-between gap-2 text-xs">
+                                <span className="truncate font-medium text-slate-700 dark:text-slate-300">
+                                  {fileName}
+                                </span>
+                                <span className="shrink-0 rounded-md border border-amber-600 bg-amber-500 px-2 py-0.5 text-[10px] font-bold text-slate-950">
+                                  Cleaned
+                                </span>
+                              </div>
+                            ) : null}
+
+                            {(facultyNote ||
+                              isRevisionRequested ||
+                              (isValidated && adminNote) ||
+                              (isRevisionUploaded && priorRejectionNote)) && (
+                              <div className="space-y-1.5 text-[11px]">
+                                {facultyNote ? (
+                                  <div className="rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-950/40 px-2.5 py-1.5">
+                                    <span className="font-bold text-slate-700 dark:text-slate-300 block">
+                                      {isRevisionUploaded
+                                        ? "Faculty Revision Note:"
+                                        : "Faculty Remarks:"}
+                                    </span>
+                                    <p className="text-slate-800 dark:text-slate-200 mt-0.5 break-words">
+                                      &ldquo;{facultyNote}&rdquo;
+                                    </p>
+                                  </div>
+                                ) : null}
+                                {isRevisionUploaded && priorRejectionNote ? (
+                                  <div className="rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-950/40 px-2.5 py-1.5">
+                                    <span className="font-bold text-slate-700 dark:text-slate-300 block">
+                                      Prior Revision:
+                                    </span>
+                                    <p className="text-slate-800 dark:text-slate-200 mt-0.5 break-words">
+                                      &ldquo;{priorRejectionNote}&rdquo;
+                                    </p>
+                                  </div>
+                                ) : isRevisionRequested ? (
+                                  <div className="rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-950/40 px-2.5 py-1.5">
+                                    <span className="font-bold text-slate-700 dark:text-slate-300 block">
+                                      Revision Sent:
+                                    </span>
+                                    <p className="text-slate-800 dark:text-slate-200 mt-0.5 break-words">
+                                      &ldquo;
+                                      {adminNote ||
+                                        "Please review and re-upload the corrected requirement document."}
+                                      &rdquo;
+                                    </p>
+                                  </div>
+                                ) : isValidated && adminNote ? (
+                                  <div className="rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-950/40 px-2.5 py-1.5">
+                                    <span className="font-bold text-slate-700 dark:text-slate-300 block">
+                                      Validated Remarks:
+                                    </span>
+                                    <p className="text-slate-800 dark:text-slate-200 mt-0.5 break-words">
+                                      &ldquo;{adminNote}&rdquo;
+                                    </p>
+                                  </div>
+                                ) : null}
+                              </div>
+                            )}
+
+                            <div className="pt-2 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between gap-2">
+                              {isValidated ? (
+                                <SubmissionStatusBadge
+                                  status="Validated"
+                                  size="md"
+                                />
+                              ) : isRevisionRequested ? (
+                                <SubmissionStatusBadge
+                                  status="Needs Revision"
+                                  size="md"
+                                />
+                              ) : matchingSubmission ? (
+                                <div className="grid grid-cols-2 gap-2 w-full">
+                                  <button
+                                    type="button"
+                                    disabled={
+                                      submittingAction !== null ||
+                                      reviewingCode !== null ||
+                                      isValidatingSingle ||
+                                      isSubmittingRevision
+                                    }
+                                    onClick={() =>
+                                      openValidateModal(
+                                        matchingSubmission.id,
+                                        code,
+                                        reqLabel,
+                                      )
+                                    }
+                                    className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-[#08412a] bg-[#0b5336] hover:bg-[#073d2a] text-white px-3 py-2 text-xs font-bold shadow-2xs transition cursor-pointer disabled:opacity-50"
+                                  >
+                                    <AppIcon
+                                      icon={Check}
+                                      size="sm"
+                                      color="white"
+                                      strokeWidth={2.5}
+                                    />
+                                    <span>Validate</span>
+                                  </button>
+                                  <button
+                                    type="button"
+                                    disabled={
+                                      submittingAction !== null ||
+                                      reviewingCode !== null ||
+                                      isValidatingSingle ||
+                                      isSubmittingRevision
+                                    }
+                                    onClick={() =>
+                                      openRevisionModal(
+                                        matchingSubmission.id,
+                                        code,
+                                        reqLabel,
+                                      )
+                                    }
+                                    className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-[#5e0000] bg-[#780000] hover:bg-[#5e0000] text-white px-3 py-2 text-xs font-bold shadow-2xs transition cursor-pointer disabled:opacity-50"
+                                  >
+                                    <AppIcon
+                                      icon={Xmark}
+                                      size="sm"
+                                      color="white"
+                                      strokeWidth={2.5}
+                                    />
+                                    <span>Revise</span>
+                                  </button>
+                                </div>
+                              ) : (
+                                <SubmissionStatusBadge
+                                  status="Not Submitted"
+                                  label="Awaiting Submission"
+                                  size="md"
+                                />
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+
+                    {/* Desktop Requirements Table */}
+                    <div className="hidden md:block overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs">
                     <div className="overflow-x-auto">
                       <table className="w-full table-fixed text-left text-xs text-slate-600 dark:text-slate-300 min-w-[880px]">
                         <thead className="bg-slate-50/60 dark:bg-slate-950/50 border-b border-slate-200/80 dark:border-slate-800/80 text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
@@ -3572,6 +3911,7 @@ export function FacultyVerificationDrawer({
                       </table>
                     </div>
                   </div>
+                  </>
                 )}
               </div>
             )
@@ -3579,59 +3919,61 @@ export function FacultyVerificationDrawer({
             /* Tab 2: Verification History */
             <div className="space-y-4">
               {/* Term Dropdown Selector & Download Action */}
-              <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-200 dark:border-slate-800/80 bg-slate-50/80 dark:bg-slate-950/40 p-3.5 shadow-2xs">
-                <div className="flex flex-wrap items-center gap-3">
-                  <span className="text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400">
+              <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 rounded-2xl border border-slate-200 dark:border-slate-800/80 bg-slate-50/80 dark:bg-slate-950/40 p-3.5 shadow-2xs">
+                <div className="flex flex-col sm:flex-row sm:items-center gap-2.5 w-full lg:w-auto">
+                  <span className="text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400 shrink-0">
                     Past Academic Term:
                   </span>
-                  <select
-                    value={selectedHistoryAy}
-                    onChange={(e) => {
-                      const newAy = e.target.value;
-                      setSelectedHistoryAy(newAy);
-                      setSelectedHistoryClassId(null);
-                      const key = `${newAy}::${selectedHistorySem}`;
-                      if (historyCacheRef.current[key]) {
-                        setHistorySubmissions(
-                          historyCacheRef.current[key].submissions,
-                        );
-                        setHistoryClasses(historyCacheRef.current[key].classes);
-                        setIsLoadingHistory(false);
-                      }
-                    }}
-                    className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 px-3 py-1.5 text-xs text-slate-900 dark:text-slate-100 outline-none transition focus:border-amber-500"
-                  >
-                    {historyAcademicYears.map((year) => (
-                      <option key={year} value={year}>
-                        A.Y. {year}
-                      </option>
-                    ))}
-                  </select>
+                  <div className="grid grid-cols-2 sm:flex items-center gap-2 w-full sm:w-auto">
+                    <select
+                      value={selectedHistoryAy}
+                      onChange={(e) => {
+                        const newAy = e.target.value;
+                        setSelectedHistoryAy(newAy);
+                        setSelectedHistoryClassId(null);
+                        const key = `${newAy}::${selectedHistorySem}`;
+                        if (historyCacheRef.current[key]) {
+                          setHistorySubmissions(
+                            historyCacheRef.current[key].submissions,
+                          );
+                          setHistoryClasses(historyCacheRef.current[key].classes);
+                          setIsLoadingHistory(false);
+                        }
+                      }}
+                      className="w-full sm:w-auto rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 px-3 py-2 sm:py-1.5 text-xs text-slate-900 dark:text-slate-100 outline-none transition focus:border-amber-500"
+                    >
+                      {historyAcademicYears.map((year) => (
+                        <option key={year} value={year}>
+                          A.Y. {year}
+                        </option>
+                      ))}
+                    </select>
 
-                  <select
-                    value={selectedHistorySem}
-                    onChange={(e) => {
-                      const newSem = e.target.value as SemesterOption;
-                      setSelectedHistorySem(newSem);
-                      setSelectedHistoryClassId(null);
-                      const key = `${selectedHistoryAy}::${newSem}`;
-                      if (historyCacheRef.current[key]) {
-                        setHistorySubmissions(
-                          historyCacheRef.current[key].submissions,
-                        );
-                        setHistoryClasses(historyCacheRef.current[key].classes);
-                        setIsLoadingHistory(false);
-                      }
-                    }}
-                    className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 px-3 py-1.5 text-xs text-slate-900 dark:text-slate-100 outline-none transition focus:border-amber-500"
-                  >
-                    <option value="1st Semester">1st Semester</option>
-                    <option value="2nd Semester">2nd Semester</option>
-                    <option value="Summer Semester">Summer Semester</option>
-                  </select>
+                    <select
+                      value={selectedHistorySem}
+                      onChange={(e) => {
+                        const newSem = e.target.value as SemesterOption;
+                        setSelectedHistorySem(newSem);
+                        setSelectedHistoryClassId(null);
+                        const key = `${selectedHistoryAy}::${newSem}`;
+                        if (historyCacheRef.current[key]) {
+                          setHistorySubmissions(
+                            historyCacheRef.current[key].submissions,
+                          );
+                          setHistoryClasses(historyCacheRef.current[key].classes);
+                          setIsLoadingHistory(false);
+                        }
+                      }}
+                      className="w-full sm:w-auto rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 px-3 py-2 sm:py-1.5 text-xs text-slate-900 dark:text-slate-100 outline-none transition focus:border-amber-500"
+                    >
+                      <option value="1st Semester">1st Semester</option>
+                      <option value="2nd Semester">2nd Semester</option>
+                      <option value="Summer Semester">Summer Semester</option>
+                    </select>
+                  </div>
                 </div>
 
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 w-full lg:w-auto">
                   {(() => {
                     const targetHistorySubs = selectedHistoryGroup
                       ? selectedHistoryGroup.submissions
@@ -3650,7 +3992,7 @@ export function FacultyVerificationDrawer({
                             ? "Download History ZIP"
                             : "Files have been cleaned (archived to ZIP backup)"
                         }
-                        className="inline-flex items-center gap-2 rounded-xl bg-[#780000] hover:bg-[#5e0000] active:scale-[0.98] text-white border border-[#5e0000] text-xs font-bold px-3.5 py-1.5 shadow-xs hover:shadow transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-[#780000] disabled:active:scale-100 shrink-0"
+                        className="w-full lg:w-auto inline-flex items-center justify-center gap-2 rounded-xl bg-[#780000] hover:bg-[#5e0000] active:scale-[0.98] text-white border border-[#5e0000] text-xs font-bold px-3.5 py-2 sm:py-1.5 shadow-xs hover:shadow transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-[#780000] disabled:active:scale-100 shrink-0"
                       >
                         {isDownloadingHistoryZip ? (
                           <>
@@ -3901,13 +4243,13 @@ export function FacultyVerificationDrawer({
                     </div>
 
                     {/* Quick History Switcher Dropdown */}
-                    <div className="flex items-center gap-2 shrink-0">
+                    <div className="flex items-center gap-2 shrink-0 w-full sm:w-auto">
                       <select
                         value={selectedHistoryClassId}
                         onChange={(e) =>
                           setSelectedHistoryClassId(e.target.value)
                         }
-                        className="rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-1.5 text-xs font-bold text-slate-800 dark:text-slate-200 outline-none focus:border-amber-500 cursor-pointer shadow-2xs"
+                        className="w-full sm:w-auto rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-2 sm:py-1.5 text-xs font-bold text-slate-800 dark:text-slate-200 outline-none focus:border-amber-500 cursor-pointer shadow-2xs"
                       >
                         {historyClassGroups.map((g) => (
                           <option key={g.key} value={g.key}>
@@ -3918,8 +4260,266 @@ export function FacultyVerificationDrawer({
                     </div>
                   </div>
 
+                  {/* Mobile Historical Requirements Cards */}
+                  <div className="md:hidden space-y-3">
+                    {(() => {
+                      const historicalRequirements = allRequirements.filter(
+                        (req) =>
+                          selectedHistoryGroup.submissions.some(
+                            (s) =>
+                              (matchRequirementCode(s.requirement_code) ||
+                                s.requirement_code) === req.code,
+                          ),
+                      );
+                      if (historicalRequirements.length === 0) {
+                        return (
+                          <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-4 py-8 text-center text-xs text-slate-400 dark:text-slate-500 italic">
+                            No submitted requirements recorded for this class in{" "}
+                            {selectedHistoryAy} &bull; {selectedHistorySem}.
+                          </div>
+                        );
+                      }
+                      return historicalRequirements.map((req) => {
+                        const code = req.code;
+                        const reqLabel = req.title;
+                        const isMandatory = req.isMandatory;
+                        const matchingSub =
+                          selectedHistoryGroup.submissions.find(
+                            (s) => s.requirement_code === code,
+                          );
+                        const docs = matchingSub?.document_versions ?? [];
+                        const latestReview =
+                          matchingSub?.review_decisions?.[0] ?? null;
+                        const isSubmitted = Boolean(
+                          matchingSub && docs.length > 0,
+                        );
+                        const historyStatus = isSubmitted
+                          ? matchingSub?.status || "Pending"
+                          : "Not Submitted";
+                        const submittedDateText = isSubmitted
+                          ? formatFullDateTime(
+                              matchingSub?.submitted_at ||
+                                matchingSub?.created_at,
+                            )
+                          : null;
+                        const adminNote =
+                          latestReview?.remarks || matchingSub?.admin_remarks;
+                        const facultyNote =
+                          matchingSub?.remarks &&
+                          matchingSub.remarks !== adminNote
+                            ? matchingSub.remarks
+                            : null;
+
+                        return (
+                          <div
+                            key={`hist-mobile-${code}`}
+                            className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-3.5 shadow-xs space-y-3"
+                          >
+                            <div className="flex items-start justify-between gap-2">
+                              <div className="min-w-0 flex-1">
+                                <h4 className="font-bold text-slate-900 dark:text-slate-100 text-xs sm:text-sm leading-snug">
+                                  {reqLabel}
+                                </h4>
+                                {submittedDateText ? (
+                                  <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+                                    Submitted: {submittedDateText}
+                                  </p>
+                                ) : (
+                                  <p className="text-[11px] text-slate-400 dark:text-slate-500 italic mt-0.5">
+                                    Not submitted
+                                  </p>
+                                )}
+                              </div>
+                              {isMandatory ? (
+                                <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider bg-[#780000] text-white border border-[#5e0000] shrink-0">
+                                  Required
+                                </span>
+                              ) : (
+                                <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider bg-slate-700 text-white border border-slate-600 shrink-0">
+                                  Optional
+                                </span>
+                              )}
+                            </div>
+
+                            {docs.length > 0 && (
+                              <div className="space-y-1.5">
+                                {docs.map((doc, idx) => {
+                                  const isCleanedDoc = Boolean(
+                                    doc.storage_path?.startsWith("__cleaned__"),
+                                  );
+                                  const rawName =
+                                    doc.storage_path?.split("/").pop() ||
+                                    "Document";
+                                  const fileName =
+                                    cleanDisplayFileName(rawName);
+                                  const fileSize = formatBytes(doc.size_bytes);
+                                  const downloadUrl = isCleanedDoc
+                                    ? ""
+                                    : `/api/storage/download?path=${encodeURIComponent(
+                                        doc.storage_path,
+                                      )}`;
+
+                                  return isCleanedDoc ? (
+                                    <div
+                                      key={doc.id || idx}
+                                      className="flex items-center justify-between gap-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-950/60 px-3 py-2 text-xs"
+                                    >
+                                      <span className="truncate font-medium text-slate-800 dark:text-slate-200">
+                                        {fileName}
+                                      </span>
+                                      <span className="shrink-0 rounded-md border border-amber-600 bg-amber-500 px-2 py-0.5 text-[10px] font-bold text-slate-950">
+                                        Cleaned (Archived)
+                                      </span>
+                                    </div>
+                                  ) : (
+                                    <div
+                                      key={doc.id || idx}
+                                      className="flex items-center justify-between gap-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-950/60 px-3 py-2 text-xs"
+                                    >
+                                      <div className="min-w-0 flex-1">
+                                        <span className="block truncate font-medium text-slate-800 dark:text-slate-200">
+                                          {fileName}
+                                        </span>
+                                        {fileSize ? (
+                                          <span className="text-[10px] text-slate-400 font-mono">
+                                            {fileSize}
+                                          </span>
+                                        ) : null}
+                                      </div>
+                                      <div className="flex items-center gap-1 shrink-0">
+                                        <button
+                                          type="button"
+                                          onClick={() => {
+                                            const vAdminNote =
+                                              matchingSub?.review_decisions?.[0]
+                                                ?.remarks ||
+                                              matchingSub?.admin_remarks;
+                                            const vFacultyNote =
+                                              matchingSub?.notes ||
+                                              matchingSub?.remarks ||
+                                              null;
+                                            const versionSuffix =
+                                              doc.version_number
+                                                ? ` (v${doc.version_number})`
+                                                : idx > 0
+                                                  ? ` (Revision ${docs.length - idx})`
+                                                  : "";
+                                            setPreviewSubmission({
+                                              code: code,
+                                              title: `${reqLabel}${versionSuffix}`,
+                                              fileName: fileName,
+                                              fileSize: doc.size_bytes || null,
+                                              storagePath: doc.storage_path,
+                                              fileUrl: downloadUrl,
+                                              submittedAt:
+                                                doc.created_at ||
+                                                matchingSub?.submitted_at ||
+                                                matchingSub?.created_at ||
+                                                undefined,
+                                              note: vFacultyNote,
+                                              notes: vFacultyNote,
+                                              remarks: vFacultyNote,
+                                              facultyNote: vFacultyNote,
+                                              feedback: vAdminNote,
+                                              admin_remarks: vAdminNote,
+                                              adminRemarks: vAdminNote,
+                                              reviewedAt:
+                                                matchingSub
+                                                  ?.review_decisions?.[0]
+                                                  ?.created_at,
+                                              latestSubmissionId:
+                                                matchingSub?.id,
+                                              status:
+                                                matchingSub?.status ||
+                                                "Pending",
+                                              academicYear: selectedHistoryAy,
+                                              semester: selectedHistorySem,
+                                              facultyName: faculty.fullName,
+                                              isAdminView: true,
+                                              hasPriorRevision: Boolean(
+                                                idx > 0,
+                                              ),
+                                              isRevision: Boolean(idx > 0),
+                                            });
+                                          }}
+                                          className="p-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300"
+                                          title="Preview"
+                                        >
+                                          <AppIcon
+                                            icon={Eye}
+                                            size="sm"
+                                            color="inherit"
+                                          />
+                                        </button>
+                                        <button
+                                          type="button"
+                                          onClick={() =>
+                                            handleSingleFileDownload(
+                                              doc.storage_path,
+                                              fileName,
+                                            )
+                                          }
+                                          className="p-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300"
+                                          title="Download"
+                                        >
+                                          <AppIcon
+                                            icon={Download}
+                                            size="sm"
+                                            color="inherit"
+                                          />
+                                        </button>
+                                      </div>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            )}
+
+                            {(facultyNote || adminNote) && (
+                              <div className="space-y-1.5 text-[11px]">
+                                {facultyNote ? (
+                                  <div className="rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-950/40 px-2.5 py-1.5">
+                                    <span className="font-bold text-slate-700 dark:text-slate-300 block">
+                                      Faculty Remarks:
+                                    </span>
+                                    <p className="text-slate-800 dark:text-slate-200 mt-0.5 break-words">
+                                      &ldquo;{facultyNote}&rdquo;
+                                    </p>
+                                  </div>
+                                ) : null}
+                                {adminNote ? (
+                                  <div className="rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-950/40 px-2.5 py-1.5">
+                                    <span className="font-bold text-slate-700 dark:text-slate-300 block">
+                                      Validated Remarks:
+                                    </span>
+                                    <p className="text-slate-800 dark:text-slate-200 mt-0.5 break-words">
+                                      &ldquo;{adminNote}&rdquo;
+                                    </p>
+                                  </div>
+                                ) : null}
+                              </div>
+                            )}
+
+                            <div className="pt-2 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between gap-2">
+                              <span className="text-[11px] font-semibold text-slate-500">
+                                Status
+                              </span>
+                              <SubmissionStatusBadge
+                                status={historyStatus}
+                                label={
+                                  isSubmitted ? undefined : "Not Submitted"
+                                }
+                                size="md"
+                              />
+                            </div>
+                          </div>
+                        );
+                      });
+                    })()}
+                  </div>
+
                   {/* Historical Requirements Table for Selected Class */}
-                  <div className="overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xs">
+                  <div className="hidden md:block overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xs">
                     <div className="overflow-x-auto">
                       <table className="w-full table-fixed text-left text-xs text-slate-600 dark:text-slate-300 min-w-[1020px]">
                         <thead className="bg-slate-50 dark:bg-slate-950/70 border-b border-slate-200 dark:border-slate-800 text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
@@ -6023,8 +6623,8 @@ export function RequirementsPanel({
       ) : (
         <>
           {/* Top View Mode: Current Submissions vs. Validation History */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
-            <div className="flex flex-wrap items-center gap-2 p-1.5 bg-slate-100 dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800">
+          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 mb-4">
+            <div className="grid grid-cols-2 sm:inline-flex items-center gap-2 p-1.5 bg-slate-100 dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 w-full lg:w-auto">
               <button
                 type="button"
                 onClick={() => {
@@ -6045,14 +6645,14 @@ export function RequirementsPanel({
                     syncActiveTerm: true,
                   });
                 }}
-                className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer ${
+                className={`w-full sm:w-auto inline-flex items-center justify-center gap-2 px-3 sm:px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer ${
                   activePanelTab === "current"
                     ? "bg-[#780000] text-white border border-[#5e0000] shadow-xs"
                     : "bg-white dark:bg-slate-800/80 text-slate-700 dark:text-slate-300 border border-slate-300 dark:border-slate-700 hover:border-slate-400 dark:hover:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-750 shadow-2xs"
                 }`}
               >
                 <AppIcon icon={Page} size="xs" color="inherit" />
-                <span>Current Submissions</span>
+                <span className="truncate">Current Submissions</span>
               </button>
               <button
                 type="button"
@@ -6091,120 +6691,122 @@ export function RequirementsPanel({
                       Object.keys(facultyStatuses).length > 0,
                   });
                 }}
-                className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer ${
+                className={`w-full sm:w-auto inline-flex items-center justify-center gap-2 px-3 sm:px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer ${
                   activePanelTab === "history"
                     ? "bg-[#780000] text-white border border-[#5e0000] shadow-xs"
                     : "bg-white dark:bg-slate-800/80 text-slate-700 dark:text-slate-300 border border-slate-300 dark:border-slate-700 hover:border-slate-400 dark:hover:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-750 shadow-2xs"
                 }`}
               >
                 <AppIcon icon={Archive} size="xs" color="inherit" />
-                <span>Validation History</span>
+                <span className="truncate">Validation History</span>
               </button>
             </div>
 
             {/* Academic Term Selector / Status Badge */}
             {activePanelTab === "current" ? (
               activeTermAy ? (
-                <div className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-xs font-bold shadow-2xs">
-                  <span className="h-2 w-2 rounded-full bg-slate-400" />
-                  <span>
+                <div className="inline-flex items-center justify-center sm:justify-start gap-2 px-3.5 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-xs font-bold shadow-2xs w-full lg:w-auto">
+                  <span className="h-2 w-2 rounded-full bg-slate-400 shrink-0" />
+                  <span className="truncate">
                     Active Term: A.Y. {activeTermAy} &bull; {activeTermSem}
                   </span>
                 </div>
               ) : (
-                <div className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-xs font-bold shadow-2xs">
-                  <span className="h-2 w-2 rounded-full bg-slate-400" />
+                <div className="inline-flex items-center justify-center sm:justify-start gap-2 px-3.5 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-xs font-bold shadow-2xs w-full lg:w-auto">
+                  <span className="h-2 w-2 rounded-full bg-slate-400 shrink-0" />
                   <span>No Active Academic Term Configured</span>
                 </div>
               )
             ) : (
-              <div className="flex items-center gap-2 flex-wrap">
-                <span className="text-xs font-bold text-slate-600 dark:text-slate-300">
+              <div className="flex flex-col sm:flex-row sm:items-center gap-2 w-full lg:w-auto">
+                <span className="text-xs font-bold text-slate-600 dark:text-slate-300 shrink-0">
                   Select Past Term:
                 </span>
-                <select
-                  value={historyAy}
-                  onChange={(e) => {
-                    const newAy = e.target.value;
-                    setHistoryAy(newAy);
-                    setAcademicYear(newAy);
-                    const validSems = sortSemestersList(
-                      termsByYear[newAy] || ["1st Semester", "2nd Semester"],
-                    );
-                    const nextSem = validSems.includes(activeTermSem)
-                      ? activeTermSem
-                      : validSems.includes(historySem)
-                        ? historySem
-                        : validSems[0];
-                    setHistorySem(nextSem);
-                    setSemester(nextSem);
+                <div className="grid grid-cols-2 sm:flex items-center gap-2 w-full sm:w-auto">
+                  <select
+                    value={historyAy}
+                    onChange={(e) => {
+                      const newAy = e.target.value;
+                      setHistoryAy(newAy);
+                      setAcademicYear(newAy);
+                      const validSems = sortSemestersList(
+                        termsByYear[newAy] || ["1st Semester", "2nd Semester"],
+                      );
+                      const nextSem = validSems.includes(activeTermSem)
+                        ? activeTermSem
+                        : validSems.includes(historySem)
+                          ? historySem
+                          : validSems[0];
+                      setHistorySem(nextSem);
+                      setSemester(nextSem);
 
-                    const termKey = `${newAy}::${nextSem}`;
-                    const cached = statusesByTermRef.current[termKey];
-                    if (cached) {
-                      setFacultyStatuses(cached.statusMap);
-                      setFacultyClassProgress(cached.classProgressMap);
-                      setFacultySubjectProgress(cached.subjectProgressMap);
-                    }
+                      const termKey = `${newAy}::${nextSem}`;
+                      const cached = statusesByTermRef.current[termKey];
+                      if (cached) {
+                        setFacultyStatuses(cached.statusMap);
+                        setFacultyClassProgress(cached.classProgressMap);
+                        setFacultySubjectProgress(cached.subjectProgressMap);
+                      }
 
-                    void fetchAllStatuses(newAy, nextSem, {
-                      silent:
-                        Boolean(cached) ||
-                        Object.keys(facultyStatuses).length > 0,
-                    });
-                  }}
-                  className="rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-1.5 text-xs text-slate-900 dark:text-slate-100 font-bold outline-none focus:border-amber-500 cursor-pointer shadow-2xs"
-                >
-                  {allKnownYears.map((y) => (
-                    <option key={y} value={y}>
-                      A.Y. {y}
-                    </option>
-                  ))}
-                </select>
+                      void fetchAllStatuses(newAy, nextSem, {
+                        silent:
+                          Boolean(cached) ||
+                          Object.keys(facultyStatuses).length > 0,
+                      });
+                    }}
+                    className="w-full sm:w-auto rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-2 sm:py-1.5 text-xs text-slate-900 dark:text-slate-100 font-bold outline-none focus:border-amber-500 cursor-pointer shadow-2xs"
+                  >
+                    {allKnownYears.map((y) => (
+                      <option key={y} value={y}>
+                        A.Y. {y}
+                      </option>
+                    ))}
+                  </select>
 
-                <select
-                  value={historySem}
-                  onChange={(e) => {
-                    const newSem = e.target.value as SemesterOption;
-                    setHistorySem(newSem);
-                    setSemester(newSem);
+                  <select
+                    value={historySem}
+                    onChange={(e) => {
+                      const newSem = e.target.value as SemesterOption;
+                      setHistorySem(newSem);
+                      setSemester(newSem);
 
-                    const termKey = `${historyAy}::${newSem}`;
-                    const cached = statusesByTermRef.current[termKey];
-                    if (cached) {
-                      setFacultyStatuses(cached.statusMap);
-                      setFacultyClassProgress(cached.classProgressMap);
-                      setFacultySubjectProgress(cached.subjectProgressMap);
-                    }
+                      const termKey = `${historyAy}::${newSem}`;
+                      const cached = statusesByTermRef.current[termKey];
+                      if (cached) {
+                        setFacultyStatuses(cached.statusMap);
+                        setFacultyClassProgress(cached.classProgressMap);
+                        setFacultySubjectProgress(cached.subjectProgressMap);
+                      }
 
-                    void fetchAllStatuses(historyAy, newSem, {
-                      silent:
-                        Boolean(cached) ||
-                        Object.keys(facultyStatuses).length > 0,
-                    });
-                  }}
-                  className="rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-1.5 text-xs text-slate-900 dark:text-slate-100 font-bold outline-none focus:border-amber-500 cursor-pointer shadow-2xs"
-                >
-                  {availableHistorySemesters.map((sem) => (
-                    <option key={sem} value={sem}>
-                      {sem}
-                    </option>
-                  ))}
-                </select>
+                      void fetchAllStatuses(historyAy, newSem, {
+                        silent:
+                          Boolean(cached) ||
+                          Object.keys(facultyStatuses).length > 0,
+                      });
+                    }}
+                    className="w-full sm:w-auto rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-2 sm:py-1.5 text-xs text-slate-900 dark:text-slate-100 font-bold outline-none focus:border-amber-500 cursor-pointer shadow-2xs"
+                  >
+                    {availableHistorySemesters.map((sem) => (
+                      <option key={sem} value={sem}>
+                        {sem}
+                      </option>
+                    ))}
+                  </select>
+                </div>
               </div>
             )}
           </div>
 
           {/* 1. Top Control Bar */}
-          <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-3 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-200 mb-4 shadow-xs">
-            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2.5 w-full lg:w-auto flex-wrap">
+          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 p-3.5 sm:p-4 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-200 mb-4 shadow-xs">
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 w-full lg:w-auto flex-wrap flex-1">
               {/* Search Input */}
               <input
                 type="text"
                 placeholder="Search faculty by name..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full sm:w-60 rounded-xl border border-slate-400 dark:border-slate-800 bg-white dark:bg-slate-950 px-3.5 py-2 text-sm text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 outline-none transition focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20"
+                className="w-full sm:w-60 h-9 rounded-xl border border-slate-400 dark:border-slate-800 bg-white dark:bg-slate-950 px-3.5 py-2 text-xs sm:text-sm text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 outline-none transition focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20"
               />
 
               {/* Custom Program Dropdown Filter */}
@@ -6340,13 +6942,13 @@ export function RequirementsPanel({
             </div>
 
             {/* Report Export Controls (PDF / Excel) */}
-            <div className="flex flex-wrap items-center gap-2 w-full lg:w-auto justify-end shrink-0">
+            <div className="grid grid-cols-2 sm:inline-flex items-center gap-2 w-full lg:w-auto shrink-0">
               <button
                 type="button"
                 onClick={() =>
                   exportReportToPdf(buildVerificationReportPayload())
                 }
-                className="inline-flex items-center gap-1.5 rounded-xl bg-[#780000] hover:bg-[#5e0000] text-white border border-[#5e0000] px-3 py-2 text-xs font-bold transition cursor-pointer shadow-xs"
+                className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-[#780000] hover:bg-[#5e0000] text-white border border-[#5e0000] px-3 py-2 text-xs font-bold transition cursor-pointer shadow-xs"
                 title="Export Verification Report to PDF"
               >
                 <img
@@ -6362,7 +6964,7 @@ export function RequirementsPanel({
                 onClick={() =>
                   exportReportToExcel(buildVerificationReportPayload())
                 }
-                className="inline-flex items-center gap-1.5 rounded-xl bg-[#0b5336] hover:bg-[#08412a] text-white border border-[#08412a] px-3 py-2 text-xs font-bold transition cursor-pointer shadow-xs"
+                className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-[#0b5336] hover:bg-[#08412a] text-white border border-[#08412a] px-3 py-2 text-xs font-bold transition cursor-pointer shadow-xs"
                 title="Export Verification Report to Excel"
               >
                 <img
@@ -6375,8 +6977,178 @@ export function RequirementsPanel({
             </div>
           </div>
 
-          {/* 2. Faculty List / Table View */}
-          <div className="w-full overflow-x-auto rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs dark:shadow-none">
+          {/* 2. Mobile Faculty Card List */}
+          <div className="md:hidden space-y-3">
+            {filteredFaculty.length === 0 ? (
+              <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-4 py-12 text-center text-xs text-slate-500 dark:text-slate-400">
+                {statusFilter === "completed"
+                  ? "No faculty accounts have completed all requirements yet."
+                  : statusFilter === "optional_review"
+                    ? "No faculty accounts currently have optional requirements awaiting review."
+                    : statusFilter === "pending_review"
+                      ? "No faculty accounts have submissions awaiting review."
+                      : statusFilter === "needs_revision"
+                        ? "No faculty accounts currently have requirements needing revision."
+                        : statusFilter === "not_submitted"
+                          ? "No faculty accounts with zero submissions found."
+                          : "No faculty found matching the filter criteria."}
+              </div>
+            ) : (
+              filteredFaculty.map((faculty, index) => {
+                const statusRecord = facultyStatuses[faculty.id];
+                const statInfo = facultyStatusMap.get(faculty.id);
+                const totalValidatedCount =
+                  statInfo?.totalValidatedCount ?? 0;
+                const overallStatus =
+                  statInfo?.overallStatus ?? "Not Submitted";
+                const isNotSubmitted =
+                  statInfo?.isNotSubmitted ??
+                  (overallStatus === "Not Submitted" ||
+                    statInfo?.category === "not_submitted");
+                const statusBadgeClass = statInfo?.statusBadgeClass ?? "";
+                const actionButtonText = isNotSubmitted
+                  ? "Not Submitted Yet"
+                  : (statInfo?.actionButtonText ?? "Review Requirements");
+                const actionButtonClass = isNotSubmitted
+                  ? "bg-slate-100 text-slate-400 border border-slate-200 dark:bg-slate-800 dark:text-slate-500 dark:border-slate-700 font-semibold cursor-not-allowed opacity-60 shadow-none"
+                  : (statInfo?.actionButtonClass ??
+                    "bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold");
+                const programCode =
+                  faculty.program?.code || faculty.program?.name || "N/A";
+                const classList = facultyClassProgress[faculty.id] || [];
+                const subjectProg = facultySubjectProgress[faculty.id];
+                const totalClasses = subjectProg
+                  ? subjectProg.totalSubjects
+                  : classList.length;
+                const doneCount = subjectProg
+                  ? subjectProg.doneSubjects
+                  : classList.filter((c) => c.isDone).length;
+                const progressPct =
+                  totalClasses > 0
+                    ? Math.round((doneCount / totalClasses) * 100)
+                    : 0;
+
+                return (
+                  <div
+                    key={faculty.id}
+                    className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-3.5 shadow-xs space-y-3"
+                  >
+                    <div className="flex items-start justify-between gap-2.5">
+                      <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                        <span className="text-[11px] font-mono text-slate-400 dark:text-slate-500 shrink-0 w-4 text-center">
+                          {index + 1}
+                        </span>
+                        <div className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full border border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-800 text-xs font-bold text-slate-700 dark:text-slate-300 shadow-sm">
+                          {faculty.profileImageUrl ? (
+                            <img
+                              src={faculty.profileImageUrl}
+                              alt={faculty.fullName}
+                              className="h-full w-full object-cover"
+                            />
+                          ) : (
+                            <span>{buildFacultyInitials(faculty.fullName)}</span>
+                          )}
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <div className="font-bold text-slate-900 dark:text-slate-100 text-xs sm:text-sm truncate">
+                            {faculty.fullName}
+                          </div>
+                          {faculty.email ? (
+                            <div className="text-[11px] text-slate-500 dark:text-slate-400 truncate">
+                              {faculty.email}
+                            </div>
+                          ) : null}
+                        </div>
+                      </div>
+                      <span className="bg-slate-100 text-slate-700 border border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700 px-2 py-0.5 text-[10px] font-semibold rounded-md shrink-0">
+                        {programCode}
+                      </span>
+                    </div>
+
+                    <div className="flex items-center justify-between gap-2 pt-1 border-t border-slate-100 dark:border-slate-800">
+                      <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400">
+                        Status
+                      </span>
+                      {isLoadingStatuses && !statusRecord ? (
+                        <div className="h-5 w-24 bg-slate-200 dark:bg-slate-800 rounded-lg animate-pulse" />
+                      ) : (
+                        <span
+                          className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-lg text-[11px] font-semibold ${statusBadgeClass}`}
+                        >
+                          <span>{overallStatus}</span>
+                        </span>
+                      )}
+                    </div>
+
+                    <div className="space-y-1.5">
+                      {isLoadingStatuses &&
+                      !facultySubjectProgress[faculty.id] &&
+                      (!facultyClassProgress[faculty.id] ||
+                        facultyClassProgress[faculty.id].length === 0) &&
+                      !isNotSubmitted ? (
+                        <div className="h-4 w-28 bg-slate-200 dark:bg-slate-800 rounded animate-pulse" />
+                      ) : totalClasses === 0 ? (
+                        <div className="flex items-center justify-between text-[11px] text-slate-400 dark:text-slate-500 italic">
+                          <span>No subjects assigned</span>
+                          {totalValidatedCount > 0 ? (
+                            <span className="not-italic text-slate-500 font-medium">
+                              {totalValidatedCount} general validated
+                            </span>
+                          ) : null}
+                        </div>
+                      ) : (
+                        <>
+                          <div className="flex items-center justify-between text-[11px]">
+                            <span className="font-bold text-slate-900 dark:text-slate-100">
+                              {doneCount}/{totalClasses}{" "}
+                              {totalClasses === 1 ? "Subject" : "Subjects"} Done
+                            </span>
+                            <span className="font-bold text-slate-500 dark:text-slate-400">
+                              {progressPct}%
+                            </span>
+                          </div>
+                          <div className="h-1.5 w-full rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden border border-slate-200/60 dark:border-slate-700/60">
+                            <div
+                              className={`h-full rounded-full transition-all duration-300 ${
+                                doneCount === totalClasses && totalClasses > 0
+                                  ? "bg-[#0b5336]"
+                                  : doneCount > 0
+                                    ? "bg-amber-500"
+                                    : "bg-transparent"
+                              }`}
+                              style={{ width: `${progressPct}%` }}
+                            />
+                          </div>
+                        </>
+                      )}
+                    </div>
+
+                    <button
+                      type="button"
+                      disabled={isNotSubmitted}
+                      onClick={() => {
+                        if (isNotSubmitted) return;
+                        openedFromRowFlag = true;
+                        initialOpenedRef.current = faculty.id;
+                        setReviewingFaculty(faculty);
+                        onSelectFaculty?.(faculty.id);
+                      }}
+                      className={`${actionButtonClass} w-full px-3.5 py-2 rounded-xl text-xs shadow-sm transition inline-flex items-center justify-center ${
+                        isNotSubmitted
+                          ? "cursor-not-allowed opacity-60"
+                          : "active:scale-[0.98] cursor-pointer"
+                      }`}
+                    >
+                      {actionButtonText}
+                    </button>
+                  </div>
+                );
+              })
+            )}
+          </div>
+
+          {/* 2. Desktop Faculty List / Table View */}
+          <div className="hidden md:block w-full overflow-x-auto rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs dark:shadow-none">
             <table className="w-full text-left border-collapse text-xs text-slate-800 dark:text-slate-300 min-w-[750px]">
               <thead className="border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/60 uppercase tracking-wider text-[10px] text-slate-600 dark:text-slate-400">
                 <tr>
