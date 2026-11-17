@@ -1656,14 +1656,22 @@ export function SubmissionWindowPanel({
 
       {/* Save Confirmation Modal */}
       {showSaveConfirmation ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-3 sm:p-4 backdrop-blur-sm animate-in fade-in">
-          <div className="w-full max-w-lg max-h-[90dvh] bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl text-slate-900 dark:text-slate-100 overflow-hidden flex flex-col">
+        <div
+          role="dialog"
+          aria-modal="true"
+          className="fixed inset-0 z-[60] h-dvh overflow-hidden overscroll-none flex items-center justify-center p-3 sm:p-4 animate-in fade-in"
+        >
+          <div
+            className="fixed inset-0 h-lvh bg-black/70 backdrop-blur-sm touch-none overscroll-none"
+            aria-hidden="true"
+          />
+          <div className="relative z-10 w-full max-w-lg max-h-[90dvh] bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl text-slate-900 dark:text-slate-100 overflow-hidden flex flex-col">
             <ModalHeader
               icon={Calendar}
               title="Save Submission Schedule?"
               subtitle="Confirm Window Schedule"
             />
-            <div className="p-4 sm:p-6 space-y-4 overflow-y-auto">
+            <div className="p-4 sm:p-6 space-y-4 overflow-y-auto overflow-x-hidden overscroll-contain">
               <p className="text-xs leading-5 text-slate-600 dark:text-slate-300">
                 Faculty will be permitted to upload compliance documents
                 starting from{" "}
@@ -1728,14 +1736,22 @@ export function SubmissionWindowPanel({
 
       {/* Close Confirmation Modal — 10-second Safety Countdown */}
       {showCloseConfirmation ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-3 sm:p-4 backdrop-blur-sm animate-in fade-in">
-          <div className="w-full max-w-lg max-h-[90dvh] bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl text-slate-900 dark:text-slate-100 overflow-hidden flex flex-col">
+        <div
+          role="dialog"
+          aria-modal="true"
+          className="fixed inset-0 z-[60] h-dvh overflow-hidden overscroll-none flex items-center justify-center p-3 sm:p-4 animate-in fade-in"
+        >
+          <div
+            className="fixed inset-0 h-lvh bg-black/70 backdrop-blur-sm touch-none overscroll-none"
+            aria-hidden="true"
+          />
+          <div className="relative z-10 w-full max-w-lg max-h-[90dvh] bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl text-slate-900 dark:text-slate-100 overflow-hidden flex flex-col">
             <ModalHeader
               icon={WarningTriangle}
               title="Close Submissions Now?"
               subtitle="Immediate Closure & Schedule Reset"
             />
-            <div className="p-4 sm:p-6 space-y-4 overflow-y-auto">
+            <div className="p-4 sm:p-6 space-y-4 overflow-y-auto overflow-x-hidden overscroll-contain">
               <p className="text-xs leading-5 text-slate-600 dark:text-slate-300">
                 This will{" "}
                 <span className="font-bold text-rose-700 dark:text-rose-400">
@@ -1825,14 +1841,22 @@ export function SubmissionWindowPanel({
       ) : null}
 
       {warningModalData.isOpen ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-3 sm:p-4 animate-in fade-in">
-          <div className="w-full max-w-lg max-h-[90dvh] bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl text-slate-900 dark:text-slate-100 overflow-hidden flex flex-col">
+        <div
+          role="dialog"
+          aria-modal="true"
+          className="fixed inset-0 z-[60] h-dvh overflow-hidden overscroll-none flex items-center justify-center p-3 sm:p-4 animate-in fade-in"
+        >
+          <div
+            className="fixed inset-0 h-lvh bg-black/70 backdrop-blur-sm touch-none overscroll-none"
+            aria-hidden="true"
+          />
+          <div className="relative z-10 w-full max-w-lg max-h-[90dvh] bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl text-slate-900 dark:text-slate-100 overflow-hidden flex flex-col">
             <ModalHeader
               icon={WarningTriangle}
               title={warningModalData.title || "Window Close Blocked"}
               subtitle="Pending Requirements Must Be Reviewed"
             />
-            <div className="p-4 sm:p-6 space-y-4 overflow-y-auto">
+            <div className="p-4 sm:p-6 space-y-4 overflow-y-auto overflow-x-hidden overscroll-contain">
               <p className="text-xs leading-relaxed text-slate-600 dark:text-slate-300">
                 {warningModalData.description}
               </p>
@@ -1879,14 +1903,22 @@ export function SubmissionWindowPanel({
 
       {/* Clear Extension Requests Confirmation Modal */}
       {showClearRequestsConfirmation ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-3 sm:p-4 backdrop-blur-sm animate-in fade-in">
-          <div className="w-full max-w-lg max-h-[90dvh] bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl text-slate-900 dark:text-slate-100 overflow-hidden flex flex-col">
+        <div
+          role="dialog"
+          aria-modal="true"
+          className="fixed inset-0 z-[60] h-dvh overflow-hidden overscroll-none flex items-center justify-center p-3 sm:p-4 animate-in fade-in"
+        >
+          <div
+            className="fixed inset-0 h-lvh bg-black/70 backdrop-blur-sm touch-none overscroll-none"
+            aria-hidden="true"
+          />
+          <div className="relative z-10 w-full max-w-lg max-h-[90dvh] bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl text-slate-900 dark:text-slate-100 overflow-hidden flex flex-col">
             <ModalHeader
               icon={Trash}
               title="Clear All Extension Requests?"
               subtitle="Remove All Extension Requests"
             />
-            <div className="p-4 sm:p-6 space-y-4 overflow-y-auto">
+            <div className="p-4 sm:p-6 space-y-4 overflow-y-auto overflow-x-hidden overscroll-contain">
               <p className="text-xs leading-5 text-slate-600 dark:text-slate-300">
                 Are you sure you want to clear all extension requests? This
                 action will permanently remove all pending and reviewed

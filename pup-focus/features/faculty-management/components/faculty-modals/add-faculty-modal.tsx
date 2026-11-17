@@ -723,8 +723,16 @@ export function AddFacultyModal({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-3 sm:p-4 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="w-full max-w-3xl sm:max-w-4xl rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xl text-slate-900 dark:text-slate-100 max-h-[90dvh] flex flex-col overflow-hidden">
+    <div
+      role="dialog"
+      aria-modal="true"
+      className="fixed inset-0 z-[60] h-dvh overflow-hidden overscroll-none flex items-center justify-center p-3 sm:p-4 animate-in fade-in duration-200"
+    >
+      <div
+        className="fixed inset-0 h-lvh bg-black/75 backdrop-blur-sm touch-none overscroll-none"
+        aria-hidden="true"
+      />
+      <div className="relative z-10 w-full max-w-3xl sm:max-w-4xl rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xl text-slate-900 dark:text-slate-100 max-h-[90dvh] flex flex-col overflow-hidden">
         <ModalHeader
           icon={UserPlus}
           title="Add Faculty Account"

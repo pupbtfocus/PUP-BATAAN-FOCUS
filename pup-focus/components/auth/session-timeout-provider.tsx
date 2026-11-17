@@ -287,8 +287,16 @@ export function SessionTimeoutProvider({
       {/* Sleek, Modern Inactivity Warning Modal                            */}
       {/* ----------------------------------------------------------------- */}
       {showModal && (
-        <div className="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-200">
-          <div className="max-w-md w-full bg-white dark:bg-slate-900 border border-slate-400/80 dark:border-slate-800 rounded-xl shadow-2xl p-6 text-slate-900 dark:text-slate-100">
+        <div
+          role="dialog"
+          aria-modal="true"
+          className="fixed inset-0 z-[80] h-dvh overflow-hidden overscroll-none flex items-center justify-center p-3 sm:p-4 animate-in fade-in duration-200"
+        >
+          <div
+            className="fixed inset-0 h-lvh bg-slate-950/60 backdrop-blur-sm touch-none overscroll-none"
+            aria-hidden="true"
+          />
+          <div className="relative z-10 max-w-md w-full max-h-[90dvh] overflow-y-auto overflow-x-hidden overscroll-contain bg-white dark:bg-slate-900 border border-slate-400/80 dark:border-slate-800 rounded-xl shadow-2xl p-4 sm:p-6 text-slate-900 dark:text-slate-100">
             {/* Header Icon & Title */}
             <div className="flex items-center gap-3.5 border-b border-slate-400 dark:border-slate-800/80 pb-4 mb-4">
               <div className="p-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700/60 shadow-2xs shrink-0 flex items-center justify-center">

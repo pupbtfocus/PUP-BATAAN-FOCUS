@@ -53,7 +53,7 @@ export function LogoutButton({ className }: { className?: string }) {
 
       {isModalOpen && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-xs animate-in fade-in duration-150"
+          className="fixed inset-0 z-[70] h-dvh overflow-hidden overscroll-none flex items-center justify-center p-3 sm:p-4 animate-in fade-in duration-150"
           role="dialog"
           aria-modal="true"
           aria-labelledby="logout-dialog-title"
@@ -62,7 +62,11 @@ export function LogoutButton({ className }: { className?: string }) {
           }}
         >
           <div
-            className="w-full max-w-sm rounded-2xl bg-[#800000] border-2 border-amber-400 shadow-[0_20px_50px_rgba(0,0,0,0.6),0_0_30px_rgba(128,0,0,0.4)] overflow-hidden animate-in zoom-in-95 duration-150 text-left text-white"
+            className="fixed inset-0 h-lvh bg-slate-950/60 backdrop-blur-xs touch-none overscroll-none"
+            aria-hidden="true"
+          />
+          <div
+            className="relative z-10 w-full max-w-sm max-h-[90dvh] overflow-y-auto overflow-x-hidden overscroll-contain rounded-2xl bg-[#800000] border-2 border-amber-400 shadow-[0_20px_50px_rgba(0,0,0,0.6),0_0_30px_rgba(128,0,0,0.4)] animate-in zoom-in-95 duration-150 text-left text-white"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Header */}

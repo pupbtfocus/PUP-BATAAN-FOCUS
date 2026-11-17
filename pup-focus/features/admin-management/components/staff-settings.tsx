@@ -1562,11 +1562,17 @@ export function AdminSettings({
       {/* Profile Image Action Modal */}
       {isProfileImageMenuOpen && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 p-4 backdrop-blur-sm animate-in fade-in duration-200"
+          role="dialog"
+          aria-modal="true"
+          className="fixed inset-0 z-[60] h-dvh overflow-hidden overscroll-none flex items-center justify-center p-3 sm:p-4 animate-in fade-in duration-200"
           onClick={() => setIsProfileImageMenuOpen(false)}
         >
           <div
-            className="w-full max-w-md rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xl overflow-hidden"
+            className="fixed inset-0 h-lvh bg-slate-950/80 backdrop-blur-sm touch-none overscroll-none"
+            aria-hidden="true"
+          />
+          <div
+            className="relative z-10 w-full max-w-md max-h-[90dvh] flex flex-col rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xl overflow-hidden"
             onClick={(event) => event.stopPropagation()}
           >
             <ModalHeader
@@ -1574,23 +1580,24 @@ export function AdminSettings({
               icon={Camera}
               onClose={() => setIsProfileImageMenuOpen(false)}
               closeAriaLabel="Close"
+              className="shrink-0"
             />
-            <div className="p-6 space-y-3">
+            <div className="flex-1 overflow-y-auto overflow-x-hidden overscroll-contain p-4 sm:p-6 space-y-3">
               <button
                 type="button"
                 onClick={() => {
                   setIsProfileImageMenuOpen(false);
                   profileImageInputRef.current?.click();
                 }}
-                className="flex w-full items-center justify-between rounded-xl border border-slate-200 bg-slate-50 hover:bg-slate-100 dark:border-slate-800 dark:bg-slate-950/60 px-4 py-3.5 text-left text-slate-800 dark:text-slate-200 transition hover:border-slate-300 dark:hover:border-slate-700 dark:hover:bg-slate-800/40 cursor-pointer"
+                className="flex w-full items-center justify-between gap-3 rounded-xl border border-slate-200 bg-slate-50 hover:bg-slate-100 dark:border-slate-800 dark:bg-slate-950/60 px-4 py-3.5 text-left text-slate-800 dark:text-slate-200 transition hover:border-slate-300 dark:hover:border-slate-700 dark:hover:bg-slate-800/40 cursor-pointer"
               >
-                <div>
+                <div className="min-w-0">
                   <p className="text-xs font-semibold">Upload Photo</p>
                   <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 font-normal">
                     Select a new image file from your device
                   </p>
                 </div>
-                <AppIcon icon={Camera} size="md" color="muted" />
+                <AppIcon icon={Camera} size="md" color="muted" className="shrink-0" />
               </button>
 
               {displayedProfileImage && (
@@ -1600,15 +1607,15 @@ export function AdminSettings({
                     setIsProfileImageMenuOpen(false);
                     setIsFullImageOpen(true);
                   }}
-                  className="flex w-full items-center justify-between rounded-xl border border-slate-200 bg-slate-50 hover:bg-slate-100 dark:border-slate-800 dark:bg-slate-950/60 px-4 py-3.5 text-left text-slate-800 dark:text-slate-200 transition hover:border-slate-300 dark:hover:border-slate-700 dark:hover:bg-slate-800/40 cursor-pointer"
+                  className="flex w-full items-center justify-between gap-3 rounded-xl border border-slate-200 bg-slate-50 hover:bg-slate-100 dark:border-slate-800 dark:bg-slate-950/60 px-4 py-3.5 text-left text-slate-800 dark:text-slate-200 transition hover:border-slate-300 dark:hover:border-slate-700 dark:hover:bg-slate-800/40 cursor-pointer"
                 >
-                  <div>
+                  <div className="min-w-0">
                     <p className="text-xs font-semibold">View Full Image</p>
                     <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 font-normal">
                       Preview your current profile picture in full size
                     </p>
                   </div>
-                  <AppIcon icon={Eye} size="md" color="muted" />
+                  <AppIcon icon={Eye} size="md" color="muted" className="shrink-0" />
                 </button>
               )}
 
@@ -1623,15 +1630,15 @@ export function AdminSettings({
                       profileImageInputRef.current.value = "";
                     }
                   }}
-                  className="flex w-full items-center justify-between rounded-xl border border-rose-200 bg-rose-50/50 hover:bg-rose-100/60 dark:border-rose-900/40 dark:bg-rose-950/20 px-4 py-3.5 text-left text-rose-700 dark:text-rose-300 transition cursor-pointer"
+                  className="flex w-full items-center justify-between gap-3 rounded-xl border border-rose-200 bg-rose-50/50 hover:bg-rose-100/60 dark:border-rose-900/40 dark:bg-rose-950/20 px-4 py-3.5 text-left text-rose-700 dark:text-rose-300 transition cursor-pointer"
                 >
-                  <div>
+                  <div className="min-w-0">
                     <p className="text-xs font-semibold">Remove Photo</p>
                     <p className="text-[11px] text-rose-600/80 dark:text-rose-400/80 mt-0.5 font-normal">
                       Remove current photo and restore fallback initials
                     </p>
                   </div>
-                  <AppIcon icon={Trash} size="md" color="danger" />
+                  <AppIcon icon={Trash} size="md" color="danger" className="shrink-0" />
                 </button>
               )}
             </div>
@@ -1642,11 +1649,17 @@ export function AdminSettings({
       {/* Full Image Preview Modal */}
       {isFullImageOpen && displayedProfileImage && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 p-4 backdrop-blur-sm animate-in fade-in duration-200"
+          role="dialog"
+          aria-modal="true"
+          className="fixed inset-0 z-[60] h-dvh overflow-hidden overscroll-none flex items-center justify-center p-3 sm:p-4 animate-in fade-in duration-200"
           onClick={() => setIsFullImageOpen(false)}
         >
           <div
-            className="w-full max-w-lg rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xl overflow-hidden"
+            className="fixed inset-0 h-lvh bg-slate-950/80 backdrop-blur-sm touch-none overscroll-none"
+            aria-hidden="true"
+          />
+          <div
+            className="relative z-10 w-full max-w-lg max-h-[90dvh] flex flex-col rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xl overflow-hidden"
             onClick={(event) => event.stopPropagation()}
           >
             <ModalHeader
@@ -1654,13 +1667,14 @@ export function AdminSettings({
               icon={User}
               onClose={() => setIsFullImageOpen(false)}
               closeAriaLabel="Close"
+              className="shrink-0"
             />
-            <div className="p-6 flex items-center justify-center">
-              <div className="flex items-center justify-center overflow-hidden rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-950 max-h-[60vh]">
+            <div className="p-4 sm:p-6 flex items-center justify-center overflow-y-auto overflow-x-hidden overscroll-contain">
+              <div className="flex items-center justify-center overflow-hidden rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-950 max-h-[60dvh]">
                 <img
                   src={displayedProfileImage}
                   alt={account.fullName || "Administrator"}
-                  className="max-h-[60vh] max-w-full object-contain"
+                  className="max-h-[60dvh] max-w-full object-contain"
                 />
               </div>
             </div>

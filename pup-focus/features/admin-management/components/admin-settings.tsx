@@ -1473,11 +1473,17 @@ export function SuperAdminSettings({
       {/* Profile Image Action Modal */}
       {isProfileImageMenuOpen && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 p-3 sm:p-4 backdrop-blur-sm animate-in fade-in duration-200"
+          role="dialog"
+          aria-modal="true"
+          className="fixed inset-0 z-[60] h-dvh overflow-hidden overscroll-none flex items-center justify-center p-3 sm:p-4 animate-in fade-in duration-200"
           onClick={() => setIsProfileImageMenuOpen(false)}
         >
           <div
-            className="w-full max-w-md max-h-[90dvh] flex flex-col rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xl overflow-hidden"
+            className="fixed inset-0 h-lvh bg-slate-950/80 backdrop-blur-sm touch-none overscroll-none"
+            aria-hidden="true"
+          />
+          <div
+            className="relative z-10 w-full max-w-md max-h-[90dvh] flex flex-col rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xl overflow-hidden"
             onClick={(event) => event.stopPropagation()}
           >
             <ModalHeader
@@ -1487,7 +1493,7 @@ export function SuperAdminSettings({
               closeAriaLabel="Close"
               className="shrink-0"
             />
-            <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-3">
+            <div className="flex-1 overflow-y-auto overflow-x-hidden overscroll-contain p-4 sm:p-6 space-y-3">
               <button
                 type="button"
                 onClick={() => {
@@ -1551,11 +1557,17 @@ export function SuperAdminSettings({
       {/* Full Image Preview Modal */}
       {isFullImageOpen && displayedProfileImage && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 p-3 sm:p-4 backdrop-blur-md animate-in fade-in duration-200"
+          role="dialog"
+          aria-modal="true"
+          className="fixed inset-0 z-[60] h-dvh overflow-hidden overscroll-none flex items-center justify-center p-3 sm:p-4 animate-in fade-in duration-200"
           onClick={() => setIsFullImageOpen(false)}
         >
           <div
-            className="relative max-w-lg w-full max-h-[90dvh] rounded-2xl overflow-hidden bg-slate-950 border border-slate-800 shadow-2xl p-2 flex flex-col items-center"
+            className="fixed inset-0 h-lvh bg-black/85 backdrop-blur-md touch-none overscroll-none"
+            aria-hidden="true"
+          />
+          <div
+            className="relative z-10 max-w-lg w-full max-h-[90dvh] rounded-2xl overflow-y-auto overflow-x-hidden overscroll-contain bg-slate-950 border border-slate-800 shadow-2xl p-2 flex flex-col items-center"
             onClick={(e) => e.stopPropagation()}
           >
             <ModalHeader

@@ -597,8 +597,17 @@ export function UserRegistrationLogsModal({
 
   return (
     <>
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-2.5 sm:p-4 md:p-6 backdrop-blur-sm animate-in fade-in duration-200">
-        <div className="w-full max-w-7xl xl:max-w-[1400px] h-[90dvh] sm:h-auto sm:max-h-[90dvh] flex flex-col rounded-2xl border-2 border-amber-400 dark:border-amber-500/70 bg-white dark:bg-slate-900 shadow-2xl text-slate-900 dark:text-slate-100 overflow-hidden transition-all">
+      <div
+        role="dialog"
+        aria-modal="true"
+        className="fixed inset-0 z-[60] h-dvh overflow-hidden overscroll-none flex items-center justify-center p-2.5 sm:p-4 md:p-6 animate-in fade-in duration-200"
+      >
+        <div
+          className="fixed inset-0 h-lvh bg-black/75 backdrop-blur-sm touch-none overscroll-none"
+          aria-hidden="true"
+          onClick={onClose}
+        />
+        <div className="relative z-10 w-full min-w-0 max-w-7xl xl:max-w-[1400px] h-[90dvh] sm:h-auto sm:max-h-[90dvh] flex flex-col rounded-2xl border-2 border-amber-400 dark:border-amber-500/70 bg-white dark:bg-slate-900 shadow-2xl text-slate-900 dark:text-slate-100 overflow-hidden transition-all">
           {/* Modal Header */}
           <div className="p-4 sm:p-6 pb-3 sm:pb-4 border-b border-slate-200 dark:border-slate-800 shrink-0">
             <ModalHeader
@@ -722,7 +731,7 @@ export function UserRegistrationLogsModal({
           </div>
 
           {/* Main Log Content Area */}
-          <div className="flex-1 overflow-y-auto min-h-[250px] p-3 sm:p-6 pt-3">
+          <div className="flex-1 overflow-y-auto overflow-x-hidden overscroll-contain min-h-[250px] p-3 sm:p-6 pt-3">
             {error && logs.length === 0 ? (
               <div className="py-16 text-center text-xs text-red-500 flex flex-col items-center justify-center gap-2">
                 <AppIcon icon={WarningTriangle} size="md" color="inherit" />
@@ -1056,7 +1065,7 @@ export function UserRegistrationLogsModal({
                 </button>
 
                 {/* Page Number Buttons */}
-                <div className="flex items-center gap-1">
+                <div className="flex flex-wrap items-center justify-center gap-1">
                   {pageNumbers.map((p, idx) =>
                     typeof p === "number" ? (
                       <button
@@ -1108,11 +1117,16 @@ export function UserRegistrationLogsModal({
       {/* ── View Details Modal ── */}
       {selectedLogForDetails ? (
         <div
-          className="fixed inset-0 z-60 flex items-center justify-center bg-black/75 p-3 sm:p-4 backdrop-blur-sm animate-in fade-in duration-150"
+          className="fixed inset-0 z-[70] h-dvh overflow-hidden overscroll-none flex items-center justify-center p-3 sm:p-4 animate-in fade-in duration-150"
           role="dialog"
           aria-modal="true"
         >
-          <div className="w-full max-w-lg rounded-2xl border-2 border-amber-400 dark:border-amber-500/70 bg-white dark:bg-slate-900 shadow-2xl text-slate-900 dark:text-slate-100 max-h-[90vh] overflow-y-auto">
+          <div
+            className="fixed inset-0 h-lvh bg-black/75 backdrop-blur-sm touch-none overscroll-none"
+            aria-hidden="true"
+            onClick={() => setSelectedLogForDetails(null)}
+          />
+          <div className="relative z-10 w-full max-w-lg rounded-2xl border-2 border-amber-400 dark:border-amber-500/70 bg-white dark:bg-slate-900 shadow-2xl text-slate-900 dark:text-slate-100 max-h-[90dvh] overflow-y-auto overflow-x-hidden overscroll-contain">
             {/* Solid Maroon Banner Header */}
             <div className="-mx-0 px-5 py-4 rounded-t-2xl bg-[#780000] text-white border-b border-[#5e0000] flex items-center justify-between shadow-xs">
               <div className="flex items-center gap-3 min-w-0">
@@ -1309,11 +1323,15 @@ export function UserRegistrationLogsModal({
       {/* ── Edit Registration Details Modal ── */}
       {editingLog ? (
         <div
-          className="fixed inset-0 z-70 flex items-center justify-center bg-black/75 p-3 sm:p-4 backdrop-blur-sm animate-in fade-in duration-150"
+          className="fixed inset-0 z-[80] h-dvh overflow-hidden overscroll-none flex items-center justify-center p-3 sm:p-4 animate-in fade-in duration-150"
           role="dialog"
           aria-modal="true"
         >
-          <div className="w-full max-w-xl sm:max-w-2xl rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xl text-slate-900 dark:text-slate-100 overflow-hidden flex flex-col animate-in zoom-in-95 duration-150">
+          <div
+            className="fixed inset-0 h-lvh bg-black/75 backdrop-blur-sm touch-none overscroll-none"
+            aria-hidden="true"
+          />
+          <div className="relative z-10 w-full max-w-xl sm:max-w-2xl max-h-[90dvh] rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xl text-slate-900 dark:text-slate-100 overflow-hidden flex flex-col animate-in zoom-in-95 duration-150">
             <ModalHeader
               icon={EditPencil}
               title="Edit Registration Details"
@@ -1321,7 +1339,7 @@ export function UserRegistrationLogsModal({
               className="rounded-t-2xl shrink-0"
             />
 
-            <div className="p-4 sm:p-6 overflow-y-auto space-y-4">
+            <div className="p-4 sm:p-6 overflow-y-auto overflow-x-hidden overscroll-contain space-y-4">
               <AlertPopup
                 type="error"
                 message={editError}
@@ -1457,11 +1475,15 @@ export function UserRegistrationLogsModal({
       {/* ── Cancel Invite Modal ── */}
       {pendingCancelLog ? (
         <div
-          className="fixed inset-0 z-70 flex items-center justify-center bg-black/75 p-3 sm:p-4 backdrop-blur-sm animate-in fade-in duration-150"
+          className="fixed inset-0 z-[80] h-dvh overflow-hidden overscroll-none flex items-center justify-center p-3 sm:p-4 animate-in fade-in duration-150"
           role="dialog"
           aria-modal="true"
         >
-          <div className="w-full max-w-md rounded-2xl border-2 border-amber-400 dark:border-amber-500/70 bg-white dark:bg-slate-900 p-4 sm:p-6 shadow-2xl text-slate-900 dark:text-slate-100 animate-in zoom-in-95 duration-150">
+          <div
+            className="fixed inset-0 h-lvh bg-black/75 backdrop-blur-sm touch-none overscroll-none"
+            aria-hidden="true"
+          />
+          <div className="relative z-10 w-full max-w-md max-h-[90dvh] overflow-y-auto overflow-x-hidden overscroll-contain rounded-2xl border-2 border-amber-400 dark:border-amber-500/70 bg-white dark:bg-slate-900 p-4 sm:p-6 shadow-2xl text-slate-900 dark:text-slate-100 animate-in zoom-in-95 duration-150">
             <ModalHeader
               icon={Trash}
               title="Cancel Invitation?"
@@ -1543,11 +1565,15 @@ export function UserRegistrationLogsModal({
       {/* ── Resend Invite Confirmation Modal ── */}
       {pendingResendLog ? (
         <div
-          className="fixed inset-0 z-70 flex items-center justify-center bg-black/75 p-3 sm:p-4 backdrop-blur-sm animate-in fade-in duration-150"
+          className="fixed inset-0 z-[80] h-dvh overflow-hidden overscroll-none flex items-center justify-center p-3 sm:p-4 animate-in fade-in duration-150"
           role="dialog"
           aria-modal="true"
         >
-          <div className="w-full max-w-md rounded-2xl border-2 border-amber-400 dark:border-amber-500/70 bg-white dark:bg-slate-900 p-4 sm:p-6 shadow-2xl text-slate-900 dark:text-slate-100 animate-in zoom-in-95 duration-150">
+          <div
+            className="fixed inset-0 h-lvh bg-black/75 backdrop-blur-sm touch-none overscroll-none"
+            aria-hidden="true"
+          />
+          <div className="relative z-10 w-full max-w-md max-h-[90dvh] overflow-y-auto overflow-x-hidden overscroll-contain rounded-2xl border-2 border-amber-400 dark:border-amber-500/70 bg-white dark:bg-slate-900 p-4 sm:p-6 shadow-2xl text-slate-900 dark:text-slate-100 animate-in zoom-in-95 duration-150">
             <ModalHeader
               icon={SendMail}
               title={pendingResendLog.status === "Pending" ? "Resend Invitation?" : "Resend Credentials?"}

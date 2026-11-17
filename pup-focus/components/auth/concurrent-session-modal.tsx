@@ -33,13 +33,17 @@ export function ConcurrentSessionModal({
       aria-modal="true"
       aria-labelledby="concurrent-modal-title"
       aria-describedby="concurrent-modal-desc"
-      className="fixed inset-0 z-[99999] flex items-center justify-center bg-black/75 backdrop-blur-sm p-4 animate-in fade-in duration-150 select-none"
+      className="fixed inset-0 z-[99999] h-dvh overflow-hidden overscroll-none flex items-center justify-center p-3 sm:p-4 animate-in fade-in duration-150 select-none"
       onClick={() => {
         if (onPreviewClose && !isLoggingOut) onPreviewClose();
       }}
     >
       <div
-        className="w-full max-w-md rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-2xl text-slate-900 dark:text-slate-100 animate-in zoom-in-95 duration-150 text-left"
+        className="fixed inset-0 h-lvh bg-black/75 backdrop-blur-sm touch-none overscroll-none"
+        aria-hidden="true"
+      />
+      <div
+        className="relative z-10 w-full max-w-md max-h-[90dvh] overflow-y-auto overflow-x-hidden overscroll-contain rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 sm:p-6 shadow-2xl text-slate-900 dark:text-slate-100 animate-in zoom-in-95 duration-150 text-left"
         onClick={(e) => e.stopPropagation()}
       >
         <ModalHeader
@@ -49,7 +53,7 @@ export function ConcurrentSessionModal({
           subtitle="Single Active Session · 1 device at a time"
           onClose={onPreviewClose}
           closeDisabled={isLoggingOut}
-          className="-mx-6 -mt-6 mb-4 rounded-t-2xl"
+          className="-mx-4 -mt-4 sm:-mx-6 sm:-mt-6 mb-4 rounded-t-2xl"
         />
 
         <div className="space-y-3.5 text-xs">

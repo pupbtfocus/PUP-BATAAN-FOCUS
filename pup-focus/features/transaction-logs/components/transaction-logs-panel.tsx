@@ -151,11 +151,17 @@ function LogDetailModal({
 }) {
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 p-3 sm:p-4 backdrop-blur-sm"
+      role="dialog"
+      aria-modal="true"
+      className="fixed inset-0 z-[60] h-dvh overflow-hidden overscroll-none flex items-center justify-center p-3 sm:p-4"
       onClick={onClose}
     >
       <div
-        className="flex w-full max-w-lg max-h-[90dvh] flex-col overflow-hidden rounded-2xl border border-slate-400 dark:border-slate-800 bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 shadow-2xl"
+        className="fixed inset-0 h-lvh bg-slate-950/80 backdrop-blur-sm touch-none overscroll-none"
+        aria-hidden="true"
+      />
+      <div
+        className="relative z-10 flex w-full max-w-lg max-h-[90dvh] flex-col overflow-hidden rounded-2xl border border-slate-400 dark:border-slate-800 bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="px-4 sm:px-6 py-4 border-b border-slate-300 dark:border-slate-800 shrink-0">
@@ -166,7 +172,7 @@ function LogDetailModal({
             Transaction Log Detail
           </p>
         </div>
-        <div className="flex-1 overflow-y-auto px-4 sm:px-6 py-4 sm:py-5 space-y-3">
+        <div className="flex-1 overflow-y-auto overflow-x-hidden overscroll-contain px-4 sm:px-6 py-4 sm:py-5 space-y-3">
           <div className="rounded-xl border border-slate-300 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 p-3 flex items-center gap-3">
             <AppIcon icon={Hourglass} size="sm" color="muted" />
             <div className="min-w-0">

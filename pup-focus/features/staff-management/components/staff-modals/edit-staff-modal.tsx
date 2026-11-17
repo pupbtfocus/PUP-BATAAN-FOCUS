@@ -439,8 +439,16 @@ export function EditStaffModal({
 
   return (
     <>
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-3 sm:p-4">
-        <div className="w-full max-w-xl max-h-[90dvh] overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-800 bg-white text-slate-900 dark:bg-slate-900 dark:text-slate-100 shadow-2xl flex flex-col">
+      <div
+        role="dialog"
+        aria-modal="true"
+        className="fixed inset-0 z-[60] h-dvh overflow-hidden overscroll-none flex items-center justify-center p-3 sm:p-4"
+      >
+        <div
+          className="fixed inset-0 h-lvh bg-black/60 backdrop-blur-xs touch-none overscroll-none"
+          aria-hidden="true"
+        />
+        <div className="relative z-10 w-full max-w-xl max-h-[90dvh] overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-800 bg-white text-slate-900 dark:bg-slate-900 dark:text-slate-100 shadow-2xl flex flex-col">
           {/* Header */}
           <ModalHeader
             icon={User}
@@ -449,7 +457,7 @@ export function EditStaffModal({
             className="rounded-t-2xl shrink-0"
           />
 
-          <div className="p-4 sm:p-5 space-y-3 overflow-y-auto flex-1">
+          <div className="p-4 sm:p-5 space-y-3 overflow-y-auto overflow-x-hidden overscroll-contain flex-1">
             {nameAlert ? (
               <AlertPopup
                 type="warning"
@@ -921,9 +929,13 @@ export function EditStaffModal({
         <div
           role="dialog"
           aria-modal="true"
-          className="fixed inset-0 z-60 flex items-center justify-center bg-black/75 p-4 backdrop-blur-sm"
+          className="fixed inset-0 z-[70] h-dvh overflow-hidden overscroll-none flex items-center justify-center p-3 sm:p-4"
         >
-          <div className="w-full max-w-md rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-2xl text-slate-900 dark:text-slate-100 space-y-4">
+          <div
+            className="fixed inset-0 h-lvh bg-black/75 backdrop-blur-sm touch-none overscroll-none"
+            aria-hidden="true"
+          />
+          <div className="relative z-10 w-full max-w-md max-h-[90dvh] overflow-y-auto overflow-x-hidden overscroll-contain rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 sm:p-6 shadow-2xl text-slate-900 dark:text-slate-100 space-y-4">
             <h3 className="text-base font-bold text-slate-900 dark:text-slate-100">
               Confirm Staff Update
             </h3>
@@ -959,9 +971,13 @@ export function EditStaffModal({
         <div
           role="dialog"
           aria-modal="true"
-          className="fixed inset-0 z-60 flex items-center justify-center bg-black/75 p-4 backdrop-blur-sm"
+          className="fixed inset-0 z-[70] h-dvh overflow-hidden overscroll-none flex items-center justify-center p-3 sm:p-4"
         >
-          <div className="w-full max-w-md rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-2xl text-slate-900 dark:text-slate-100 space-y-4 text-center">
+          <div
+            className="fixed inset-0 h-lvh bg-black/75 backdrop-blur-sm touch-none overscroll-none"
+            aria-hidden="true"
+          />
+          <div className="relative z-10 w-full max-w-md max-h-[90dvh] overflow-y-auto overflow-x-hidden overscroll-contain rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 sm:p-6 shadow-2xl text-slate-900 dark:text-slate-100 space-y-4 text-center">
             <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-emerald-100 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400">
               <AppIcon icon={CheckCircle} size="lg" color="inherit" />
             </div>

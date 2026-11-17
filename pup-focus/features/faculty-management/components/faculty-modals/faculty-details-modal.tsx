@@ -95,9 +95,13 @@ export function FacultyDetailsModal({
         role="dialog"
         aria-modal="true"
         aria-labelledby="faculty-details-title"
-        className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-3 sm:p-4"
+        className="fixed inset-0 z-[60] h-dvh overflow-hidden overscroll-none flex items-center justify-center p-3 sm:p-4"
       >
-        <div className="relative w-full max-w-2xl max-h-[90dvh] overflow-y-auto rounded-2xl border border-slate-200 dark:border-slate-800 bg-white text-slate-900 dark:bg-slate-900 dark:text-slate-100 shadow-xl">
+        <div
+          className="fixed inset-0 h-lvh bg-black/60 backdrop-blur-xs touch-none overscroll-none"
+          aria-hidden="true"
+        />
+        <div className="relative z-10 w-full max-w-2xl max-h-[90dvh] overflow-y-auto overflow-x-hidden overscroll-contain rounded-2xl border border-slate-200 dark:border-slate-800 bg-white text-slate-900 dark:bg-slate-900 dark:text-slate-100 shadow-xl">
           {/* Header */}
           <ModalHeader
             icon={User}
@@ -280,11 +284,15 @@ export function FacultyDetailsModal({
         <div
           role="dialog"
           aria-modal="true"
-          className="fixed inset-0 z-60 flex items-center justify-center bg-black/75 p-4 backdrop-blur-sm"
+          className="fixed inset-0 z-[70] h-dvh overflow-hidden overscroll-none flex items-center justify-center p-3 sm:p-4"
           onClick={() => setShowPhotoPreview(false)}
         >
           <div
-            className="relative max-w-xs w-full rounded-2xl overflow-hidden bg-white dark:bg-slate-900 shadow-2xl border border-slate-200 dark:border-slate-800"
+            className="fixed inset-0 h-lvh bg-black/75 backdrop-blur-sm touch-none overscroll-none"
+            aria-hidden="true"
+          />
+          <div
+            className="relative z-10 max-w-xs w-full max-h-[90dvh] overflow-y-auto overflow-x-hidden overscroll-contain rounded-2xl bg-white dark:bg-slate-900 shadow-2xl border border-slate-200 dark:border-slate-800"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 px-4 py-3 bg-slate-50 dark:bg-slate-900/50">

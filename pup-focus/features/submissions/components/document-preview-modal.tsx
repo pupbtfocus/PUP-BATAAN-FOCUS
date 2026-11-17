@@ -586,14 +586,18 @@ export function DocumentPreviewModal({
 
   return (
     <div
-      className="fixed inset-0 z-[70] flex items-center justify-center bg-slate-950/75 px-2 sm:px-4 py-2 sm:py-4 backdrop-blur-xs overflow-y-auto"
+      className="fixed inset-0 z-[70] h-dvh overflow-hidden overscroll-none flex items-center justify-center px-2 sm:px-4 py-2 sm:py-4"
       role="dialog"
       aria-modal="true"
       aria-labelledby="document-preview-modal-title"
       onClick={onClose}
     >
       <div
-        className="w-full max-w-[96vw] xl:max-w-7xl h-[88vh] max-h-[calc(100dvh-2rem)] flex flex-col rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xl overflow-hidden my-auto"
+        className="fixed inset-0 h-lvh bg-slate-950/75 backdrop-blur-xs touch-none overscroll-none"
+        aria-hidden="true"
+      />
+      <div
+        className="relative z-10 w-full max-w-[96vw] xl:max-w-7xl h-[88dvh] max-h-[calc(100dvh-2rem)] flex flex-col rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xl overflow-hidden"
         onClick={(event) => event.stopPropagation()}
       >
         {/* Header */}

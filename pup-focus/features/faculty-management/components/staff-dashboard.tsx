@@ -879,12 +879,12 @@ export function AdminFacultyDashboard({
         )}
 
         {/* Scrollable Main Content Area */}
-        <div className="flex min-h-full w-full flex-col">
-          <div className="flex min-h-0 flex-1 flex-col overflow-hidden border-l-0 bg-slate-100 dark:bg-[#0b0f19] shadow-sm transition-colors duration-200">
-            <main className="min-h-0 flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 bg-slate-100 dark:bg-[#0b0f19] text-slate-900 dark:text-slate-100 transition-colors duration-200">
+        <div className="flex min-h-full md:h-full min-w-0 w-full flex-col">
+          <div className="flex md:min-h-0 flex-1 flex-col md:overflow-hidden border-l-0 bg-slate-100 dark:bg-[#0b0f19] shadow-sm transition-colors duration-200">
+            <main className="md:min-h-0 flex-1 md:overflow-y-auto overflow-x-clip p-4 pb-8 sm:p-6 lg:p-8 bg-slate-100 dark:bg-[#0b0f19] text-slate-900 dark:text-slate-100 transition-colors duration-200">
               <div className="max-w-7xl mx-auto w-full">
                 {activeSection === "dashboard" ? (
-                  <article className="space-y-5 p-2 sm:p-4 md:p-5">
+                  <article className="space-y-4 sm:space-y-5">
                     {/* Solid Amber Card Header */}
                     <div className="relative overflow-hidden rounded-2xl border-2 border-amber-500 bg-amber-400 p-5 sm:p-6 shadow-md shadow-amber-500/10 space-y-3 transition-colors mb-6">
                       <div>

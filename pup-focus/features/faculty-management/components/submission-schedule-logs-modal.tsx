@@ -235,7 +235,11 @@ export function SubmissionScheduleLogsModal({
   };
 
   return (
-    <div className="fixed inset-0 z-[70] flex flex-col bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 animate-in fade-in duration-200 overflow-hidden w-screen h-dvh">
+    <div
+      role="dialog"
+      aria-modal="true"
+      className="fixed inset-0 z-[70] flex flex-col bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 animate-in fade-in duration-200 overflow-hidden overscroll-none w-screen h-dvh"
+    >
       <div className="w-full h-full flex flex-col overflow-hidden">
         {/* Modal Header */}
         <ModalHeader
@@ -669,8 +673,17 @@ export function SubmissionScheduleLogsModal({
 
       {/* Uncompressed Full Details Modal */}
       {selectedLogForDetails && (
-        <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/80 p-3 sm:p-4 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="w-full max-w-lg max-h-[90dvh] rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xl overflow-hidden flex flex-col">
+        <div
+          role="dialog"
+          aria-modal="true"
+          className="fixed inset-0 z-[80] h-dvh overflow-hidden overscroll-none flex items-center justify-center p-3 sm:p-4 animate-in fade-in duration-200"
+        >
+          <div
+            className="fixed inset-0 h-lvh bg-black/80 backdrop-blur-sm touch-none overscroll-none"
+            aria-hidden="true"
+            onClick={() => setSelectedLogForDetails(null)}
+          />
+          <div className="relative z-10 w-full max-w-lg max-h-[90dvh] rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xl overflow-hidden flex flex-col">
             <ModalHeader
               icon={ClockRotateRight}
               title="Schedule Log Details"
@@ -678,7 +691,7 @@ export function SubmissionScheduleLogsModal({
               className="rounded-t-2xl border-b border-slate-200 dark:border-slate-800 px-4 sm:px-6 py-3.5 sm:py-4 shrink-0"
             />
 
-            <div className="p-4 sm:p-6 space-y-4 text-xs overflow-y-auto flex-1">
+            <div className="p-4 sm:p-6 space-y-4 text-xs overflow-y-auto overflow-x-hidden overscroll-contain flex-1">
               {/* Event & Status */}
               <div className="flex flex-wrap items-center justify-between gap-2 p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60">
                 <div>

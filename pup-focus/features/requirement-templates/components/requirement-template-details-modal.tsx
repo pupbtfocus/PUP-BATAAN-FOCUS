@@ -34,18 +34,23 @@ export function RequirementTemplateDetailsModal({
       role="dialog"
       aria-modal="true"
       aria-labelledby="requirement-details-title"
-      className="fixed inset-0 z-50 overflow-y-auto bg-slate-950/80 p-3 sm:p-4 flex min-h-full items-center justify-center backdrop-blur-sm animate-in fade-in duration-200"
+      className="fixed inset-0 z-[60] h-dvh overflow-hidden overscroll-none flex items-center justify-center p-3 sm:p-4 animate-in fade-in duration-200"
     >
-      <div className="relative w-full max-w-2xl max-h-[90dvh] flex flex-col rounded-2xl bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-800 shadow-2xl overflow-hidden my-auto animate-in zoom-in-95 duration-200">
+      <div
+        className="fixed inset-0 h-lvh bg-slate-950/80 backdrop-blur-sm touch-none overscroll-none"
+        aria-hidden="true"
+      />
+      <div className="relative z-10 w-full max-w-2xl max-h-[90dvh] flex flex-col rounded-2xl bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-800 shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
         {/* Header */}
         <ModalHeader
           icon={Page}
           title="Requirement Template Details"
           subtitle="Full specification, compliance rules, and submission settings"
+          className="shrink-0"
         />
 
         {/* Scrollable Content Body */}
-        <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4 sm:space-y-5 text-slate-800 dark:text-slate-200">
+        <div className="flex-1 overflow-y-auto overflow-x-hidden overscroll-contain p-4 sm:p-6 space-y-4 sm:space-y-5 text-slate-800 dark:text-slate-200">
           {/* Top Banner Overview Card */}
           <div className="flex items-center gap-3.5 sm:gap-4 rounded-xl border border-slate-200/90 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/40 p-3.5 sm:p-5">
             <div className="p-2.5 sm:p-3 rounded-2xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 shrink-0 flex items-center justify-center">

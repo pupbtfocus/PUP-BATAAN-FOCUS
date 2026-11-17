@@ -4955,17 +4955,23 @@ export function FacultyVerificationDrawer({
       {/* Interactive Request Revision Dialog Modal */}
       {revisionModalData ? (
         <div
-          className="fixed inset-0 z-70 flex items-center justify-center bg-slate-950/80 p-4 backdrop-blur-sm"
+          role="dialog"
+          aria-modal="true"
+          className="fixed inset-0 z-[70] h-dvh overflow-hidden overscroll-none flex items-center justify-center p-3 sm:p-4"
           onClick={() => setRevisionModalData(null)}
         >
           <div
-            className="w-full max-w-lg rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-2xl space-y-5"
+            className="fixed inset-0 h-lvh bg-slate-950/80 backdrop-blur-sm touch-none overscroll-none"
+            aria-hidden="true"
+          />
+          <div
+            className="relative z-10 w-full max-w-lg max-h-[90dvh] overflow-y-auto overflow-x-hidden overscroll-contain rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 sm:p-6 shadow-2xl space-y-5"
             onClick={(e) => e.stopPropagation()}
           >
             <ModalHeader
               title="Request Requirement Revision"
               subtitle={`${revisionModalData.reqLabel} • ${faculty.fullName}`}
-              className="-mx-6 -mt-6 mb-4 rounded-t-3xl"
+              className="-mx-4 -mt-4 sm:-mx-6 sm:-mt-6 mb-4 rounded-t-3xl"
             />
 
             <div className="space-y-3">
@@ -4996,7 +5002,7 @@ export function FacultyVerificationDrawer({
                         className="fixed inset-0 z-10"
                         onClick={() => setIsPresetDropdownOpen(false)}
                       />
-                      <div className="absolute left-0 right-0 top-full mt-1.5 z-20 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xl overflow-hidden py-1 max-h-56 overflow-y-auto">
+                      <div className="absolute left-0 right-0 top-full mt-1.5 z-20 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xl overflow-hidden py-1 max-h-56 overflow-y-auto overscroll-contain">
                         {REVISION_PRESETS.map((preset) => {
                           const isAlreadyAdded =
                             revisionInputText.includes(preset);
@@ -5091,18 +5097,24 @@ export function FacultyVerificationDrawer({
       {/* Interactive Validate Requirement Dialog Modal */}
       {validateModalData ? (
         <div
-          className="fixed inset-0 z-60 flex items-center justify-center bg-slate-950/80 p-4 backdrop-blur-sm"
+          role="dialog"
+          aria-modal="true"
+          className="fixed inset-0 z-[70] h-dvh overflow-hidden overscroll-none flex items-center justify-center p-3 sm:p-4"
           onClick={() => setValidateModalData(null)}
         >
           <div
-            className="w-full max-w-lg rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-2xl space-y-5"
+            className="fixed inset-0 h-lvh bg-slate-950/80 backdrop-blur-sm touch-none overscroll-none"
+            aria-hidden="true"
+          />
+          <div
+            className="relative z-10 w-full max-w-lg max-h-[90dvh] overflow-y-auto overflow-x-hidden overscroll-contain rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 sm:p-6 shadow-2xl space-y-5"
             onClick={(e) => e.stopPropagation()}
           >
             <ModalHeader
               icon={CheckCircle}
               title="Validate Requirement"
               subtitle={`${validateModalData.reqLabel} • ${faculty.fullName}`}
-              className="-mx-6 -mt-6 mb-4 rounded-t-3xl"
+              className="-mx-4 -mt-4 sm:-mx-6 sm:-mt-6 mb-4 rounded-t-3xl"
             />
 
             <div className="space-y-3">
@@ -5249,17 +5261,23 @@ export function FacultyVerificationDrawer({
       {/* Notice Pop-up Modal */}
       {noticeModalData ? (
         <div
-          className="fixed inset-0 z-70 flex items-center justify-center bg-slate-950/80 p-4 backdrop-blur-sm"
+          role="dialog"
+          aria-modal="true"
+          className="fixed inset-0 z-[70] h-dvh overflow-hidden overscroll-none flex items-center justify-center p-3 sm:p-4"
           onClick={() => setNoticeModalData(null)}
         >
           <div
-            className="w-full max-w-md rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-2xl"
+            className="fixed inset-0 h-lvh bg-slate-950/80 backdrop-blur-sm touch-none overscroll-none"
+            aria-hidden="true"
+          />
+          <div
+            className="relative z-10 w-full max-w-md max-h-[90dvh] overflow-y-auto overflow-x-hidden overscroll-contain rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 sm:p-6 shadow-2xl"
             onClick={(e) => e.stopPropagation()}
           >
             <ModalHeader
               icon={InfoCircle}
               title={noticeModalData.title}
-              className="-mx-6 -mt-6 mb-4 rounded-t-3xl"
+              className="-mx-4 -mt-4 sm:-mx-6 sm:-mt-6 mb-4 rounded-t-3xl"
             />
 
             <div className="mb-5">
@@ -5284,7 +5302,9 @@ export function FacultyVerificationDrawer({
       {/* Validate All Pending Confirmation Pop-up Modal */}
       {isValidateModalOpen ? (
         <div
-          className="fixed inset-0 z-70 flex items-center justify-center bg-slate-950/80 p-4 backdrop-blur-sm"
+          role="dialog"
+          aria-modal="true"
+          className="fixed inset-0 z-[70] h-dvh overflow-hidden overscroll-none flex items-center justify-center p-3 sm:p-4"
           onClick={() => {
             if (!isValidatingAll) {
               setIsValidateModalOpen(false);
@@ -5293,14 +5313,18 @@ export function FacultyVerificationDrawer({
           }}
         >
           <div
-            className="w-full max-w-md rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-2xl"
+            className="fixed inset-0 h-lvh bg-slate-950/80 backdrop-blur-sm touch-none overscroll-none"
+            aria-hidden="true"
+          />
+          <div
+            className="relative z-10 w-full max-w-md max-h-[90dvh] overflow-y-auto overflow-x-hidden overscroll-contain rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 sm:p-6 shadow-2xl"
             onClick={(e) => e.stopPropagation()}
           >
             <ModalHeader
               icon={CheckCircle}
               title="Confirm Bulk Validation"
               subtitle={`Validate all ${pendingSubmissionsCount} pending requirements for ${faculty.fullName}`}
-              className="-mx-6 -mt-6 mb-4 rounded-t-3xl"
+              className="-mx-4 -mt-4 sm:-mx-6 sm:-mt-6 mb-4 rounded-t-3xl"
             />
 
             <div className="space-y-4 mb-5">
@@ -5472,7 +5496,9 @@ export function FacultyVerificationDrawer({
       {/* Zipping / Downloading Progress Modal */}
       {zipProgressData ? (
         <div
-          className="fixed inset-0 z-70 flex items-center justify-center bg-slate-950/80 p-4 backdrop-blur-sm"
+          role="dialog"
+          aria-modal="true"
+          className="fixed inset-0 z-[70] h-dvh overflow-hidden overscroll-none flex items-center justify-center p-3 sm:p-4"
           onClick={() => {
             if (zipProgressData.status === "zipping") {
               handleCancelZip();
@@ -5482,7 +5508,11 @@ export function FacultyVerificationDrawer({
           }}
         >
           <div
-            className="w-full max-w-md rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-2xl"
+            className="fixed inset-0 h-lvh bg-slate-950/80 backdrop-blur-sm touch-none overscroll-none"
+            aria-hidden="true"
+          />
+          <div
+            className="relative z-10 w-full max-w-md max-h-[90dvh] overflow-y-auto overflow-x-hidden overscroll-contain rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 sm:p-6 shadow-2xl"
             onClick={(e) => e.stopPropagation()}
           >
             <ModalHeader
@@ -5494,7 +5524,7 @@ export function FacultyVerificationDrawer({
                     : WarningTriangle
               }
               title={zipProgressData.title}
-              className="-mx-6 -mt-6 mb-4 rounded-t-3xl"
+              className="-mx-4 -mt-4 sm:-mx-6 sm:-mt-6 mb-4 rounded-t-3xl"
             />
 
             <div className="flex flex-col items-center justify-center py-2 text-center space-y-4">

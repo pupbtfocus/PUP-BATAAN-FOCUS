@@ -5123,14 +5123,18 @@ function FacultySubmissionPanelContent({
                 />
                 {isMounted && isGuideOpen ? (
                   <div
-                    className="fixed inset-0 z-[60] overflow-y-auto overscroll-contain bg-black/60 p-3 sm:p-4 flex min-h-full items-center justify-center backdrop-blur-sm"
+                    className="fixed inset-0 z-[60] h-dvh overflow-hidden overscroll-none flex items-center justify-center p-3 sm:p-4"
                     role="dialog"
                     aria-modal="true"
                     aria-labelledby="submission-guide-title"
                     onClick={() => setIsGuideOpen(false)}
                   >
                     <div
-                      className="w-full max-w-2xl max-h-[90dvh] overflow-y-auto rounded-2xl border border-slate-200 dark:border-slate-700 bg-white text-slate-900 dark:bg-slate-900 dark:text-slate-100 p-4 sm:p-6 shadow-2xl my-auto"
+                      className="fixed inset-0 h-lvh bg-black/60 backdrop-blur-sm touch-none overscroll-none"
+                      aria-hidden="true"
+                    />
+                    <div
+                      className="relative z-10 w-full max-w-2xl max-h-[90dvh] overflow-y-auto overflow-x-hidden overscroll-contain rounded-2xl border border-slate-200 dark:border-slate-700 bg-white text-slate-900 dark:bg-slate-900 dark:text-slate-100 p-4 sm:p-6 shadow-2xl"
                       onClick={(event) => event.stopPropagation()}
                     >
                       <ModalHeader
@@ -7337,14 +7341,18 @@ function FacultySubmissionPanelContent({
             )}
             {isMounted && selectedRequirementForUpload && (
               <div
-                className="fixed inset-0 z-[60] overflow-y-auto overscroll-contain bg-slate-950/80 p-3 sm:p-4 flex min-h-full items-center justify-center backdrop-blur-sm"
+                className="fixed inset-0 z-[60] h-dvh overflow-hidden overscroll-none flex items-center justify-center p-3 sm:p-4"
                 role="dialog"
                 aria-modal="true"
                 aria-labelledby="upload-modal-title"
                 onClick={closeDirectUploadModal}
               >
                 <div
-                  className="w-full max-w-2xl max-h-[90dvh] flex flex-col rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xl overflow-hidden my-auto"
+                  className="fixed inset-0 h-lvh bg-slate-950/80 backdrop-blur-sm touch-none overscroll-none"
+                  aria-hidden="true"
+                />
+                <div
+                  className="relative z-10 w-full max-w-2xl max-h-[90dvh] flex flex-col rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xl overflow-hidden"
                   onClick={(event) => event.stopPropagation()}
                 >
                   {/* Modal Header (Pinned Top) */}
@@ -7664,8 +7672,16 @@ function FacultySubmissionPanelContent({
                   progress={directUploadPercent}
                 />
               ) : isSubmitSuccess ? (
-                <div className="fixed inset-0 z-[70] overflow-y-auto bg-slate-950/80 p-3 sm:p-6 flex min-h-full items-center justify-center backdrop-blur-sm animate-in fade-in duration-200">
-                  <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 sm:p-10 max-w-lg max-h-[90dvh] overflow-y-auto w-full text-center shadow-2xl space-y-6 my-auto animate-in zoom-in-95 duration-200">
+                <div
+                  role="dialog"
+                  aria-modal="true"
+                  className="fixed inset-0 z-[70] h-dvh overflow-hidden overscroll-none flex items-center justify-center p-3 sm:p-6 animate-in fade-in duration-200"
+                >
+                  <div
+                    className="fixed inset-0 h-lvh bg-slate-950/80 backdrop-blur-sm touch-none overscroll-none"
+                    aria-hidden="true"
+                  />
+                  <div className="relative z-10 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 sm:p-10 max-w-lg max-h-[90dvh] overflow-y-auto overflow-x-hidden overscroll-contain w-full text-center shadow-2xl space-y-6 animate-in zoom-in-95 duration-200">
                     <div className="space-y-6 py-2">
                       {/* Large Solid PUP Green Icon Badge */}
                       <div className="mx-auto flex h-20 w-20 sm:h-28 sm:w-28 items-center justify-center rounded-3xl bg-[#0b5336] text-white shadow-xl shadow-[#0b5336]/30 border-2 border-[#08412a] animate-in zoom-in duration-300">
@@ -7709,7 +7725,7 @@ function FacultySubmissionPanelContent({
               ) : null)}
             {isMounted && successModalData.isOpen && (
               <div
-                className="fixed inset-0 z-[70] overflow-y-auto bg-slate-950/80 p-3 sm:p-6 flex min-h-full items-center justify-center backdrop-blur-sm animate-in fade-in duration-200"
+                className="fixed inset-0 z-[70] h-dvh overflow-hidden overscroll-none flex items-center justify-center p-3 sm:p-6 animate-in fade-in duration-200"
                 role="dialog"
                 aria-modal="true"
                 aria-labelledby="success-modal-title"
@@ -7718,7 +7734,11 @@ function FacultySubmissionPanelContent({
                 }
               >
                 <div
-                  className="w-full max-w-lg max-h-[90dvh] overflow-y-auto rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 sm:p-10 text-center shadow-2xl my-auto space-y-6 animate-in zoom-in-95 duration-200"
+                  className="fixed inset-0 h-lvh bg-slate-950/80 backdrop-blur-sm touch-none overscroll-none"
+                  aria-hidden="true"
+                />
+                <div
+                  className="relative z-10 w-full max-w-lg max-h-[90dvh] overflow-y-auto overflow-x-hidden overscroll-contain rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 sm:p-10 text-center shadow-2xl space-y-6 animate-in zoom-in-95 duration-200"
                   onClick={(e) => e.stopPropagation()}
                 >
                   <div className="mx-auto flex h-20 w-20 sm:h-28 sm:w-28 items-center justify-center rounded-3xl bg-[#0b5336] text-white shadow-xl shadow-[#0b5336]/30 border-2 border-[#08412a] animate-in zoom-in duration-300">
@@ -7995,10 +8015,18 @@ function FacultySubmissionPanelContent({
               </article>
             )}
             {isMounted && isSubmitModalOpen && (
-              <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-950/80 p-3 sm:p-4 flex min-h-full items-center justify-center backdrop-blur-sm">
-                <div className="w-full max-w-3xl max-h-[90dvh] flex flex-col overflow-hidden rounded-2xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-2xl my-auto">
+              <div
+                role="dialog"
+                aria-modal="true"
+                className="fixed inset-0 z-[60] h-dvh overflow-hidden overscroll-none flex items-center justify-center p-3 sm:p-4"
+              >
+                <div
+                  className="fixed inset-0 h-lvh bg-slate-950/80 backdrop-blur-sm touch-none overscroll-none"
+                  aria-hidden="true"
+                />
+                <div className="relative z-10 w-full max-w-3xl max-h-[90dvh] flex flex-col overflow-hidden rounded-2xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-2xl">
                   <ModalHeader title="Submit Requirement" icon={Upload} className="shrink-0" />
-                  <div className="flex-1 overflow-y-auto p-4 sm:p-6 min-h-0">
+                  <div className="flex-1 overflow-y-auto overflow-x-hidden overscroll-contain p-4 sm:p-6 min-h-0">
                     {isEffectivelyOpen ? (
                       <form className="space-y-4" onSubmit={handleSubmit}>
                         <div className="grid gap-4 sm:grid-cols-2">
@@ -8197,14 +8225,23 @@ function FacultySubmissionPanelContent({
 
             {/* Extension Details Modal */}
             {showExtensionDetailsModal && pendingExtensionData && (
-              <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-3 sm:p-4 backdrop-blur-sm animate-in fade-in duration-200">
-                <div className="w-full max-w-md max-h-[90dvh] flex flex-col bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl overflow-hidden text-slate-900 dark:text-slate-100">
+              <div
+                role="dialog"
+                aria-modal="true"
+                className="fixed inset-0 z-[60] h-dvh overflow-hidden overscroll-none flex items-center justify-center p-3 sm:p-4 animate-in fade-in duration-200"
+              >
+                <div
+                  className="fixed inset-0 h-lvh bg-black/70 backdrop-blur-sm touch-none overscroll-none"
+                  aria-hidden="true"
+                  onClick={() => setShowExtensionDetailsModal(false)}
+                />
+                <div className="relative z-10 w-full max-w-md max-h-[90dvh] flex flex-col bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl overflow-hidden text-slate-900 dark:text-slate-100">
                   <ModalHeader
                     title="Extension Request Status"
                     icon={Hourglass}
                     className="shrink-0"
                   />
-                  <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4">
+                  <div className="flex-1 overflow-y-auto overflow-x-hidden overscroll-contain p-4 sm:p-6 space-y-4">
                     <div className="space-y-3 text-xs">
                       <div className="flex flex-wrap items-center justify-between gap-2 p-3 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
                         <span className="font-semibold text-xs text-slate-700 dark:text-slate-300">
@@ -8337,7 +8374,7 @@ function FacultySubmissionPanelContent({
             {/* Add Class / Subject Load Modal */}
             {isAddClassModalOpen && (
               <div
-                className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 p-3 sm:p-4 backdrop-blur-sm"
+                className="fixed inset-0 z-[60] h-dvh overflow-hidden overscroll-none flex items-center justify-center p-3 sm:p-4"
                 role="dialog"
                 aria-modal="true"
                 aria-labelledby="add-class-modal-title"
@@ -8349,7 +8386,11 @@ function FacultySubmissionPanelContent({
                 }}
               >
                 <div
-                  className="w-full max-w-lg max-h-[90dvh] flex flex-col rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xl overflow-hidden my-auto"
+                  className="fixed inset-0 h-lvh bg-slate-950/80 backdrop-blur-sm touch-none overscroll-none"
+                  aria-hidden="true"
+                />
+                <div
+                  className="relative z-10 w-full max-w-lg max-h-[90dvh] flex flex-col rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xl overflow-hidden"
                   onClick={(e) => e.stopPropagation()}
                 >
                   <ModalHeader
@@ -8365,7 +8406,7 @@ function FacultySubmissionPanelContent({
 
                   <form
                     onSubmit={handleAddClassSubmit}
-                    className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4"
+                    className="flex-1 overflow-y-auto overflow-x-hidden overscroll-contain p-4 sm:p-6 space-y-4"
                   >
                     {!hasActiveAcademicTerm && (
                       <div className="rounded-xl border-2 border-amber-400 bg-[#780000] p-3.5 flex items-start gap-2.5 text-xs text-white shadow-lg shadow-black/20">
@@ -8521,10 +8562,14 @@ function FacultySubmissionPanelContent({
                 role="dialog"
                 aria-modal="true"
                 aria-labelledby="confirm-create-class-title"
-                className="fixed inset-0 z-[60] flex items-center justify-center p-3 sm:p-4 bg-slate-950/75 backdrop-blur-xs animate-in fade-in duration-200"
+                className="fixed inset-0 z-[70] h-dvh overflow-hidden overscroll-none flex items-center justify-center p-3 sm:p-4 animate-in fade-in duration-200"
               >
                 <div
-                  className="w-full max-w-md max-h-[90dvh] overflow-y-auto rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xl p-4 sm:p-6 space-y-4 animate-in zoom-in-95 duration-200"
+                  className="fixed inset-0 h-lvh bg-slate-950/75 backdrop-blur-xs touch-none overscroll-none"
+                  aria-hidden="true"
+                />
+                <div
+                  className="relative z-10 w-full max-w-md max-h-[90dvh] overflow-y-auto overflow-x-hidden overscroll-contain rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xl p-4 sm:p-6 space-y-4 animate-in zoom-in-95 duration-200"
                   onClick={(e) => e.stopPropagation()}
                 >
                   <div className="flex items-start gap-3.5">
@@ -8633,7 +8678,7 @@ function FacultySubmissionPanelContent({
             {/* Create Class Success Modal */}
             {isCreateClassSuccessModalOpen && createdClassSuccessData && (
               <div
-                className="fixed inset-0 z-[60] overflow-y-auto bg-slate-950/80 p-3 sm:p-6 flex min-h-full items-center justify-center backdrop-blur-sm animate-in fade-in duration-200"
+                className="fixed inset-0 z-[70] h-dvh overflow-hidden overscroll-none flex items-center justify-center p-3 sm:p-6 animate-in fade-in duration-200"
                 role="dialog"
                 aria-modal="true"
                 aria-labelledby="class-created-success-title"
@@ -8643,7 +8688,11 @@ function FacultySubmissionPanelContent({
                 }}
               >
                 <div
-                  className="w-full max-w-lg max-h-[90dvh] overflow-y-auto rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 sm:p-10 text-center shadow-2xl my-auto space-y-6 animate-in zoom-in-95 duration-200"
+                  className="fixed inset-0 h-lvh bg-slate-950/80 backdrop-blur-sm touch-none overscroll-none"
+                  aria-hidden="true"
+                />
+                <div
+                  className="relative z-10 w-full max-w-lg max-h-[90dvh] overflow-y-auto overflow-x-hidden overscroll-contain rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 sm:p-10 text-center shadow-2xl space-y-6 animate-in zoom-in-95 duration-200"
                   onClick={(e) => e.stopPropagation()}
                 >
                   <div className="mx-auto flex h-20 w-20 sm:h-28 sm:w-28 items-center justify-center rounded-3xl bg-[#0b5336] text-white shadow-xl shadow-[#0b5336]/30 border-2 border-[#08412a] animate-in zoom-in duration-300">
@@ -8700,14 +8749,18 @@ function FacultySubmissionPanelContent({
                 role="dialog"
                 aria-modal="true"
                 aria-labelledby="view-class-modal-title"
-                className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-950/75 backdrop-blur-xs animate-in fade-in duration-200"
+                className="fixed inset-0 z-[60] h-dvh overflow-hidden overscroll-none flex items-center justify-center p-3 sm:p-4 animate-in fade-in duration-200"
                 onClick={() => {
                   setIsViewClassModalOpen(false);
                   setClassToView(null);
                 }}
               >
                 <div
-                  className="w-full max-w-lg max-h-[90dvh] overflow-y-auto rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xl p-4 sm:p-6 space-y-4 animate-in zoom-in-95 duration-200 my-auto"
+                  className="fixed inset-0 h-lvh bg-slate-950/75 backdrop-blur-xs touch-none overscroll-none"
+                  aria-hidden="true"
+                />
+                <div
+                  className="relative z-10 w-full max-w-lg max-h-[90dvh] overflow-y-auto overflow-x-hidden overscroll-contain rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xl p-4 sm:p-6 space-y-4 animate-in zoom-in-95 duration-200"
                   onClick={(e) => e.stopPropagation()}
                 >
                   {/* Header */}
@@ -8845,9 +8898,13 @@ function FacultySubmissionPanelContent({
               <div
                 role="dialog"
                 aria-modal="true"
-                className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-950/70 backdrop-blur-xs animate-in fade-in duration-200"
+                className="fixed inset-0 z-[60] h-dvh overflow-hidden overscroll-none flex items-center justify-center p-3 sm:p-4 animate-in fade-in duration-200"
               >
-                <div className="w-full max-w-lg max-h-[90dvh] overflow-y-auto rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xl p-4 sm:p-6 space-y-5">
+                <div
+                  className="fixed inset-0 h-lvh bg-slate-950/70 backdrop-blur-xs touch-none overscroll-none"
+                  aria-hidden="true"
+                />
+                <div className="relative z-10 w-full max-w-lg max-h-[90dvh] overflow-y-auto overflow-x-hidden overscroll-contain rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xl p-4 sm:p-6 space-y-5">
                   <div className="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-slate-800">
                     <div className="flex items-center gap-3 min-w-0">
                       <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-500/15 text-amber-700 dark:text-amber-400 border border-amber-500/30">
@@ -9022,9 +9079,13 @@ function FacultySubmissionPanelContent({
               <div
                 role="dialog"
                 aria-modal="true"
-                className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-950/70 backdrop-blur-xs animate-in fade-in duration-200"
+                className="fixed inset-0 z-[60] h-dvh overflow-hidden overscroll-none flex items-center justify-center p-3 sm:p-4 animate-in fade-in duration-200"
               >
-                <div className="w-full max-w-md max-h-[90dvh] overflow-y-auto rounded-3xl border border-amber-300 dark:border-amber-700/60 bg-white dark:bg-slate-900 shadow-2xl p-4 sm:p-6 space-y-4">
+                <div
+                  className="fixed inset-0 h-lvh bg-slate-950/70 backdrop-blur-xs touch-none overscroll-none"
+                  aria-hidden="true"
+                />
+                <div className="relative z-10 w-full max-w-md max-h-[90dvh] overflow-y-auto overflow-x-hidden overscroll-contain rounded-3xl border border-amber-300 dark:border-amber-700/60 bg-white dark:bg-slate-900 shadow-2xl p-4 sm:p-6 space-y-4">
                   <div className="flex items-start gap-3.5">
                     <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-amber-500 text-slate-950 shadow-md border-2 border-amber-600">
                       <AppIcon icon={Archive} size="md" color="inherit" />
@@ -9099,9 +9160,13 @@ function FacultySubmissionPanelContent({
               <div
                 role="dialog"
                 aria-modal="true"
-                className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-950/70 backdrop-blur-xs animate-in fade-in duration-200"
+                className="fixed inset-0 z-[60] h-dvh overflow-hidden overscroll-none flex items-center justify-center p-3 sm:p-4 animate-in fade-in duration-200"
               >
-                <div className="w-full max-w-md max-h-[90dvh] overflow-y-auto rounded-3xl border border-rose-200 dark:border-rose-900/60 bg-white dark:bg-slate-900 shadow-2xl p-4 sm:p-6 space-y-4">
+                <div
+                  className="fixed inset-0 h-lvh bg-slate-950/70 backdrop-blur-xs touch-none overscroll-none"
+                  aria-hidden="true"
+                />
+                <div className="relative z-10 w-full max-w-md max-h-[90dvh] overflow-y-auto overflow-x-hidden overscroll-contain rounded-3xl border border-rose-200 dark:border-rose-900/60 bg-white dark:bg-slate-900 shadow-2xl p-4 sm:p-6 space-y-4">
                   <div className="flex items-start gap-3.5">
                     <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-[#780000] text-white shadow-md border-2 border-[#5e0000]">
                       <AppIcon icon={Trash} size="md" color="inherit" />

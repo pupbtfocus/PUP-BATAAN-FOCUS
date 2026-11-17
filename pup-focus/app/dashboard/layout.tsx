@@ -75,12 +75,12 @@ export default function DashboardLayout({
 
       {/* Mobile Navigation Drawer / Sheet */}
       {isMobileMenuOpen && (
-        <div className="fixed inset-0 z-50 md:hidden flex">
+        <div className="fixed inset-0 h-dvh z-[60] md:hidden flex overflow-hidden overscroll-none">
           <div
-            className="fixed inset-0 bg-black/70 backdrop-blur-sm"
+            className="fixed inset-0 h-lvh bg-black/70 backdrop-blur-sm touch-none overscroll-none"
             onClick={() => setIsMobileMenuOpen(false)}
           />
-          <aside className="relative w-72 max-w-[85%] bg-[#800000] text-amber-50 border-r-4 border-amber-500 h-full p-4 flex flex-col z-10 shadow-2xl overflow-y-auto sidebar-scrollbar">
+          <aside className="relative w-72 max-w-[85%] bg-[#800000] text-amber-50 border-r-4 border-amber-500 h-dvh p-4 flex flex-col z-10 shadow-2xl overflow-y-auto overflow-x-hidden overscroll-contain sidebar-scrollbar">
             <div className="flex items-center justify-between pb-3 border-b border-white/10 mb-2">
               <div className="flex items-center gap-2.5 min-w-0 pr-2">
                 <BrandMark size={38} className="shrink-0" />

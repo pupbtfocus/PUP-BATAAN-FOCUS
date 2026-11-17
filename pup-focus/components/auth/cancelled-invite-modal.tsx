@@ -51,13 +51,17 @@ export function CancelledInviteModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-xs p-4 animate-in fade-in duration-200"
+      className="fixed inset-0 z-[70] h-dvh overflow-hidden overscroll-none flex items-center justify-center p-3 sm:p-4 animate-in fade-in duration-200"
       role="dialog"
       aria-modal="true"
       onClick={onClose}
     >
       <div
-        className="relative w-full max-w-[420px] bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-xl overflow-hidden text-slate-900 dark:text-slate-100 transition-all duration-200 animate-in zoom-in-95 cursor-default"
+        className="fixed inset-0 h-lvh bg-slate-900/40 backdrop-blur-xs touch-none overscroll-none"
+        aria-hidden="true"
+      />
+      <div
+        className="relative z-10 w-full max-w-[420px] max-h-[90dvh] overflow-y-auto overflow-x-hidden overscroll-contain bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-xl text-slate-900 dark:text-slate-100 transition-all duration-200 animate-in zoom-in-95 cursor-default"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Email-style Maroon Header Banner (No Logo) */}

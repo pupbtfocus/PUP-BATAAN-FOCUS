@@ -2364,20 +2364,22 @@ export function DevPreviewPanel() {
       {/* FULLSCREEN PASSWORD CHANGE MODAL */}
       {isPasswordModalOpen && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-in fade-in overflow-y-auto"
+          role="dialog"
+          aria-modal="true"
+          className="fixed inset-0 z-[60] h-dvh overflow-hidden overscroll-none flex items-center justify-center p-3 sm:p-4 animate-in fade-in"
           onClick={() => setIsPasswordModalOpen(false)}
         >
           {/* Campus photo background matching the login screen */}
           <div
-            className="absolute inset-0 bg-cover bg-center pointer-events-none"
+            className="fixed inset-0 h-lvh bg-cover bg-center touch-none overscroll-none pointer-events-none"
             style={{ backgroundImage: "url('/images/attachments/IMG_9399.jpeg')" }}
           />
           {/* Overlay with Blur and Gradient matching Login Screen */}
-          <div className="absolute inset-0 z-0 bg-transparent backdrop-blur-[6px] pointer-events-none" />
-          <div className="absolute inset-0 z-0 bg-gradient-to-t from-black/60 via-black/30 to-black/40 pointer-events-none" />
+          <div className="fixed inset-0 h-lvh z-0 bg-transparent backdrop-blur-[6px] touch-none overscroll-none" />
+          <div className="fixed inset-0 h-lvh z-0 bg-gradient-to-t from-black/60 via-black/30 to-black/40 touch-none overscroll-none" />
 
           <div
-            className="relative z-10 w-full max-w-[390px] sm:max-w-md my-auto drop-shadow-2xl"
+            className="relative z-10 w-full max-w-[390px] sm:max-w-md max-h-[90dvh] overflow-y-auto overflow-x-hidden overscroll-contain rounded-2xl drop-shadow-2xl"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl overflow-hidden transition-all">
@@ -2538,8 +2540,16 @@ export function DevPreviewPanel() {
 
       {/* SHOWCASE MODAL 1: EXTENSION LOGS */}
       {activeShowcaseModal === "extension-logs" && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm">
-          <div className="w-full max-w-2xl bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-2xl space-y-4 max-h-[85vh] flex flex-col text-slate-900 dark:text-slate-100">
+        <div
+          role="dialog"
+          aria-modal="true"
+          className="fixed inset-0 z-[60] h-dvh overflow-hidden overscroll-none flex items-center justify-center p-3 sm:p-4"
+        >
+          <div
+            className="fixed inset-0 h-lvh bg-black/70 backdrop-blur-sm touch-none overscroll-none"
+            aria-hidden="true"
+          />
+          <div className="relative z-10 w-full max-w-2xl bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 sm:p-6 shadow-2xl space-y-4 max-h-[90dvh] flex flex-col text-slate-900 dark:text-slate-100">
             <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3">
               <div className="flex items-center gap-3">
                 <div className="p-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700/60 shadow-2xs shrink-0 flex items-center justify-center">
@@ -2557,7 +2567,7 @@ export function DevPreviewPanel() {
               </button>
             </div>
 
-            <div className="overflow-y-auto space-y-3 pr-1 flex-1 text-xs">
+            <div className="overflow-y-auto overflow-x-hidden overscroll-contain space-y-3 pr-1 flex-1 text-xs">
               <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 p-4 space-y-2.5">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
@@ -2606,8 +2616,16 @@ export function DevPreviewPanel() {
 
       {/* SHOWCASE MODAL 2: 10S SAFETY TIMER */}
       {activeShowcaseModal === "close-safety" && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm">
-          <div className="w-full max-w-lg bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-2xl space-y-4 text-slate-900 dark:text-slate-100">
+        <div
+          role="dialog"
+          aria-modal="true"
+          className="fixed inset-0 z-[60] h-dvh overflow-hidden overscroll-none flex items-center justify-center p-3 sm:p-4"
+        >
+          <div
+            className="fixed inset-0 h-lvh bg-black/70 backdrop-blur-sm touch-none overscroll-none"
+            aria-hidden="true"
+          />
+          <div className="relative z-10 w-full max-w-lg max-h-[90dvh] overflow-y-auto overflow-x-hidden overscroll-contain bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 sm:p-6 shadow-2xl space-y-4 text-slate-900 dark:text-slate-100">
             <p className="text-xs uppercase tracking-wider text-rose-700 dark:text-rose-400 font-semibold flex items-center gap-1.5">
               <AppIcon icon={WarningTriangle} size="sm" color="inherit" />
               Destructive Action Preview
@@ -2648,8 +2666,16 @@ export function DevPreviewPanel() {
 
       {/* SHOWCASE MODAL 3: WARNING REQUIREMENTS */}
       {activeShowcaseModal === "warning-requirements" && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-md p-4">
-          <div className="bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 max-w-md w-full text-center shadow-2xl space-y-4 text-slate-900 dark:text-slate-100">
+        <div
+          role="dialog"
+          aria-modal="true"
+          className="fixed inset-0 z-[60] h-dvh overflow-hidden overscroll-none flex items-center justify-center p-3 sm:p-4"
+        >
+          <div
+            className="fixed inset-0 h-lvh bg-black/70 backdrop-blur-md touch-none overscroll-none"
+            aria-hidden="true"
+          />
+          <div className="relative z-10 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-3xl p-4 sm:p-6 max-w-md max-h-[90dvh] overflow-y-auto overflow-x-hidden overscroll-contain w-full text-center shadow-2xl space-y-4 text-slate-900 dark:text-slate-100">
             <div className="w-12 h-12 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700/60 rounded-2xl flex items-center justify-center mx-auto text-slate-700 dark:text-slate-300 shadow-2xs">
               <AppIcon icon={WarningTriangle} size="md" color="default" />
             </div>
@@ -2697,7 +2723,7 @@ export function DevPreviewPanel() {
       {/* SHOWCASE MODAL 5: LOGOUT CONFIRMATION MODAL */}
       {activeShowcaseModal === "logout" && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-xs animate-in fade-in duration-150"
+          className="fixed inset-0 z-[60] h-dvh overflow-hidden overscroll-none flex items-center justify-center p-3 sm:p-4 animate-in fade-in duration-150"
           role="dialog"
           aria-modal="true"
           aria-labelledby="logout-preview-dialog-title"
@@ -2706,7 +2732,11 @@ export function DevPreviewPanel() {
           }}
         >
           <div
-            className="w-full max-w-sm rounded-2xl bg-[#800000] border-2 border-amber-400 shadow-[0_20px_50px_rgba(0,0,0,0.6),0_0_30px_rgba(128,0,0,0.4)] overflow-hidden animate-in zoom-in-95 duration-150 text-left text-white"
+            className="fixed inset-0 h-lvh bg-slate-950/60 backdrop-blur-xs touch-none overscroll-none"
+            aria-hidden="true"
+          />
+          <div
+            className="relative z-10 w-full max-w-sm max-h-[90dvh] overflow-y-auto overflow-x-hidden overscroll-contain rounded-2xl bg-[#800000] border-2 border-amber-400 shadow-[0_20px_50px_rgba(0,0,0,0.6),0_0_30px_rgba(128,0,0,0.4)] animate-in zoom-in-95 duration-150 text-left text-white"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Header */}

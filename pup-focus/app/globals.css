@@ -54,6 +54,59 @@ body {
   background-color: var(--background);
 }
 
+/* Prevent underlying page swipe/scroll & overscroll whitespace whenever any modal overlay is open */
+html:has(
+  .fixed.inset-0[role="dialog"],
+  .fixed.inset-0[role="alertdialog"],
+  .fixed.inset-0 [role="dialog"],
+  .fixed.inset-0 [role="alertdialog"],
+  .fixed.inset-0[class*="backdrop-blur"],
+  .fixed.inset-0[class*="bg-black/"],
+  .fixed.inset-0[class*="bg-slate-950/"]
+) {
+  overflow: hidden !important;
+  overscroll-behavior: none !important;
+}
+
+html:has(
+  .fixed.inset-0[role="dialog"],
+  .fixed.inset-0[role="alertdialog"],
+  .fixed.inset-0 [role="dialog"],
+  .fixed.inset-0 [role="alertdialog"],
+  .fixed.inset-0[class*="backdrop-blur"],
+  .fixed.inset-0[class*="bg-black/"],
+  .fixed.inset-0[class*="bg-slate-950/"]
+) body {
+  overflow: hidden !important;
+  overscroll-behavior: none !important;
+}
+
+.fixed.inset-0:is(
+  [role="dialog"],
+  [role="alertdialog"],
+  :has([role="dialog"]),
+  :has([role="alertdialog"]),
+  [class*="backdrop-blur"],
+  [class*="bg-black/"],
+  [class*="bg-slate-950/"]
+) {
+  overscroll-behavior: none;
+  overflow-x: clip;
+}
+
+.fixed.inset-0:is(
+  [role="dialog"],
+  [role="alertdialog"],
+  :has([role="dialog"]),
+  :has([role="alertdialog"]),
+  [class*="backdrop-blur"],
+  [class*="bg-black/"],
+  [class*="bg-slate-950/"]
+) .overflow-y-auto {
+  overscroll-behavior: contain;
+  overflow-x: hidden;
+}
+
 /* Campus photo backgrounds — scoped to public/auth routes via .campus-bg class */
 body.campus-bg {
   background-color: #5f0000;

@@ -546,8 +546,16 @@ export function EditFacultyModal({
 
   return (
     <>
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-3 sm:p-4">
-        <div className="w-full max-w-xl max-h-[90dvh] overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-800 bg-white text-slate-900 dark:bg-slate-900 dark:text-slate-100 shadow-2xl flex flex-col">
+      <div
+        role="dialog"
+        aria-modal="true"
+        className="fixed inset-0 z-[60] h-dvh overflow-hidden overscroll-none flex items-center justify-center p-3 sm:p-4"
+      >
+        <div
+          className="fixed inset-0 h-lvh bg-black/60 backdrop-blur-xs touch-none overscroll-none"
+          aria-hidden="true"
+        />
+        <div className="relative z-10 w-full max-w-xl max-h-[90dvh] overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-800 bg-white text-slate-900 dark:bg-slate-900 dark:text-slate-100 shadow-2xl flex flex-col">
           <ModalHeader
             icon={User}
             title="Faculty Details"
@@ -555,7 +563,7 @@ export function EditFacultyModal({
             className="rounded-t-2xl shrink-0"
           />
 
-          <div className="p-4 sm:p-5 space-y-3 overflow-y-auto flex-1">
+          <div className="p-4 sm:p-5 space-y-3 overflow-y-auto overflow-x-hidden overscroll-contain flex-1">
             {saveError ? (
               <AlertPopup
                 type="error"
@@ -1083,14 +1091,18 @@ export function EditFacultyModal({
         <div
           role="dialog"
           aria-modal="true"
-          className="fixed inset-0 z-60 flex items-center justify-center bg-black/75 p-4 backdrop-blur-sm animate-in fade-in duration-150"
+          className="fixed inset-0 z-[70] h-dvh overflow-hidden overscroll-none flex items-center justify-center p-3 sm:p-4 animate-in fade-in duration-150"
         >
-          <div className="w-full max-w-md rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-2xl text-slate-900 dark:text-slate-100 animate-in zoom-in-95 duration-150">
+          <div
+            className="fixed inset-0 h-lvh bg-black/75 backdrop-blur-sm touch-none overscroll-none"
+            aria-hidden="true"
+          />
+          <div className="relative z-10 w-full max-w-md max-h-[90dvh] overflow-y-auto overflow-x-hidden overscroll-contain rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 sm:p-6 shadow-2xl text-slate-900 dark:text-slate-100 animate-in zoom-in-95 duration-150">
             <ModalHeader
               icon={EditPencil}
               title="Save Changes?"
               subtitle="Confirm Faculty Profile Update"
-              className="-mx-6 -mt-6 mb-5 rounded-t-2xl"
+              className="-mx-4 -mt-4 sm:-mx-6 sm:-mt-6 mb-4 sm:mb-5 rounded-t-2xl"
             />
 
             <div className="space-y-4">
@@ -1186,11 +1198,15 @@ export function EditFacultyModal({
         <div
           role="dialog"
           aria-modal="true"
-          className="fixed inset-0 z-60 flex items-center justify-center bg-black/50 dark:bg-black/70 backdrop-blur-xs p-4 animate-in fade-in duration-200"
+          className="fixed inset-0 z-[70] h-dvh overflow-hidden overscroll-none flex items-center justify-center p-3 sm:p-4 animate-in fade-in duration-200"
           onClick={handleCloseSuccess}
         >
           <div
-            className="bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-800/80 shadow-2xl rounded-3xl p-7 max-w-sm w-full mx-4 flex flex-col items-center text-center animate-in fade-in zoom-in-95 duration-200"
+            className="fixed inset-0 h-lvh bg-black/50 dark:bg-black/70 backdrop-blur-xs touch-none overscroll-none"
+            aria-hidden="true"
+          />
+          <div
+            className="relative z-10 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-800/80 shadow-2xl rounded-3xl p-6 sm:p-7 max-w-sm max-h-[90dvh] overflow-y-auto overscroll-contain w-full mx-2 sm:mx-4 flex flex-col items-center text-center animate-in fade-in zoom-in-95 duration-200"
             onClick={(event) => event.stopPropagation()}
           >
             <div className="relative mb-5 flex items-center justify-center">

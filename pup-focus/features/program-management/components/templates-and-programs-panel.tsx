@@ -774,9 +774,13 @@ export function TemplatesAndProgramsPanel({
 
       {/* ─── ADD / EDIT PROGRAM MODAL ─────────────────────────────── */}
       {(isAddProgramOpen || editingProgram) && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-950/60 backdrop-blur-xs animate-in fade-in duration-200">
+        <div className="fixed inset-0 z-[60] h-dvh overflow-hidden overscroll-none flex items-center justify-center p-3 sm:p-4 animate-in fade-in duration-200">
           <div
-            className="w-full max-w-lg max-h-[90dvh] rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-2xl overflow-hidden flex flex-col animate-in zoom-in-95 duration-200"
+            className="fixed inset-0 h-lvh bg-slate-950/60 backdrop-blur-xs touch-none overscroll-none"
+            aria-hidden="true"
+          />
+          <div
+            className="relative z-10 w-full max-w-lg max-h-[90dvh] rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-2xl overflow-hidden flex flex-col animate-in zoom-in-95 duration-200"
             role="dialog"
             aria-modal="true"
           >
@@ -786,7 +790,7 @@ export function TemplatesAndProgramsPanel({
               subtitle="PUP Bataan Campus degree program registry"
               className="shrink-0"
             />
-            <form onSubmit={handleSubmitProgram} className="p-4 sm:p-6 space-y-4 overflow-y-auto">
+            <form onSubmit={handleSubmitProgram} className="p-4 sm:p-6 space-y-4 overflow-y-auto overflow-x-hidden overscroll-contain">
               <div>
                 <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1">
                   Program Code <span className="text-rose-500">*</span>
@@ -843,8 +847,12 @@ export function TemplatesAndProgramsPanel({
 
       {/* ─── HIDE/UNHIDE PROGRAM CONFIRMATION MODAL ───────────────── */}
       {hideTarget && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-3 sm:p-4 backdrop-blur-sm">
-          <div className="w-full max-w-md max-h-[90dvh] rounded-2xl border border-slate-300 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 sm:p-6 shadow-2xl text-slate-900 dark:text-slate-100 overflow-y-auto" role="dialog" aria-modal="true">
+        <div className="fixed inset-0 z-[60] h-dvh overflow-hidden overscroll-none flex items-center justify-center p-3 sm:p-4">
+          <div
+            className="fixed inset-0 h-lvh bg-black/75 backdrop-blur-sm touch-none overscroll-none"
+            aria-hidden="true"
+          />
+          <div className="relative z-10 w-full max-w-md max-h-[90dvh] rounded-2xl border border-slate-300 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 sm:p-6 shadow-2xl text-slate-900 dark:text-slate-100 overflow-y-auto overflow-x-hidden overscroll-contain" role="dialog" aria-modal="true">
             <ModalHeader
               icon={hideTarget.is_hidden ? Eye : EyeClosed}
               title={hideTarget.is_hidden ? "Unhide Academic Program" : "Hide Academic Program"}
@@ -887,9 +895,13 @@ export function TemplatesAndProgramsPanel({
 
       {/* ─── DELETE PROGRAM CONFIRMATION MODAL ────────────────────── */}
       {deleteTarget && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-3 sm:p-4 backdrop-blur-sm">
+        <div className="fixed inset-0 z-[60] h-dvh overflow-hidden overscroll-none flex items-center justify-center p-3 sm:p-4">
           <div
-            className="w-full max-w-md max-h-[90dvh] rounded-2xl border border-slate-300 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 sm:p-6 shadow-2xl text-slate-900 dark:text-slate-100 overflow-y-auto"
+            className="fixed inset-0 h-lvh bg-black/75 backdrop-blur-sm touch-none overscroll-none"
+            aria-hidden="true"
+          />
+          <div
+            className="relative z-10 w-full max-w-md max-h-[90dvh] rounded-2xl border border-slate-300 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 sm:p-6 shadow-2xl text-slate-900 dark:text-slate-100 overflow-y-auto overflow-x-hidden overscroll-contain"
             role="dialog"
             aria-modal="true"
           >

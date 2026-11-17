@@ -44,13 +44,19 @@ export function AuthFeedbackModal({ modal, onClose }: AuthFeedbackModalProps) {
 
   return (
     <div
-      className={`fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200 ${
+      role="dialog"
+      aria-modal="true"
+      className={`fixed inset-0 z-[70] h-dvh overflow-hidden overscroll-none flex items-center justify-center p-3 sm:p-4 animate-in fade-in duration-200 ${
         isSuccess ? "cursor-default" : "cursor-pointer"
       }`}
       onClick={isSuccess ? undefined : onClose}
     >
       <div
-        className="relative w-full max-w-[360px] overflow-hidden rounded-2xl border-2 border-amber-400 bg-[#800000] p-6 sm:p-7 text-white shadow-2xl transition-all duration-300 animate-in zoom-in-95 cursor-default text-center"
+        className="fixed inset-0 h-lvh bg-black/60 backdrop-blur-sm touch-none overscroll-none"
+        aria-hidden="true"
+      />
+      <div
+        className="relative z-10 w-full max-w-[360px] max-h-[90dvh] overflow-y-auto overflow-x-hidden overscroll-contain rounded-2xl border-2 border-amber-400 bg-[#800000] p-6 sm:p-7 text-white shadow-2xl transition-all duration-300 animate-in zoom-in-95 cursor-default text-center"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex flex-col items-center justify-center text-center">

@@ -2625,8 +2625,16 @@ export function SuperAdminDashboard({
       </div>
 
       {createAdminModalOpen ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-3 sm:p-4 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="w-full max-w-3xl sm:max-w-4xl rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xl text-slate-900 dark:text-slate-100 max-h-[90dvh] flex flex-col overflow-hidden">
+        <div
+          role="dialog"
+          aria-modal="true"
+          className="fixed inset-0 z-[60] h-dvh overflow-hidden overscroll-none flex items-center justify-center p-3 sm:p-4 animate-in fade-in duration-200"
+        >
+          <div
+            className="fixed inset-0 h-lvh bg-black/75 backdrop-blur-sm touch-none overscroll-none"
+            aria-hidden="true"
+          />
+          <div className="relative z-10 w-full max-w-3xl sm:max-w-4xl rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xl text-slate-900 dark:text-slate-100 max-h-[90dvh] flex flex-col overflow-hidden">
             <ModalHeader
               title="Add Staff Account"
               subtitle="Create credentials and assign staff privileges"
@@ -2637,7 +2645,7 @@ export function SuperAdminDashboard({
             />
             <div className="flex flex-1 flex-col overflow-hidden min-h-0 w-full">
               <form className="flex flex-1 flex-col overflow-hidden min-h-0 w-full" onSubmit={onSubmit}>
-                <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4 sm:space-y-5">
+                <div className="flex-1 overflow-y-auto overflow-x-hidden overscroll-contain p-4 sm:p-6 space-y-4 sm:space-y-5">
                   <AlertPopup
                     type="warning"
                     message={adminNameAlert}

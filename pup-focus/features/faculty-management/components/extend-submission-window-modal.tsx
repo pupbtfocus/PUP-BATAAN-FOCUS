@@ -325,8 +325,16 @@ export function ExtendSubmissionWindowModal({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="w-full max-w-xl bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-2xl space-y-5 max-h-[92vh] overflow-y-auto text-slate-900 dark:text-slate-100">
+    <div
+      role="dialog"
+      aria-modal="true"
+      className="fixed inset-0 z-[60] h-dvh overflow-hidden overscroll-none flex items-center justify-center p-3 sm:p-4 animate-in fade-in duration-200"
+    >
+      <div
+        className="fixed inset-0 h-lvh bg-black/70 backdrop-blur-sm touch-none overscroll-none"
+        aria-hidden="true"
+      />
+      <div className="relative z-10 w-full max-w-xl bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 sm:p-6 shadow-2xl space-y-5 max-h-[90dvh] overflow-y-auto overflow-x-hidden overscroll-contain text-slate-900 dark:text-slate-100">
         {/* Header */}
         <ModalHeader
           icon={Hourglass}

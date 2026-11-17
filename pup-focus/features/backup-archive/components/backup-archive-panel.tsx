@@ -2080,8 +2080,16 @@ export function BackupArchivePanel({
             snap?.faculty_roster || snap?.faculty_list || null;
 
           return (
-            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-3 sm:p-4 backdrop-blur-sm animate-in fade-in">
-              <div className="w-full max-w-2xl rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xl text-slate-900 dark:text-slate-100 max-h-[90dvh] overflow-hidden flex flex-col">
+            <div
+              role="dialog"
+              aria-modal="true"
+              className="fixed inset-0 z-[60] h-dvh overflow-hidden overscroll-none flex items-center justify-center p-3 sm:p-4 animate-in fade-in"
+            >
+              <div
+                className="fixed inset-0 h-lvh bg-black/75 backdrop-blur-sm touch-none overscroll-none"
+                aria-hidden="true"
+              />
+              <div className="relative z-10 w-full max-w-2xl rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xl text-slate-900 dark:text-slate-100 max-h-[90dvh] overflow-hidden flex flex-col">
                 <ModalHeader
                   title={
                     inspectedBackup.metadata?.zip_name ||
@@ -2091,7 +2099,7 @@ export function BackupArchivePanel({
                   }
                   icon={Archive}
                 />
-                <div className="p-4 sm:p-5 overflow-y-auto flex-1 space-y-4 text-xs">
+                <div className="p-4 sm:p-5 overflow-y-auto overflow-x-hidden overscroll-contain flex-1 space-y-4 text-xs">
                   {/* Meta stats bar */}
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 p-3.5 rounded-xl bg-slate-50 border border-slate-200 dark:bg-slate-950/60 dark:border-slate-800">
                     <div>
@@ -2341,10 +2349,18 @@ export function BackupArchivePanel({
 
       {/* Term Vault Inspection Modal */}
       {inspectedTerm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-3 sm:p-4 backdrop-blur-sm">
-          <div className="w-full max-w-md max-h-[90dvh] rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xl text-slate-900 dark:text-slate-100 overflow-hidden flex flex-col">
+        <div
+          role="dialog"
+          aria-modal="true"
+          className="fixed inset-0 z-[60] h-dvh overflow-hidden overscroll-none flex items-center justify-center p-3 sm:p-4"
+        >
+          <div
+            className="fixed inset-0 h-lvh bg-black/75 backdrop-blur-sm touch-none overscroll-none"
+            aria-hidden="true"
+          />
+          <div className="relative z-10 w-full max-w-md max-h-[90dvh] rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xl text-slate-900 dark:text-slate-100 overflow-hidden flex flex-col">
             <ModalHeader title="Archived Term Details" icon={Archive} />
-            <div className="p-4 sm:p-6 space-y-3 text-xs overflow-y-auto flex-1">
+            <div className="p-4 sm:p-6 space-y-3 text-xs overflow-y-auto overflow-x-hidden overscroll-contain flex-1">
               <div className="p-3.5 sm:p-4 rounded-lg bg-slate-50 border border-slate-200/80 dark:bg-slate-900/50 dark:border-slate-800 space-y-2">
                 <div className="flex justify-between gap-3">
                   <span className="text-slate-500 dark:text-slate-400">
@@ -2442,8 +2458,16 @@ export function BackupArchivePanel({
 
       {/* Delete Backup Confirmation Modal */}
       {backupToDelete && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-3 sm:p-4 backdrop-blur-sm">
-          <div className="w-full max-w-md max-h-[90dvh] rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 sm:p-6 shadow-2xl text-slate-900 dark:text-slate-100 overflow-y-auto">
+        <div
+          role="dialog"
+          aria-modal="true"
+          className="fixed inset-0 z-[60] h-dvh overflow-hidden overscroll-none flex items-center justify-center p-3 sm:p-4"
+        >
+          <div
+            className="fixed inset-0 h-lvh bg-black/75 backdrop-blur-sm touch-none overscroll-none"
+            aria-hidden="true"
+          />
+          <div className="relative z-10 w-full max-w-md max-h-[90dvh] rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 sm:p-6 shadow-2xl text-slate-900 dark:text-slate-100 overflow-y-auto overflow-x-hidden overscroll-contain">
             {/* Modal Header */}
             <ModalHeader
               icon={Trash}
@@ -2511,8 +2535,16 @@ export function BackupArchivePanel({
 
       {/* Clean Semester Storage Modal */}
       {cleanTermTarget && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-3 sm:p-4 backdrop-blur-sm">
-          <div className="w-full max-w-lg max-h-[90dvh] rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 sm:p-6 shadow-2xl text-slate-900 dark:text-slate-100 overflow-y-auto">
+        <div
+          role="dialog"
+          aria-modal="true"
+          className="fixed inset-0 z-[60] h-dvh overflow-hidden overscroll-none flex items-center justify-center p-3 sm:p-4"
+        >
+          <div
+            className="fixed inset-0 h-lvh bg-black/75 backdrop-blur-sm touch-none overscroll-none"
+            aria-hidden="true"
+          />
+          <div className="relative z-10 w-full max-w-lg max-h-[90dvh] rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 sm:p-6 shadow-2xl text-slate-900 dark:text-slate-100 overflow-y-auto overflow-x-hidden overscroll-contain">
             <ModalHeader
               icon={Trash}
               title={`Delete Semester Files & Logs · A.Y. ${cleanTermTarget.academic_year}`}

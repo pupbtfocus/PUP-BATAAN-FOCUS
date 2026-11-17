@@ -739,8 +739,12 @@ export function RequirementTemplatesPanel({
 
       {/* ─── HIDE/UNHIDE REQUIREMENT CONFIRMATION MODAL ───────────────── */}
       {hideTarget && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-3 sm:p-4 backdrop-blur-sm">
-          <div className="w-full max-w-md max-h-[90dvh] rounded-2xl border border-slate-300 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 sm:p-6 shadow-2xl text-slate-900 dark:text-slate-100 overflow-y-auto" role="dialog" aria-modal="true">
+        <div className="fixed inset-0 z-[60] h-dvh overflow-hidden overscroll-none flex items-center justify-center p-3 sm:p-4">
+          <div
+            className="fixed inset-0 h-lvh bg-black/75 backdrop-blur-sm touch-none overscroll-none"
+            aria-hidden="true"
+          />
+          <div className="relative z-10 w-full max-w-md max-h-[90dvh] rounded-2xl border border-slate-300 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 sm:p-6 shadow-2xl text-slate-900 dark:text-slate-100 overflow-y-auto overflow-x-hidden overscroll-contain" role="dialog" aria-modal="true">
             <ModalHeader
               icon={!hideTarget.is_active ? Eye : EyeClosed}
               title={!hideTarget.is_active ? "Unhide Requirement Template" : "Hide Requirement Template"}
@@ -784,8 +788,16 @@ export function RequirementTemplatesPanel({
 
       {/* Delete Confirmation Modal with 10-Second Safety Timer */}
       {templateToDelete && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-3 sm:p-4 backdrop-blur-sm">
-          <div className="w-full max-w-md max-h-[90dvh] rounded-2xl border border-slate-300 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 sm:p-6 shadow-2xl text-slate-900 dark:text-slate-100 overflow-y-auto">
+        <div
+          role="dialog"
+          aria-modal="true"
+          className="fixed inset-0 z-[60] h-dvh overflow-hidden overscroll-none flex items-center justify-center p-3 sm:p-4"
+        >
+          <div
+            className="fixed inset-0 h-lvh bg-black/75 backdrop-blur-sm touch-none overscroll-none"
+            aria-hidden="true"
+          />
+          <div className="relative z-10 w-full max-w-md max-h-[90dvh] rounded-2xl border border-slate-300 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 sm:p-6 shadow-2xl text-slate-900 dark:text-slate-100 overflow-y-auto overflow-x-hidden overscroll-contain">
             {/* Modal Header */}
             <ModalHeader
               icon={Trash}

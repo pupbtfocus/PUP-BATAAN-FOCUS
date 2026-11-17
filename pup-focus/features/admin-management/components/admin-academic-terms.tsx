@@ -1235,14 +1235,22 @@ export function AdminAcademicTerms({
 
       {/* Modal: Create Next Academic Year */}
       {isCreateModalOpen ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-3 sm:px-4 py-4 sm:py-6 backdrop-blur-sm">
-          <div className="w-full max-w-xl max-h-[90dvh] rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 shadow-2xl text-slate-900 dark:text-slate-100 overflow-hidden flex flex-col">
+        <div
+          role="dialog"
+          aria-modal="true"
+          className="fixed inset-0 z-[60] h-dvh overflow-hidden overscroll-none flex items-center justify-center px-3 sm:px-4 py-4 sm:py-6"
+        >
+          <div
+            className="fixed inset-0 h-lvh bg-black/70 backdrop-blur-sm touch-none overscroll-none"
+            aria-hidden="true"
+          />
+          <div className="relative z-10 w-full max-w-xl max-h-[90dvh] rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 shadow-2xl text-slate-900 dark:text-slate-100 overflow-hidden flex flex-col">
             <ModalHeader
               title="Create Next Academic Year"
               subtitle="Automatically generate terms for the upcoming academic cycle."
               icon={Calendar}
             />
-            <div className="p-4 sm:p-6 overflow-y-auto">
+            <div className="p-4 sm:p-6 overflow-y-auto overflow-x-hidden overscroll-contain">
               <div className="rounded-xl border border-slate-200/80 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 p-3.5 sm:p-4">
                 <p className="text-[11px] font-bold uppercase tracking-wider text-amber-700 dark:text-amber-400/90">
                   Next Academic Year
@@ -1339,14 +1347,22 @@ export function AdminAcademicTerms({
 
       {/* Modal: Confirm Set Current with Safety Timed Countdown */}
       {termToSetCurrent ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-3 sm:px-4 py-4 sm:py-6 backdrop-blur-sm">
-          <div className="w-full max-w-md max-h-[90dvh] rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 shadow-2xl text-slate-900 dark:text-slate-100 overflow-hidden flex flex-col">
+        <div
+          role="dialog"
+          aria-modal="true"
+          className="fixed inset-0 z-[60] h-dvh overflow-hidden overscroll-none flex items-center justify-center px-3 sm:px-4 py-4 sm:py-6"
+        >
+          <div
+            className="fixed inset-0 h-lvh bg-black/70 backdrop-blur-sm touch-none overscroll-none"
+            aria-hidden="true"
+          />
+          <div className="relative z-10 w-full max-w-md max-h-[90dvh] rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 shadow-2xl text-slate-900 dark:text-slate-100 overflow-hidden flex flex-col">
             <ModalHeader
               title="Set Current Academic Term"
               subtitle="Update active institutional academic period"
               icon={Calendar}
             />
-            <div className="p-4 sm:p-6 space-y-4 overflow-y-auto">
+            <div className="p-4 sm:p-6 space-y-4 overflow-y-auto overflow-x-hidden overscroll-contain">
               <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
                 Are you sure you want to set{" "}
                 <strong className="text-slate-900 dark:text-slate-100 font-semibold">
@@ -1404,14 +1420,22 @@ export function AdminAcademicTerms({
 
       {/* Modal: Confirm Archive Academic Term with Safety Timed Countdown */}
       {termToArchive ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-3 sm:px-4 py-4 sm:py-6 backdrop-blur-sm">
-          <div className="w-full max-w-md max-h-[90dvh] rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 shadow-2xl text-slate-900 dark:text-slate-100 overflow-hidden flex flex-col">
+        <div
+          role="dialog"
+          aria-modal="true"
+          className="fixed inset-0 z-[60] h-dvh overflow-hidden overscroll-none flex items-center justify-center px-3 sm:px-4 py-4 sm:py-6"
+        >
+          <div
+            className="fixed inset-0 h-lvh bg-black/70 backdrop-blur-sm touch-none overscroll-none"
+            aria-hidden="true"
+          />
+          <div className="relative z-10 w-full max-w-md max-h-[90dvh] rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 shadow-2xl text-slate-900 dark:text-slate-100 overflow-hidden flex flex-col">
             <ModalHeader
               title="Archive Academic Term"
               subtitle="Close and archive completed academic period"
               icon={Archive}
             />
-            <div className="p-4 sm:p-6 space-y-4 overflow-y-auto">
+            <div className="p-4 sm:p-6 space-y-4 overflow-y-auto overflow-x-hidden overscroll-contain">
               <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
                 Are you sure you want to archive{" "}
                 <strong className="text-slate-900 dark:text-slate-100 font-semibold">
@@ -1476,14 +1500,22 @@ export function AdminAcademicTerms({
 
       {/* Modal: Confirm Delete with Safety Timed Countdown */}
       {termToDelete ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-3 sm:px-4 py-4 sm:py-6 backdrop-blur-sm">
-          <div className="w-full max-w-md max-h-[90dvh] rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 shadow-2xl text-slate-900 dark:text-slate-100 overflow-hidden flex flex-col">
+        <div
+          role="dialog"
+          aria-modal="true"
+          className="fixed inset-0 z-[60] h-dvh overflow-hidden overscroll-none flex items-center justify-center px-3 sm:px-4 py-4 sm:py-6"
+        >
+          <div
+            className="fixed inset-0 h-lvh bg-black/70 backdrop-blur-sm touch-none overscroll-none"
+            aria-hidden="true"
+          />
+          <div className="relative z-10 w-full max-w-md max-h-[90dvh] rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 shadow-2xl text-slate-900 dark:text-slate-100 overflow-hidden flex flex-col">
             <ModalHeader
               title="Delete Academic Term"
               subtitle="Permanently remove scheduled academic term"
               icon={WarningTriangle}
             />
-            <div className="p-4 sm:p-6 space-y-4 overflow-y-auto">
+            <div className="p-4 sm:p-6 space-y-4 overflow-y-auto overflow-x-hidden overscroll-contain">
               <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
                 Are you sure you want to permanently delete{" "}
                 <strong className="text-slate-900 dark:text-slate-100 font-semibold">
@@ -1546,15 +1578,23 @@ export function AdminAcademicTerms({
 
       {/* Modal: Backup Required (System Transition Guard) */}
       {warningModalData.isOpen ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-3 sm:px-4 py-4 sm:py-6 backdrop-blur-sm animate-in fade-in">
-          <div className="w-full max-w-xl max-h-[90dvh] rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 shadow-2xl text-slate-900 dark:text-slate-100 overflow-hidden flex flex-col">
+        <div
+          role="dialog"
+          aria-modal="true"
+          className="fixed inset-0 z-[60] h-dvh overflow-hidden overscroll-none flex items-center justify-center px-3 sm:px-4 py-4 sm:py-6 animate-in fade-in"
+        >
+          <div
+            className="fixed inset-0 h-lvh bg-black/70 backdrop-blur-sm touch-none overscroll-none"
+            aria-hidden="true"
+          />
+          <div className="relative z-10 w-full max-w-xl max-h-[90dvh] rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 shadow-2xl text-slate-900 dark:text-slate-100 overflow-hidden flex flex-col">
             <ModalHeader
               title={warningModalData.title || "Semester Backup Required"}
               subtitle="Each semester requires its own backup before changing terms"
               icon={WarningTriangle}
             />
 
-            <div className="p-4 sm:p-6 space-y-4 overflow-y-auto">
+            <div className="p-4 sm:p-6 space-y-4 overflow-y-auto overflow-x-hidden overscroll-contain">
               <div className="space-y-2.5">
                 <p className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
                   {warningModalData.hasPendingReviews
@@ -1737,14 +1777,22 @@ export function AdminAcademicTerms({
 
       {/* Modal: Confirm Backup & Activate Term */}
       {isConfirmBackupOpen ? (
-        <div className="fixed inset-0 z-60 flex items-center justify-center bg-black/70 px-3 sm:px-4 py-4 sm:py-6 backdrop-blur-sm animate-in fade-in">
-          <div className="w-full max-w-md max-h-[90dvh] rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 shadow-2xl text-slate-900 dark:text-slate-100 overflow-hidden flex flex-col">
+        <div
+          role="dialog"
+          aria-modal="true"
+          className="fixed inset-0 z-[70] h-dvh overflow-hidden overscroll-none flex items-center justify-center px-3 sm:px-4 py-4 sm:py-6 animate-in fade-in"
+        >
+          <div
+            className="fixed inset-0 h-lvh bg-black/70 backdrop-blur-sm touch-none overscroll-none"
+            aria-hidden="true"
+          />
+          <div className="relative z-10 w-full max-w-md max-h-[90dvh] rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 shadow-2xl text-slate-900 dark:text-slate-100 overflow-hidden flex flex-col">
             <ModalHeader
               title="Confirm Semester Backup &amp; Activation"
               subtitle="Please confirm before proceeding"
               icon={Archive}
             />
-            <div className="p-4 sm:p-6 space-y-4 overflow-y-auto">
+            <div className="p-4 sm:p-6 space-y-4 overflow-y-auto overflow-x-hidden overscroll-contain">
               <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
                 Are you sure you want to download a backup of{" "}
                 <strong className="text-slate-900 dark:text-slate-100 font-semibold">

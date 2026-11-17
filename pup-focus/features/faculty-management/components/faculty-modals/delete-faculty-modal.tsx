@@ -41,11 +41,15 @@ export function DeleteFacultyModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4 backdrop-blur-sm"
+      className="fixed inset-0 z-[60] h-dvh overflow-hidden overscroll-none flex items-center justify-center p-3 sm:p-4"
       role="dialog"
       aria-modal="true"
     >
-      <div className="w-full max-w-lg rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-2xl text-slate-900 dark:text-slate-100 animate-in fade-in zoom-in-95 duration-150">
+      <div
+        className="fixed inset-0 h-lvh bg-black/75 backdrop-blur-sm touch-none overscroll-none"
+        aria-hidden="true"
+      />
+      <div className="relative z-10 w-full max-w-lg max-h-[90dvh] overflow-y-auto overflow-x-hidden overscroll-contain rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 sm:p-6 shadow-2xl text-slate-900 dark:text-slate-100 animate-in fade-in zoom-in-95 duration-150">
         <ModalHeader
           icon={
             pendingFacultyAction.kind === "delete"
@@ -74,7 +78,7 @@ export function DeleteFacultyModal({
               ? "Clear Failed-Login Lockout"
               : "Confirm Account Deactivation"
           }
-          className="-mx-6 -mt-6 mb-5 rounded-t-2xl"
+          className="-mx-4 -mt-4 sm:-mx-6 sm:-mt-6 mb-4 sm:mb-5 rounded-t-2xl"
         />
 
         <div className="space-y-3">

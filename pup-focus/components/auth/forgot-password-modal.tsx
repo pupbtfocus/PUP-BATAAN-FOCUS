@@ -218,12 +218,16 @@ export function ForgotPasswordModal({
 
       {/* Modal Backdrop */}
       <div
-        className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-3 sm:p-4 backdrop-blur-sm animate-in fade-in duration-200"
-        onClick={(e) => {
-          if (e.target === e.currentTarget) onClose();
-        }}
+        role="dialog"
+        aria-modal="true"
+        className="fixed inset-0 z-[60] h-dvh overflow-hidden overscroll-none flex items-center justify-center p-3 sm:p-4 animate-in fade-in duration-200"
       >
-        <div className="relative w-full max-w-[400px] sm:max-w-[420px] mx-auto animate-in zoom-in-95 duration-200">
+        <div
+          className="fixed inset-0 h-lvh bg-black/75 backdrop-blur-sm touch-none overscroll-none"
+          aria-hidden="true"
+          onClick={onClose}
+        />
+        <div className="relative z-10 w-full max-w-[400px] sm:max-w-[420px] max-h-[90dvh] overflow-y-auto overflow-x-hidden overscroll-contain rounded-2xl mx-auto animate-in zoom-in-95 duration-200">
           {/* Main Card Container */}
           <section className="relative rounded-2xl border border-amber-400/40 bg-[#800000] p-6 sm:p-7 text-[#fff8e7] shadow-2xl">
             {/* Header with Centered Lock Badge */}

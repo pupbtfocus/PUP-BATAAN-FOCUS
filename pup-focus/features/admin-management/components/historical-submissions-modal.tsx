@@ -166,7 +166,11 @@ export function HistoricalSubmissionsModal({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[70] flex h-dvh w-screen flex-col bg-white overflow-hidden dark:bg-slate-900 animate-in fade-in duration-200">
+    <div
+      role="dialog"
+      aria-modal="true"
+      className="fixed inset-0 z-[70] flex h-dvh w-screen flex-col bg-white overflow-hidden overscroll-none dark:bg-slate-900 animate-in fade-in duration-200"
+    >
       <div className="flex h-full w-full flex-col overflow-hidden bg-white dark:bg-slate-900">
         <ModalHeader
           title={
