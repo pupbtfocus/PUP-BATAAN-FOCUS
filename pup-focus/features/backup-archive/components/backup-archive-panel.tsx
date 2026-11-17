@@ -410,9 +410,10 @@ export function BackupArchivePanel({
   const getTermFileAvailability = (
     ay?: string | null,
     sem?: string | null,
-  ): { canDownload: boolean; isCleaned: boolean } => {
+  ): { canDownload: boolean; isCleaned: boolean; canClean: boolean } => {
     const terms = availableTerms.length > 0 ? availableTerms : archivedTerms;
-    if (terms.length === 0) return { canDownload: false, isCleaned: false };
+    if (terms.length === 0)
+      return { canDownload: false, isCleaned: false, canClean: false };
 
     const normAy = (ay || "").trim().toLowerCase();
     const normSem = (sem || "").trim().toLowerCase();
@@ -427,11 +428,13 @@ export function BackupArchivePanel({
       return ayOk && semOk;
     });
 
-    if (matching.length === 0) return { canDownload: false, isCleaned: false };
+    if (matching.length === 0)
+      return { canDownload: false, isCleaned: false, canClean: false };
     const canDownload = matching.some((t) => t.has_downloadable_files === true);
     const isCleaned =
       !canDownload && matching.some((t) => t.is_files_cleaned === true);
-    return { canDownload, isCleaned };
+    const canClean = matching.some((t) => t.has_cleanable_data === true);
+    return { canDownload, isCleaned, canClean };
   };
 
   const selectedTermAvailability = useMemo(
@@ -1221,23 +1224,33 @@ export function BackupArchivePanel({
                 selectedAcademicYear === "all" ||
                 selectedSemester === "all" ||
                 isCleaningTerm ||
-                Boolean(exportingTermKey)
+                Boolean(exportingTermKey) ||
+                !selectedTermAvailability.canClean
               }
               onClick={() =>
                 void openCleanTermModal(selectedAcademicYear, selectedSemester)
               }
-              className="h-10 flex items-center justify-center gap-2 bg-[#780000] hover:bg-[#5e0000] text-white border border-[#5e0000] font-bold rounded-xl text-xs sm:text-sm px-4 transition shadow-xs cursor-pointer active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed shrink-0"
+              className="h-10 flex items-center justify-center gap-2 bg-[#780000] hover:bg-[#5e0000] text-white border border-[#5e0000] font-bold rounded-xl text-xs sm:text-sm px-4 transition shadow-xs cursor-pointer active:scale-[0.98] disabled:bg-slate-200 disabled:text-slate-400 disabled:border-slate-300 dark:disabled:bg-slate-800 dark:disabled:text-slate-500 dark:disabled:border-slate-700 disabled:shadow-none disabled:cursor-not-allowed disabled:hover:bg-slate-200 dark:disabled:hover:bg-slate-800 disabled:active:scale-100 shrink-0"
               title={
                 selectedAcademicYear === "all" || selectedSemester === "all"
                   ? "Select a specific Academic Year & Semester first"
-                  : "Permanently delete uploaded files, notifications, transaction logs & extension requests for this semester (cannot be restored)"
+                  : !selectedTermAvailability.canClean
+                    ? "All files and logs for this semester have already been deleted"
+                    : "Optional: permanently delete uploaded files, notifications, transaction logs & extension requests for this semester if database/storage is getting full"
               }
             >
-              <AppIcon icon={Trash} size="sm" color="white" />
+              <AppIcon icon={Trash} size="sm" color="inherit" />
               <span>Delete Semester Files &amp; Logs</span>
             </button>
           </div>
         </div>
+
+        <p className="text-[11px] text-slate-500 dark:text-slate-400 text-right">
+          <strong className="text-slate-700 dark:text-slate-300">Note:</strong>{" "}
+          Deleting semester files &amp; logs is{" "}
+          <strong className="text-slate-700 dark:text-slate-300">optional</strong>{" "}
+          (only use when storage or database space is getting full). After deleting a semester, it cannot be deleted again unless new files or logs are added.
+        </p>
       </section>
 
       {/* SECTION 2: System Backup History Manager */}
@@ -1708,17 +1721,24 @@ export function BackupArchivePanel({
 
                             <button
                               type="button"
-                              disabled={isCleaningTerm}
+                              disabled={
+                                isCleaningTerm ||
+                                term.has_cleanable_data !== true
+                              }
                               onClick={() =>
                                 void openCleanTermModal(
                                   term.academic_year,
                                   term.semester,
                                 )
                               }
-                              className="p-1.5 rounded-lg bg-red-600 hover:bg-red-700 text-white border border-red-700 transition cursor-pointer shadow-2xs active:scale-[0.98] disabled:opacity-50 shrink-0"
-                              title="Permanently delete semester files, logs, notifications & extension requests (cannot be restored)"
+                              className="p-1.5 rounded-lg bg-red-600 hover:bg-red-700 text-white border border-red-700 transition cursor-pointer shadow-2xs active:scale-[0.98] disabled:bg-slate-200 disabled:text-slate-400 disabled:border-slate-300 dark:disabled:bg-slate-800 dark:disabled:text-slate-500 dark:disabled:border-slate-700 disabled:shadow-none disabled:cursor-not-allowed disabled:hover:bg-slate-200 dark:disabled:hover:bg-slate-800 shrink-0"
+                              title={
+                                term.has_cleanable_data === true
+                                  ? "Optional: permanently delete semester files, logs, notifications & extension requests (cannot be restored)"
+                                  : "All files and logs for this semester have already been deleted"
+                              }
                             >
-                              <AppIcon icon={Trash} size="xs" color="white" />
+                              <AppIcon icon={Trash} size="xs" color="inherit" />
                             </button>
                           </div>
                         </td>
@@ -2181,7 +2201,7 @@ export function BackupArchivePanel({
             <ModalHeader
               icon={Trash}
               title={`Delete Semester Files & Logs · A.Y. ${cleanTermTarget.academic_year}`}
-              subtitle={`${cleanTermTarget.semester} — Permanent cleanup (cannot be restored once deleted)`}
+              subtitle={`${cleanTermTarget.semester} — Optional cleanup if storage/DB is full (cannot be restored once deleted)`}
               className="-mx-6 -mt-6 mb-4 rounded-t-2xl"
             />
 

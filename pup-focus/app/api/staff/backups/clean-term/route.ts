@@ -388,6 +388,7 @@ async function resolveTermScope(
   let txLogTable: "transaction_logs" | "audit_logs" = "transaction_logs";
   let txRows: Array<{
     id: string;
+    action?: string | null;
     entity_id?: string | null;
     metadata?: Record<string, unknown> | null;
     created_at?: string | null;
@@ -395,13 +396,13 @@ async function resolveTermScope(
 
   const txPrimary = await supabase
     .from("transaction_logs")
-    .select("id, entity_id, metadata, created_at");
+    .select("id, action, entity_id, metadata, created_at");
 
   if (txPrimary.error && (txPrimary.error.code === "42P01" || txPrimary.error.message.includes("does not exist"))) {
     txLogTable = "audit_logs";
     const txFallback = await supabase
       .from("audit_logs")
-      .select("id, entity_id, metadata, created_at");
+      .select("id, action, entity_id, metadata, created_at");
     txRows = (txFallback.data ?? []) as typeof txRows;
   } else {
     txRows = (txPrimary.data ?? []) as typeof txRows;
@@ -409,6 +410,7 @@ async function resolveTermScope(
 
   const matchedTxIds: string[] = [];
   for (const row of txRows) {
+    if (row.action === "backup.clean_term") continue;
     const meta = row.metadata ?? {};
     const metaAy = normalizeAcademicYear(String(meta.academic_year ?? ""));
     const metaSem = normalizeSemester(String(meta.semester ?? ""));
@@ -741,6 +743,20 @@ export async function POST(request: NextRequest) {
     const filesToDelete = includeOrphanStorage
       ? [...scope.termStorageFiles, ...scope.orphanedStorageFiles]
       : scope.termStorageFiles;
+
+    if (
+      filesToDelete.length === 0 &&
+      scope.matchedTxIds.length === 0 &&
+      scope.matchedNotifIds.length === 0 &&
+      scope.matchedExtensionIds.length === 0
+    ) {
+      return NextResponse.json(
+        {
+          error: "All files and logs for this semester have already been deleted.",
+        },
+        { status: 400 },
+      );
+    }
 
     const pathsByBucket = new Map<string, string[]>();
     for (const f of filesToDelete) {

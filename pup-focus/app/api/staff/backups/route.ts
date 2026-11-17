@@ -55,13 +55,14 @@ export async function GET(request: NextRequest) {
       semester: string;
       status: string;
       is_archived?: boolean;
+      created_at?: string;
       updated_at?: string;
     }> = [];
 
     try {
       const { data, error } = await supabase
         .from("academic_terms")
-        .select("academic_year, semester, status, is_archived, updated_at")
+        .select("academic_year, semester, status, is_archived, created_at, updated_at")
         .order("created_at", { ascending: false });
 
       if (!error && data) {
@@ -118,22 +119,68 @@ export async function GET(request: NextRequest) {
 
     const assignmentTermMap = new Map<string, { ay: string; sem: string }>();
     const classTermMap = new Map<string, { ay: string; sem: string }>();
+    const submissionTermMap = new Map<string, string>();
     const termsWithActiveFiles = new Set<string>();
     const termsWithCleanedFiles = new Set<string>();
+    const termsWithCleanableLogs = new Set<string>();
     const termSubmissionCounts = new Map<string, number>();
+    let storageHasAnyFiles = false;
 
     try {
-      const [assignRes, classRes, subPrimary] = await Promise.all([
-        supabase
-          .from("faculty_program_assignments")
-          .select("id, academic_year, term"),
-        supabase
-          .from("faculty_classes")
-          .select("id, academic_year, semester"),
-        supabase
-          .from("submissions")
-          .select("id, status, created_at, submitted_at, faculty_assignment_id, class_id, storage_path"),
-      ]);
+      const orderedTermsAsc = [...termsRows].sort((a, b) => {
+        const aMs = a.created_at ? new Date(a.created_at).getTime() : 0;
+        const bMs = b.created_at ? new Date(b.created_at).getTime() : 0;
+        return aMs - bMs;
+      });
+      const isSingleTermSystem = orderedTermsAsc.length <= 1;
+
+      const resolveDateTermKey = (iso?: string | null): string | null => {
+        if (orderedTermsAsc.length === 0) {
+          const inferred = inferTerm(iso);
+          return `${normAy(inferred.ay)}::${normSem(inferred.sem)}`;
+        }
+        if (isSingleTermSystem) {
+          const t = orderedTermsAsc[0];
+          return `${normAy(t.academic_year)}::${normSem(t.semester)}`;
+        }
+        if (!iso) return null;
+        const ms = new Date(iso).getTime();
+        if (Number.isNaN(ms)) return null;
+        for (let i = orderedTermsAsc.length - 1; i >= 0; i--) {
+          const startIso = i > 0 ? orderedTermsAsc[i].created_at : null;
+          const endIso =
+            i < orderedTermsAsc.length - 1
+              ? orderedTermsAsc[i + 1].created_at
+              : null;
+          if (startIso && ms < new Date(startIso).getTime()) continue;
+          if (endIso && ms >= new Date(endIso).getTime()) continue;
+          return `${normAy(orderedTermsAsc[i].academic_year)}::${normSem(orderedTermsAsc[i].semester)}`;
+        }
+        const inferred = inferTerm(iso);
+        return `${normAy(inferred.ay)}::${normSem(inferred.sem)}`;
+      };
+
+      const [assignRes, classRes, subPrimary, txRes, notifRes, extRes] =
+        await Promise.all([
+          supabase
+            .from("faculty_program_assignments")
+            .select("id, academic_year, term"),
+          supabase
+            .from("faculty_classes")
+            .select("id, academic_year, semester"),
+          supabase
+            .from("submissions")
+            .select("id, status, created_at, submitted_at, faculty_assignment_id, class_id, storage_path"),
+          supabase
+            .from("transaction_logs")
+            .select("id, action, entity_id, metadata, created_at"),
+          supabase
+            .from("notifications")
+            .select("id, created_at"),
+          supabase
+            .from("extension_requests")
+            .select("id, academic_year, semester, created_at"),
+        ]);
 
       for (const a of assignRes.data ?? []) {
         if (a.id && a.academic_year) {
@@ -165,7 +212,6 @@ export async function GET(request: NextRequest) {
       }
 
       // Check whether submission Storage buckets actually hold any files
-      let storageHasAnyFiles = false;
       try {
         const { data: buckets } = await supabase.storage.listBuckets();
         const subBuckets = (buckets ?? [])
@@ -188,6 +234,7 @@ export async function GET(request: NextRequest) {
           (sub.class_id && classTermMap.get(sub.class_id)) ||
           inferTerm(sub.submitted_at || sub.created_at);
         const key = `${normAy(term.ay)}::${normSem(term.sem)}`;
+        submissionTermMap.set(sub.id, key);
         termSubmissionCounts.set(key, (termSubmissionCounts.get(key) ?? 0) + 1);
         if (sub.storage_path?.startsWith("__cleaned__") || !storageHasAnyFiles) {
           termsWithCleanedFiles.add(key);
@@ -199,6 +246,64 @@ export async function GET(request: NextRequest) {
             sub.status !== "exempted")
         ) {
           termsWithActiveFiles.add(key);
+        }
+      }
+
+      // Track whether any cleanable logs, notifications, or extension requests remain per term
+      type TxLogCheckRow = {
+        id: string;
+        action?: string | null;
+        entity_id?: string | null;
+        metadata?: Record<string, unknown> | null;
+        created_at?: string | null;
+      };
+      let txRowsForCheck: TxLogCheckRow[] | null = txRes.error
+        ? null
+        : ((txRes.data ?? []) as TxLogCheckRow[]);
+      if (!txRowsForCheck) {
+        const auditFallback = await supabase
+          .from("audit_logs")
+          .select("id, action, entity_id, metadata, created_at");
+        txRowsForCheck = (auditFallback.data ?? []) as TxLogCheckRow[];
+      }
+      for (const row of txRowsForCheck ?? []) {
+        if (row.action === "backup.clean_term") continue;
+        const meta = row.metadata ?? {};
+        const metaAy = meta.academic_year ? normAy(String(meta.academic_year)) : "";
+        const metaSem = meta.semester ? normSem(String(meta.semester)) : "";
+        let key: string | null = null;
+        if (metaAy && metaSem) {
+          key = `${metaAy}::${metaSem}`;
+        } else if (row.entity_id && row.entity_id.includes("::")) {
+          const [eAy, eSem] = row.entity_id.split("::");
+          key = `${normAy(eAy)}::${normSem(eSem)}`;
+        } else if (row.entity_id && submissionTermMap.has(row.entity_id)) {
+          key = submissionTermMap.get(row.entity_id) ?? null;
+        } else if (row.entity_id && classTermMap.has(row.entity_id)) {
+          const c = classTermMap.get(row.entity_id)!;
+          key = `${normAy(c.ay)}::${normSem(c.sem)}`;
+        } else {
+          key = resolveDateTermKey(row.created_at);
+        }
+        if (key) termsWithCleanableLogs.add(key);
+      }
+
+      if (!notifRes.error && Array.isArray(notifRes.data)) {
+        for (const n of notifRes.data) {
+          const key = resolveDateTermKey(n.created_at);
+          if (key) termsWithCleanableLogs.add(key);
+        }
+      }
+
+      if (!extRes.error && Array.isArray(extRes.data)) {
+        for (const r of extRes.data) {
+          const rAy = normAy(r.academic_year);
+          const rSem = normSem(r.semester);
+          const key =
+            rAy && rSem
+              ? `${rAy}::${rSem}`
+              : resolveDateTermKey(r.created_at);
+          if (key) termsWithCleanableLogs.add(key);
         }
       }
     } catch (err) {
@@ -215,6 +320,10 @@ export async function GET(request: NextRequest) {
       const subCount = termSubmissionCounts.get(termKey) ?? 0;
       const hasDownloadableFiles = termsWithActiveFiles.has(termKey);
       const isFilesCleaned = !hasDownloadableFiles && termsWithCleanedFiles.has(termKey);
+      const hasCleanableData =
+        hasDownloadableFiles ||
+        termsWithCleanableLogs.has(termKey) ||
+        (termsRows.length <= 1 && storageHasAnyFiles);
 
       const termItem: AvailableAcademicTerm = {
         academic_year: term.academic_year,
@@ -224,6 +333,7 @@ export async function GET(request: NextRequest) {
         total_submissions: subCount,
         has_downloadable_files: hasDownloadableFiles,
         is_files_cleaned: isFilesCleaned,
+        has_cleanable_data: hasCleanableData,
       };
 
       availableTerms.push(termItem);
@@ -239,6 +349,7 @@ export async function GET(request: NextRequest) {
           archived_at: term.updated_at || null,
           has_downloadable_files: hasDownloadableFiles,
           is_files_cleaned: isFilesCleaned,
+          has_cleanable_data: hasCleanableData,
         });
       }
     }

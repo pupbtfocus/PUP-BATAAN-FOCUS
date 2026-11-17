@@ -54,6 +54,7 @@ export interface ArchivedTermSummary {
   archived_at?: string | null;
   has_downloadable_files?: boolean;
   is_files_cleaned?: boolean;
+  has_cleanable_data?: boolean;
 }
 
 export interface AvailableAcademicTerm {
@@ -64,6 +65,7 @@ export interface AvailableAcademicTerm {
   total_submissions?: number;
   has_downloadable_files?: boolean;
   is_files_cleaned?: boolean;
+  has_cleanable_data?: boolean;
 }
 
 export interface BackupStats {
