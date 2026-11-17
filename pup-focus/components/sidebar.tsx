@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import { Activity, Archive, Calendar, ClipboardCheck, Eye, GraduationCap, Group, Hourglass, NavArrowDown, NavArrowRight, Page, Settings, UserBadgeCheck, ViewGrid } from "iconoir-react";
 import { AppIcon } from "@/components/ui/app-icon";
 import { BrandMark } from "@/components/shared/brand-mark";
+import { SidebarProfileCard } from "@/components/shared/sidebar-profile-card";
 import { extractFirstName } from "@/lib/faculty-profile";
 
 export interface SidebarProps {
@@ -91,12 +92,6 @@ export function SidebarContent({
   onNavigate,
   showBrand = true,
 }: SidebarProps) {
-  const [hasAvatarError, setHasAvatarError] = useState(false);
-
-  useEffect(() => {
-    setHasAvatarError(false);
-  }, [profileImageUrl]);
-
   const isSuperAdmin =
     isSuperAdminProp ??
     Boolean(
@@ -189,47 +184,15 @@ export function SidebarContent({
         </div>
       )}
 
-      <div className="my-1 bg-black/15 border border-white/10 p-3.5 sm:p-4 rounded-2xl text-center flex flex-col items-center transition-colors shadow-xs">
-        <button
-          type="button"
+      <div className="my-1.5">
+        <SidebarProfileCard
+          name={extractFirstName(adminName, roleTitle)}
+          roleTitle={roleTitle}
+          avatarUrl={profileImageUrl}
+          fallbackAvatarSrc={isSuperAdmin ? "/icons/pup-seal.png" : undefined}
+          initials={getSidebarInitials(adminName, "AD")}
           onClick={() => handleSelect("settings")}
-          className="relative mb-2 cursor-pointer transition-transform hover:scale-105 group focus:outline-hidden"
-          title="Manage Profile & Settings"
-        >
-          {profileImageUrl && !hasAvatarError ? (
-            <img
-              src={profileImageUrl}
-              alt={adminName ?? "User"}
-              className="w-20 h-20 rounded-full object-cover border-2 border-amber-400 shadow-md ring-2 ring-amber-400/30 group-hover:border-amber-300 transition-colors"
-              onError={() => setHasAvatarError(true)}
-            />
-          ) : isSuperAdmin ? (
-            <img
-              src="/icons/pup-seal.png"
-              alt="PUP"
-              className="w-20 h-20 rounded-full object-cover border-2 border-amber-400/80 ring-2 ring-amber-400/30 group-hover:border-amber-300 transition-colors"
-            />
-          ) : (
-            <div className="w-20 h-20 rounded-full bg-amber-500/20 text-amber-200 border-2 border-amber-400/60 font-bold text-xl flex items-center justify-center shadow-xs ring-2 ring-amber-400/30 group-hover:border-amber-300 transition-colors">
-              {getSidebarInitials(adminName, "AD")}
-            </div>
-          )}
-        </button>
-
-        <span className="text-xs sm:text-sm font-semibold text-amber-200/90 tracking-wide">
-          Welcome,
-        </span>
-        <p className="mt-0.5 font-bold text-white text-center tracking-tight text-lg sm:text-xl leading-snug break-words max-w-full px-1">
-          {extractFirstName(adminName, roleTitle)}
-        </p>
-
-        <div className="my-2.5 h-px w-full bg-white/10" />
-
-        <span
-          className="mt-0.5 inline-flex items-center justify-center bg-amber-400/20 text-amber-300 border border-amber-400/40 px-3 py-0.5 text-[11px] sm:text-xs font-bold uppercase tracking-wider rounded-full shadow-2xs"
-        >
-          {roleTitle}
-        </span>
+        />
       </div>
 
       <div className="my-2.5 h-px w-full bg-white/10" />
