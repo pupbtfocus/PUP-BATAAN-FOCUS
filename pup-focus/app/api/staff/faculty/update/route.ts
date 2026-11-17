@@ -12,6 +12,7 @@ import {
   FACULTY_PROFILE_IMAGE_BUCKET,
   buildFacultyFullName,
 } from "@/lib/faculty-profile";
+import { cleanupOldProfileImages } from "@/lib/admin-profile";
 
 function trimOrEmpty(value: unknown): string {
   return typeof value === "string" ? value.trim() : "";
@@ -497,18 +498,45 @@ export async function PATCH(request: NextRequest) {
       }
     }
 
-    if (
-      uploadedProfileImagePath &&
-      trimOrEmpty(previousAuthUserMetadata.profile_image_path) &&
-      previousAuthUserMetadata.profile_image_path !== uploadedProfileImagePath
-    ) {
-      await supabase.storage
-        .from(
-          (previousAuthUserMetadata.profile_image_bucket as string) ||
-            FACULTY_PROFILE_IMAGE_BUCKET,
-        )
-        .remove([trimOrEmpty(previousAuthUserMetadata.profile_image_path)])
-        .catch(() => null);
+    if (profileImage && uploadedProfileImagePath) {
+      await cleanupOldProfileImages(supabase, {
+        keepBucket: uploadedProfileImageBucket,
+        keepPath: uploadedProfileImagePath,
+        previousPaths: [
+          {
+            bucket:
+              (previousAuthUserMetadata.profile_image_bucket as string) ||
+              FACULTY_PROFILE_IMAGE_BUCKET,
+            path: previousAuthUserMetadata.profile_image_path,
+          },
+        ],
+        rawUrls: [
+          previousAuthUserMetadata.avatar_url,
+          previousAuthUserMetadata.picture,
+        ],
+        folders: [
+          ...(targetEmail
+            ? [
+                {
+                  bucket: FACULTY_PROFILE_IMAGE_BUCKET,
+                  folder: `faculty-profile-images/${targetEmail}`,
+                },
+              ]
+            : []),
+          ...(previousEmail && previousEmail !== targetEmail
+            ? [
+                {
+                  bucket: FACULTY_PROFILE_IMAGE_BUCKET,
+                  folder: `faculty-profile-images/${previousEmail}`,
+                },
+              ]
+            : []),
+          ...(authUserId
+            ? [{ bucket: "avatars", folder: `admin/${authUserId}` }]
+            : []),
+        ],
+        defaultBucket: FACULTY_PROFILE_IMAGE_BUCKET,
+      });
     }
 
     let verificationSent = false;

@@ -8,6 +8,7 @@ import {
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { verifyMfaAal2IfEnrolled } from "@/lib/auth/admin-security";
 import { getServiceRoleClient } from "@/lib/supabase/service-role";
+import { cleanupOldProfileImages } from "@/lib/admin-profile";
 import { filterCondition, orFilter } from "@/lib/supabase/filters";
 
 function trimOrEmpty(value: unknown) {
@@ -423,15 +424,38 @@ export async function PATCH(request: NextRequest) {
       );
     }
 
-    if (
-      uploadedProfileImagePath &&
-      previousProfileImagePath &&
-      previousProfileImagePath !== uploadedProfileImagePath
-    ) {
-      await supabase.storage
-        .from(previousProfileImageBucket)
-        .remove([previousProfileImagePath])
-        .catch(() => null);
+    if (profileImage && uploadedProfileImagePath) {
+      const accountEmail = profile.email || user.email || "";
+      await cleanupOldProfileImages(supabase, {
+        keepBucket: uploadedProfileImageBucket,
+        keepPath: uploadedProfileImagePath,
+        previousPaths: [
+          {
+            bucket: previousProfileImageBucket,
+            path: previousProfileImagePath,
+          },
+        ],
+        rawUrls: [
+          previousAuthUserMetadata.avatar_url,
+          previousAuthUserMetadata.picture,
+        ],
+        folders: [
+          ...(accountEmail
+            ? [
+                {
+                  bucket: FACULTY_PROFILE_IMAGE_BUCKET,
+                  folder: `faculty-profile-images/${accountEmail}`,
+                },
+                {
+                  bucket: FACULTY_PROFILE_IMAGE_BUCKET,
+                  folder: `faculty-profile-images/${accountEmail.toLowerCase()}`,
+                },
+              ]
+            : []),
+          { bucket: "avatars", folder: `admin/${user.id}` },
+        ],
+        defaultBucket: FACULTY_PROFILE_IMAGE_BUCKET,
+      });
     }
 
     const account = await loadFacultyAccount(user.id);

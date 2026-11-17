@@ -1576,12 +1576,12 @@ export function SuperAdminSettings({
           onClick={() => setIsFullImageOpen(false)}
         >
           <div
-            className="fixed inset-0 h-lvh bg-black/85 backdrop-blur-md touch-none overscroll-none"
+            className="fixed inset-0 h-lvh bg-slate-950/80 backdrop-blur-sm touch-none overscroll-none"
             aria-hidden="true"
           />
           <div
-            className="relative z-10 max-w-lg w-full max-h-[90dvh] rounded-2xl overflow-y-auto overflow-x-hidden overscroll-contain bg-slate-950 border border-slate-800 shadow-2xl p-2 flex flex-col items-center"
-            onClick={(e) => e.stopPropagation()}
+            className="relative z-10 w-full max-w-lg max-h-[90dvh] flex flex-col rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xl overflow-hidden"
+            onClick={(event) => event.stopPropagation()}
           >
             <ModalHeader
               title={
@@ -1589,24 +1589,28 @@ export function SuperAdminSettings({
                   firstName: form.firstName,
                   middleName: form.middleName,
                   lastName: form.lastName,
-                }) || "Administrator"
+                }) || "Profile Photo"
               }
               icon={User}
               onClose={() => setIsFullImageOpen(false)}
               closeAriaLabel="Close"
-              className="w-full shrink-0 bg-transparent border-slate-800 px-3 py-2 mb-2"
+              className="shrink-0"
             />
-            <img
-              src={displayedProfileImage}
-              alt={
-                buildFacultyFullName({
-                  firstName: form.firstName,
-                  middleName: form.middleName,
-                  lastName: form.lastName,
-                }) || "Administrator"
-              }
-              className="max-h-[65dvh] sm:max-h-[70dvh] w-auto rounded-xl object-contain shadow-lg"
-            />
+            <div className="p-4 sm:p-6 flex items-center justify-center overflow-y-auto overflow-x-hidden overscroll-contain">
+              <div className="flex items-center justify-center overflow-hidden rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-950 max-h-[60dvh]">
+                <img
+                  src={displayedProfileImage}
+                  alt={
+                    buildFacultyFullName({
+                      firstName: form.firstName,
+                      middleName: form.middleName,
+                      lastName: form.lastName,
+                    }) || "Administrator"
+                  }
+                  className="max-h-[60dvh] max-w-full object-contain"
+                />
+              </div>
+            </div>
           </div>
         </div>
       )}

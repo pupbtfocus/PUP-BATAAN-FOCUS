@@ -9,7 +9,7 @@ import {
   buildFacultyFullName,
   parseFullNameFallback,
 } from "@/lib/faculty-profile";
-import { resolveAdminAvatarUrl } from "@/lib/admin-profile";
+import { cleanupOldProfileImages, resolveAdminAvatarUrl } from "@/lib/admin-profile";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { verifyMfaAal2IfEnrolled } from "@/lib/auth/admin-security";
 import { getServiceRoleClient } from "@/lib/supabase/service-role";
@@ -273,7 +273,7 @@ export async function PATCH(request: NextRequest) {
     // 1. Fetch current profile from profiles table
     const { data: profile, error: profileFetchError } = await supabaseAdmin
       .from("profiles")
-      .select("id, full_name, email")
+      .select("id, full_name, email, avatar_url")
       .or(
         orFilter([
           filterCondition("user_id", "eq", user.id),
@@ -314,14 +314,9 @@ export async function PATCH(request: NextRequest) {
     let newAvatarUrl: string | null = null;
     let newProfileImagePath: string | null = previousMetadata.profile_image_path || null;
     let newProfileImageBucket: string | null = previousMetadata.profile_image_bucket || "profile-pictures";
+    let uploadedStoragePath: string | null = null;
 
     if (removeAvatar) {
-      if (previousMetadata.profile_image_path) {
-        await supabaseAdmin.storage
-          .from(previousMetadata.profile_image_bucket || "profile-pictures")
-          .remove([previousMetadata.profile_image_path])
-          .catch(() => null);
-      }
       newProfileImagePath = null;
       newProfileImageBucket = null;
       newAvatarUrl = null;
@@ -363,20 +358,10 @@ export async function PATCH(request: NextRequest) {
         .from("profile-pictures")
         .createSignedUrl(storagePath, 60 * 60 * 24 * 7);
 
+      uploadedStoragePath = storagePath;
       newProfileImagePath = storagePath;
       newProfileImageBucket = "profile-pictures";
       newAvatarUrl = signedData?.signedUrl || null;
-
-      // Clean up previous image if different
-      if (
-        previousMetadata.profile_image_path &&
-        previousMetadata.profile_image_path !== storagePath
-      ) {
-        await supabaseAdmin.storage
-          .from(previousMetadata.profile_image_bucket || "profile-pictures")
-          .remove([previousMetadata.profile_image_path])
-          .catch(() => null);
-      }
     } else {
       // Re-resolve existing avatar
       newAvatarUrl = await resolveAdminAvatarUrl(supabaseAdmin, {
@@ -387,14 +372,25 @@ export async function PATCH(request: NextRequest) {
     }
 
     // 3. Update profiles table
+    const profileUpdates: Record<string, any> = {
+      full_name: updatedFullName,
+    };
+    if (avatarFile || removeAvatar) {
+      profileUpdates.avatar_url = newAvatarUrl;
+    }
+
     const { error: profileUpdateError } = await supabaseAdmin
       .from("profiles")
-      .update({
-        full_name: updatedFullName,
-      })
+      .update(profileUpdates)
       .eq("id", profile.id);
 
     if (profileUpdateError) {
+      if (uploadedStoragePath) {
+        await supabaseAdmin.storage
+          .from("profile-pictures")
+          .remove([uploadedStoragePath])
+          .catch(() => null);
+      }
       return NextResponse.json(
         { error: profileUpdateError.message },
         { status: 400 }
@@ -472,10 +468,48 @@ export async function PATCH(request: NextRequest) {
     );
 
     if (authUpdateError) {
+      if (uploadedStoragePath) {
+        await supabaseAdmin.storage
+          .from("profile-pictures")
+          .remove([uploadedStoragePath])
+          .catch(() => null);
+      }
       return NextResponse.json(
         { error: authUpdateError.message },
         { status: 400 }
       );
+    }
+
+    if (uploadedStoragePath || removeAvatar) {
+      const accountEmail = profile.email || user.email || "";
+      await cleanupOldProfileImages(supabaseAdmin, {
+        keepBucket: "profile-pictures",
+        keepPath: uploadedStoragePath,
+        previousPaths: [
+          {
+            bucket: previousMetadata.profile_image_bucket || "profile-pictures",
+            path: previousMetadata.profile_image_path,
+          },
+        ],
+        rawUrls: [
+          profile.avatar_url,
+          previousMetadata.avatar_url,
+          previousMetadata.picture,
+        ],
+        folders: [
+          ...(accountEmail
+            ? [
+                { bucket: "profile-pictures", folder: `admin-profile-images/${accountEmail}` },
+                { bucket: "profile-pictures", folder: `admin-profile-images/${accountEmail.toLowerCase()}` },
+              ]
+            : []),
+          ...(user.email && user.email !== accountEmail
+            ? [{ bucket: "profile-pictures", folder: `admin-profile-images/${user.email}` }]
+            : []),
+          { bucket: "profile-pictures", folder: `admin-profile-images/${user.id}` },
+          { bucket: "avatars", folder: `admin/${user.id}` },
+        ],
+      });
     }
 
     return NextResponse.json({

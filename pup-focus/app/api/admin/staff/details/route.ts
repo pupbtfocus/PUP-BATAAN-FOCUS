@@ -16,6 +16,7 @@ import { getServiceRoleClient } from "@/lib/supabase/service-role";
 import { isValidEmailAddress } from "@/lib/validation/email";
 import { sendEmailChangeVerificationEmail } from "@/lib/email/send-invite";
 import { extractFirstName, parseFullNameFallback } from "@/lib/faculty-profile";
+import { cleanupOldProfileImages } from "@/lib/admin-profile";
 import { filterCondition, orFilter } from "@/lib/supabase/filters";
 
 async function resolveAvatarUrl(
@@ -472,6 +473,7 @@ export async function PATCH(request: NextRequest) {
 
     // Upload profile image if provided
     let uploadedImageUrl: string | null = null;
+    let uploadedStoragePath: string | null = null;
     if (profileImage && profileImage.size > 0) {
       try {
         const safeFileName = profileImage.name.replace(/[^a-zA-Z0-9._-]/g, "_");
@@ -486,6 +488,7 @@ export async function PATCH(request: NextRequest) {
           });
 
         if (!uploadError) {
+          uploadedStoragePath = storagePath;
           const { data: signedData } = await supabase.storage
             .from("profile-pictures")
             .createSignedUrl(storagePath, 60 * 60 * 24 * 365);
@@ -563,6 +566,12 @@ export async function PATCH(request: NextRequest) {
         ...(middleName !== undefined ? { middle_name: middleName?.trim() || null } : {}),
         ...(lastName !== undefined ? { last_name: lastName?.trim() || null } : {}),
         ...(role ? { role } : {}),
+        ...(uploadedStoragePath
+          ? {
+              profile_image_bucket: "profile-pictures",
+              profile_image_path: uploadedStoragePath,
+            }
+          : {}),
         ...(uploadedImageUrl
           ? {
               avatar_url: uploadedImageUrl,
@@ -586,10 +595,44 @@ export async function PATCH(request: NextRequest) {
       await supabase.auth.admin.updateUserById(authUserId, updatePayload);
 
     if (updateError) {
+      if (uploadedStoragePath) {
+        await supabase.storage
+          .from("profile-pictures")
+          .remove([uploadedStoragePath])
+          .catch(() => null);
+      }
       return NextResponse.json(
         { error: updateError.message || "Failed to update staff account" },
         { status: 400 },
       );
+    }
+
+    if (uploadedStoragePath) {
+      await cleanupOldProfileImages(supabase, {
+        keepBucket: "profile-pictures",
+        keepPath: uploadedStoragePath,
+        previousPaths: [
+          {
+            bucket:
+              (targetUser.user_metadata?.profile_image_bucket as string | undefined) ||
+              "profile-pictures",
+            path: targetUser.user_metadata?.profile_image_path,
+          },
+        ],
+        rawUrls: [
+          profile?.avatar_url,
+          targetUser.user_metadata?.avatar_url,
+          targetUser.user_metadata?.picture,
+        ],
+        folders: [
+          { bucket: "profile-pictures", folder: `admin-profile-images/${normalizedNewEmail}` },
+          ...(previousEmail && previousEmail !== normalizedNewEmail
+            ? [{ bucket: "profile-pictures", folder: `admin-profile-images/${previousEmail}` }]
+            : []),
+          { bucket: "profile-pictures", folder: `admin-profile-images/${authUserId}` },
+          { bucket: "avatars", folder: `admin/${authUserId}` },
+        ],
+      });
     }
 
     let verificationSent = false;

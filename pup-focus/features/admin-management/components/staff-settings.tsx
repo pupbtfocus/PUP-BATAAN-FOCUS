@@ -8,7 +8,7 @@ import {
   parseFullNameFallback,
 } from "@/lib/faculty-profile";
 import { createClient } from "@/lib/supabase/client";
-import { Bell, Camera, Check, Circle, EditPencil, Eye, EyeClosed, FloppyDisk, Hourglass, Lock, Refresh, SystemRestart, Trash, User, Xmark } from "iconoir-react";
+import { Bell, Camera, Check, Circle, EditPencil, Eye, EyeClosed, FloppyDisk, Hourglass, Lock, Refresh, SystemRestart, User, Xmark } from "iconoir-react";
 import { AppIcon } from "@/components/ui/app-icon";
 import { ModalHeader } from "@/components/ui/modal-header";
 import { AlertPopup } from "@/components/ui/alert-popup";
@@ -1630,29 +1630,6 @@ export function AdminSettings({
                     </p>
                   </div>
                   <AppIcon icon={Eye} size="md" color="muted" className="shrink-0" />
-                </button>
-              )}
-
-              {displayedProfileImage && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    setIsProfileImageMenuOpen(false);
-                    setProfileImageFile(null);
-                    setIsAvatarMarkedForRemoval(true);
-                    if (profileImageInputRef.current) {
-                      profileImageInputRef.current.value = "";
-                    }
-                  }}
-                  className="flex w-full items-center justify-between gap-3 rounded-xl border border-rose-200 bg-rose-50/50 hover:bg-rose-100/60 dark:border-rose-900/40 dark:bg-rose-950/20 px-4 py-3.5 text-left text-rose-700 dark:text-rose-300 transition cursor-pointer"
-                >
-                  <div className="min-w-0">
-                    <p className="text-xs font-semibold">Remove Photo</p>
-                    <p className="text-[11px] text-rose-600/80 dark:text-rose-400/80 mt-0.5 font-normal">
-                      Remove current photo and restore fallback initials
-                    </p>
-                  </div>
-                  <AppIcon icon={Trash} size="md" color="danger" className="shrink-0" />
                 </button>
               )}
             </div>
