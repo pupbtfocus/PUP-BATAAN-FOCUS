@@ -975,9 +975,9 @@ export function BackupArchivePanel({
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       {/* Top 3 Stat Cards */}
-      <section className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <section className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3 sm:gap-4">
         <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 sm:p-5 shadow-xs transition-colors">
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
@@ -1012,7 +1012,7 @@ export function BackupArchivePanel({
           </div>
         </div>
 
-        <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 sm:p-5 shadow-xs transition-colors">
+        <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 sm:p-5 shadow-xs transition-colors md:col-span-2 xl:col-span-1">
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
               Last Backup
@@ -1020,7 +1020,7 @@ export function BackupArchivePanel({
             <Hourglass className="h-5 w-5 text-slate-400" strokeWidth={2} />
           </div>
           <div className="mt-2">
-            <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100 tracking-tight truncate">
+            <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100 tracking-tight break-words">
               {formatDateTime(stats.last_backup_date)}
             </h3>
             <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
@@ -1039,18 +1039,18 @@ export function BackupArchivePanel({
       />
 
       {/* UNIFIED SEMESTER COMPLIANCE & BACKUP COMMAND CENTER */}
-      <section className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm shadow-slate-200/50 dark:shadow-none p-5 sm:p-6 transition-all space-y-5">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-slate-100 dark:border-slate-800">
-          <div className="space-y-1">
-            <div className="flex items-center gap-2.5 flex-wrap">
+      <section className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm shadow-slate-200/50 dark:shadow-none p-4 sm:p-6 transition-all space-y-4 sm:space-y-5">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-3.5 sm:gap-4 pb-4 border-b border-slate-100 dark:border-slate-800">
+          <div className="space-y-1 min-w-0">
+            <div className="flex items-start sm:items-center gap-3">
               <div className="h-9 w-9 rounded-xl flex items-center justify-center shrink-0 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700/60 shadow-2xs">
                 <AppIcon icon={Archive} size="sm" color="default" />
               </div>
-              <div>
-                <h2 className="text-base sm:text-lg font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
-                  <span>Semester Compliance Backup &amp; Document Vault</span>
+              <div className="min-w-0">
+                <h2 className="text-base sm:text-lg font-bold text-slate-900 dark:text-slate-100">
+                  Semester Compliance Backup &amp; Document Vault
                 </h2>
-                <p className="text-xs text-slate-500 dark:text-slate-400">
+                <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
                   Every backup comprehensively captures{" "}
                   <strong>all faculty members</strong>, their submitted
                   requirements, and verified file types for the selected
@@ -1060,12 +1060,12 @@ export function BackupArchivePanel({
             </div>
           </div>
 
-          <div className="flex items-center gap-2 shrink-0">
+          <div className="flex items-center gap-2 w-full md:w-auto shrink-0">
             <button
               type="button"
               onClick={() => void handleRefresh()}
               disabled={isRefreshing}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-xl border border-slate-300 dark:border-slate-700 bg-white hover:bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-200 transition-all cursor-pointer shadow-xs disabled:opacity-50"
+              className="w-full md:w-auto inline-flex items-center justify-center gap-1.5 px-3 py-2 sm:py-1.5 text-xs font-semibold rounded-xl border border-slate-300 dark:border-slate-700 bg-white hover:bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-200 transition-all cursor-pointer shadow-xs disabled:opacity-50"
             >
               <Refresh
                 className={`w-3.5 h-3.5 ${isRefreshing ? "animate-spin" : ""}`}
@@ -1077,29 +1077,31 @@ export function BackupArchivePanel({
 
         {/* Centered Operational Term Notice — Clean Inline Bold */}
         {currentActiveTerm && (
-          <div className="flex flex-wrap items-center justify-center gap-2 py-1 text-xs text-slate-800 dark:text-slate-200 text-center font-bold">
-            <AppIcon
-              icon={isCurrentTermBackedUp ? CheckCircle : WarningTriangle}
-              size="sm"
-              color={isCurrentTermBackedUp ? "success" : "warning"}
-              className="shrink-0"
-            />
-            <span>
-              Active Operational Term:{" "}
-              <span className="text-slate-900 dark:text-white font-extrabold">
-                A.Y. {currentActiveTerm.academic_year} · {currentActiveTerm.semester}
+          <div className="flex flex-col sm:flex-row sm:flex-wrap items-center justify-center gap-2 py-1 text-xs text-slate-800 dark:text-slate-200 text-center font-bold">
+            <div className="flex items-start sm:items-center justify-center gap-2">
+              <AppIcon
+                icon={isCurrentTermBackedUp ? CheckCircle : WarningTriangle}
+                size="sm"
+                color={isCurrentTermBackedUp ? "success" : "warning"}
+                className="shrink-0 mt-0.5 sm:mt-0"
+              />
+              <span className="leading-relaxed">
+                Active Operational Term:{" "}
+                <span className="text-slate-900 dark:text-white font-extrabold">
+                  A.Y. {currentActiveTerm.academic_year} · {currentActiveTerm.semester}
+                </span>
+                {" — "}
+                {isCurrentTermBackedUp ? (
+                  <span className="text-[#0b5336] dark:text-emerald-400 font-extrabold">
+                    Verified backup on file · Safe to change semester now
+                  </span>
+                ) : (
+                  <span className="text-amber-700 dark:text-amber-400 font-extrabold">
+                    Backup required before changing terms
+                  </span>
+                )}
               </span>
-              {" — "}
-              {isCurrentTermBackedUp ? (
-                <span className="text-[#0b5336] dark:text-emerald-400 font-extrabold">
-                  Verified backup on file · Safe to change semester now
-                </span>
-              ) : (
-                <span className="text-amber-700 dark:text-amber-400 font-extrabold">
-                  Backup required before changing terms
-                </span>
-              )}
-            </span>
+            </div>
             {isCurrentTermBackedUp && (
               <button
                 type="button"
@@ -1110,7 +1112,7 @@ export function BackupArchivePanel({
                     window.location.assign("/admin/dashboard?section=terms");
                   }
                 }}
-                className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-[#0b5336] hover:bg-[#08412a] text-white border border-[#08412a] text-[11px] font-bold shadow-2xs transition cursor-pointer active:scale-[0.98]"
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-3 py-1.5 sm:py-1 rounded-lg bg-[#0b5336] hover:bg-[#08412a] text-white border border-[#08412a] text-[11px] font-bold shadow-2xs transition cursor-pointer active:scale-[0.98]"
                 title="Go to Academic Terms to switch to the next semester"
               >
                 <AppIcon icon={Calendar} size="xs" color="white" />
@@ -1245,7 +1247,7 @@ export function BackupArchivePanel({
           </div>
         </div>
 
-        <p className="text-[11px] text-slate-500 dark:text-slate-400 text-right">
+        <p className="text-[11px] text-slate-500 dark:text-slate-400 text-left sm:text-right leading-relaxed">
           <strong className="text-slate-700 dark:text-slate-300">Note:</strong>{" "}
           Deleting semester files &amp; logs is{" "}
           <strong className="text-slate-700 dark:text-slate-300">optional</strong>{" "}
@@ -1267,16 +1269,16 @@ export function BackupArchivePanel({
             </p>
           </div>
 
-          <div className="flex items-center gap-2.5">
+          <div className="flex items-center gap-2 w-full sm:w-auto">
             {/* Search backups input */}
-            <div className="relative min-w-[220px] sm:min-w-[280px]">
+            <div className="relative flex-1 sm:w-72 min-w-0">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400 pointer-events-none" />
               <input
                 type="text"
                 value={backupSearchQuery}
                 onChange={(e) => setBackupSearchQuery(e.target.value)}
                 placeholder="Search backups by name, AY, sem..."
-                className="w-full pl-8.5 pr-7 py-1.5 text-xs bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl outline-none focus:border-amber-500 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 transition"
+                className="w-full pl-8.5 pr-7 py-2 sm:py-1.5 text-xs bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl outline-none focus:border-amber-500 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 transition"
               />
               {backupSearchQuery && (
                 <button
@@ -1295,8 +1297,178 @@ export function BackupArchivePanel({
           </div>
         </div>
 
-        {/* Backups Table */}
-        <div className="w-full rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm shadow-slate-300/50 dark:shadow-none overflow-hidden transition-colors">
+        {/* Backups Mobile Card View (< md) */}
+        <div className="md:hidden space-y-2.5">
+          {isLoading && filteredBackups.length === 0 ? (
+            <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 py-10 px-4 text-center text-xs text-slate-500 shadow-sm">
+              <Refresh className="h-5 w-5 animate-spin mx-auto mb-2 text-amber-500" strokeWidth={2} />
+              Loading backups...
+            </div>
+          ) : filteredBackups.length === 0 ? (
+            <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 py-10 px-4 text-center text-xs text-slate-500 shadow-sm">
+              <AppIcon icon={HardDrive} size="xl" color="muted" className="mx-auto mb-2" />
+              <p className="font-semibold text-slate-700 dark:text-slate-300">
+                {backupSearchQuery ? "No matching backups found" : "No backups yet"}
+              </p>
+              <p className="text-xs text-slate-500 mt-1">
+                {backupSearchQuery
+                  ? "Try a different search keyword or clear filters."
+                  : "Create a snapshot or download files above to save your first backup record."}
+              </p>
+            </div>
+          ) : (
+            filteredBackups.map((bk, idx) => {
+              const scope = bk.metadata?.scope;
+              const hasScope = Boolean(
+                scope?.academic_year ||
+                scope?.semester ||
+                scope?.faculty_name ||
+                bk.academic_year ||
+                bk.metadata?.semester ||
+                bk.metadata?.faculty_name,
+              );
+              const scopeAy = scope?.academic_year || bk.academic_year || null;
+              const scopeSem = scope?.semester || bk.metadata?.semester || null;
+              const scopeFac = scope?.faculty_name || bk.metadata?.faculty_name || null;
+              const zipDisplay =
+                bk.metadata?.zip_name ||
+                (bk.backup_name?.endsWith(".zip") ? bk.backup_name : `${bk.backup_name}.zip`);
+
+              return (
+                <div
+                  key={`mobile-bk-${bk.id}`}
+                  className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-3.5 space-y-2.5 shadow-xs"
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex items-start gap-2 min-w-0">
+                      <span className="text-[10px] font-mono text-slate-400 dark:text-slate-500 bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded shrink-0">
+                        #{idx + 1}
+                      </span>
+                      <div className="min-w-0">
+                        <p className="font-mono text-xs font-bold text-slate-900 dark:text-slate-100 break-all leading-snug">
+                          {zipDisplay}
+                        </p>
+                        <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+                          {formatDateTime(bk.created_at)}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="shrink-0">
+                      {bk.status === "completed" ? (
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 text-[11px] font-semibold rounded-md bg-[#0b5336] text-white border border-[#08412a] shadow-2xs">
+                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-200" />
+                          Completed
+                        </span>
+                      ) : bk.status === "failed" ? (
+                        <span className="inline-flex items-center gap-1 bg-[#780000] text-white border border-[#5e0000] px-2 py-0.5 text-[11px] font-semibold rounded-md shadow-2xs">
+                          <span className="w-1.5 h-1.5 rounded-full bg-rose-200" />
+                          Failed
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 bg-amber-500 text-slate-950 border border-amber-600 px-2 py-0.5 text-[11px] font-semibold rounded-md shadow-2xs">
+                          <span className="w-1.5 h-1.5 rounded-full bg-amber-900 animate-pulse" />
+                          Processing
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    {hasScope ? (
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-[#780000] text-white border border-[#5e0000] font-semibold text-[10.5px] shadow-2xs">
+                        {scopeAy
+                          ? scopeAy.startsWith("A.Y.")
+                            ? scopeAy
+                            : `A.Y. ${scopeAy}`
+                          : "All Academic Years"}
+                        {scopeSem ? ` • ${scopeSem}` : ""}
+                        {scopeFac ? ` • ${scopeFac}` : ""}
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-[#780000] text-white border border-[#5e0000] text-[10.5px] font-semibold shadow-2xs">
+                        Everything
+                      </span>
+                    )}
+
+                    <div className="flex items-center gap-1.5 text-[11px]">
+                      <span className="font-mono font-medium text-slate-600 dark:text-slate-300">
+                        {formatFileSize(bk.file_size_kb)}
+                      </span>
+                      <span className="px-2 py-0.5 rounded-md bg-amber-500 text-slate-900 border border-amber-600 font-mono text-[10.5px] font-bold shadow-2xs">
+                        {bk.total_records.toLocaleString()} items
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="pt-2.5 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-1.5">
+                      <button
+                        type="button"
+                        onClick={() => setInspectedBackup(bk)}
+                        className="px-2.5 py-1.5 text-[11px] font-semibold rounded-lg bg-[#780000] hover:bg-[#5e0000] text-white border border-[#5e0000] transition cursor-pointer flex items-center gap-1 shadow-2xs active:scale-[0.98]"
+                        title="View backup details"
+                      >
+                        <AppIcon icon={Eye} size="xs" color="white" />
+                        <span>View</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        disabled={
+                          Boolean(rowExportingKey) ||
+                          isGeneratingBackup ||
+                          bk.has_downloadable_files !== true
+                        }
+                        onClick={() =>
+                          void handleRowDownloadZip(
+                            scopeAy ?? "all",
+                            scopeSem ?? "all",
+                            "all",
+                            zipDisplay,
+                          )
+                        }
+                        className="px-2.5 py-1.5 text-[11px] font-semibold rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-900 border border-amber-600 transition cursor-pointer flex items-center gap-1 shadow-xs disabled:bg-slate-200 disabled:text-slate-400 disabled:border-slate-300 dark:disabled:bg-slate-800 dark:disabled:text-slate-500 dark:disabled:border-slate-700 disabled:shadow-none disabled:cursor-not-allowed"
+                        title={
+                          bk.has_downloadable_files === true
+                            ? "Download document archive (.ZIP)"
+                            : bk.is_files_cleaned
+                              ? "Files for this semester were cleaned from Storage"
+                              : "No uploaded files remain in Storage"
+                        }
+                      >
+                        {rowExportingKey ===
+                        `${scopeAy ?? "all"}__${scopeSem ?? "all"}__all` ? (
+                          <>
+                            <Refresh className="w-3 h-3 animate-spin text-slate-900" />
+                            <span>{rowExportProgress || "Zipping..."}</span>
+                          </>
+                        ) : (
+                          <>
+                            <AppIcon icon={Archive} size="xs" color="inherit" />
+                            <span>.ZIP</span>
+                          </>
+                        )}
+                      </button>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => setBackupToDelete(bk)}
+                      className="p-1.5 bg-red-600 hover:bg-red-700 text-white border border-red-700 rounded-lg transition cursor-pointer shadow-2xs active:scale-[0.98]"
+                      title="Delete backup"
+                    >
+                      <AppIcon icon={Trash} size="xs" color="white" />
+                    </button>
+                  </div>
+                </div>
+              );
+            })
+          )}
+        </div>
+
+        {/* Backups Desktop Table (>= md) */}
+        <div className="hidden md:block w-full rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm shadow-slate-300/50 dark:shadow-none overflow-hidden transition-colors">
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs border-collapse">
               <thead className="border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/60 text-slate-600 dark:text-slate-300 text-[10.5px] font-bold uppercase tracking-wider">
@@ -1559,8 +1731,153 @@ export function BackupArchivePanel({
           </div>
         </div>
 
-        {/* Academic Terms Table */}
-        <div className="w-full rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm shadow-slate-300/50 dark:shadow-none overflow-hidden transition-colors">
+        {/* Academic Terms Mobile Cards (< md) */}
+        <div className="md:hidden space-y-2.5">
+          {displayedVaultTerms.length === 0 ? (
+            <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 py-10 px-4 text-center text-xs text-slate-500 shadow-sm">
+              <AppIcon icon={Archive} size="xl" color="muted" className="mx-auto mb-2" />
+              <p className="font-semibold text-slate-700 dark:text-slate-300">
+                No archived semesters in vault
+              </p>
+              <p className="text-xs text-slate-500 mt-1 max-w-sm mx-auto">
+                Past academic terms and verified semester backups are safely preserved in this archive vault.
+              </p>
+            </div>
+          ) : (
+            displayedVaultTerms.map((term, idx) => {
+              const isBackedUp = isTermBackedUp(term.academic_year, term.semester);
+              const isCurrent = term.status === "Current";
+              const isArchived = term.status === "Archived" || term.is_archived;
+              const zipKey = `${term.academic_year}__${term.semester}__all`;
+              const isRowExporting = exportingTermKey === zipKey;
+
+              return (
+                <div
+                  key={`mobile-term-${term.academic_year}-${term.semester}`}
+                  className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-3.5 space-y-2.5 shadow-xs"
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex items-start gap-2 min-w-0">
+                      <span className="text-[10px] font-mono text-slate-400 dark:text-slate-500 bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded shrink-0">
+                        #{idx + 1}
+                      </span>
+                      <div className="min-w-0">
+                        <p className="font-bold text-sm text-slate-900 dark:text-slate-100">
+                          {term.academic_year}
+                        </p>
+                        <p className="text-xs text-slate-500 dark:text-slate-400">
+                          {term.semester}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex flex-wrap items-center justify-end gap-1.5 shrink-0">
+                      {isCurrent ? (
+                        <span className="inline-flex items-center gap-1.5 bg-amber-500 text-slate-900 border border-amber-600 px-2 py-0.5 text-[11px] font-bold rounded-md shadow-2xs">
+                          <span className="w-1.5 h-1.5 rounded-full bg-amber-900 animate-pulse" />
+                          Current Term
+                        </span>
+                      ) : isArchived ? (
+                        <span className="inline-flex items-center gap-1.5 px-2 py-0.5 text-[11px] font-semibold rounded-md bg-[#780000] text-white border border-[#5e0000] shadow-2xs">
+                          <span className="w-1.5 h-1.5 rounded-full bg-rose-200" />
+                          Archived
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1.5 px-2 py-0.5 text-[11px] font-medium rounded-md bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
+                          Upcoming
+                        </span>
+                      )}
+
+                      {isBackedUp ? (
+                        <span className="inline-flex items-center gap-1.5 px-2 py-0.5 text-[11px] font-semibold rounded-md bg-[#0b5336] text-white border border-[#08412a] shadow-2xs">
+                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-200" />
+                          Backed Up
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1.5 px-2 py-0.5 text-[11px] font-medium rounded-md bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-slate-700">
+                          No Backup
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="pt-2.5 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-1.5">
+                      <button
+                        type="button"
+                        onClick={() => setInspectedTerm(term)}
+                        className="px-2.5 py-1.5 text-[11px] font-semibold rounded-lg bg-[#780000] hover:bg-[#5e0000] text-white border border-[#5e0000] transition cursor-pointer flex items-center gap-1 shadow-2xs active:scale-[0.98]"
+                        title="View archived term details"
+                      >
+                        <AppIcon icon={Eye} size="xs" color="white" />
+                        <span>View</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        disabled={
+                          Boolean(exportingTermKey) ||
+                          term.has_downloadable_files !== true
+                        }
+                        onClick={() =>
+                          void handleDownloadZip(
+                            term.academic_year,
+                            term.semester,
+                          )
+                        }
+                        className="px-2.5 py-1.5 text-[11px] font-semibold rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-900 border border-amber-600 transition cursor-pointer flex items-center gap-1 shadow-xs disabled:bg-slate-200 disabled:text-slate-400 disabled:border-slate-300 dark:disabled:bg-slate-800 dark:disabled:text-slate-500 dark:disabled:border-slate-700 disabled:shadow-none disabled:cursor-not-allowed"
+                        title={
+                          term.has_downloadable_files === true
+                            ? "Download faculty files archive (.ZIP)"
+                            : term.is_files_cleaned
+                              ? "Files for this semester were cleaned from Storage"
+                              : "No uploaded files available for this term"
+                        }
+                      >
+                        {isRowExporting ? (
+                          <>
+                            <Refresh className="w-3.5 h-3.5 animate-spin" />
+                            <span>{exportProgress || "Zipping..."}</span>
+                          </>
+                        ) : (
+                          <>
+                            <AppIcon icon={Archive} size="xs" color="inherit" />
+                            <span>.ZIP</span>
+                          </>
+                        )}
+                      </button>
+                    </div>
+
+                    <button
+                      type="button"
+                      disabled={
+                        isCleaningTerm ||
+                        term.has_cleanable_data !== true
+                      }
+                      onClick={() =>
+                        void openCleanTermModal(
+                          term.academic_year,
+                          term.semester,
+                        )
+                      }
+                      className="p-1.5 rounded-lg bg-red-600 hover:bg-red-700 text-white border border-red-700 transition cursor-pointer shadow-2xs active:scale-[0.98] disabled:bg-slate-200 disabled:text-slate-400 disabled:border-slate-300 dark:disabled:bg-slate-800 dark:disabled:text-slate-500 dark:disabled:border-slate-700 disabled:shadow-none disabled:cursor-not-allowed"
+                      title={
+                        term.has_cleanable_data === true
+                          ? "Optional: permanently delete semester files, logs, notifications & extension requests (cannot be restored)"
+                          : "All files and logs for this semester have already been deleted"
+                      }
+                    >
+                      <AppIcon icon={Trash} size="xs" color="inherit" />
+                    </button>
+                  </div>
+                </div>
+              );
+            })
+          )}
+        </div>
+
+        {/* Academic Terms Desktop Table (>= md) */}
+        <div className="hidden md:block w-full rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm shadow-slate-300/50 dark:shadow-none overflow-hidden transition-colors">
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs border-collapse">
               <thead className="border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/60 text-slate-700 dark:text-slate-300 text-[11px] font-bold uppercase tracking-wider">
@@ -1763,8 +2080,8 @@ export function BackupArchivePanel({
             snap?.faculty_roster || snap?.faculty_list || null;
 
           return (
-            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4 backdrop-blur-sm animate-in fade-in">
-              <div className="w-full max-w-2xl rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xl text-slate-900 dark:text-slate-100 max-h-[88vh] overflow-hidden flex flex-col">
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-3 sm:p-4 backdrop-blur-sm animate-in fade-in">
+              <div className="w-full max-w-2xl rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xl text-slate-900 dark:text-slate-100 max-h-[90dvh] overflow-hidden flex flex-col">
                 <ModalHeader
                   title={
                     inspectedBackup.metadata?.zip_name ||
@@ -1774,7 +2091,7 @@ export function BackupArchivePanel({
                   }
                   icon={Archive}
                 />
-                <div className="p-5 overflow-y-auto flex-1 space-y-4 text-xs">
+                <div className="p-4 sm:p-5 overflow-y-auto flex-1 space-y-4 text-xs">
                   {/* Meta stats bar */}
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 p-3.5 rounded-xl bg-slate-50 border border-slate-200 dark:bg-slate-950/60 dark:border-slate-800">
                     <div>
@@ -1794,7 +2111,7 @@ export function BackupArchivePanel({
                       <span className="text-[10px] text-slate-500 dark:text-slate-400 uppercase tracking-wider block font-medium">
                         Faculty Scope
                       </span>
-                      <span className="font-bold text-slate-900 dark:text-slate-100 text-sm block">
+                      <span className="font-bold text-slate-900 dark:text-slate-100 text-sm block break-words">
                         {inspectedBackup.metadata?.users_count
                           ? `${inspectedBackup.metadata.users_count} Members`
                           : facultyRoster
@@ -1818,7 +2135,7 @@ export function BackupArchivePanel({
                       <span className="text-[10px] text-slate-500 dark:text-slate-400 uppercase tracking-wider block">
                         Date Generated
                       </span>
-                      <span className="font-semibold text-slate-800 dark:text-slate-200 block truncate">
+                      <span className="font-semibold text-slate-800 dark:text-slate-200 block break-words">
                         {formatDateTime(inspectedBackup.created_at)}
                       </span>
                     </div>
@@ -1856,7 +2173,7 @@ export function BackupArchivePanel({
 
                   {/* Faculty & Submitted Requirements Roster */}
                   <div className="space-y-2">
-                    <div className="flex items-center justify-between">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
                       <h4 className="text-xs font-bold text-slate-800 dark:text-slate-200 uppercase tracking-wider">
                         <span>
                           {facultyRoster && facultyRoster.length > 0
@@ -1878,17 +2195,17 @@ export function BackupArchivePanel({
                             key={fac.faculty_id}
                             className="p-3 hover:bg-slate-50/50 dark:hover:bg-slate-800/40 transition"
                           >
-                            <div className="flex items-center justify-between gap-2">
-                              <div>
-                                <span className="font-bold text-slate-900 dark:text-slate-100 block">
+                            <div className="flex flex-wrap items-start justify-between gap-2">
+                              <div className="min-w-0">
+                                <span className="font-bold text-slate-900 dark:text-slate-100 block break-words">
                                   {fac.name}
                                 </span>
-                                <span className="text-[10px] text-slate-400">
+                                <span className="text-[10px] text-slate-400 break-all block">
                                   {fac.department ? `${fac.department} • ` : ""}
                                   {fac.email || "Faculty"}
                                 </span>
                               </div>
-                              <span className="text-[11px] font-semibold text-slate-600 dark:text-slate-400">
+                              <span className="text-[11px] font-semibold text-slate-600 dark:text-slate-400 shrink-0">
                                 {fac.total_submitted_requirements ??
                                   (fac.requirements?.length || 0)}{" "}
                                 requirement
@@ -1904,13 +2221,13 @@ export function BackupArchivePanel({
                                   (req: any, idx: number) => (
                                     <div
                                       key={idx}
-                                      className="flex items-center justify-between gap-2 text-[11px]"
+                                      className="flex flex-wrap items-center justify-between gap-2 text-[11px]"
                                     >
-                                      <div className="flex items-center gap-1.5 truncate">
-                                        <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
+                                      <div className="flex flex-wrap items-center gap-1.5 min-w-0">
+                                        <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 shrink-0">
                                           {req.file?.file_type || "FILE"}
                                         </span>
-                                        <span className="text-slate-800 dark:text-slate-200 font-medium truncate">
+                                        <span className="text-slate-800 dark:text-slate-200 font-medium break-words">
                                           {req.requirement_title ||
                                             req.requirement_code}
                                         </span>
@@ -1959,7 +2276,7 @@ export function BackupArchivePanel({
                           </div>
                           <div className="p-2.5 rounded-xl border border-slate-200 dark:border-slate-800">
                             <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider block">Archive Term</span>
-                            <span className="text-xs font-bold text-slate-800 dark:text-slate-200 mt-0.5 block truncate">
+                            <span className="text-xs font-bold text-slate-800 dark:text-slate-200 mt-0.5 block break-words">
                               {inspectedBackup.academic_year || inspectedBackup.metadata?.academic_year || "All A.Y."} • {inspectedBackup.metadata?.semester || "All Semesters"}
                             </span>
                           </div>
@@ -1977,47 +2294,45 @@ export function BackupArchivePanel({
                   </div>
                 </div>
 
-                <div className="flex items-center justify-between gap-2 p-4 border-t border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/40">
+                <div className="flex flex-col-reverse sm:flex-row sm:items-center justify-between gap-2.5 p-3.5 sm:p-4 border-t border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/40 shrink-0">
                   <button
                     type="button"
                     onClick={() => setInspectedBackup(null)}
-                    className="px-4 py-2 rounded-xl text-xs font-semibold bg-[#780000] hover:bg-[#5e0000] text-white border border-[#5e0000] transition cursor-pointer shadow-xs"
+                    className="w-full sm:w-auto inline-flex items-center justify-center px-4 py-2 rounded-xl text-xs font-semibold bg-[#780000] hover:bg-[#5e0000] text-white border border-[#5e0000] transition cursor-pointer shadow-xs"
                   >
                     Close
                   </button>
 
-                  <div className="flex items-center gap-2">
-                    <button
-                      type="button"
-                      disabled={
-                        Boolean(exportingTermKey) ||
-                        inspectedBackup.has_downloadable_files !== true
-                      }
-                      onClick={() => {
-                        const ay =
-                          inspectedBackup.academic_year ||
-                          inspectedBackup.metadata?.academic_year ||
-                          undefined;
-                        const sem =
-                          inspectedBackup.metadata?.semester || undefined;
-                        const customZipName =
-                          inspectedBackup.metadata?.zip_name ||
-                          (inspectedBackup.backup_name?.endsWith(".zip")
-                            ? inspectedBackup.backup_name
-                            : `${inspectedBackup.backup_name}.zip`);
-                        void handleDownloadZip(ay, sem, undefined, customZipName);
-                      }}
-                      title={
-                        inspectedBackup.has_downloadable_files === true
-                          ? "Download Documents (.ZIP)"
-                          : "Files for this semester were cleaned from Storage"
-                      }
-                      className="px-4 py-2 rounded-xl text-xs font-bold bg-amber-500 hover:bg-amber-400 text-slate-900 border border-amber-600 transition cursor-pointer flex items-center gap-1.5 shadow-xs disabled:bg-slate-200 disabled:text-slate-400 disabled:border-slate-300 dark:disabled:bg-slate-800 dark:disabled:text-slate-500 dark:disabled:border-slate-700 disabled:shadow-none disabled:cursor-not-allowed disabled:hover:bg-slate-200 dark:disabled:hover:bg-slate-800"
-                    >
-                      <AppIcon icon={Archive} size="sm" color="inherit" />
-                      <span>Download Documents (.ZIP)</span>
-                    </button>
-                  </div>
+                  <button
+                    type="button"
+                    disabled={
+                      Boolean(exportingTermKey) ||
+                      inspectedBackup.has_downloadable_files !== true
+                    }
+                    onClick={() => {
+                      const ay =
+                        inspectedBackup.academic_year ||
+                        inspectedBackup.metadata?.academic_year ||
+                        undefined;
+                      const sem =
+                        inspectedBackup.metadata?.semester || undefined;
+                      const customZipName =
+                        inspectedBackup.metadata?.zip_name ||
+                        (inspectedBackup.backup_name?.endsWith(".zip")
+                          ? inspectedBackup.backup_name
+                          : `${inspectedBackup.backup_name}.zip`);
+                      void handleDownloadZip(ay, sem, undefined, customZipName);
+                    }}
+                    title={
+                      inspectedBackup.has_downloadable_files === true
+                        ? "Download Documents (.ZIP)"
+                        : "Files for this semester were cleaned from Storage"
+                    }
+                    className="w-full sm:w-auto justify-center px-4 py-2 rounded-xl text-xs font-bold bg-amber-500 hover:bg-amber-400 text-slate-900 border border-amber-600 transition cursor-pointer flex items-center gap-1.5 shadow-xs disabled:bg-slate-200 disabled:text-slate-400 disabled:border-slate-300 dark:disabled:bg-slate-800 dark:disabled:text-slate-500 dark:disabled:border-slate-700 disabled:shadow-none disabled:cursor-not-allowed disabled:hover:bg-slate-200 dark:disabled:hover:bg-slate-800"
+                  >
+                    <AppIcon icon={Archive} size="sm" color="inherit" />
+                    <span>Download Documents (.ZIP)</span>
+                  </button>
                 </div>
               </div>
             </div>
@@ -2026,32 +2341,32 @@ export function BackupArchivePanel({
 
       {/* Term Vault Inspection Modal */}
       {inspectedTerm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4 backdrop-blur-sm">
-          <div className="w-full max-w-md rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xl text-slate-900 dark:text-slate-100 overflow-hidden flex flex-col">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-3 sm:p-4 backdrop-blur-sm">
+          <div className="w-full max-w-md max-h-[90dvh] rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xl text-slate-900 dark:text-slate-100 overflow-hidden flex flex-col">
             <ModalHeader title="Archived Term Details" icon={Archive} />
-            <div className="p-6 space-y-3 text-xs">
-              <div className="p-4 rounded-lg bg-slate-50 border border-slate-200/80 dark:bg-slate-900/50 dark:border-slate-800 space-y-2">
-                <div className="flex justify-between">
+            <div className="p-4 sm:p-6 space-y-3 text-xs overflow-y-auto flex-1">
+              <div className="p-3.5 sm:p-4 rounded-lg bg-slate-50 border border-slate-200/80 dark:bg-slate-900/50 dark:border-slate-800 space-y-2">
+                <div className="flex justify-between gap-3">
                   <span className="text-slate-500 dark:text-slate-400">
                     School Year:
                   </span>
-                  <span className="font-bold text-slate-900 dark:text-slate-100">
+                  <span className="font-bold text-slate-900 dark:text-slate-100 text-right">
                     {inspectedTerm.academic_year}
                   </span>
                 </div>
-                <div className="flex justify-between">
+                <div className="flex justify-between gap-3">
                   <span className="text-slate-500 dark:text-slate-400">
                     Semester:
                   </span>
-                  <span className="font-bold text-slate-900 dark:text-slate-100">
+                  <span className="font-bold text-slate-900 dark:text-slate-100 text-right">
                     {inspectedTerm.semester}
                   </span>
                 </div>
-                <div className="flex justify-between">
+                <div className="flex justify-between gap-3">
                   <span className="text-slate-500 dark:text-slate-400">
                     File Status:
                   </span>
-                  <span className="font-semibold text-slate-800 dark:text-slate-200">
+                  <span className="font-semibold text-slate-800 dark:text-slate-200 text-right">
                     {inspectedTerm.is_files_cleaned
                       ? "Cleaned from Storage"
                       : inspectedTerm.has_downloadable_files
@@ -2059,11 +2374,11 @@ export function BackupArchivePanel({
                         : "No Uploaded Files"}
                   </span>
                 </div>
-                <div className="flex justify-between">
+                <div className="flex justify-between gap-3">
                   <span className="text-slate-500 dark:text-slate-400">
                     Date Archived:
                   </span>
-                  <span className="text-slate-700 dark:text-slate-300">
+                  <span className="text-slate-700 dark:text-slate-300 text-right">
                     {"archived_at" in inspectedTerm && inspectedTerm.archived_at
                       ? formatDateTime(inspectedTerm.archived_at)
                       : "Preserved in Vault"}
@@ -2077,7 +2392,14 @@ export function BackupArchivePanel({
               </p>
             </div>
 
-            <div className="flex items-center justify-end gap-2 p-4 border-t border-slate-200 dark:border-slate-800">
+            <div className="flex flex-col-reverse sm:flex-row sm:items-center justify-end gap-2 p-4 border-t border-slate-200 dark:border-slate-800 shrink-0">
+              <button
+                type="button"
+                onClick={() => setInspectedTerm(null)}
+                className="w-full sm:w-auto inline-flex items-center justify-center px-4 py-2 rounded-xl text-xs font-semibold bg-[#780000] hover:bg-[#5e0000] text-white border border-[#5e0000] transition cursor-pointer shadow-xs"
+              >
+                Close
+              </button>
               <button
                 type="button"
                 disabled={
@@ -2098,7 +2420,7 @@ export function BackupArchivePanel({
                       ? "Files for this term were cleaned from Storage"
                       : "No uploaded files available for this term"
                 }
-                className="px-4 py-2 rounded-xl text-xs font-bold bg-amber-500 hover:bg-amber-400 text-slate-900 border border-amber-600 transition cursor-pointer flex items-center gap-1.5 disabled:bg-slate-200 disabled:text-slate-400 disabled:border-slate-300 dark:disabled:bg-slate-800 dark:disabled:text-slate-500 dark:disabled:border-slate-700 disabled:shadow-none disabled:cursor-not-allowed disabled:hover:bg-slate-200 dark:disabled:hover:bg-slate-800 shadow-xs"
+                className="w-full sm:w-auto justify-center px-4 py-2 rounded-xl text-xs font-bold bg-amber-500 hover:bg-amber-400 text-slate-900 border border-amber-600 transition cursor-pointer flex items-center gap-1.5 disabled:bg-slate-200 disabled:text-slate-400 disabled:border-slate-300 dark:disabled:bg-slate-800 dark:disabled:text-slate-500 dark:disabled:border-slate-700 disabled:shadow-none disabled:cursor-not-allowed disabled:hover:bg-slate-200 dark:disabled:hover:bg-slate-800 shadow-xs"
               >
                 {exportingTermKey ===
                 `${inspectedTerm.academic_year}__${inspectedTerm.semester}__all` ? (
@@ -2113,13 +2435,6 @@ export function BackupArchivePanel({
                   </>
                 )}
               </button>
-              <button
-                type="button"
-                onClick={() => setInspectedTerm(null)}
-                className="px-4 py-2 rounded-xl text-xs font-semibold bg-[#780000] hover:bg-[#5e0000] text-white border border-[#5e0000] transition cursor-pointer shadow-xs"
-              >
-                Close
-              </button>
             </div>
           </div>
         </div>
@@ -2127,19 +2442,19 @@ export function BackupArchivePanel({
 
       {/* Delete Backup Confirmation Modal */}
       {backupToDelete && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4 backdrop-blur-sm">
-          <div className="w-full max-w-md rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-2xl text-slate-900 dark:text-slate-100">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-3 sm:p-4 backdrop-blur-sm">
+          <div className="w-full max-w-md max-h-[90dvh] rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 sm:p-6 shadow-2xl text-slate-900 dark:text-slate-100 overflow-y-auto">
             {/* Modal Header */}
             <ModalHeader
               icon={Trash}
               title="Delete Backup"
               subtitle="Remove this backup from the list"
-              className="-mx-6 -mt-6 mb-4 rounded-t-2xl"
+              className="-mx-4 -mt-4 sm:-mx-6 sm:-mt-6 mb-4 rounded-t-2xl"
             />
 
             {/* Description & Warnings */}
             <div className="space-y-3">
-              <p className="text-xs text-slate-700 dark:text-slate-300 leading-relaxed">
+              <p className="text-xs text-slate-700 dark:text-slate-300 leading-relaxed break-words">
                 Are you sure you want to permanently delete{" "}
                 <strong className="text-slate-900 dark:text-slate-100">
                   &ldquo;{backupToDelete.backup_name}&rdquo;
@@ -2169,11 +2484,11 @@ export function BackupArchivePanel({
             </div>
 
             {/* Footer Actions */}
-            <div className="mt-6 flex items-center justify-end gap-2.5">
+            <div className="mt-5 sm:mt-6 grid grid-cols-2 sm:flex sm:items-center sm:justify-end gap-2.5">
               <button
                 type="button"
                 onClick={() => setBackupToDelete(null)}
-                className="px-4 py-2 rounded-xl bg-[#780000] hover:bg-[#5e0000] text-white border border-[#5e0000] text-xs font-semibold transition cursor-pointer shadow-xs"
+                className="w-full sm:w-auto inline-flex items-center justify-center px-4 py-2 rounded-xl bg-[#780000] hover:bg-[#5e0000] text-white border border-[#5e0000] text-xs font-semibold transition cursor-pointer shadow-xs"
               >
                 Cancel
               </button>
@@ -2181,7 +2496,7 @@ export function BackupArchivePanel({
                 type="button"
                 disabled={isDeleting || deleteCountdown > 0}
                 onClick={() => void handleDeleteBackup()}
-                className="bg-[#780000] hover:bg-[#5e0000] text-white border border-[#5e0000] text-xs font-semibold px-4 py-2 rounded-xl transition disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer shadow-xs"
+                className="w-full sm:w-auto inline-flex items-center justify-center bg-[#780000] hover:bg-[#5e0000] text-white border border-[#5e0000] text-xs font-semibold px-4 py-2 rounded-xl transition disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer shadow-xs"
               >
                 {isDeleting
                   ? "Deleting..."
@@ -2196,13 +2511,13 @@ export function BackupArchivePanel({
 
       {/* Clean Semester Storage Modal */}
       {cleanTermTarget && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4 backdrop-blur-sm">
-          <div className="w-full max-w-lg rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-2xl text-slate-900 dark:text-slate-100">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-3 sm:p-4 backdrop-blur-sm">
+          <div className="w-full max-w-lg max-h-[90dvh] rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 sm:p-6 shadow-2xl text-slate-900 dark:text-slate-100 overflow-y-auto">
             <ModalHeader
               icon={Trash}
               title={`Delete Semester Files & Logs · A.Y. ${cleanTermTarget.academic_year}`}
               subtitle={`${cleanTermTarget.semester} — Optional cleanup if storage/DB is full (cannot be restored once deleted)`}
-              className="-mx-6 -mt-6 mb-4 rounded-t-2xl"
+              className="-mx-4 -mt-4 sm:-mx-6 sm:-mt-6 mb-4 rounded-t-2xl"
             />
 
             <div className="space-y-3.5 text-xs">
@@ -2214,7 +2529,7 @@ export function BackupArchivePanel({
                     <span>Checking sem data...</span>
                   </div>
                 ) : cleanPreview ? (
-                  <div className="grid grid-cols-3 sm:grid-cols-6 gap-2.5">
+                  <div className="grid grid-cols-2 xs:grid-cols-3 sm:grid-cols-6 gap-2.5">
                     <div>
                       <span className="text-[10px] uppercase tracking-wider text-slate-500 block whitespace-nowrap">
                         Files
@@ -2293,7 +2608,7 @@ export function BackupArchivePanel({
                         cleanTermTarget.semester,
                       )
                     }
-                    className="px-3 py-1.5 rounded-lg bg-[#780000] hover:bg-[#5e0000] text-white font-bold text-[11px] border border-[#5e0000] shrink-0 cursor-pointer"
+                    className="w-full sm:w-auto px-3 py-1.5 rounded-lg bg-[#780000] hover:bg-[#5e0000] text-white font-bold text-[11px] border border-[#5e0000] shrink-0 cursor-pointer text-center"
                   >
                     Download .ZIP
                   </button>
@@ -2401,11 +2716,11 @@ export function BackupArchivePanel({
               ) : null}
             </div>
 
-            <div className="mt-5 flex items-center justify-end gap-2.5">
+            <div className="mt-5 grid grid-cols-2 sm:flex sm:items-center sm:justify-end gap-2.5">
               <button
                 type="button"
                 onClick={() => setCleanTermTarget(null)}
-                className="px-4 py-2 rounded-xl border border-amber-600 bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-bold transition cursor-pointer shadow-xs"
+                className="w-full sm:w-auto inline-flex items-center justify-center px-4 py-2 rounded-xl border border-amber-600 bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-bold transition cursor-pointer shadow-xs"
               >
                 Cancel
               </button>
@@ -2418,7 +2733,7 @@ export function BackupArchivePanel({
                   !cleanAdminPassword
                 }
                 onClick={() => void handleConfirmCleanTerm()}
-                className="bg-[#780000] hover:bg-[#5e0000] text-white border border-[#5e0000] text-xs font-bold px-4 py-2 rounded-xl transition disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer shadow-xs"
+                className="w-full sm:w-auto inline-flex items-center justify-center bg-[#780000] hover:bg-[#5e0000] text-white border border-[#5e0000] text-xs font-bold px-4 py-2 rounded-xl transition disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer shadow-xs"
               >
                 {isCleaningTerm
                   ? "Cleaning..."
