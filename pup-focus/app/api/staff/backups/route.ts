@@ -83,23 +83,123 @@ export async function GET(request: NextRequest) {
       console.warn("Error querying academic_terms:", err);
     }
 
-    // 3. Fetch submissions counts per term
+    // 3. Fetch submissions & assignment mappings to detect active vs cleaned Storage files per term
     let submissionsList: Array<{
       id: string;
-      academic_year?: string | null;
-      semester?: string | null;
       status?: string | null;
       is_archived?: boolean | null;
       created_at?: string | null;
+      submitted_at?: string | null;
+      faculty_assignment_id?: string | null;
+      class_id?: string | null;
+      storage_path?: string | null;
     }> = [];
 
-    try {
-      const { data: subData, error: subError } = await supabase
-        .from("submissions")
-        .select("id, status, is_archived, created_at, faculty_assignment_id");
+    const normAy = (v?: string | null) =>
+      (v || "").toLowerCase().trim().replace(/^s\.?y\.?\s*/i, "").replace(/^a\.?y\.?\s*/i, "").replace(/[^0-9]/g, "");
+    const normSem = (v?: string | null) => {
+      const s = (v || "").toLowerCase().trim();
+      if (s.includes("2nd") || s.includes("second")) return "2nd semester";
+      if (s.includes("summer")) return "summer semester";
+      if (s.includes("1st") || s.includes("first")) return "1st semester";
+      return s;
+    };
+    const inferTerm = (dateInput?: string | null) => {
+      const src = dateInput ? new Date(dateInput) : new Date();
+      const d = Number.isNaN(src.getTime()) ? new Date() : src;
+      const m = d.getMonth() + 1;
+      const y = d.getFullYear();
+      const first = m >= 6;
+      return {
+        ay: first ? `${y}-${y + 1}` : `${y - 1}-${y}`,
+        sem: first ? "1st Semester" : "2nd Semester",
+      };
+    };
 
-      if (!subError && subData) {
-        submissionsList = subData as typeof submissionsList;
+    const assignmentTermMap = new Map<string, { ay: string; sem: string }>();
+    const classTermMap = new Map<string, { ay: string; sem: string }>();
+    const termsWithActiveFiles = new Set<string>();
+    const termsWithCleanedFiles = new Set<string>();
+    const termSubmissionCounts = new Map<string, number>();
+
+    try {
+      const [assignRes, classRes, subPrimary] = await Promise.all([
+        supabase
+          .from("faculty_program_assignments")
+          .select("id, academic_year, term"),
+        supabase
+          .from("faculty_classes")
+          .select("id, academic_year, semester"),
+        supabase
+          .from("submissions")
+          .select("id, status, created_at, submitted_at, faculty_assignment_id, class_id, storage_path"),
+      ]);
+
+      for (const a of assignRes.data ?? []) {
+        if (a.id && a.academic_year) {
+          assignmentTermMap.set(a.id, { ay: a.academic_year, sem: a.term || "1st Semester" });
+        }
+      }
+      for (const c of classRes.data ?? []) {
+        if (c.id && c.academic_year) {
+          classTermMap.set(c.id, { ay: c.academic_year, sem: c.semester || "1st Semester" });
+        }
+      }
+
+      if (!subPrimary.error && subPrimary.data) {
+        submissionsList = subPrimary.data as typeof submissionsList;
+      } else {
+        const subWithStorage = await supabase
+          .from("submissions")
+          .select("id, status, created_at, submitted_at, faculty_assignment_id, storage_path");
+        if (!subWithStorage.error && subWithStorage.data) {
+          submissionsList = subWithStorage.data as typeof submissionsList;
+        } else {
+          const subFallback = await supabase
+            .from("submissions")
+            .select("id, status, created_at, submitted_at, faculty_assignment_id");
+          if (!subFallback.error && subFallback.data) {
+            submissionsList = subFallback.data as typeof submissionsList;
+          }
+        }
+      }
+
+      // Check whether submission Storage buckets actually hold any files
+      let storageHasAnyFiles = false;
+      try {
+        const { data: buckets } = await supabase.storage.listBuckets();
+        const subBuckets = (buckets ?? [])
+          .map((b) => b.name)
+          .filter((n) => n && n.toLowerCase() !== "avatars");
+        for (const bName of subBuckets.length > 0 ? subBuckets : ["faculty-submissions", "submissions"]) {
+          const { data: rootList } = await supabase.storage.from(bName).list("", { limit: 5 });
+          if (Array.isArray(rootList) && rootList.some((item) => item.name && item.name !== ".emptyFolderPlaceholder")) {
+            storageHasAnyFiles = true;
+            break;
+          }
+        }
+      } catch {
+        storageHasAnyFiles = true;
+      }
+
+      for (const sub of submissionsList) {
+        const term =
+          (sub.faculty_assignment_id && assignmentTermMap.get(sub.faculty_assignment_id)) ||
+          (sub.class_id && classTermMap.get(sub.class_id)) ||
+          inferTerm(sub.submitted_at || sub.created_at);
+        const key = `${normAy(term.ay)}::${normSem(term.sem)}`;
+        termSubmissionCounts.set(key, (termSubmissionCounts.get(key) ?? 0) + 1);
+        if (sub.storage_path?.startsWith("__cleaned__") || !storageHasAnyFiles) {
+          termsWithCleanedFiles.add(key);
+        } else if (
+          sub.storage_path ||
+          (sub.status &&
+            sub.status !== "missing" &&
+            sub.status !== "pending" &&
+            sub.status !== "exempted")
+        ) {
+          termsWithActiveFiles.add(key);
+        }
       }
     } catch (err) {
       console.warn("Error querying submissions for archive summary:", err);
@@ -111,13 +211,19 @@ export async function GET(request: NextRequest) {
 
     for (const term of termsRows) {
       const isArchived = Boolean(term.is_archived) || term.status === "Archived";
-      
+      const termKey = `${normAy(term.academic_year)}::${normSem(term.semester)}`;
+      const subCount = termSubmissionCounts.get(termKey) ?? 0;
+      const hasDownloadableFiles = termsWithActiveFiles.has(termKey);
+      const isFilesCleaned = !hasDownloadableFiles && termsWithCleanedFiles.has(termKey);
+
       const termItem: AvailableAcademicTerm = {
         academic_year: term.academic_year,
         semester: term.semester,
         status: term.status,
         is_archived: isArchived,
-        total_submissions: 0,
+        total_submissions: subCount,
+        has_downloadable_files: hasDownloadableFiles,
+        is_files_cleaned: isFilesCleaned,
       };
 
       availableTerms.push(termItem);
@@ -128,12 +234,39 @@ export async function GET(request: NextRequest) {
           semester: term.semester,
           status: "Archived",
           is_archived: true,
-          total_submissions: 0,
+          total_submissions: subCount,
           validated_submissions: 0,
           archived_at: term.updated_at || null,
+          has_downloadable_files: hasDownloadableFiles,
+          is_files_cleaned: isFilesCleaned,
         });
       }
     }
+
+    backups = backups.map((bk) => {
+      const meta = (bk.metadata ?? {}) as Record<string, any>;
+      const scope = (typeof meta.scope === "object" && meta.scope !== null ? meta.scope : {}) as Record<string, any>;
+      const bAy = scope.academic_year || bk.academic_year || meta.academic_year || null;
+      const bSem = scope.semester || meta.semester || null;
+
+      let hasFiles = termsWithActiveFiles.size > 0;
+      let isCleaned = !hasFiles && termsWithCleanedFiles.size > 0;
+      if (bAy && bSem) {
+        const key = `${normAy(String(bAy))}::${normSem(String(bSem))}`;
+        hasFiles = termsWithActiveFiles.has(key);
+        isCleaned = !hasFiles && termsWithCleanedFiles.has(key);
+      } else if (bAy) {
+        const ayPrefix = `${normAy(String(bAy))}::`;
+        hasFiles = Array.from(termsWithActiveFiles).some((k) => k.startsWith(ayPrefix));
+        isCleaned = !hasFiles && Array.from(termsWithCleanedFiles).some((k) => k.startsWith(ayPrefix));
+      }
+
+      return {
+        ...bk,
+        has_downloadable_files: hasFiles,
+        is_files_cleaned: isCleaned,
+      };
+    });
 
     // 4. Fetch faculty list for scoped backups (Strictly faculty only - exclude admin & superadmin)
     const facultyList: Array<{

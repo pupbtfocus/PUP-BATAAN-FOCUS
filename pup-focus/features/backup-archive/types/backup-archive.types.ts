@@ -16,6 +16,8 @@ export interface SystemBackup {
   file_size_kb: number;
   file_url?: string | null;
   status: BackupStatus;
+  has_downloadable_files?: boolean;
+  is_files_cleaned?: boolean;
   created_by?: string | null;
   created_by_name?: string | null;
   created_at: string;
@@ -50,6 +52,8 @@ export interface ArchivedTermSummary {
   total_submissions: number;
   validated_submissions: number;
   archived_at?: string | null;
+  has_downloadable_files?: boolean;
+  is_files_cleaned?: boolean;
 }
 
 export interface AvailableAcademicTerm {
@@ -58,6 +62,8 @@ export interface AvailableAcademicTerm {
   status: string;
   is_archived: boolean;
   total_submissions?: number;
+  has_downloadable_files?: boolean;
+  is_files_cleaned?: boolean;
 }
 
 export interface BackupStats {

@@ -599,6 +599,16 @@ export async function GET(request: NextRequest) {
       ]);
     }
 
+    if (fileCount === 0) {
+      return NextResponse.json(
+        {
+          error:
+            "No downloadable files remain in Storage for this semester (already cleaned). Use the .ZIP backup downloaded before cleaning.",
+        },
+        { status: 410 },
+      );
+    }
+
     const csvContent = csvRows.map(r => r.join(",")).join("\n");
     zip.file("Faculty_Semester_Compliance_Summary.csv", csvContent);
 
