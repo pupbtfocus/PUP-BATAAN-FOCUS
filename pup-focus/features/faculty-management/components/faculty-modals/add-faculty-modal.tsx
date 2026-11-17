@@ -509,7 +509,7 @@ export function AddFacultyPanel({
         onSubmit={form.handleSubmit(handleFormSubmit)}
       >
           {/* Scrollable Body Content */}
-          <div className="flex-1 overflow-y-auto p-6 space-y-5">
+          <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4 sm:space-y-5">
             <AlertPopup
               type="warning"
               message={nameAlert}
@@ -611,7 +611,7 @@ export function AddFacultyPanel({
             <label className="text-xs font-semibold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1.5 block">
               Profile Photo
             </label>
-            <div className="border-2 border-dashed border-slate-200 dark:border-slate-700/80 rounded-xl p-4 bg-slate-50/50 dark:bg-slate-950/40 flex items-center gap-3">
+            <div className="border-2 border-dashed border-slate-200 dark:border-slate-700/80 rounded-xl p-3.5 sm:p-4 bg-slate-50/50 dark:bg-slate-950/40 flex flex-wrap sm:flex-nowrap items-center gap-3">
               {imagePreview ? (
                 <img
                   src={imagePreview}
@@ -677,9 +677,9 @@ export function AddFacultyPanel({
             <FieldError message={form.formState.errors.email?.message} />
           </div>
 
-            <div className="flex items-center justify-center pt-2">
+            <div className="pt-2 sm:flex sm:items-center sm:justify-center">
               <button
-                className={`py-2.5 px-6 rounded-xl transition-all shadow-md text-xs tracking-wide font-bold ${
+                className={`w-full sm:w-auto py-2.5 px-6 rounded-xl transition-all shadow-md text-xs tracking-wide font-bold ${
                   !canSubmit || isCreating || isLoadingPrograms
                     ? "bg-slate-200 dark:bg-slate-800 text-slate-400 dark:text-slate-500 cursor-not-allowed border border-slate-300 dark:border-slate-700"
                     : "bg-amber-500 hover:bg-amber-400 text-slate-950 cursor-pointer active:scale-[0.99]"
@@ -723,8 +723,8 @@ export function AddFacultyModal({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="w-full max-w-3xl sm:max-w-4xl rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xl text-slate-900 dark:text-slate-100 max-h-[85vh] flex flex-col overflow-hidden">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-3 sm:p-4 backdrop-blur-sm animate-in fade-in duration-200">
+      <div className="w-full max-w-3xl sm:max-w-4xl rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xl text-slate-900 dark:text-slate-100 max-h-[90dvh] flex flex-col overflow-hidden">
         <ModalHeader
           icon={UserPlus}
           title="Add Faculty Account"

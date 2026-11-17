@@ -440,7 +440,7 @@ export function EditStaffModal({
   return (
     <>
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-3 sm:p-4">
-        <div className="w-full max-w-xl max-h-[94vh] overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-800 bg-white text-slate-900 dark:bg-slate-900 dark:text-slate-100 shadow-2xl flex flex-col">
+        <div className="w-full max-w-xl max-h-[90dvh] overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-800 bg-white text-slate-900 dark:bg-slate-900 dark:text-slate-100 shadow-2xl flex flex-col">
           {/* Header */}
           <ModalHeader
             icon={User}
@@ -770,7 +770,7 @@ export function EditStaffModal({
                   >
                     Email Address (Account Recovery / Change Email)
                   </label>
-                  <div className="flex items-center gap-1.5 shrink-0">
+                  <div className="flex flex-wrap items-center gap-1.5 w-full sm:w-auto">
                     <button
                       type="button"
                       onClick={() => void handleSendPasswordReset()}
@@ -890,11 +890,11 @@ export function EditStaffModal({
           </div>
 
           {/* Modal Footer */}
-          <div className="flex items-center justify-end gap-2.5 px-5 py-3 border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shrink-0 rounded-b-2xl">
+          <div className="grid grid-cols-2 sm:flex sm:items-center sm:justify-end gap-2.5 px-4 sm:px-5 py-3 border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shrink-0 rounded-b-2xl">
             <button
               type="button"
               onClick={handleAttemptClose}
-              className="rounded-xl bg-[#780000] hover:bg-[#5e0000] text-white border border-[#5e0000] px-5 py-2 text-xs font-semibold transition cursor-pointer shadow-xs"
+              className="w-full sm:w-auto inline-flex items-center justify-center rounded-xl bg-[#780000] hover:bg-[#5e0000] text-white border border-[#5e0000] px-5 py-2 text-xs font-semibold transition cursor-pointer shadow-xs"
             >
               Close
             </button>
@@ -908,7 +908,7 @@ export function EditStaffModal({
                 !lastName.trim() ||
                 !isEmailValid
               }
-              className="rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold px-5 py-2 text-xs transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed shadow-2xs"
+              className="w-full sm:w-auto inline-flex items-center justify-center rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold px-5 py-2 text-xs transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed shadow-2xs"
             >
               Save Changes
             </button>

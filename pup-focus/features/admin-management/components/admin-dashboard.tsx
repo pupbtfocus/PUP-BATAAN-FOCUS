@@ -2599,8 +2599,8 @@ export function SuperAdminDashboard({
       </div>
 
       {createAdminModalOpen ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="w-full max-w-3xl sm:max-w-4xl rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xl text-slate-900 dark:text-slate-100 max-h-[85vh] flex flex-col overflow-hidden">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-3 sm:p-4 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="w-full max-w-3xl sm:max-w-4xl rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xl text-slate-900 dark:text-slate-100 max-h-[90dvh] flex flex-col overflow-hidden">
             <ModalHeader
               title="Add Staff Account"
               subtitle="Create credentials and assign staff privileges"
@@ -2611,7 +2611,7 @@ export function SuperAdminDashboard({
             />
             <div className="flex flex-1 flex-col overflow-hidden min-h-0 w-full">
               <form className="flex flex-1 flex-col overflow-hidden min-h-0 w-full" onSubmit={onSubmit}>
-                <div className="flex-1 overflow-y-auto p-6 space-y-5">
+                <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4 sm:space-y-5">
                   <AlertPopup
                     type="warning"
                     message={adminNameAlert}
@@ -2694,7 +2694,7 @@ export function SuperAdminDashboard({
                     <label className="text-xs font-semibold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1.5 block">
                       Profile Photo
                     </label>
-                    <div className="border-2 border-dashed border-slate-200 dark:border-slate-700/80 rounded-xl p-4 bg-slate-50/50 dark:bg-slate-950/40 flex items-center gap-3">
+                    <div className="border-2 border-dashed border-slate-200 dark:border-slate-700/80 rounded-xl p-3.5 sm:p-4 bg-slate-50/50 dark:bg-slate-950/40 flex flex-wrap sm:flex-nowrap items-center gap-3">
                       {createAdminProfileImagePreview ? (
                         <img
                           src={createAdminProfileImagePreview}
@@ -2779,9 +2779,9 @@ export function SuperAdminDashboard({
                   />
 
                   {/* Action Button - Centered */}
-                  <div className="flex items-center justify-center pt-2">
+                  <div className="pt-2 sm:flex sm:items-center sm:justify-center">
                     <button
-                      className={`py-2.5 px-6 rounded-xl transition-all shadow-md text-xs tracking-wide font-bold ${
+                      className={`w-full sm:w-auto py-2.5 px-6 rounded-xl transition-all shadow-md text-xs tracking-wide font-bold ${
                         !canSubmitStaff || isSubmitting
                           ? "bg-slate-200 dark:bg-slate-800 text-slate-400 dark:text-slate-500 cursor-not-allowed border border-slate-300 dark:border-slate-700"
                           : "bg-amber-500 hover:bg-amber-400 text-slate-950 cursor-pointer active:scale-[0.99]"
@@ -3109,14 +3109,14 @@ function SettingsOptionButton({
                     </div>
 
                     <div className="space-y-1.5 pt-2.5 border-t border-slate-200/80 dark:border-slate-800">
-                      <div className="flex items-center justify-between gap-2">
+                      <div className="flex flex-wrap items-center justify-between gap-2">
                         <label
                           className="block text-[11px] uppercase tracking-[0.16em] text-slate-500 dark:text-slate-400 font-semibold"
                           htmlFor="adminEmail"
                         >
                           Email Address (Account Recovery / Change Email)
                         </label>
-                        <div className="flex items-center gap-1.5 shrink-0">
+                        <div className="flex flex-wrap items-center gap-1.5 w-full sm:w-auto">
                           <button
                             type="button"
                             onClick={() => void handleSendPasswordReset()}
@@ -3245,11 +3245,11 @@ function SettingsOptionButton({
                         </span>
                       </div>
                     </div>
-                    <div className="flex gap-2">
+                    <div className="w-full sm:w-auto grid grid-cols-2 sm:flex gap-2">
                       <button
                         type="button"
                         onClick={handleAttemptClose}
-                        className="rounded-xl bg-[#780000] hover:bg-[#5e0000] text-white border border-[#5e0000] px-4 py-2 text-xs font-semibold transition cursor-pointer shadow-xs"
+                        className="w-full sm:w-auto inline-flex items-center justify-center rounded-xl bg-[#780000] hover:bg-[#5e0000] text-white border border-[#5e0000] px-4 py-2 text-xs font-semibold transition cursor-pointer shadow-xs"
                       >
                         Close
                       </button>
@@ -3261,7 +3261,7 @@ function SettingsOptionButton({
                           !fullName.trim() ||
                           !isEmailValid
                         }
-                        className="bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold rounded-xl px-5 py-2 text-xs transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed shadow-2xs"
+                        className="w-full sm:w-auto inline-flex items-center justify-center bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold rounded-xl px-5 py-2 text-xs transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed shadow-2xs"
                       >
                         {isSaving ? "Saving..." : "Save Changes"}
                       </button>

@@ -124,9 +124,9 @@ export function StaffDetailsModal({
         role="dialog"
         aria-modal="true"
         aria-labelledby="staff-details-title"
-        className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4"
+        className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-3 sm:p-4"
       >
-        <div className="relative w-full max-w-2xl max-h-[92vh] overflow-y-auto rounded-2xl border border-slate-200 dark:border-slate-800 bg-white text-slate-900 dark:bg-slate-900 dark:text-slate-100 shadow-xl">
+        <div className="relative w-full max-w-2xl max-h-[90dvh] overflow-y-auto rounded-2xl border border-slate-200 dark:border-slate-800 bg-white text-slate-900 dark:bg-slate-900 dark:text-slate-100 shadow-xl">
           {/* Header */}
           <ModalHeader
             icon={User}
@@ -136,9 +136,9 @@ export function StaffDetailsModal({
           />
 
           {/* Content Body */}
-          <div className="space-y-6 p-6">
+          <div className="space-y-4 sm:space-y-6 p-4 sm:p-6">
             {/* Staff Profile Overview Banner Card */}
-            <div className="flex items-center gap-4 rounded-xl border border-slate-200/80 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 p-4">
+            <div className="flex items-center gap-3.5 sm:gap-4 rounded-xl border border-slate-200/80 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 p-3.5 sm:p-4">
               <button
                 type="button"
                 onClick={() => {
@@ -166,27 +166,27 @@ export function StaffDetailsModal({
 
               <div className="flex-1 min-w-0">
                 <div className="flex flex-wrap items-center gap-2">
-                  <h3 className="text-base sm:text-lg font-bold text-slate-900 dark:text-slate-100 truncate">
+                  <h3 className="text-base sm:text-lg font-bold text-slate-900 dark:text-slate-100 break-words">
                     {displayName}
                   </h3>
                   {staff.is_active ? (
-                    <span className="bg-[#0b5336] text-white border border-[#08412a] px-2 py-0.5 text-xs font-semibold rounded-md inline-flex items-center gap-1 shadow-2xs">
+                    <span className="bg-[#0b5336] text-white border border-[#08412a] px-2 py-0.5 text-xs font-semibold rounded-md inline-flex items-center gap-1 shadow-2xs shrink-0">
                       <span className="h-1.5 w-1.5 rounded-full bg-emerald-300" />
                       Active
                     </span>
                   ) : (
-                    <span className="bg-[#780000] text-white border border-[#5e0000] px-2 py-0.5 text-xs font-semibold rounded-md inline-flex items-center gap-1 shadow-2xs">
+                    <span className="bg-[#780000] text-white border border-[#5e0000] px-2 py-0.5 text-xs font-semibold rounded-md inline-flex items-center gap-1 shadow-2xs shrink-0">
                       <span className="h-1.5 w-1.5 rounded-full bg-rose-300" />
                       Inactive
                     </span>
                   )}
-                  <span className="bg-slate-100 text-slate-700 border border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700 px-2 py-0.5 text-xs font-semibold rounded-md inline-flex items-center">
+                  <span className="bg-slate-100 text-slate-700 border border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700 px-2 py-0.5 text-xs font-semibold rounded-md inline-flex items-center shrink-0">
                     {roleLabel}
                   </span>
                 </div>
-                <div className="mt-1 flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400">
-                  <AppIcon icon={Mail} size="sm" color="muted" />
-                  <span className="truncate">{staff.email}</span>
+                <div className="mt-1 flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400 min-w-0">
+                  <AppIcon icon={Mail} size="sm" color="muted" className="shrink-0" />
+                  <span className="break-all">{staff.email}</span>
                 </div>
               </div>
             </div>
@@ -200,27 +200,27 @@ export function StaffDetailsModal({
                   <span>Personal Information</span>
                 </div>
                 <div className="space-y-2 text-xs divide-y divide-slate-200/60 dark:divide-slate-800/60">
-                  <div className="flex justify-between items-center py-1.5">
-                    <span className="text-slate-500 dark:text-slate-400">First Name</span>
-                    <span className="font-semibold text-slate-800 dark:text-slate-200">
+                  <div className="flex justify-between items-center gap-3 py-1.5">
+                    <span className="text-slate-500 dark:text-slate-400 shrink-0">First Name</span>
+                    <span className="font-semibold text-slate-800 dark:text-slate-200 text-right break-words min-w-0">
                       {firstName || "—"}
                     </span>
                   </div>
-                  <div className="flex justify-between items-center py-1.5">
-                    <span className="text-slate-500 dark:text-slate-400">Middle Name</span>
-                    <span className="font-semibold text-slate-800 dark:text-slate-200">
+                  <div className="flex justify-between items-center gap-3 py-1.5">
+                    <span className="text-slate-500 dark:text-slate-400 shrink-0">Middle Name</span>
+                    <span className="font-semibold text-slate-800 dark:text-slate-200 text-right break-words min-w-0">
                       {middleName || "—"}
                     </span>
                   </div>
-                  <div className="flex justify-between items-center py-1.5">
-                    <span className="text-slate-500 dark:text-slate-400">Last Name</span>
-                    <span className="font-semibold text-slate-800 dark:text-slate-200">
+                  <div className="flex justify-between items-center gap-3 py-1.5">
+                    <span className="text-slate-500 dark:text-slate-400 shrink-0">Last Name</span>
+                    <span className="font-semibold text-slate-800 dark:text-slate-200 text-right break-words min-w-0">
                       {lastName || "—"}
                     </span>
                   </div>
-                  <div className="flex justify-between items-center py-1.5">
-                    <span className="text-slate-500 dark:text-slate-400">Registered On</span>
-                    <span className="font-semibold text-slate-800 dark:text-slate-200">
+                  <div className="flex justify-between items-center gap-3 py-1.5">
+                    <span className="text-slate-500 dark:text-slate-400 shrink-0">Registered On</span>
+                    <span className="font-semibold text-slate-800 dark:text-slate-200 text-right break-words min-w-0">
                       {formattedCreatedDate}
                     </span>
                   </div>
@@ -234,21 +234,21 @@ export function StaffDetailsModal({
                   <span>Administrative & System</span>
                 </div>
                 <div className="space-y-2 text-xs divide-y divide-slate-200/60 dark:divide-slate-800/60">
-                  <div className="flex justify-between items-center py-1.5">
-                    <span className="text-slate-500 dark:text-slate-400">Assigned Role</span>
-                    <span className="font-semibold text-slate-800 dark:text-slate-200">
+                  <div className="flex justify-between items-center gap-3 py-1.5">
+                    <span className="text-slate-500 dark:text-slate-400 shrink-0">Assigned Role</span>
+                    <span className="font-semibold text-slate-800 dark:text-slate-200 text-right">
                       {roleLabel}
                     </span>
                   </div>
-                  <div className="flex justify-between items-center py-1.5">
-                    <span className="text-slate-500 dark:text-slate-400">Department</span>
-                    <span className="font-semibold text-slate-800 dark:text-slate-200">
+                  <div className="flex justify-between items-center gap-3 py-1.5">
+                    <span className="text-slate-500 dark:text-slate-400 shrink-0">Department</span>
+                    <span className="font-semibold text-slate-800 dark:text-slate-200 text-right break-words min-w-0">
                       {staff.department || "Administration"}
                     </span>
                   </div>
-                  <div className="flex justify-between items-center py-1.5">
-                    <span className="text-slate-500 dark:text-slate-400">Account Status</span>
-                    <span className="inline-flex items-center gap-1.5 font-semibold">
+                  <div className="flex justify-between items-center gap-3 py-1.5">
+                    <span className="text-slate-500 dark:text-slate-400 shrink-0">Account Status</span>
+                    <span className="inline-flex items-center gap-1.5 font-semibold shrink-0">
                       <span
                         className={`h-2 w-2 rounded-full ${
                           staff.is_active ? "bg-[#0b5336]" : "bg-[#780000]"
@@ -265,9 +265,9 @@ export function StaffDetailsModal({
                       </span>
                     </span>
                   </div>
-                  <div className="flex justify-between items-center py-1.5">
-                    <span className="text-slate-500 dark:text-slate-400">Last Sign-in</span>
-                    <span className="font-semibold text-slate-800 dark:text-slate-200">
+                  <div className="flex justify-between items-center gap-3 py-1.5">
+                    <span className="text-slate-500 dark:text-slate-400 shrink-0">Last Sign-in</span>
+                    <span className="font-semibold text-slate-800 dark:text-slate-200 text-right break-words min-w-0">
                       {formattedLastLogin}
                     </span>
                   </div>
@@ -277,7 +277,7 @@ export function StaffDetailsModal({
           </div>
 
           {/* Modal Footer */}
-          <div className="sticky bottom-0 flex items-center justify-end gap-2 border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-6 py-3.5">
+          <div className={`sticky bottom-0 grid ${onEdit && canEdit ? "grid-cols-2" : "grid-cols-1"} sm:flex sm:items-center sm:justify-end gap-2.5 border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-4 sm:px-6 py-3.5`}>
             {onEdit && canEdit ? (
               <button
                 type="button"
@@ -285,7 +285,7 @@ export function StaffDetailsModal({
                   onClose();
                   onEdit(staff.profile_id);
                 }}
-                className="bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-semibold rounded-xl px-4 py-2 transition-colors cursor-pointer inline-flex items-center gap-1.5 shadow-2xs"
+                className="w-full sm:w-auto bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-semibold rounded-xl px-4 py-2 transition-colors cursor-pointer inline-flex items-center justify-center gap-1.5 shadow-2xs"
               >
                 <AppIcon icon={EditPencil} size="sm" color="inherit" className="text-slate-950" />
                 Edit Profile
@@ -294,7 +294,7 @@ export function StaffDetailsModal({
             <button
               type="button"
               onClick={onClose}
-              className="bg-[#780000] hover:bg-[#5e0000] text-white border border-[#5e0000] text-xs font-semibold rounded-xl px-5 py-2 transition-colors cursor-pointer shadow-xs"
+              className="w-full sm:w-auto inline-flex items-center justify-center bg-[#780000] hover:bg-[#5e0000] text-white border border-[#5e0000] text-xs font-semibold rounded-xl px-5 py-2 transition-colors cursor-pointer shadow-xs"
             >
               Close
             </button>

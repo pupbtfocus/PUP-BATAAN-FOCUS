@@ -597,8 +597,8 @@ export function UserRegistrationLogsModal({
 
   return (
     <>
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-2 sm:p-4 md:p-6 backdrop-blur-sm animate-in fade-in duration-200">
-        <div className="w-full max-w-7xl xl:max-w-[1400px] h-[92vh] sm:h-auto sm:max-h-[90vh] flex flex-col rounded-2xl border-2 border-amber-400 dark:border-amber-500/70 bg-white dark:bg-slate-900 shadow-2xl text-slate-900 dark:text-slate-100 overflow-hidden transition-all">
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-2.5 sm:p-4 md:p-6 backdrop-blur-sm animate-in fade-in duration-200">
+        <div className="w-full max-w-7xl xl:max-w-[1400px] h-[90dvh] sm:h-auto sm:max-h-[90dvh] flex flex-col rounded-2xl border-2 border-amber-400 dark:border-amber-500/70 bg-white dark:bg-slate-900 shadow-2xl text-slate-900 dark:text-slate-100 overflow-hidden transition-all">
           {/* Modal Header */}
           <div className="p-4 sm:p-6 pb-3 sm:pb-4 border-b border-slate-200 dark:border-slate-800 shrink-0">
             <ModalHeader
@@ -758,10 +758,10 @@ export function UserRegistrationLogsModal({
                               size="md"
                             />
                             <div className="min-w-0 flex-1">
-                              <h4 className="font-semibold text-slate-900 dark:text-slate-100 text-xs truncate">
+                              <h4 className="font-semibold text-slate-900 dark:text-slate-100 text-xs break-words">
                                 {log.fullName}
                               </h4>
-                              <p className="text-[10px] text-slate-500 dark:text-slate-400 font-mono truncate">
+                              <p className="text-[10px] text-slate-500 dark:text-slate-400 font-mono break-all">
                                 {log.email}
                               </p>
                             </div>
@@ -783,7 +783,7 @@ export function UserRegistrationLogsModal({
                         </div>
 
                         {/* Details row: Role / Program & Dates */}
-                        <div className="grid grid-cols-2 gap-2 text-xs pt-2.5 border-t border-slate-100 dark:border-slate-850">
+                        <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-2 gap-2.5 text-xs pt-2.5 border-t border-slate-100 dark:border-slate-850">
                           <div>
                             <span className="text-[9px] uppercase font-semibold text-slate-400 dark:text-slate-500 block">
                               {isFacultyMode ? "Program" : "Role"}
@@ -797,11 +797,11 @@ export function UserRegistrationLogsModal({
                             <span className="text-[9px] uppercase font-semibold text-slate-400 dark:text-slate-500 block">
                               Sent At
                             </span>
-                            <span className="font-medium text-slate-700 dark:text-slate-300 text-[11px] mt-0.5 inline-block">
+                            <span className="font-medium text-slate-700 dark:text-slate-300 text-[11px] mt-0.5 inline-block leading-snug">
                               {formatDate(log.invitedAt)}
                             </span>
                             {isAccepted && log.confirmedAt ? (
-                              <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-normal block mt-0.5">
+                              <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-normal block mt-0.5 leading-snug">
                                 Accepted: {formatDate(log.confirmedAt)}
                               </span>
                             ) : null}
@@ -809,12 +809,14 @@ export function UserRegistrationLogsModal({
                         </div>
 
                         {/* Actions bar - Solid Colors & Clean Realignment */}
-                        <div className="flex items-center justify-between gap-2 pt-2.5 border-t border-slate-100 dark:border-slate-850">
+                        <div className="flex flex-wrap items-center justify-between gap-2 pt-2.5 border-t border-slate-100 dark:border-slate-850">
                           <button
                             type="button"
                             onClick={() => setSelectedLogForDetails(log)}
                             title="View Details"
-                            className="bg-[#780000] hover:bg-[#5e0000] text-white font-semibold border border-[#5e0000] text-xs rounded-lg px-3 py-1.5 transition-colors cursor-pointer inline-flex items-center justify-center gap-1.5 shadow-2xs"
+                            className={`bg-[#780000] hover:bg-[#5e0000] text-white font-semibold border border-[#5e0000] text-xs rounded-lg px-3 py-1.5 transition-colors cursor-pointer inline-flex items-center justify-center gap-1.5 shadow-2xs ${
+                              isAccepted ? "w-full" : "flex-1 sm:flex-initial"
+                            }`}
                           >
                             <AppIcon icon={Eye} size="sm" color="white" />
                             <span>View Details</span>
