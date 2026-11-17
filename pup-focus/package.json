@@ -8,11 +8,7 @@
     "build": "next build --webpack && node scripts/ensure-deterministic-routes-manifest.mjs",
     "start": "next start",
     "lint": "eslint .",
-    "typecheck": "tsc --noEmit",
-    "test": "vitest run",
-    "test:watch": "vitest",
-    "test:e2e": "playwright test",
-    "reset-db": "node scripts/reset-db.mjs"
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",

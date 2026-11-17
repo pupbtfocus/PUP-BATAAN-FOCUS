@@ -37,8 +37,6 @@ export const PUBLIC_ROUTES = [
   "/api/auth/callback",
   "/api/bootstrap/admin",
   "/api/bootstrap/super-admin",
-  "/email-preview",
-  "/api/email/preview",
   ...AUTH_ROUTES,
 ];
 

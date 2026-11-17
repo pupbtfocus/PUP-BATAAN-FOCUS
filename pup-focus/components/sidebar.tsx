@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useCallback, useRef } from "react";
-import { Activity, Archive, Calendar, ClipboardCheck, Eye, GraduationCap, Group, Hourglass, NavArrowDown, NavArrowRight, Page, Settings, SidebarCollapse, SidebarExpand, UserBadgeCheck, ViewGrid } from "iconoir-react";
+import { Activity, Archive, Calendar, ClipboardCheck, GraduationCap, Group, Hourglass, NavArrowDown, NavArrowRight, Page, Settings, SidebarCollapse, SidebarExpand, UserBadgeCheck, ViewGrid } from "iconoir-react";
 import { AppIcon } from "@/components/ui/app-icon";
 import { BrandMark } from "@/components/shared/brand-mark";
 import { SidebarProfileCard } from "@/components/shared/sidebar-profile-card";
@@ -197,10 +197,6 @@ export function SidebarContent({
     activeSection === "audit-logs" ||
     activeSection === "transaction-logs" ||
     activeSection === "transactionLogs";
-  const isPreviewsActive =
-    activeSection === "previews" ||
-    activeSection === "preview" ||
-    activeSection === "dev-preview";
   const isSettingsActive = activeSection === "settings";
 
   const isAcademicCycleActive =
@@ -638,18 +634,7 @@ export function SidebarContent({
           />
         )}
 
-        {/* 6. Developer Feature Previews (Super Admin) */}
-        {isSuperAdmin && (
-          <SidebarButton
-            active={isPreviewsActive}
-            title="Feature Previews"
-            Icon={Eye}
-            onClick={() => handleSelect("previews")}
-            collapsed={collapsed}
-          />
-        )}
-
-        {/* 7. Settings */}
+        {/* 6. Settings */}
         <SidebarButton
           active={isSettingsActive}
           title="Settings"

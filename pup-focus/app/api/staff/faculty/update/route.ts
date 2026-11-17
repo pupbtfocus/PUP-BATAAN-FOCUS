@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { getServiceRoleClient } from "@/lib/supabase/service-role";
-import { ROLE, resolveTrustedUserRole } from "@/config/roles";
+import { ROLE, isAdminRoleToken, isOriginalAdmin, resolveTrustedUserRole } from "@/config/roles";
 import { logTransactionEvent } from "@/features/transaction-logs/services/transaction-log.service";
 import { logAuditEvent } from "@/features/audit-logs/services/audit-log.service";
 import { logger } from "@/lib/observability/logger";
@@ -88,20 +88,10 @@ export async function PATCH(request: NextRequest) {
     const userEmail = (user?.email ?? "").toLowerCase().trim();
 
     const isAuthorized =
-      requesterRole === "admin" ||
-      requesterRole === "super_admin" ||
-      requesterRole === "superadmin" ||
+      isOriginalAdmin(userEmail) ||
+      isAdminRoleToken(requesterRole) ||
       requesterRole === "staff" ||
-      requesterRole === ROLE.STAFF ||
-      requesterRole === ROLE.ADMIN ||
-      requesterRole.includes("staff") ||
-      requesterRole.includes("admin") ||
-      requesterRole.includes("super") ||
-      userEmail === "pupbataanfocus.admin@gmail.com" ||
-      userEmail === "pupbataanfocus.superadmin@gmail.com" ||
-      userEmail === "preview@pupfocus.dev" ||
-      userEmail.startsWith("qa.admin") ||
-      userEmail.startsWith("qa.superadmin");
+      requesterRole === ROLE.STAFF;
 
     if (!user || !isAuthorized) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });

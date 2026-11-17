@@ -24,7 +24,6 @@ import { AdminAcademicTerms } from "@/features/admin-management/components/admin
 import { SubmissionWindowPanel } from "@/features/faculty-management/components/submission-window-panel";
 import { BackupArchivePanel } from "@/features/backup-archive/components/backup-archive-panel";
 import { TemplatesAndProgramsPanel } from "@/features/program-management/components/templates-and-programs-panel";
-import { DevPreviewPanel } from "@/features/dev-preview/components/dev-preview-panel";
 import { SuperAdminSettings } from "@/features/admin-management/components/admin-settings";
 import { DatabaseCapacityAlert } from "@/features/admin-management/components/database-capacity-alert";
 import { SuperAdminComplianceAnalytics } from "@/features/admin-management/components/super-admin-compliance-analytics";
@@ -78,8 +77,7 @@ export type SuperAdminSection =
   | "backups"
   | "programs"
   | "audit"
-  | "settings"
-  | "previews";
+  | "settings";
 
 interface AdminAccount {
   id?: string;
@@ -229,13 +227,6 @@ function normalizeSuperAdminSection(
   )
     return "audit";
   if (val === "settings" || val === "super-admin-settings" || val === "admin-settings") return "settings";
-  if (
-    val === "previews" ||
-    val === "preview" ||
-    val === "dev-preview" ||
-    val === "features"
-  )
-    return "previews";
   return null;
 }
 
@@ -2627,12 +2618,6 @@ export function SuperAdminDashboard({
                   profileImageUrl={superAdminAvatarUrl}
                   onProfileUpdated={handleSuperAdminProfileUpdated}
                 />
-              </article>
-            ) : null}
-
-            {activeSection === "previews" ? (
-              <article className="space-y-6">
-                <DevPreviewPanel />
               </article>
             ) : null}
           </div>
