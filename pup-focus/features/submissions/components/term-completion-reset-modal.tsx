@@ -61,9 +61,9 @@ export function TermCompletionResetModal({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-xs animate-in fade-in duration-200">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-950/60 backdrop-blur-xs animate-in fade-in duration-200">
       <div
-        className="w-full max-w-lg rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200"
+        className="w-full max-w-lg max-h-[90dvh] flex flex-col rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200"
         role="dialog"
         aria-modal="true"
         aria-labelledby="term-completion-title"
@@ -73,18 +73,19 @@ export function TermCompletionResetModal({
           icon={CheckCircle}
           title="Done All for This Semester"
           subtitle={`A.Y. ${academicYear} • ${semester}`}
+          className="shrink-0"
         />
 
         {/* Content Body */}
-        <div className="p-5 space-y-4">
+        <div className="flex-1 overflow-y-auto overscroll-contain p-4 sm:p-5 space-y-4">
           {/* 100% Validated Milestone Box */}
-          <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/5 dark:bg-emerald-950/20 p-4 space-y-1.5">
-            <div className="flex items-center justify-between">
+          <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/5 dark:bg-emerald-950/20 p-3.5 sm:p-4 space-y-1.5">
+            <div className="flex flex-wrap items-center justify-between gap-2">
               <span className="inline-flex items-center gap-1 text-xs font-bold text-emerald-800 dark:text-emerald-300 uppercase tracking-wider">
                 <AppIcon icon={CheckCircle} size="md" color="success" />
                 Done All for This Semester (100% Validated)
               </span>
-              <span className="text-[11px] font-bold text-[#0b5336] dark:text-emerald-400">
+              <span className="text-[11px] font-bold text-[#0b5336] dark:text-emerald-400 shrink-0">
                 6 of 6 Validated
               </span>
             </div>
@@ -113,7 +114,7 @@ export function TermCompletionResetModal({
                 return (
                   <div
                     key={code}
-                    className="flex items-center justify-between p-2 rounded-lg bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700/60 text-xs"
+                    className="flex items-center justify-between gap-2 p-2 rounded-lg bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700/60 text-xs min-w-0"
                   >
                     <div className="flex items-center gap-2 min-w-0">
                       <div className="h-4 w-4 rounded-full bg-emerald-500/15 flex items-center justify-center shrink-0">
@@ -158,7 +159,7 @@ export function TermCompletionResetModal({
           </div>
 
           {/* Action Buttons */}
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-2.5 pt-3 border-t border-slate-200 dark:border-slate-800">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5 pt-3 border-t border-slate-200 dark:border-slate-800">
             {onViewHistory && (
               <button
                 type="button"
@@ -173,12 +174,12 @@ export function TermCompletionResetModal({
               </button>
             )}
 
-            <div className="w-full sm:w-auto flex items-center justify-end gap-2.5 ml-auto">
+            <div className="w-full sm:w-auto grid grid-cols-1 sm:flex items-center justify-end gap-2 sm:ml-auto">
               <button
                 type="button"
                 onClick={onClose}
                 disabled={isResetting}
-                className="px-4 py-2 rounded-xl text-xs font-semibold bg-[#780000] hover:bg-[#5e0000] text-white border border-[#5e0000] transition cursor-pointer shadow-xs disabled:opacity-50"
+                className="w-full sm:w-auto px-4 py-2 rounded-xl text-xs font-semibold bg-[#780000] hover:bg-[#5e0000] text-white border border-[#5e0000] transition cursor-pointer shadow-xs disabled:opacity-50 text-center"
               >
                 Close
               </button>
@@ -186,7 +187,7 @@ export function TermCompletionResetModal({
                 type="button"
                 onClick={handleConfirm}
                 disabled={isResetting}
-                className="inline-flex items-center justify-center gap-1.5 bg-[#0b5336] hover:bg-[#083e28] text-white font-bold px-4 py-2 rounded-xl text-xs shadow-sm active:scale-[0.98] transition-all cursor-pointer disabled:opacity-50"
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 bg-[#0b5336] hover:bg-[#083e28] text-white font-bold px-4 py-2 rounded-xl text-xs shadow-sm active:scale-[0.98] transition-all cursor-pointer disabled:opacity-50"
               >
                 {isResetting ? (
                   <>

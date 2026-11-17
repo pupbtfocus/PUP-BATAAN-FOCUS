@@ -900,8 +900,28 @@ function FacultySubmissionPanelContent({
     isOpen: boolean;
     requirementTitle: string;
   }>({ isOpen: false, requirementTitle: "" });
-  // ─── Mobile menu state ────────────────────────────────────────────
+  // ─── Mobile menu & pending navigation state ──────────────────────
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const pendingNavViewRef = useRef<PanelView | null>(null);
+  useEffect(() => {
+    if (!isMobileMenuOpen) return;
+    const html = document.documentElement;
+    const body = document.body;
+    const prevHtmlOverflow = html.style.overflow;
+    const prevBodyOverflow = body.style.overflow;
+    const prevHtmlOverscroll = html.style.overscrollBehavior;
+    const prevBodyOverscroll = body.style.overscrollBehavior;
+    html.style.overflow = "hidden";
+    body.style.overflow = "hidden";
+    html.style.overscrollBehavior = "none";
+    body.style.overscrollBehavior = "none";
+    return () => {
+      html.style.overflow = prevHtmlOverflow;
+      body.style.overflow = prevBodyOverflow;
+      html.style.overscrollBehavior = prevHtmlOverscroll;
+      body.style.overscrollBehavior = prevBodyOverscroll;
+    };
+  }, [isMobileMenuOpen]);
   // ─── Page-load overlay state ───────────────────────────────────────
   const [isPageLoading, setIsPageLoading] = useState(!initialData);
   useEffect(() => {
@@ -1482,19 +1502,59 @@ function FacultySubmissionPanelContent({
     }
   }, [initialData, refetchSubmissionWindow]);
   // Deep-linking, view routing, and auto-scrolling with highlight
+  const scrollToAndHighlightRequirement = useCallback((code: string) => {
+    const mobileEl = document.getElementById(`requirement-mobile-${code}`);
+    const desktopEl = document.getElementById(`requirement-${code}`);
+    const targetElement =
+      (mobileEl && mobileEl.offsetParent !== null ? mobileEl : null) ||
+      (desktopEl && desktopEl.offsetParent !== null ? desktopEl : null) ||
+      desktopEl ||
+      mobileEl ||
+      document.getElementById(code);
+    if (!targetElement) return;
+    targetElement.scrollIntoView({ behavior: "smooth", block: "center" });
+    targetElement.classList.add(
+      "ring-4",
+      "ring-amber-400",
+      "bg-amber-500/10",
+      "transition-all",
+      "duration-500",
+    );
+    setTimeout(() => {
+      targetElement.classList.remove(
+        "ring-4",
+        "ring-amber-400",
+        "bg-amber-500/10",
+        "transition-all",
+        "duration-500",
+      );
+    }, 3500);
+  }, []);
+
   useEffect(() => {
     try {
-      const view =
-        searchParams?.get("view") ||
-        new URLSearchParams(window.location.search).get("view");
+      const liveParams = new URLSearchParams(window.location.search);
+      const spView = searchParams?.get("view");
+      const view = liveParams.get("view") || spView;
       const highlightParam =
+        liveParams.get("highlight") ||
+        liveParams.get("requirement") ||
         searchParams?.get("highlight") ||
-        searchParams?.get("requirement") ||
-        new URLSearchParams(window.location.search).get("highlight") ||
-        new URLSearchParams(window.location.search).get("requirement");
+        searchParams?.get("requirement");
       const historyParam =
-        searchParams?.get("history") ||
-        new URLSearchParams(window.location.search).get("history");
+        liveParams.get("history") || searchParams?.get("history");
+
+      if (pendingNavViewRef.current) {
+        if (spView === pendingNavViewRef.current) {
+          pendingNavViewRef.current = null;
+        } else {
+          return;
+        }
+      }
+
+      if (liveParams.get("view") && spView && liveParams.get("view") !== spView) {
+        return;
+      }
 
       if (
         view === "history" ||
@@ -1507,35 +1567,24 @@ function FacultySubmissionPanelContent({
       } else if (highlightParam) {
         setActiveView((prev) => (prev !== "status" ? "status" : prev));
       }
+    } catch {
+      // ignore
+    }
+  }, [searchParams]);
+
+  useEffect(() => {
+    try {
+      const liveParams = new URLSearchParams(window.location.search);
+      const highlightParam =
+        liveParams.get("highlight") ||
+        liveParams.get("requirement") ||
+        searchParams?.get("highlight") ||
+        searchParams?.get("requirement");
 
       if (highlightParam && handledHighlightRef.current !== highlightParam) {
         handledHighlightRef.current = highlightParam;
         const timer = setTimeout(() => {
-          const targetElement =
-            document.getElementById(`requirement-${highlightParam}`) ||
-            document.getElementById(highlightParam);
-          if (targetElement) {
-            targetElement.scrollIntoView({
-              behavior: "smooth",
-              block: "center",
-            });
-            targetElement.classList.add(
-              "ring-4",
-              "ring-amber-400",
-              "bg-amber-500/10",
-              "transition-all",
-              "duration-500",
-            );
-            setTimeout(() => {
-              targetElement.classList.remove(
-                "ring-4",
-                "ring-amber-400",
-                "bg-amber-500/10",
-                "transition-all",
-                "duration-500",
-              );
-            }, 3500);
-          }
+          scrollToAndHighlightRequirement(highlightParam);
 
           // Clean up highlight params from the URL so future tab switches don't get trapped
           try {
@@ -1561,7 +1610,7 @@ function FacultySubmissionPanelContent({
     } catch {
       // ignore
     }
-  }, [searchParams, requirementStatuses]);
+  }, [searchParams, requirementStatuses, scrollToAndHighlightRequirement]);
 
   // Listener for instant in-page view navigation requests from notification drawer
   useEffect(() => {
@@ -1577,28 +1626,7 @@ function FacultySubmissionPanelContent({
         const h = customEvent.detail.highlight;
         handledHighlightRef.current = null;
         setTimeout(() => {
-          const el =
-            document.getElementById(`requirement-${h}`) ||
-            document.getElementById(h);
-          if (el) {
-            el.scrollIntoView({ behavior: "smooth", block: "center" });
-            el.classList.add(
-              "ring-4",
-              "ring-amber-400",
-              "bg-amber-500/10",
-              "transition-all",
-              "duration-500",
-            );
-            setTimeout(() => {
-              el.classList.remove(
-                "ring-4",
-                "ring-amber-400",
-                "bg-amber-500/10",
-                "transition-all",
-                "duration-500",
-              );
-            }, 3500);
-          }
+          scrollToAndHighlightRequirement(h);
         }, 300);
       }
     }
@@ -1608,12 +1636,13 @@ function FacultySubmissionPanelContent({
         "pup-focus-select-view",
         handleCustomSelectView,
       );
-  }, []);
+  }, [scrollToAndHighlightRequirement]);
 
   // Browser back/forward popstate listener for accurate history navigation in faculty dashboard
   useEffect(() => {
     function handlePopState() {
       try {
+        pendingNavViewRef.current = null;
         const params = new URLSearchParams(window.location.search);
         const v = params.get("view");
         if (v && (PANEL_VIEWS as readonly string[]).includes(v)) {
@@ -1803,21 +1832,27 @@ function FacultySubmissionPanelContent({
     if (preferredSem) {
       setHistorySemester(preferredSem);
     }
+    pendingNavViewRef.current = "status";
     setIsHistoryModalOpen(true);
     void fetchHistory({ silent: pastSubmissions.length > 0 });
     try {
-      const params = new URLSearchParams(searchParams?.toString() ?? "");
+      const params = new URLSearchParams(
+        window.location.search || (searchParams?.toString() ?? ""),
+      );
       params.set("view", "status");
       params.set("history", "true");
-      router.replace(`${pathname}?${params.toString()}`);
+      router.replace(`${pathname}?${params.toString()}`, { scroll: false });
     } catch {
       // fallback
     }
   }
   function closeHistoryModal() {
+    pendingNavViewRef.current = "status";
     setIsHistoryModalOpen(false);
     try {
-      const params = new URLSearchParams(searchParams?.toString() ?? "");
+      const params = new URLSearchParams(
+        window.location.search || (searchParams?.toString() ?? ""),
+      );
       params.set("view", "status");
       params.delete("history");
       router.replace(`${pathname}?${params.toString()}`, { scroll: false });
@@ -1846,6 +1881,7 @@ function FacultySubmissionPanelContent({
       if (preferredAy) setHistoryAcademicYear(preferredAy);
       if (preferredSem) setHistorySemester(preferredSem);
     }
+    pendingNavViewRef.current = targetView;
     setActiveView(targetView);
     setIsHistoryModalOpen(openHistory);
     setIsMobileMenuOpen(false);
@@ -1853,7 +1889,9 @@ function FacultySubmissionPanelContent({
     handledHighlightRef.current = null;
     try {
       sessionStorage.setItem("pup_focus_faculty_active_view", targetView);
-      const params = new URLSearchParams(searchParams?.toString() ?? "");
+      const params = new URLSearchParams(
+        window.location.search || (searchParams?.toString() ?? ""),
+      );
       params.set("view", targetView);
       params.delete("highlight");
       params.delete("requirement");
@@ -4332,7 +4370,7 @@ function FacultySubmissionPanelContent({
   };
 
   return (
-    <div className="relative flex min-h-full w-full items-stretch gap-0">
+    <div className="relative flex min-h-full md:h-full w-full items-stretch gap-0">
       {/* ─── Initial page-load overlay ─────────────────────────────── */}
       {isPageLoading && (
         <SystemLoadingScreen text="Loading faculty academic portal..." />
@@ -4342,7 +4380,7 @@ function FacultySubmissionPanelContent({
         <button
           type="button"
           onClick={() => setIsMobileMenuOpen(true)}
-          className="fixed left-3 top-2 z-[55] md:hidden inline-flex h-9 w-9 items-center justify-center rounded-xl border border-amber-400 bg-[#680000] hover:bg-[#550000] text-amber-100 hover:text-white transition-all focus:outline-none focus:ring-2 focus:ring-amber-400 cursor-pointer shadow-xs"
+          className="fixed left-3 top-2 z-[45] md:hidden inline-flex h-9 w-9 items-center justify-center rounded-xl border border-amber-400 bg-[#680000] hover:bg-[#550000] text-amber-100 hover:text-white transition-all focus:outline-none focus:ring-2 focus:ring-amber-400 cursor-pointer shadow-xs"
           aria-label="Open Navigation Menu"
         >
           <AppIcon icon={Menu} size="md" color="inherit" />
@@ -4428,11 +4466,15 @@ function FacultySubmissionPanelContent({
       {/* Mobile Drawer (visible only on small screens when drawer is open) */}
       {isMobileMenuOpen && (
         <div
-          className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm md:hidden flex"
+          className="fixed inset-0 z-[60] h-dvh overflow-hidden overscroll-none bg-slate-950/80 backdrop-blur-sm md:hidden flex"
           onClick={() => setIsMobileMenuOpen(false)}
         >
+          <div
+            className="fixed inset-0 h-lvh touch-none overscroll-none"
+            aria-hidden="true"
+          />
           <aside
-            className="relative flex flex-col h-full w-72 max-w-[85%] bg-[#800000] text-amber-50 border-r-4 border-amber-500 p-4 shadow-2xl transition-colors duration-200"
+            className="relative z-10 flex flex-col h-dvh w-72 max-w-[85%] overflow-y-auto overscroll-contain bg-[#800000] text-amber-50 border-r-4 border-amber-500 p-4 shadow-2xl transition-colors duration-200"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between pb-3 border-b border-white/10 mb-2">
@@ -4517,16 +4559,16 @@ function FacultySubmissionPanelContent({
           </aside>
         </div>
       )}
-      <div className="md:ml-72 flex min-h-full w-full md:w-[calc(100%-18rem)] flex-col">
-        <div className="flex min-h-0 flex-1 flex-col overflow-hidden border-l-0 bg-slate-100 dark:bg-[#0b0f19] shadow-sm transition-colors duration-200">
-          <div className="min-h-0 flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 bg-slate-100 dark:bg-[#0b0f19] text-slate-900 dark:text-slate-100 transition-colors duration-200">
+      <div className="md:ml-72 flex min-h-full md:h-full w-full md:w-[calc(100%-18rem)] flex-col">
+        <div className="flex flex-1 flex-col md:min-h-0 md:overflow-hidden border-l-0 bg-slate-100 dark:bg-[#0b0f19] shadow-sm transition-colors duration-200">
+          <div className="flex-1 md:min-h-0 md:overflow-y-auto overflow-x-clip p-4 pb-8 sm:p-6 lg:p-8 bg-slate-100 dark:bg-[#0b0f19] text-slate-900 dark:text-slate-100 transition-colors duration-200">
             {activeView === "submit" ? (
-              <div className="relative overflow-hidden rounded-2xl border-2 border-amber-500 bg-amber-400 p-5 sm:p-6 shadow-md shadow-amber-500/10 mb-6">
+              <div className="relative overflow-hidden rounded-2xl border-2 border-amber-500 bg-amber-400 p-4 sm:p-6 shadow-md shadow-amber-500/10 mb-4 sm:mb-6">
                 <div>
-                  <h1 className="text-2xl sm:text-3xl font-black text-slate-950 tracking-tight">
+                  <h1 className="text-xl sm:text-3xl font-black text-slate-950 tracking-tight">
                     Submit Requirements
                   </h1>
-                  <p className="mt-1.5 text-sm sm:text-base text-amber-950/90 font-medium leading-relaxed">
+                  <p className="mt-1.5 text-xs sm:text-base text-amber-950/90 font-medium leading-relaxed">
                     Upload and submit required academic and administrative
                     compliance documents.
                   </p>
@@ -4534,11 +4576,11 @@ function FacultySubmissionPanelContent({
               </div>
             ) : null}
             {activeView === "dashboard" && (
-              <article className="space-y-6 p-2 sm:p-4 md:p-5">
+              <article className="space-y-4 sm:space-y-6">
                 {/* Solid Amber Card Header matching Admin Dashboard */}
-                <div className="relative overflow-hidden rounded-2xl border-2 border-amber-500 bg-amber-400 p-5 sm:p-6 shadow-md shadow-amber-500/10 flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
-                  <div>
-                    <h1 className="text-2xl sm:text-3xl font-black text-slate-950 tracking-tight flex items-center gap-2.5 flex-wrap">
+                <div className="relative overflow-hidden rounded-2xl border-2 border-amber-500 bg-amber-400 p-4 sm:p-6 shadow-md shadow-amber-500/10 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                  <div className="min-w-0">
+                    <h1 className="text-xl sm:text-3xl font-black text-slate-950 tracking-tight flex items-center gap-2.5 flex-wrap">
                       <span>Dashboard</span>
                       {isAllValidated && (
                         <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#0b5336] text-white text-xs font-bold shadow-xs">
@@ -4551,7 +4593,7 @@ function FacultySubmissionPanelContent({
                         </span>
                       )}
                     </h1>
-                    <p className="mt-1.5 text-sm sm:text-base text-amber-950/90 font-medium leading-relaxed">
+                    <p className="mt-1.5 text-xs sm:text-base text-amber-950/90 font-medium leading-relaxed">
                       {hasActiveAcademicTerm && activeAY
                         ? `Track your compliance requirements, class submissions, and upcoming deadlines for A.Y. ${activeAY} • ${activeSem}.`
                         : "Track your compliance requirements, class submissions, and upcoming deadlines."}
@@ -4574,23 +4616,23 @@ function FacultySubmissionPanelContent({
                 </div>
 
                 {/* Top Stat Summary Grid (3 Cards) matching Admin Dashboard */}
-                <section className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                <section className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
                   {/* Card 1: Overall Compliance */}
-                  <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-xs space-y-3 transition-colors flex flex-col justify-between">
+                  <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 sm:p-5 shadow-xs space-y-3 transition-colors flex flex-col justify-between min-w-0">
                     <div className="space-y-2.5">
                       <div className="flex items-center justify-between">
                         <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">
                           Overall Compliance
                         </span>
-                        <CheckCircle className="h-5 w-5 text-slate-400" strokeWidth={2} />
+                        <CheckCircle className="h-5 w-5 text-slate-400 shrink-0" strokeWidth={2} />
                       </div>
 
-                      <div className="flex items-baseline justify-between gap-2">
-                        <h3 className="text-xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">
+                      <div className="flex flex-wrap items-baseline justify-between gap-2">
+                        <h3 className="text-lg sm:text-xl font-bold text-slate-900 dark:text-slate-100 tracking-tight min-w-0 break-words">
                           {mandatoryValidatedCount} of {mandatoryTemplates.length} Validated
                         </h3>
                         <span
-                          className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider ${
+                          className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider shrink-0 ${
                             isAllValidated
                               ? "bg-[#0b5336] text-white border border-[#08412a]"
                               : "bg-amber-500 text-white border border-amber-600"
@@ -4617,8 +4659,8 @@ function FacultySubmissionPanelContent({
                       </div>
                     </div>
 
-                    <div className="pt-1.5 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between gap-2 mt-auto">
-                      <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate">
+                    <div className="pt-1.5 border-t border-slate-100 dark:border-slate-800 flex flex-wrap items-center justify-between gap-2 mt-auto">
+                      <p className="text-[11px] text-slate-500 dark:text-slate-400 min-w-0 truncate">
                         {isAllValidated
                           ? `All ${mandatoryTemplates.length} requirements approved`
                           : `${mandatoryTemplates.length - mandatoryValidatedCount} left to complete`}
@@ -4635,17 +4677,17 @@ function FacultySubmissionPanelContent({
                   </div>
 
                   {/* Card 2: Submission Schedule */}
-                  <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-xs space-y-3 transition-colors flex flex-col justify-between">
+                  <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 sm:p-5 shadow-xs space-y-3 transition-colors flex flex-col justify-between min-w-0">
                     <div className="space-y-2.5">
                       <div className="flex items-center justify-between">
                         <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">
                           Submission Schedule
                         </span>
-                        <Calendar className="h-5 w-5 text-slate-400" strokeWidth={2} />
+                        <Calendar className="h-5 w-5 text-slate-400 shrink-0" strokeWidth={2} />
                       </div>
 
-                      <div className="flex items-baseline justify-between gap-2">
-                        <h3 className="text-xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">
+                      <div className="flex flex-wrap items-baseline justify-between gap-2">
+                        <h3 className="text-lg sm:text-xl font-bold text-slate-900 dark:text-slate-100 tracking-tight min-w-0 break-words">
                           {hasActiveGracePeriod
                             ? "Personal Schedule"
                             : isWindowNotConfigured
@@ -4655,7 +4697,7 @@ function FacultySubmissionPanelContent({
                                 : "Submissions Open"}
                         </h3>
                         <span
-                          className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider ${
+                          className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider shrink-0 ${
                             hasActiveGracePeriod
                               ? "bg-[#0b5336] text-white border border-[#08412a]"
                               : isWindowClosed
@@ -4689,8 +4731,8 @@ function FacultySubmissionPanelContent({
                       </div>
                     </div>
 
-                    <div className="pt-1.5 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between gap-2 mt-auto">
-                      <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate">
+                    <div className="pt-1.5 border-t border-slate-100 dark:border-slate-800 flex flex-wrap items-center justify-between gap-2 mt-auto">
+                      <p className="text-[11px] text-slate-500 dark:text-slate-400 min-w-0 truncate">
                         {hasActiveGracePeriod && personalDeadlineFormatted
                           ? `Due: ${personalDeadlineFormatted}`
                           : windowDeadlineDisplay
@@ -4720,23 +4762,23 @@ function FacultySubmissionPanelContent({
                   </div>
 
                   {/* Card 3: Action Items */}
-                  <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-xs space-y-3 transition-colors flex flex-col justify-between">
+                  <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 sm:p-5 shadow-xs space-y-3 transition-colors flex flex-col justify-between min-w-0">
                     <div className="space-y-2.5">
                       <div className="flex items-center justify-between">
                         <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">
                           Action Items
                         </span>
-                        <TaskList className="h-5 w-5 text-slate-400" strokeWidth={2} />
+                        <TaskList className="h-5 w-5 text-slate-400 shrink-0" strokeWidth={2} />
                       </div>
 
-                      <div className="flex items-baseline justify-between gap-2">
-                        <h3 className="text-xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">
+                      <div className="flex flex-wrap items-baseline justify-between gap-2">
+                        <h3 className="text-lg sm:text-xl font-bold text-slate-900 dark:text-slate-100 tracking-tight min-w-0 break-words">
                           {isAllValidated
                             ? "All Caught Up"
                             : `${lackingRequirements.length} ${lackingRequirements.length === 1 ? "Item" : "Items"} Left`}
                         </h3>
                         <span
-                          className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider ${
+                          className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider shrink-0 ${
                             isAllValidated
                               ? "bg-[#0b5336] text-white border border-[#08412a]"
                               : lackingRequirements.filter((r) => r.status === "Overdue").length > 0
@@ -4768,8 +4810,8 @@ function FacultySubmissionPanelContent({
                       </div>
                     </div>
 
-                    <div className="pt-1.5 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between gap-2 mt-auto">
-                      <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate">
+                    <div className="pt-1.5 border-t border-slate-100 dark:border-slate-800 flex flex-wrap items-center justify-between gap-2 mt-auto">
+                      <p className="text-[11px] text-slate-500 dark:text-slate-400 min-w-0 truncate">
                         {isAllValidated
                           ? "No action needed"
                           : `${displayedStatusCounts.notSubmitted} to submit • ${displayedStatusCounts.pending} in review`}
@@ -4787,12 +4829,12 @@ function FacultySubmissionPanelContent({
                 </section>
 
                 {/* 4 Status Blocks matching SuperAdmin Compliance Analytics */}
-                <section className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 mb-6">
+                <section className="grid grid-cols-1 min-[360px]:grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
                   {/* Validated */}
-                  <div className="rounded-2xl bg-[#0b5336] text-white border border-[#08412a] p-4 sm:p-4.5 shadow-xs space-y-2">
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs font-bold text-white">Validated</span>
-                      <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-white/20 text-white">
+                  <div className="rounded-2xl bg-[#0b5336] text-white border border-[#08412a] p-3.5 sm:p-4.5 shadow-xs space-y-2 min-w-0">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-xs font-bold text-white truncate">Validated</span>
+                      <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-white/20 text-white shrink-0">
                         {isAllValidated
                           ? (totalRequirements || mandatoryTemplates.length)
                           : displayedStatusCounts.validated}
@@ -4809,10 +4851,10 @@ function FacultySubmissionPanelContent({
                   </div>
 
                   {/* In Review / Pending */}
-                  <div className="rounded-2xl bg-amber-500 text-white border border-amber-600 p-4 sm:p-4.5 shadow-xs space-y-2">
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs font-bold text-white">In Review</span>
-                      <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-white/20 text-white">
+                  <div className="rounded-2xl bg-amber-500 text-white border border-amber-600 p-3.5 sm:p-4.5 shadow-xs space-y-2 min-w-0">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-xs font-bold text-white truncate">In Review</span>
+                      <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-white/20 text-white shrink-0">
                         {isAllValidated ? 0 : displayedStatusCounts.pending}
                       </span>
                     </div>
@@ -4827,10 +4869,10 @@ function FacultySubmissionPanelContent({
                   </div>
 
                   {/* Needs Revision */}
-                  <div className="rounded-2xl bg-[#780000] text-white border border-[#5e0000] p-4 sm:p-4.5 shadow-xs space-y-2">
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs font-bold text-white">Needs Revision</span>
-                      <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-white/20 text-white">
+                  <div className="rounded-2xl bg-[#780000] text-white border border-[#5e0000] p-3.5 sm:p-4.5 shadow-xs space-y-2 min-w-0">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-xs font-bold text-white truncate">Needs Revision</span>
+                      <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-white/20 text-white shrink-0">
                         {isAllValidated ? 0 : displayedStatusCounts.rejected}
                       </span>
                     </div>
@@ -4845,10 +4887,10 @@ function FacultySubmissionPanelContent({
                   </div>
 
                   {/* Not Submitted */}
-                  <div className="rounded-2xl bg-slate-600 dark:bg-slate-800 text-white border border-slate-500 dark:border-slate-700 p-4 sm:p-4.5 shadow-xs space-y-2">
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs font-bold text-white">Not Submitted</span>
-                      <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-white/20 text-white">
+                  <div className="rounded-2xl bg-slate-600 dark:bg-slate-800 text-white border border-slate-500 dark:border-slate-700 p-3.5 sm:p-4.5 shadow-xs space-y-2 min-w-0">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-xs font-bold text-white truncate">Not Submitted</span>
+                      <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-white/20 text-white shrink-0">
                         {isAllValidated ? 0 : displayedStatusCounts.notSubmitted}
                       </span>
                     </div>
@@ -4874,9 +4916,9 @@ function FacultySubmissionPanelContent({
               </article>
             )}
             {activeView === "submit" && (
-              <article className="space-y-6 p-2 sm:p-4 md:p-5">
+              <article className="space-y-4 sm:space-y-5">
                 {isEffectivelyOpen ? (
-                  <form className="mt-6 space-y-4" onSubmit={handleSubmit}>
+                  <form className="space-y-4" onSubmit={handleSubmit}>
                     <div className="grid gap-4 md:grid-cols-2">
                       <div>
                         <p className="text-xs uppercase tracking-[0.18em] text-amber-600 dark:text-amber-300 font-semibold">
@@ -4988,20 +5030,22 @@ function FacultySubmissionPanelContent({
                         }
                       />
                     </div>
-                    <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-dashed border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-950/60 px-4 py-3 text-sm text-slate-600 dark:text-slate-400">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-xl border border-dashed border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-950/60 px-4 py-3 text-xs sm:text-sm text-slate-600 dark:text-slate-400">
                       <span>
                         Submission will be queued for review after upload.
                       </span>
-                      <div className="flex flex-wrap gap-2">
+                      <div className="grid grid-cols-2 sm:flex w-full sm:w-auto gap-2 shrink-0">
                         <Button
                           type="button"
                           variant="secondary"
+                          className="w-full sm:w-auto justify-center"
                           onClick={() => setIsGuideOpen(true)}
                         >
                           Submission Guide
                         </Button>
                         <Button
                           type="submit"
+                          className="w-full sm:w-auto justify-center"
                           disabled={
                             isSubmitting ||
                             !form.fileName ||
@@ -5024,12 +5068,12 @@ function FacultySubmissionPanelContent({
                     </div>
                   </form>
                 ) : (
-                  <div className="mt-6 flex min-h-[60vh] items-center justify-center rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-8">
-                    <div className="w-full max-w-2xl rounded-2xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-950/80 p-8 text-center shadow-2xl">
-                      <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full border border-slate-300 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300">
-                        <WarningTriangle className="h-8 w-8" strokeWidth={2} />
+                  <div className="flex min-h-[50dvh] items-center justify-center rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 sm:p-8">
+                    <div className="w-full max-w-2xl rounded-2xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-950/80 p-5 sm:p-8 text-center shadow-2xl">
+                      <div className="mx-auto flex h-14 w-14 sm:h-16 sm:w-16 items-center justify-center rounded-full border border-slate-300 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300">
+                        <WarningTriangle className="h-7 w-7 sm:h-8 sm:w-8" strokeWidth={2} />
                       </div>
-                      <h3 className="mt-5 text-2xl font-semibold text-slate-900 dark:text-slate-100">
+                      <h3 className="mt-4 sm:mt-5 text-lg sm:text-2xl font-semibold text-slate-900 dark:text-slate-100">
                         Submission Is Currently Unavailable
                       </h3>
                       {isLoadingSubmissionWindow ? (
@@ -5037,7 +5081,7 @@ function FacultySubmissionPanelContent({
                           Checking submission availability...
                         </p>
                       ) : submissionWindow?.isConfigured ? (
-                        <p className="mt-3 text-sm text-slate-600 dark:text-slate-300">
+                        <p className="mt-3 text-xs sm:text-sm text-slate-600 dark:text-slate-300">
                           The submission window is closed. Allowed schedule is
                           <span className="font-semibold text-amber-600 dark:text-amber-300">
                             {" "}
@@ -5051,7 +5095,7 @@ function FacultySubmissionPanelContent({
                           .
                         </p>
                       ) : (
-                        <p className="mt-3 text-sm text-slate-600 dark:text-slate-300">
+                        <p className="mt-3 text-xs sm:text-sm text-slate-600 dark:text-slate-300">
                           Admin has not set the submission start and end dates
                           yet. Please wait until the schedule is available.
                         </p>
@@ -5079,14 +5123,14 @@ function FacultySubmissionPanelContent({
                 />
                 {isMounted && isGuideOpen ? (
                   <div
-                    className="fixed inset-0 z-50 overflow-y-auto bg-black/60 p-4 sm:p-6 flex min-h-full items-center justify-center backdrop-blur-sm"
+                    className="fixed inset-0 z-[60] overflow-y-auto overscroll-contain bg-black/60 p-3 sm:p-4 flex min-h-full items-center justify-center backdrop-blur-sm"
                     role="dialog"
                     aria-modal="true"
                     aria-labelledby="submission-guide-title"
                     onClick={() => setIsGuideOpen(false)}
                   >
                     <div
-                      className="w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl border border-slate-200 dark:border-slate-700 bg-white text-slate-900 dark:bg-slate-900 dark:text-slate-100 p-6 shadow-2xl my-auto"
+                      className="w-full max-w-2xl max-h-[90dvh] overflow-y-auto rounded-2xl border border-slate-200 dark:border-slate-700 bg-white text-slate-900 dark:bg-slate-900 dark:text-slate-100 p-4 sm:p-6 shadow-2xl my-auto"
                       onClick={(event) => event.stopPropagation()}
                     >
                       <ModalHeader
@@ -5094,7 +5138,7 @@ function FacultySubmissionPanelContent({
                         title="Submission Guide"
                         subtitle="Instructions and guidelines for uploading compliance documents"
                         onClose={() => setIsGuideOpen(false)}
-                        className="-mx-6 -mt-6 mb-5 rounded-t-2xl"
+                        className="-mx-4 sm:-mx-6 -mt-4 sm:-mt-6 mb-4 sm:mb-5 rounded-t-2xl shrink-0"
                       />
                       <div className="mt-5 space-y-3 text-sm text-slate-600 dark:text-slate-300">
                         <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 p-4">
@@ -5131,33 +5175,33 @@ function FacultySubmissionPanelContent({
               </article>
             )}
             {activeView === "status" && (
-              <article className="space-y-5 p-2 sm:p-4 md:p-5">
+              <article className="space-y-4 sm:space-y-5">
                 {selectedClassId === null ? (
                   /* ─── STEP 1: CLASS / SUBJECT LOAD SELECTION ─────────────────── */
-                  <div className="space-y-5">
+                  <div className="space-y-4 sm:space-y-5">
                     {/* Solid Amber Card Header */}
-                    <div className="relative overflow-hidden rounded-2xl border-2 border-amber-500 bg-amber-400 p-5 sm:p-6 shadow-md shadow-amber-500/10 flex flex-col sm:flex-row sm:items-center justify-between gap-4 transition-colors mb-2">
-                      <div>
+                    <div className="relative overflow-hidden rounded-2xl border-2 border-amber-500 bg-amber-400 p-4 sm:p-6 shadow-md shadow-amber-500/10 flex flex-col sm:flex-row sm:items-center justify-between gap-4 transition-colors">
+                      <div className="min-w-0">
                         <div className="flex items-center gap-2.5 flex-wrap">
-                          <h1 className="text-2xl sm:text-3xl font-black text-slate-950 tracking-tight">
+                          <h1 className="text-xl sm:text-3xl font-black text-slate-950 tracking-tight">
                             Documents to be Submitted
                           </h1>
                         </div>
-                        <p className="mt-1.5 text-sm sm:text-base text-amber-950/90 font-medium leading-relaxed">
+                        <p className="mt-1.5 text-xs sm:text-base text-amber-950/90 font-medium leading-relaxed">
                           Select your assigned class or subject load below
                           before viewing and uploading required compliance
                           documents for this term.
                         </p>
                       </div>
 
-                      <div className="flex flex-wrap items-center gap-2.5 shrink-0">
+                      <div className="grid grid-cols-1 sm:flex sm:flex-wrap items-center gap-2 sm:gap-2.5 w-full sm:w-auto shrink-0">
                         <button
                           type="button"
                           onClick={() => {
                             setClassFormError(null);
                             setIsAddClassModalOpen(true);
                           }}
-                          className="inline-flex items-center justify-center gap-1.5 bg-[#780000] hover:bg-[#5e0000] text-white border border-[#5e0000] rounded-xl px-4 py-2 sm:px-4.5 sm:py-2.5 text-xs sm:text-sm font-bold transition-all cursor-pointer whitespace-nowrap shadow-xs active:scale-[0.98]"
+                          className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 bg-[#780000] hover:bg-[#5e0000] text-white border border-[#5e0000] rounded-xl px-4 py-2 sm:px-4.5 sm:py-2.5 text-xs sm:text-sm font-bold transition-all cursor-pointer whitespace-nowrap shadow-xs active:scale-[0.98]"
                         >
                           <AppIcon icon={Plus} size="sm" color="white" />
                           <span>Add Class / Subject Load</span>
@@ -5165,7 +5209,7 @@ function FacultySubmissionPanelContent({
                         <button
                           type="button"
                           onClick={openHistoryModal}
-                          className="inline-flex items-center justify-center gap-2 bg-[#0b5336] hover:bg-[#08412a] text-white border border-[#08412a] rounded-xl px-4 py-2 sm:px-4.5 sm:py-2.5 text-xs sm:text-sm font-semibold transition-all cursor-pointer whitespace-nowrap shadow-xs active:scale-[0.98]"
+                          className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-[#0b5336] hover:bg-[#08412a] text-white border border-[#08412a] rounded-xl px-4 py-2 sm:px-4.5 sm:py-2.5 text-xs sm:text-sm font-semibold transition-all cursor-pointer whitespace-nowrap shadow-xs active:scale-[0.98]"
                           title="View validated documents history"
                         >
                           <AppIcon icon={CheckCircle} size="md" color="white" />
@@ -5176,7 +5220,7 @@ function FacultySubmissionPanelContent({
                           onClick={() => void handleManualRefresh()}
                           disabled={isRefreshing}
                           title="Refresh status and classes"
-                          className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white hover:bg-slate-50 dark:bg-slate-900 dark:hover:bg-slate-800 text-slate-800 dark:text-slate-100 px-4 py-2 sm:px-4.5 sm:py-2.5 text-xs sm:text-sm font-semibold transition-all disabled:opacity-50 cursor-pointer whitespace-nowrap shadow-xs active:scale-[0.98]"
+                          className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white hover:bg-slate-50 dark:bg-slate-900 dark:hover:bg-slate-800 text-slate-800 dark:text-slate-100 px-4 py-2 sm:px-4.5 sm:py-2.5 text-xs sm:text-sm font-semibold transition-all disabled:opacity-50 cursor-pointer whitespace-nowrap shadow-xs active:scale-[0.98]"
                         >
                           <Refresh
                             className={`h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`}
@@ -5190,7 +5234,7 @@ function FacultySubmissionPanelContent({
 
                     <div className="w-full flex flex-col rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 shadow-xs transition-all animate-in fade-in duration-150 overflow-hidden">
                       {/* Header Info Box matching Requirements Verification */}
-                      <div className="border-b border-slate-200 dark:border-slate-800/80 p-5 sm:p-6 bg-slate-50/50 dark:bg-slate-950/30 rounded-t-2xl space-y-3">
+                      <div className="border-b border-slate-200 dark:border-slate-800/80 p-4 sm:p-6 bg-slate-50/50 dark:bg-slate-950/30 rounded-t-2xl space-y-3">
                         {/* Top row with PUP SIS style Faculty Name Header */}
                         <div className="flex items-center justify-between gap-3 flex-wrap">
                           <div className="flex items-center gap-2.5">
@@ -5222,7 +5266,7 @@ function FacultySubmissionPanelContent({
                               ? `School Year ${activeAY} ${activeSem}`
                               : "No Active Academic Term Configured"}
                           </div>
-                          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-y-3.5 gap-x-6 p-4 bg-white dark:bg-slate-900 text-xs">
+                          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-y-3.5 gap-x-6 p-3.5 sm:p-4 bg-white dark:bg-slate-900 text-xs">
                             <div>
                               <span className="font-bold text-slate-900 dark:text-slate-100 block mb-0.5">
                                 Faculty Department &amp; Program
@@ -5247,7 +5291,7 @@ function FacultySubmissionPanelContent({
                                 Faculty Email
                               </span>
                               <p
-                                className="font-medium text-slate-700 dark:text-slate-300 truncate"
+                                className="font-medium text-slate-700 dark:text-slate-300 break-all sm:truncate"
                                 title={facultyEmail || undefined}
                               >
                                 {facultyEmail || "—"}
@@ -5259,16 +5303,16 @@ function FacultySubmissionPanelContent({
 
                       {/* Tabs & Search/Filter Controls matching Requirements Verification */}
                       {facultyClasses.length > 0 && (
-                        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 border-b border-slate-200 dark:border-slate-800/80 px-6 py-3 bg-white dark:bg-slate-900">
+                        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 border-b border-slate-200 dark:border-slate-800/80 px-4 sm:px-6 py-3 bg-white dark:bg-slate-900">
                           {/* Active / Archive Toggle Pills with Solid Highlight */}
-                          <div className="inline-flex p-1 bg-slate-100 dark:bg-slate-950/80 rounded-2xl border border-slate-200/80 dark:border-slate-800/80 shrink-0 self-start lg:self-auto">
+                          <div className="grid grid-cols-2 sm:inline-flex p-1 bg-slate-100 dark:bg-slate-950/80 rounded-2xl border border-slate-200/80 dark:border-slate-800/80 shrink-0 w-full lg:w-auto self-stretch lg:self-auto">
                             <button
                               type="button"
                               onClick={() => {
                                 setClassTab("active");
                                 setClassSectionFilter("ALL");
                               }}
-                              className={`inline-flex items-center gap-2 rounded-xl px-4 py-1.5 text-xs font-bold transition cursor-pointer ${
+                              className={`inline-flex items-center justify-center gap-2 rounded-xl px-3 sm:px-4 py-1.5 text-xs font-bold transition cursor-pointer ${
                                 classTab === "active"
                                   ? "bg-amber-500 text-slate-950 border border-amber-600 shadow-xs"
                                   : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200"
@@ -5292,7 +5336,7 @@ function FacultySubmissionPanelContent({
                                 setClassTab("archived");
                                 setClassSectionFilter("ALL");
                               }}
-                              className={`inline-flex items-center gap-1.5 rounded-xl px-4 py-1.5 text-xs font-bold transition cursor-pointer ${
+                              className={`inline-flex items-center justify-center gap-1.5 rounded-xl px-3 sm:px-4 py-1.5 text-xs font-bold transition cursor-pointer ${
                                 classTab === "archived"
                                   ? "bg-amber-500 text-slate-950 border border-amber-600 shadow-xs"
                                   : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200"
@@ -5390,7 +5434,7 @@ function FacultySubmissionPanelContent({
                                   setClassSearchQuery("");
                                   setClassSectionFilter("ALL");
                                 }}
-                                className="inline-flex items-center gap-1 rounded-xl bg-amber-400 hover:bg-amber-500 px-3 py-2 text-xs font-bold text-amber-950 border border-amber-500 transition-colors cursor-pointer shrink-0"
+                                className="w-full sm:w-auto inline-flex items-center justify-center gap-1 rounded-xl bg-amber-400 hover:bg-amber-500 px-3 py-2 text-xs font-bold text-amber-950 border border-amber-500 transition-colors cursor-pointer shrink-0"
                               >
                                 <AppIcon
                                   icon={Xmark}
@@ -5405,7 +5449,7 @@ function FacultySubmissionPanelContent({
                       )}
 
                       {/* Body Content */}
-                      <div className="px-6 py-5">
+                      <div className="px-4 sm:px-6 py-4 sm:py-5">
                         {isLoadingClasses ? (
                           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5 pt-1">
                             {[1, 2, 3].map((i) => (
@@ -5598,7 +5642,7 @@ function FacultySubmissionPanelContent({
                                         : "border-amber-500 dark:border-amber-600 group-hover:border-amber-400"
                                     }`}
                                   >
-                                    <div className="p-5 flex-1 flex flex-col justify-between gap-4">
+                                    <div className="p-4 sm:p-5 flex-1 flex flex-col justify-between gap-4">
                                       <div className="space-y-3.5">
                                         {/* Top Row: Units, Status Badges & Class Controls */}
                                         <div className="flex flex-wrap items-center justify-between gap-1.5">
@@ -5845,24 +5889,24 @@ function FacultySubmissionPanelContent({
                   /* ─── STEP 2: CLASS REQUIREMENTS UPLOAD ZONE ─────────────────── */
                   <div className="space-y-5">
                     {/* Solid Amber Card Header */}
-                    <div className="relative overflow-hidden rounded-2xl border-2 border-amber-500 bg-amber-400 p-5 sm:p-6 shadow-md shadow-amber-500/10 flex flex-col sm:flex-row sm:items-center justify-between gap-4 transition-colors">
-                      <div>
+                    <div className="relative overflow-hidden rounded-2xl border-2 border-amber-500 bg-amber-400 p-4 sm:p-6 shadow-md shadow-amber-500/10 flex flex-col sm:flex-row sm:items-center justify-between gap-4 transition-colors">
+                      <div className="min-w-0">
                         <div className="flex items-center gap-2.5 flex-wrap">
-                          <h1 className="text-2xl sm:text-3xl font-black text-slate-950 tracking-tight">
+                          <h1 className="text-xl sm:text-3xl font-black text-slate-950 tracking-tight">
                             Documents to be Submitted
                           </h1>
                         </div>
-                        <p className="mt-1.5 text-sm sm:text-base text-amber-950/90 font-medium leading-relaxed">
+                        <p className="mt-1.5 text-xs sm:text-base text-amber-950/90 font-medium leading-relaxed">
                           View, upload, and track the status of your required
                           faculty compliance documents for this academic term.
                         </p>
                       </div>
 
-                      <div className="flex flex-wrap items-center gap-2.5 shrink-0">
+                      <div className="grid grid-cols-1 sm:flex sm:flex-wrap items-center gap-2 sm:gap-2.5 w-full sm:w-auto shrink-0">
                         <button
                           type="button"
                           onClick={openHistoryModal}
-                          className="inline-flex items-center justify-center gap-2 bg-[#0b5336] hover:bg-[#08412a] text-white border border-[#08412a] rounded-xl px-4 py-2 sm:px-4.5 sm:py-2.5 text-xs sm:text-sm font-semibold transition-all cursor-pointer whitespace-nowrap shadow-xs active:scale-[0.98]"
+                          className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-[#0b5336] hover:bg-[#08412a] text-white border border-[#08412a] rounded-xl px-4 py-2 sm:px-4.5 sm:py-2.5 text-xs sm:text-sm font-semibold transition-all cursor-pointer whitespace-nowrap shadow-xs active:scale-[0.98]"
                           title="View validated documents history"
                         >
                           <AppIcon icon={CheckCircle} size="md" color="white" />
@@ -5877,7 +5921,7 @@ function FacultySubmissionPanelContent({
                               "noopener,noreferrer",
                             )
                           }
-                          className="inline-flex items-center justify-center gap-2 bg-[#780000] hover:bg-[#5e0000] text-white border border-[#5e0000] rounded-xl px-4 py-2 sm:px-4.5 sm:py-2.5 text-xs sm:text-sm font-semibold transition-all cursor-pointer whitespace-nowrap shadow-xs active:scale-[0.98]"
+                          className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-[#780000] hover:bg-[#5e0000] text-white border border-[#5e0000] rounded-xl px-4 py-2 sm:px-4.5 sm:py-2.5 text-xs sm:text-sm font-semibold transition-all cursor-pointer whitespace-nowrap shadow-xs active:scale-[0.98]"
                         >
                           <Logo size={18} className="shrink-0" />
                           <span>University Calendar</span>
@@ -5887,7 +5931,7 @@ function FacultySubmissionPanelContent({
                           onClick={() => void handleManualRefresh()}
                           disabled={isRefreshing}
                           title="Refresh status"
-                          className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white hover:bg-slate-50 dark:bg-slate-900 dark:hover:bg-slate-800 text-slate-800 dark:text-slate-100 px-4 py-2 sm:px-4.5 sm:py-2.5 text-xs sm:text-sm font-semibold transition-all disabled:opacity-50 cursor-pointer whitespace-nowrap shadow-xs active:scale-[0.98]"
+                          className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white hover:bg-slate-50 dark:bg-slate-900 dark:hover:bg-slate-800 text-slate-800 dark:text-slate-100 px-4 py-2 sm:px-4.5 sm:py-2.5 text-xs sm:text-sm font-semibold transition-all disabled:opacity-50 cursor-pointer whitespace-nowrap shadow-xs active:scale-[0.98]"
                         >
                           <Refresh
                             className={`h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`}
@@ -5901,12 +5945,12 @@ function FacultySubmissionPanelContent({
 
                     {/* Unified White Container matching Requirements Verification */}
                     <div className="w-full flex flex-col rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 shadow-xs transition-all animate-in fade-in duration-150 overflow-hidden">
-                      <div className="px-6 py-5 space-y-4">
+                      <div className="px-4 sm:px-6 py-4 sm:py-5 space-y-4">
                     {/* Class Context Navigation Bar (Between Header & Status Filter/Counts) */}
                     <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 py-1">
                       <div className="flex flex-col sm:flex-row sm:items-center gap-2.5 min-w-0 flex-1">
                         {/* Mobile Top Row: Back Button + Edit/Archive Actions */}
-                        <div className="flex items-center justify-between sm:justify-start gap-2">
+                        <div className="flex flex-wrap items-center justify-between sm:justify-start gap-2">
                           <button
                             type="button"
                             onClick={() => {
@@ -6098,7 +6142,7 @@ function FacultySubmissionPanelContent({
                       </div>
 
                       {/* Quick Switcher dropdown & Add class */}
-                      <div className="flex items-center gap-2 w-full lg:w-auto shrink-0 lg:ml-auto pt-2 lg:pt-0 border-t border-slate-100 dark:border-slate-800/80 lg:border-t-0">
+                      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full lg:w-auto shrink-0 lg:ml-auto pt-2 lg:pt-0 border-t border-slate-100 dark:border-slate-800/80 lg:border-t-0">
                         <select
                           value={selectedClassId}
                           onChange={(e) => {
@@ -6116,7 +6160,7 @@ function FacultySubmissionPanelContent({
                               { silent: true },
                             );
                           }}
-                          className="flex-1 lg:flex-initial min-w-0 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-black text-slate-800 outline-none focus:border-[#780000] cursor-pointer shadow-2xs"
+                          className="w-full sm:w-auto sm:flex-1 lg:flex-initial min-w-0 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-black text-slate-800 outline-none focus:border-[#780000] cursor-pointer shadow-2xs"
                         >
                           {facultyClasses.map((c) => (
                             <option key={c.id} value={c.id}>
@@ -6130,7 +6174,7 @@ function FacultySubmissionPanelContent({
                             setClassFormError(null);
                             setIsAddClassModalOpen(true);
                           }}
-                          className="inline-flex items-center justify-center gap-1 px-3.5 py-2 rounded-xl bg-[#780000] hover:bg-[#5e0000] text-white border border-[#5e0000] text-xs font-bold transition-all cursor-pointer shadow-xs active:scale-95 shrink-0"
+                          className="w-full sm:w-auto inline-flex items-center justify-center gap-1 px-3.5 py-2 rounded-xl bg-[#780000] hover:bg-[#5e0000] text-white border border-[#5e0000] text-xs font-bold transition-all cursor-pointer shadow-xs active:scale-95 shrink-0"
                           title="Add another class load"
                         >
                           <AppIcon icon={Plus} size="xs" color="white" />
@@ -6163,7 +6207,7 @@ function FacultySubmissionPanelContent({
                           onClick={() =>
                             handleToggleArchiveClass(selectedClass)
                           }
-                          className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-amber-950 text-xs sm:text-sm font-bold transition shadow-sm cursor-pointer shrink-0 border border-amber-600/40 active:scale-95"
+                          className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-amber-950 text-xs sm:text-sm font-bold transition shadow-sm cursor-pointer shrink-0 border border-amber-600/40 active:scale-95"
                         >
                           <AppIcon icon={Archive} size="sm" color="inherit" />
                           <span>Unarchive Class</span>
@@ -6173,8 +6217,8 @@ function FacultySubmissionPanelContent({
 
                     {/* Scoped Filter Toolbar matching Requirements Verification */}
                     {displayedStatusCounts && !isLoadingStatuses && (
-                      <div className="flex flex-wrap items-center justify-between gap-2.5 rounded-2xl border border-slate-200 dark:border-slate-800/80 bg-slate-50/80 dark:bg-slate-950/40 p-2 sm:p-2.5 shadow-2xs overflow-x-auto">
-                        <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+                      <div className="flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-slate-200 dark:border-slate-800/80 bg-slate-50/80 dark:bg-slate-950/40 p-2 sm:p-2.5 shadow-2xs overflow-x-hidden">
+                        <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 min-w-0">
                           <button
                             type="button"
                             onClick={() => setStep2FilterMode("all")}
@@ -6380,7 +6424,7 @@ function FacultySubmissionPanelContent({
                                       Extension Request Pending Admin Review
                                     </span>
                                     {pendingExtensionData?.reason && (
-                                      <span className="text-[11px] text-slate-500 dark:text-slate-400 italic truncate max-w-md font-medium">
+                                      <span className="text-[11px] text-slate-500 dark:text-slate-400 italic truncate max-w-full sm:max-w-md font-medium">
                                         &ldquo;{pendingExtensionData.reason}
                                         &rdquo;
                                       </span>
@@ -6390,14 +6434,14 @@ function FacultySubmissionPanelContent({
                               </div>
                             </div>
                             {hasLackings && (
-                              <div className="shrink-0 flex items-center gap-2 self-start sm:self-center">
+                              <div className="w-full sm:w-auto shrink-0 flex items-center gap-2 self-stretch sm:self-center">
                                 {hasPendingExtensionRequest ? (
                                   <button
                                     type="button"
                                     onClick={() =>
                                       setShowExtensionDetailsModal(true)
                                     }
-                                    className="inline-flex items-center gap-2 bg-[#780000] hover:bg-[#5e0000] text-white font-bold px-4.5 py-2.5 rounded-xl text-xs sm:text-sm shadow-sm hover:shadow-md transition-all cursor-pointer border border-[#5e0000]"
+                                    className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-[#780000] hover:bg-[#5e0000] text-white font-bold px-4.5 py-2.5 rounded-xl text-xs sm:text-sm shadow-sm hover:shadow-md transition-all cursor-pointer border border-[#5e0000]"
                                   >
                                     <AppIcon
                                       icon={Hourglass}
@@ -6410,7 +6454,7 @@ function FacultySubmissionPanelContent({
                                   <button
                                     type="button"
                                     onClick={() => openExtensionRequestModal()}
-                                    className="inline-flex items-center justify-center gap-2 bg-[#780000] hover:bg-[#5e0000] text-white font-bold px-4.5 py-2.5 rounded-xl text-xs sm:text-sm shadow-sm hover:shadow-md active:scale-[0.98] transition-all cursor-pointer border border-[#5e0000]"
+                                    className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-[#780000] hover:bg-[#5e0000] text-white font-bold px-4.5 py-2.5 rounded-xl text-xs sm:text-sm shadow-sm hover:shadow-md active:scale-[0.98] transition-all cursor-pointer border border-[#5e0000]"
                                   >
                                     <AppIcon
                                       icon={Hourglass}
@@ -6463,663 +6507,826 @@ function FacultySubmissionPanelContent({
                             </span>
                           </div>
                         )}
-                        <div className="overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs">
-                          <div className="overflow-x-auto">
-                            <table className="w-full table-fixed text-left text-xs text-slate-600 dark:text-slate-300 min-w-[880px]">
-                              <thead className="bg-slate-50/60 dark:bg-slate-950/50 border-b border-slate-200/80 dark:border-slate-800/80 text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-                                <tr>
-                                  <th className="px-4 py-3 w-[25%] text-center">
-                                    Requirement
-                                  </th>
-                                  <th className="px-3 py-3 w-[10%] text-center">
-                                    Type
-                                  </th>
-                                  <th className="px-4 py-3 w-[25%] text-center">
-                                    Attached File
-                                  </th>
-                                  <th className="px-4 py-3 w-[24%]">
-                                    Notes &amp; Feedback
-                                  </th>
-                                  <th className="px-4 py-3 w-[16%] text-center">
-                                    Status
-                                  </th>
-                                </tr>
-                              </thead>
-                              <tbody className="divide-y divide-slate-100 dark:divide-slate-800/70">
-                                {(() => {
-                                  const filteredStep2Reqs =
-                                    displayedRequirementStatuses.filter((req) => {
-                                      if (step2FilterMode === "all") return true;
-                                      if (step2FilterMode === "validated")
-                                        return req.status === "Validated";
-                                      if (step2FilterMode === "pending")
-                                        return (
-                                          req.status === "Pending" &&
-                                          Boolean(
-                                            req.submittedAt ||
-                                              req.latestSubmissionId,
-                                          )
-                                        );
-                                      if (step2FilterMode === "revision")
-                                        return req.status === "Rejected";
-                                      if (step2FilterMode === "not_submitted")
-                                        return (
-                                          req.status === "Not Submitted" ||
-                                          req.status === "Overdue" ||
-                                          (req.status === "Pending" &&
-                                            !req.latestSubmissionId &&
-                                            !req.submittedAt)
-                                        );
-                                      return true;
-                                    });
+                        {(() => {
+                          const filteredStep2Reqs =
+                            displayedRequirementStatuses.filter((req) => {
+                              if (step2FilterMode === "all") return true;
+                              if (step2FilterMode === "validated")
+                                return req.status === "Validated";
+                              if (step2FilterMode === "pending")
+                                return (
+                                  req.status === "Pending" &&
+                                  Boolean(
+                                    req.submittedAt || req.latestSubmissionId,
+                                  )
+                                );
+                              if (step2FilterMode === "revision")
+                                return req.status === "Rejected";
+                              if (step2FilterMode === "not_submitted")
+                                return (
+                                  req.status === "Not Submitted" ||
+                                  req.status === "Overdue" ||
+                                  (req.status === "Pending" &&
+                                    !req.latestSubmissionId &&
+                                    !req.submittedAt)
+                                );
+                              return true;
+                            });
 
-                                  if (filteredStep2Reqs.length === 0) {
-                                    return (
-                                      <tr>
-                                        <td
-                                          colSpan={5}
-                                          className="px-6 py-12 text-center text-xs text-slate-500 dark:text-slate-400 font-medium"
-                                        >
-                                          <div className="flex flex-col items-center justify-center gap-2">
-                                            <p className="font-bold text-slate-700 dark:text-slate-300 text-sm">
-                                              {displayedRequirementStatuses.length === 0
-                                                ? "No Active Documents Required"
-                                                : "No requirements match the selected filter."}
-                                            </p>
-                                            {step2FilterMode !== "all" ? (
-                                              <button
-                                                type="button"
-                                                onClick={() =>
-                                                  setStep2FilterMode("all")
-                                                }
-                                                className="text-xs font-semibold text-amber-600 dark:text-amber-400 hover:underline cursor-pointer"
-                                              >
-                                                View All Files
-                                              </button>
-                                            ) : (
-                                              <p className="text-xs text-slate-400 dark:text-slate-500">
-                                                All compliance document requirements are currently hidden or not active for this term.
-                                              </p>
-                                            )}
-                                          </div>
-                                        </td>
-                                      </tr>
-                                    );
-                                  }
+                          if (filteredStep2Reqs.length === 0) {
+                            return (
+                              <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-6 py-12 text-center text-xs text-slate-500 dark:text-slate-400 font-medium shadow-xs">
+                                <div className="flex flex-col items-center justify-center gap-2">
+                                  <p className="font-bold text-slate-700 dark:text-slate-300 text-sm">
+                                    {displayedRequirementStatuses.length === 0
+                                      ? "No Active Documents Required"
+                                      : "No requirements match the selected filter."}
+                                  </p>
+                                  {step2FilterMode !== "all" ? (
+                                    <button
+                                      type="button"
+                                      onClick={() => setStep2FilterMode("all")}
+                                      className="text-xs font-semibold text-amber-600 dark:text-amber-400 hover:underline cursor-pointer"
+                                    >
+                                      View All Files
+                                    </button>
+                                  ) : (
+                                    <p className="text-xs text-slate-400 dark:text-slate-500">
+                                      All compliance document requirements are currently hidden or not active for this term.
+                                    </p>
+                                  )}
+                                </div>
+                              </div>
+                            );
+                          }
 
-                                  return filteredStep2Reqs.map((req) => {
-                                    const submittedDateText =
-                                      req.submittedAt &&
-                                      formatSubmittedDateTime(req.submittedAt)
-                                        ? formatSubmittedDateTime(
-                                            req.submittedAt,
-                                          )
-                                        : null;
-                                    const tpl = activeTemplates.find(
-                                      (t) => t.code === req.code,
-                                    );
-                                    const maxMb = tpl?.max_size_mb
-                                      ? Number(tpl.max_size_mb)
-                                      : 10;
-                                    const isMandatory =
-                                      templateMandatoryMap.get(req.code) !==
-                                      false;
-                                    const isCleanedFile = Boolean(
-                                      req.storagePath?.startsWith("__cleaned__"),
-                                    );
-                                    const rawDisplayFileName =
-                                      req.fileName ||
-                                      (isCleanedFile
-                                        ? req.storagePath
-                                            ?.replace(/^__cleaned__\/?/, "")
-                                            .trim() || ""
-                                        : req.storagePath?.split("/").pop() ||
-                                          "") ||
-                                      "Uploaded Document";
-                                    const displayFileName = rawDisplayFileName.replace(
-                                      /^\d+_/,
-                                      "",
-                                    );
-                                    const hasUploadedFile = Boolean(
-                                      !isCleanedFile &&
-                                        req.status !== "Not Submitted" &&
-                                        req.status !== "Exempted" &&
-                                        req.status !== "Overdue" &&
-                                        req.latestSubmissionId &&
-                                        (req.submittedAt ||
-                                          req.storagePath ||
-                                          req.fileName),
-                                    );
-                                    const facultyRemarksText =
-                                      req.remarks || req.note || null;
-                                    const reviewerFeedbackText =
-                                      req.adminRemarks ||
-                                      req.admin_remarks ||
-                                      req.feedback ||
-                                      null;
+                          const enrichedReqs = filteredStep2Reqs.map((req) => {
+                            const submittedDateText =
+                              req.submittedAt &&
+                              formatSubmittedDateTime(req.submittedAt)
+                                ? formatSubmittedDateTime(req.submittedAt)
+                                : null;
+                            const tpl = activeTemplates.find(
+                              (t) => t.code === req.code,
+                            );
+                            const maxMb = tpl?.max_size_mb
+                              ? Number(tpl.max_size_mb)
+                              : 10;
+                            const isMandatory =
+                              templateMandatoryMap.get(req.code) !== false;
+                            const isCleanedFile = Boolean(
+                              req.storagePath?.startsWith("__cleaned__"),
+                            );
+                            const rawDisplayFileName =
+                              req.fileName ||
+                              (isCleanedFile
+                                ? req.storagePath
+                                    ?.replace(/^__cleaned__\/?/, "")
+                                    .trim() || ""
+                                : req.storagePath?.split("/").pop() || "") ||
+                              "Uploaded Document";
+                            const displayFileName = rawDisplayFileName.replace(
+                              /^\d+_/,
+                              "",
+                            );
+                            const hasUploadedFile = Boolean(
+                              !isCleanedFile &&
+                                req.status !== "Not Submitted" &&
+                                req.status !== "Exempted" &&
+                                req.status !== "Overdue" &&
+                                req.latestSubmissionId &&
+                                (req.submittedAt ||
+                                  req.storagePath ||
+                                  req.fileName),
+                            );
+                            const facultyRemarksText =
+                              req.remarks || req.note || null;
+                            const reviewerFeedbackText =
+                              req.adminRemarks ||
+                              req.admin_remarks ||
+                              req.feedback ||
+                              null;
+                            const badgeStatus =
+                              req.status === "Pending" &&
+                              req.submittedAt &&
+                              req.latestSubmissionId &&
+                              (req.hasPriorRevision || req.isRevision)
+                                ? "Revision Under Review"
+                                : req.status === "Pending" &&
+                                    req.submittedAt &&
+                                    req.latestSubmissionId
+                                  ? "Pending Review"
+                                  : isWindowNotConfigured &&
+                                      (req.status === "Not Submitted" ||
+                                        req.status === "Pending" ||
+                                        req.status === "Overdue")
+                                    ? "Not Submitted"
+                                    : req.isIndividualClosed
+                                      ? "Not Submitted"
+                                      : isWindowClosed &&
+                                          (req.status === "Not Submitted" ||
+                                            req.status === "Pending")
+                                        ? "Overdue"
+                                        : req.status;
 
-                                    return (
-                                      <tr
-                                        key={req.code}
-                                        id={`requirement-${req.code}`}
-                                        className="bg-white hover:bg-slate-50/70 dark:bg-slate-900 dark:hover:bg-slate-800/30 transition-colors"
+                            const renderActions = (mobileCard: boolean) => {
+                              const btnPad = mobileCard
+                                ? "px-3 py-2 text-xs"
+                                : "px-2.5 py-1 text-[11px]";
+                              const fullCls = mobileCard ? "w-full" : "";
+
+                              if (selectedClass?.is_archived) {
+                                return (
+                                  <div
+                                    className={
+                                      mobileCard
+                                        ? "flex flex-col gap-2 w-full"
+                                        : "flex flex-col items-center gap-1.5"
+                                    }
+                                  >
+                                    {hasUploadedFile && (
+                                      <button
+                                        type="button"
+                                        onClick={() => openSubmissionPreview(req)}
+                                        className={`inline-flex items-center justify-center gap-1.5 rounded-lg border border-slate-200 bg-slate-100 hover:bg-slate-200 text-slate-800 dark:border-slate-700 dark:bg-slate-800 dark:hover:bg-slate-750 dark:text-slate-200 font-semibold transition cursor-pointer shadow-2xs ${btnPad} ${fullCls}`}
                                       >
-                                        {/* Column 1: Requirement */}
-                                        <td className="px-4 py-3.5 align-middle text-center">
-                                          <div className="space-y-1 min-w-0 text-center">
-                                            <span className="font-semibold text-slate-900 dark:text-slate-100 text-xs block leading-snug">
-                                              {getRequirementTitle(req.code)}
-                                            </span>
-                                            {submittedDateText ? (
-                                              <span className="text-[11px] text-slate-500 dark:text-slate-400 block">
-                                                Submitted: {submittedDateText}
-                                              </span>
-                                            ) : (
-                                              <span className="text-[11px] text-slate-400 dark:text-slate-500 italic block">
-                                                Not submitted
-                                              </span>
-                                            )}
-                                            <span className="text-[10.5px] text-slate-400 dark:text-slate-500 block">
-                                              {req.effectiveDeadline &&
-                                              !req.submittedAt &&
-                                              req.status !== "Exempted" ? (
-                                                <span
-                                                  className={
-                                                    req.status === "Overdue"
-                                                      ? "text-[#780000] dark:text-rose-400 font-semibold"
-                                                      : req.status === "Extended"
-                                                        ? "text-indigo-600 dark:text-indigo-400 font-semibold"
-                                                        : ""
-                                                  }
-                                                >
-                                                  Due:{" "}
-                                                  {formatDeadlineDate(
-                                                    req.effectiveDeadline,
-                                                  )}{" "}
-                                                  &bull;{" "}
-                                                </span>
-                                              ) : null}
-                                              Max {maxMb} MB
-                                            </span>
-                                          </div>
-                                        </td>
+                                        <AppIcon
+                                          icon={Eye}
+                                          size="sm"
+                                          color="inherit"
+                                        />
+                                        <span>View File</span>
+                                      </button>
+                                    )}
+                                    <span
+                                      className={`inline-flex items-center justify-center gap-1 bg-slate-200/80 dark:bg-slate-800/80 text-slate-500 dark:text-slate-400 font-semibold rounded-lg cursor-not-allowed border border-slate-300 dark:border-slate-700 select-none ${btnPad} ${fullCls}`}
+                                      title="This class is archived. Unarchive it to upload or request extensions."
+                                    >
+                                      <AppIcon
+                                        icon={Lock}
+                                        size="xs"
+                                        color="inherit"
+                                      />
+                                      <span>Class Archived</span>
+                                    </span>
+                                  </div>
+                                );
+                              }
 
-                                        {/* Column 2: Type */}
-                                        <td className="px-3 py-3.5 align-middle text-center">
-                                          <div className="flex items-center justify-center">
+                              const ongoingUpload = uploadTasks.find(
+                                (t) =>
+                                  t.requirementCode === req.code &&
+                                  t.status === "uploading" &&
+                                  (selectedClassId
+                                    ? t.classId === selectedClassId
+                                    : !t.classId),
+                              );
+                              if (ongoingUpload) {
+                                return (
+                                  <div
+                                    className={`inline-flex items-center justify-center gap-1.5 bg-amber-500 border border-amber-600 text-slate-950 font-bold rounded-lg shadow-xs ${mobileCard ? "w-full px-3 py-2 text-xs" : "px-3 py-1 text-[11px]"}`}
+                                  >
+                                    <AppIcon
+                                      icon={SystemRestart}
+                                      size="xs"
+                                      color="inherit"
+                                      className="animate-spin shrink-0"
+                                    />
+                                    <span className="truncate">
+                                      Uploading {ongoingUpload.progress}%
+                                    </span>
+                                  </div>
+                                );
+                              }
+
+                              return (
+                                <div
+                                  className={
+                                    mobileCard
+                                      ? "flex flex-col sm:flex-row sm:flex-wrap items-stretch sm:items-center gap-2 w-full"
+                                      : "flex flex-wrap items-center justify-center gap-1.5"
+                                  }
+                                >
+                                  {req.status === "Exempted" && (
+                                    <button
+                                      type="button"
+                                      disabled
+                                      className={`inline-flex items-center justify-center gap-1 bg-slate-200 text-slate-500 dark:bg-slate-800 dark:text-slate-400 border border-slate-300 dark:border-slate-700 font-medium rounded-lg cursor-not-allowed ${btnPad} ${fullCls}`}
+                                      title="This requirement is exempted."
+                                    >
+                                      <AppIcon
+                                        icon={Minus}
+                                        size="xs"
+                                        color="inherit"
+                                      />
+                                      <span>Exempted</span>
+                                    </button>
+                                  )}
+
+                                  {req.status === "Rejected" &&
+                                    ((isWindowNotConfigured ||
+                                      req.isIndividualClosed) &&
+                                    !req.isExtended &&
+                                    !hasActiveGracePeriod &&
+                                    !isEffectivelyOpen ? (
+                                      <button
+                                        type="button"
+                                        disabled
+                                        className={`inline-flex items-center justify-center gap-1 bg-slate-200 text-slate-500 dark:bg-slate-800 dark:text-slate-400 border border-slate-300 dark:border-slate-700 font-medium rounded-lg cursor-not-allowed ${btnPad} ${fullCls}`}
+                                        title="Submissions will open once the administration announces the submission schedule."
+                                      >
+                                        <AppIcon
+                                          icon={Calendar}
+                                          size="xs"
+                                          color="inherit"
+                                        />
+                                        <span>Awaiting Schedule</span>
+                                      </button>
+                                    ) : req.isExtended ? (
+                                      <button
+                                        type="button"
+                                        onClick={() =>
+                                          openDirectUploadModal(req.code, true)
+                                        }
+                                        className={`inline-flex items-center justify-center gap-1 bg-indigo-600 hover:bg-indigo-500 text-white border border-indigo-700 font-semibold rounded-lg shadow-2xs transition-all cursor-pointer ${btnPad} ${fullCls}`}
+                                        title={`Upload revision unlocked until ${formatDeadlineDate(req.extendedUntil)}`}
+                                      >
+                                        <AppIcon
+                                          icon={Upload}
+                                          size="xs"
+                                          color="white"
+                                        />
+                                        <span>Upload Revision</span>
+                                      </button>
+                                    ) : (isWindowClosed ||
+                                        Boolean(
+                                          req.effectiveDeadline &&
+                                            Date.now() >
+                                              new Date(
+                                                req.effectiveDeadline,
+                                              ).getTime(),
+                                        )) &&
+                                      !hasActiveGracePeriod &&
+                                      !isEffectivelyOpen &&
+                                      !req.customDueDate ? (
+                                      <button
+                                        type="button"
+                                        disabled
+                                        className={`inline-flex items-center justify-center gap-1 bg-slate-200 text-slate-500 dark:bg-slate-800 dark:text-slate-400 border border-slate-300 dark:border-slate-700 font-medium rounded-lg cursor-not-allowed ${btnPad} ${fullCls}`}
+                                        title="Uploads are locked because the submission window is closed."
+                                      >
+                                        <AppIcon
+                                          icon={Lock}
+                                          size="xs"
+                                          color="inherit"
+                                        />
+                                        <span>Uploads Locked</span>
+                                      </button>
+                                    ) : (
+                                      <button
+                                        type="button"
+                                        onClick={() =>
+                                          openDirectUploadModal(req.code, true)
+                                        }
+                                        className={`inline-flex items-center justify-center gap-1 bg-amber-500 hover:bg-amber-400 text-slate-950 border border-amber-600/40 font-semibold rounded-lg shadow-2xs transition-all cursor-pointer ${btnPad} ${fullCls}`}
+                                      >
+                                        <AppIcon
+                                          icon={Upload}
+                                          size="xs"
+                                          color="inherit"
+                                        />
+                                        <span>Upload Revision</span>
+                                      </button>
+                                    ))}
+
+                                  {hasUploadedFile ? (
+                                    <button
+                                      type="button"
+                                      onClick={() => openSubmissionPreview(req)}
+                                      className={`inline-flex items-center justify-center gap-1 rounded-lg border border-slate-200 bg-slate-100 hover:bg-slate-200 text-slate-800 dark:border-slate-700 dark:bg-slate-800 dark:hover:bg-slate-750 dark:text-slate-200 font-semibold transition cursor-pointer shadow-2xs ${btnPad} ${fullCls}`}
+                                    >
+                                      <AppIcon
+                                        icon={Eye}
+                                        size="xs"
+                                        color="inherit"
+                                      />
+                                      <span>View File</span>
+                                    </button>
+                                  ) : null}
+
+                                  {req.status === "Extended" &&
+                                    !req.latestSubmissionId && (
+                                      <button
+                                        type="button"
+                                        onClick={() =>
+                                          openDirectUploadModal(req.code)
+                                        }
+                                        className={`inline-flex items-center justify-center gap-1 bg-amber-500 hover:bg-amber-400 text-slate-950 border border-amber-600/40 font-semibold rounded-lg shadow-2xs transition-all cursor-pointer ${btnPad} ${fullCls}`}
+                                      >
+                                        <AppIcon
+                                          icon={Upload}
+                                          size="xs"
+                                          color="inherit"
+                                        />
+                                        <span>Upload</span>
+                                      </button>
+                                    )}
+
+                                  {req.status === "Overdue" && (
+                                    <button
+                                      type="button"
+                                      disabled
+                                      className={`inline-flex items-center justify-center gap-1 bg-slate-200 text-slate-500 dark:bg-slate-800 dark:text-slate-400 border border-slate-300 dark:border-slate-700 font-medium rounded-lg cursor-not-allowed ${btnPad} ${fullCls}`}
+                                      title={
+                                        isWindowNotConfigured ||
+                                        req.isIndividualClosed
+                                          ? "Submissions will open once the administration announces the submission schedule."
+                                          : "Uploads are locked because the submission window is closed."
+                                      }
+                                    >
+                                      <AppIcon
+                                        icon={
+                                          isWindowNotConfigured ||
+                                          req.isIndividualClosed
+                                            ? Calendar
+                                            : Lock
+                                        }
+                                        size="xs"
+                                        color="inherit"
+                                      />
+                                      <span>
+                                        {isWindowNotConfigured ||
+                                        req.isIndividualClosed
+                                          ? "Awaiting Schedule"
+                                          : "Uploads Locked"}
+                                      </span>
+                                    </button>
+                                  )}
+
+                                  {((req.status === "Pending" &&
+                                    (!req.latestSubmissionId ||
+                                      !req.submittedAt)) ||
+                                    req.status === "Not Submitted") &&
+                                    ((isWindowClosed ||
+                                      isWindowNotConfigured ||
+                                      req.isIndividualClosed) &&
+                                    !req.customDueDate &&
+                                    !hasActiveGracePeriod &&
+                                    !isEffectivelyOpen ? (
+                                      <button
+                                        type="button"
+                                        disabled
+                                        className={`inline-flex items-center justify-center gap-1 bg-slate-200 text-slate-500 dark:bg-slate-800 dark:text-slate-400 border border-slate-300 dark:border-slate-700 font-medium rounded-lg cursor-not-allowed ${btnPad} ${fullCls}`}
+                                        title={
+                                          isWindowClosed &&
+                                          !req.isIndividualClosed
+                                            ? "Uploads are locked because the submission window is closed."
+                                            : "Submissions will open once the administration announces the submission schedule."
+                                        }
+                                      >
+                                        <AppIcon
+                                          icon={
+                                            isWindowClosed &&
+                                            !req.isIndividualClosed
+                                              ? Lock
+                                              : Calendar
+                                          }
+                                          size="xs"
+                                          color="inherit"
+                                        />
+                                        <span>
+                                          {isWindowClosed &&
+                                          !req.isIndividualClosed
+                                            ? "Uploads Locked"
+                                            : "Awaiting Schedule"}
+                                        </span>
+                                      </button>
+                                    ) : (
+                                      <button
+                                        type="button"
+                                        onClick={() =>
+                                          openDirectUploadModal(req.code)
+                                        }
+                                        className={`inline-flex items-center justify-center gap-1 bg-amber-500 hover:bg-amber-400 text-slate-950 border border-amber-600/40 font-semibold rounded-lg shadow-2xs transition-all cursor-pointer ${btnPad} ${fullCls}`}
+                                      >
+                                        <AppIcon
+                                          icon={Upload}
+                                          size="xs"
+                                          color="inherit"
+                                        />
+                                        <span>Upload</span>
+                                      </button>
+                                    ))}
+                                </div>
+                              );
+                            };
+
+                            return {
+                              req,
+                              submittedDateText,
+                              maxMb,
+                              isMandatory,
+                              isCleanedFile,
+                              rawDisplayFileName,
+                              displayFileName,
+                              hasUploadedFile,
+                              facultyRemarksText,
+                              reviewerFeedbackText,
+                              badgeStatus,
+                              renderActions,
+                            };
+                          });
+
+                          return (
+                            <>
+                              {/* Mobile Stacked Requirement Cards */}
+                              <div className="md:hidden space-y-3">
+                                {enrichedReqs.map(
+                                  ({
+                                    req,
+                                    submittedDateText,
+                                    maxMb,
+                                    isMandatory,
+                                    isCleanedFile,
+                                    rawDisplayFileName,
+                                    displayFileName,
+                                    hasUploadedFile,
+                                    facultyRemarksText,
+                                    reviewerFeedbackText,
+                                    badgeStatus,
+                                    renderActions,
+                                  }) => (
+                                    <div
+                                      key={`mob-${req.code}`}
+                                      id={`requirement-mobile-${req.code}`}
+                                      className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 space-y-3 shadow-xs min-w-0"
+                                    >
+                                      <div className="flex flex-wrap items-start justify-between gap-2">
+                                        <div className="min-w-0 flex-1 space-y-1">
+                                          <div className="flex flex-wrap items-center gap-1.5">
                                             {isMandatory ? (
-                                              <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider bg-[#780000] text-white border border-[#5e0000] shadow-2xs">
+                                              <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider bg-[#780000] text-white border border-[#5e0000]">
                                                 Required
                                               </span>
                                             ) : (
-                                              <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider bg-slate-700 text-white border border-slate-600 shadow-2xs">
+                                              <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider bg-slate-700 text-white border border-slate-600">
                                                 Optional
                                               </span>
                                             )}
                                           </div>
-                                        </td>
-
-                                        {/* Column 3: Attached File */}
-                                        <td className="px-4 py-3.5 align-middle text-center">
-                                          <div className="flex flex-col items-center justify-center gap-1.5 min-w-0 text-center">
-                                            {isCleanedFile ? (
-                                              <>
-                                                <span
-                                                  className="font-medium text-slate-700 dark:text-slate-300 break-words text-xs leading-snug"
-                                                  title={rawDisplayFileName}
-                                                >
-                                                  {displayFileName}
-                                                </span>
-                                                <span className="inline-flex items-center gap-1 rounded-md border border-amber-600 bg-amber-500 px-2.5 py-0.5 text-[10px] font-bold text-slate-950 shadow-2xs">
-                                                  Cleaned (Archived to ZIP)
-                                                </span>
-                                              </>
-                                            ) : hasUploadedFile ? (
+                                          <h4 className="font-bold text-slate-900 dark:text-slate-100 text-sm leading-snug break-words">
+                                            {getRequirementTitle(req.code)}
+                                          </h4>
+                                          {submittedDateText ? (
+                                            <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                                              Submitted: {submittedDateText}
+                                            </p>
+                                          ) : (
+                                            <p className="text-[11px] text-slate-400 dark:text-slate-500 italic">
+                                              Not submitted
+                                            </p>
+                                          )}
+                                          <p className="text-[11px] text-slate-400 dark:text-slate-500">
+                                            {req.effectiveDeadline &&
+                                            !req.submittedAt &&
+                                            req.status !== "Exempted" ? (
                                               <span
-                                                className="font-medium text-slate-900 dark:text-slate-100 truncate max-w-full block text-xs leading-snug"
-                                                title={rawDisplayFileName}
+                                                className={
+                                                  req.status === "Overdue"
+                                                    ? "text-[#780000] dark:text-rose-400 font-semibold"
+                                                    : req.status === "Extended"
+                                                      ? "text-indigo-600 dark:text-indigo-400 font-semibold"
+                                                      : ""
+                                                }
                                               >
-                                                {displayFileName}
+                                                Due:{" "}
+                                                {formatDeadlineDate(
+                                                  req.effectiveDeadline,
+                                                )}{" "}
+                                                &bull;{" "}
                                               </span>
                                             ) : null}
+                                            Max {maxMb} MB
+                                          </p>
+                                        </div>
+                                        <div className="shrink-0">
+                                          <SubmissionStatusBadge
+                                            status={badgeStatus}
+                                            size="sm"
+                                          />
+                                        </div>
+                                      </div>
 
-                                            {selectedClass?.is_archived ? (
-                                              <>
-                                                {hasUploadedFile && (
-                                                  <button
-                                                    type="button"
-                                                    onClick={() =>
-                                                      openSubmissionPreview(req)
-                                                    }
-                                                    className="inline-flex items-center justify-center gap-1 rounded-lg border border-slate-200 bg-slate-100 hover:bg-slate-200 text-slate-800 dark:border-slate-700 dark:bg-slate-800 dark:hover:bg-slate-750 dark:text-slate-200 px-2.5 py-1 text-[11px] font-semibold transition cursor-pointer shadow-2xs"
-                                                  >
-                                                    <AppIcon
-                                                      icon={Eye}
-                                                      size="sm"
-                                                      color="inherit"
-                                                    />
-                                                    <span>View File</span>
-                                                  </button>
-                                                )}
-                                                <span
-                                                  className="inline-flex items-center justify-center gap-1 bg-slate-200/80 dark:bg-slate-800/80 text-slate-500 dark:text-slate-400 font-semibold px-2.5 py-1 rounded-lg text-[11px] cursor-not-allowed border border-slate-300 dark:border-slate-700 select-none"
-                                                  title="This class is archived. Unarchive it to upload or request extensions."
-                                                >
-                                                  <AppIcon
-                                                    icon={Lock}
-                                                    size="xs"
-                                                    color="inherit"
-                                                  />
-                                                  <span>Class Archived</span>
-                                                </span>
-                                              </>
-                                            ) : (
-                                              (() => {
-                                                const ongoingUpload =
-                                                  uploadTasks.find(
-                                                    (t) =>
-                                                      t.requirementCode ===
-                                                        req.code &&
-                                                      t.status === "uploading" &&
-                                                      (selectedClassId
-                                                        ? t.classId ===
-                                                          selectedClassId
-                                                        : !t.classId),
-                                                  );
-                                                if (ongoingUpload) {
-                                                  return (
-                                                    <div className="inline-flex items-center justify-center gap-1.5 bg-amber-500 border border-amber-600 text-slate-950 font-bold px-3 py-1 rounded-lg text-[11px] shadow-xs">
-                                                      <AppIcon
-                                                        icon={SystemRestart}
-                                                        size="xs"
-                                                        color="inherit"
-                                                        className="animate-spin shrink-0"
-                                                      />
-                                                      <span className="truncate">
-                                                        Uploading{" "}
-                                                        {ongoingUpload.progress}%
-                                                      </span>
-                                                    </div>
-                                                  );
-                                                }
-                                                return (
-                                                  <div className="flex flex-wrap items-center justify-center gap-1.5">
-                                                    {req.status === "Exempted" && (
-                                                      <button
-                                                        type="button"
-                                                        disabled
-                                                        className="inline-flex items-center justify-center gap-1 bg-slate-200 text-slate-500 dark:bg-slate-800 dark:text-slate-400 border border-slate-300 dark:border-slate-700 font-medium px-2.5 py-1 rounded-lg text-[11px] cursor-not-allowed"
-                                                        title="This requirement is exempted."
-                                                      >
-                                                        <AppIcon
-                                                          icon={Minus}
-                                                          size="xs"
-                                                          color="inherit"
-                                                        />
-                                                        <span>Exempted</span>
-                                                      </button>
-                                                    )}
+                                      {(isCleanedFile || hasUploadedFile) && (
+                                        <div className="rounded-lg border border-slate-200/80 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-950/40 px-3 py-2 space-y-1.5 min-w-0">
+                                          <p
+                                            className="font-medium text-slate-800 dark:text-slate-200 text-xs break-all leading-snug"
+                                            title={rawDisplayFileName}
+                                          >
+                                            {displayFileName}
+                                          </p>
+                                          {isCleanedFile && (
+                                            <span className="inline-flex items-center gap-1 rounded-md border border-amber-600 bg-amber-500 px-2 py-0.5 text-[10px] font-bold text-slate-950 shadow-2xs">
+                                              Cleaned (Archived to ZIP)
+                                            </span>
+                                          )}
+                                        </div>
+                                      )}
 
-                                                    {req.status === "Rejected" &&
-                                                      ((isWindowNotConfigured ||
-                                                        req.isIndividualClosed) &&
-                                                      !req.isExtended &&
-                                                      !hasActiveGracePeriod &&
-                                                      !isEffectivelyOpen ? (
-                                                        <button
-                                                          type="button"
-                                                          disabled
-                                                          className="inline-flex items-center justify-center gap-1 bg-slate-200 text-slate-500 dark:bg-slate-800 dark:text-slate-400 border border-slate-300 dark:border-slate-700 font-medium px-2.5 py-1 rounded-lg text-[11px] cursor-not-allowed"
-                                                          title="Submissions will open once the administration announces the submission schedule."
-                                                        >
-                                                          <AppIcon
-                                                            icon={Calendar}
-                                                            size="xs"
-                                                            color="inherit"
-                                                          />
-                                                          <span>
-                                                            Awaiting Schedule
-                                                          </span>
-                                                        </button>
-                                                      ) : req.isExtended ? (
-                                                        <button
-                                                          type="button"
-                                                          onClick={() =>
-                                                            openDirectUploadModal(
-                                                              req.code,
-                                                              true,
-                                                            )
-                                                          }
-                                                          className="inline-flex items-center justify-center gap-1 bg-indigo-600 hover:bg-indigo-500 text-white border border-indigo-700 font-semibold px-2.5 py-1 rounded-lg text-[11px] shadow-2xs transition-all cursor-pointer"
-                                                          title={`Upload revision unlocked until ${formatDeadlineDate(req.extendedUntil)}`}
-                                                        >
-                                                          <AppIcon
-                                                            icon={Upload}
-                                                            size="xs"
-                                                            color="white"
-                                                          />
-                                                          <span>
-                                                            Upload Revision
-                                                          </span>
-                                                        </button>
-                                                      ) : (isWindowClosed ||
-                                                          Boolean(
-                                                            req.effectiveDeadline &&
-                                                              Date.now() >
-                                                                new Date(
-                                                                  req.effectiveDeadline,
-                                                                ).getTime(),
-                                                          )) &&
-                                                        !hasActiveGracePeriod &&
-                                                        !isEffectivelyOpen &&
-                                                        !req.customDueDate ? (
-                                                        <button
-                                                          type="button"
-                                                          disabled
-                                                          className="inline-flex items-center justify-center gap-1 bg-slate-200 text-slate-500 dark:bg-slate-800 dark:text-slate-400 border border-slate-300 dark:border-slate-700 font-medium px-2.5 py-1 rounded-lg text-[11px] cursor-not-allowed"
-                                                          title="Uploads are locked because the submission window is closed."
-                                                        >
-                                                          <AppIcon
-                                                            icon={Lock}
-                                                            size="xs"
-                                                            color="inherit"
-                                                          />
-                                                          <span>
-                                                            Uploads Locked
-                                                          </span>
-                                                        </button>
-                                                      ) : (
-                                                        <button
-                                                          type="button"
-                                                          onClick={() =>
-                                                            openDirectUploadModal(
-                                                              req.code,
-                                                              true,
-                                                            )
-                                                          }
-                                                          className="inline-flex items-center justify-center gap-1 bg-amber-500 hover:bg-amber-400 text-slate-950 border border-amber-600/40 font-semibold px-2.5 py-1 rounded-lg text-[11px] shadow-2xs transition-all cursor-pointer"
-                                                        >
-                                                          <AppIcon
-                                                            icon={Upload}
-                                                            size="xs"
-                                                            color="inherit"
-                                                          />
-                                                          <span>
-                                                            Upload Revision
-                                                          </span>
-                                                        </button>
-                                                      ))}
-
-                                                    {hasUploadedFile ? (
-                                                      <button
-                                                        type="button"
-                                                        onClick={() =>
-                                                          openSubmissionPreview(
-                                                            req,
-                                                          )
-                                                        }
-                                                        className="inline-flex items-center justify-center gap-1 rounded-lg border border-slate-200 bg-slate-100 hover:bg-slate-200 text-slate-800 dark:border-slate-700 dark:bg-slate-800 dark:hover:bg-slate-750 dark:text-slate-200 px-2.5 py-1 text-[11px] font-semibold transition cursor-pointer shadow-2xs"
-                                                      >
-                                                        <AppIcon
-                                                          icon={Eye}
-                                                          size="xs"
-                                                          color="inherit"
-                                                        />
-                                                        <span>View File</span>
-                                                      </button>
-                                                    ) : null}
-
-                                                    {req.status === "Extended" &&
-                                                      !req.latestSubmissionId && (
-                                                        <button
-                                                          type="button"
-                                                          onClick={() =>
-                                                            openDirectUploadModal(
-                                                              req.code,
-                                                            )
-                                                          }
-                                                          className="inline-flex items-center justify-center gap-1 bg-amber-500 hover:bg-amber-400 text-slate-950 border border-amber-600/40 font-semibold px-2.5 py-1 rounded-lg text-[11px] shadow-2xs transition-all cursor-pointer"
-                                                        >
-                                                          <AppIcon
-                                                            icon={Upload}
-                                                            size="xs"
-                                                            color="inherit"
-                                                          />
-                                                          <span>Upload</span>
-                                                        </button>
-                                                      )}
-
-                                                    {req.status === "Overdue" && (
-                                                      <button
-                                                        type="button"
-                                                        disabled
-                                                        className="inline-flex items-center justify-center gap-1 bg-slate-200 text-slate-500 dark:bg-slate-800 dark:text-slate-400 border border-slate-300 dark:border-slate-700 font-medium px-2.5 py-1 rounded-lg text-[11px] cursor-not-allowed"
-                                                        title={
-                                                          isWindowNotConfigured ||
-                                                          req.isIndividualClosed
-                                                            ? "Submissions will open once the administration announces the submission schedule."
-                                                            : "Uploads are locked because the submission window is closed."
-                                                        }
-                                                      >
-                                                        <AppIcon
-                                                          icon={
-                                                            isWindowNotConfigured ||
-                                                            req.isIndividualClosed
-                                                              ? Calendar
-                                                              : Lock
-                                                          }
-                                                          size="xs"
-                                                          color="inherit"
-                                                        />
-                                                        <span>
-                                                          {isWindowNotConfigured ||
-                                                          req.isIndividualClosed
-                                                            ? "Awaiting Schedule"
-                                                            : "Uploads Locked"}
-                                                        </span>
-                                                      </button>
-                                                    )}
-
-                                                    {((req.status === "Pending" &&
-                                                      (!req.latestSubmissionId ||
-                                                        !req.submittedAt)) ||
-                                                      req.status ===
-                                                        "Not Submitted") &&
-                                                      ((isWindowClosed ||
-                                                        isWindowNotConfigured ||
-                                                        req.isIndividualClosed) &&
-                                                      !req.customDueDate &&
-                                                      !hasActiveGracePeriod &&
-                                                      !isEffectivelyOpen ? (
-                                                        <button
-                                                          type="button"
-                                                          disabled
-                                                          className="inline-flex items-center justify-center gap-1 bg-slate-200 text-slate-500 dark:bg-slate-800 dark:text-slate-400 border border-slate-300 dark:border-slate-700 font-medium px-2.5 py-1 rounded-lg text-[11px] cursor-not-allowed"
-                                                          title={
-                                                            isWindowClosed &&
-                                                            !req.isIndividualClosed
-                                                              ? "Uploads are locked because the submission window is closed."
-                                                              : "Submissions will open once the administration announces the submission schedule."
-                                                          }
-                                                        >
-                                                          <AppIcon
-                                                            icon={
-                                                              isWindowClosed &&
-                                                              !req.isIndividualClosed
-                                                                ? Lock
-                                                                : Calendar
-                                                            }
-                                                            size="xs"
-                                                            color="inherit"
-                                                          />
-                                                          <span>
-                                                            {isWindowClosed &&
-                                                            !req.isIndividualClosed
-                                                              ? "Uploads Locked"
-                                                              : "Awaiting Schedule"}
-                                                          </span>
-                                                        </button>
-                                                      ) : (
-                                                        <button
-                                                          type="button"
-                                                          onClick={() =>
-                                                            openDirectUploadModal(
-                                                              req.code,
-                                                            )
-                                                          }
-                                                          className="inline-flex items-center justify-center gap-1 bg-amber-500 hover:bg-amber-400 text-slate-950 border border-amber-600/40 font-semibold px-2.5 py-1 rounded-lg text-[11px] shadow-2xs transition-all cursor-pointer"
-                                                        >
-                                                          <AppIcon
-                                                            icon={Upload}
-                                                            size="xs"
-                                                            color="inherit"
-                                                          />
-                                                          <span>Upload</span>
-                                                        </button>
-                                                      ))}
-                                                  </div>
-                                                );
-                                              })()
-                                            )}
-                                          </div>
-                                        </td>
-
-                                        {/* Column 4: Notes & Feedback */}
-                                        <td className="px-4 py-3.5 align-top">
-                                          {facultyRemarksText ||
-                                          reviewerFeedbackText ||
-                                          req.status === "Rejected" ? (
-                                            <div className="flex flex-col gap-1.5 min-w-0">
-                                              {facultyRemarksText ? (
-                                                <div
-                                                  className="rounded-lg border border-slate-200/90 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-900/40 px-2.5 py-1.5 text-xs shadow-2xs min-w-0"
-                                                  title={facultyRemarksText}
-                                                >
-                                                  <div className="flex items-center gap-1.5 mb-1">
-                                                    <span className="inline-flex items-center justify-center h-4 w-4 rounded-full bg-slate-200/70 dark:bg-slate-800 text-slate-600 dark:text-slate-400 shrink-0 [&>svg]:h-2.5 [&>svg]:w-2.5">
-                                                      <AppIcon
-                                                        icon={ChatBubble}
-                                                        size="xs"
-                                                        color="inherit"
-                                                      />
-                                                    </span>
-                                                    <span className="text-[10px] font-bold text-slate-700 dark:text-slate-300 tracking-tight">
-                                                      Faculty Remarks
-                                                    </span>
-                                                  </div>
-                                                  <p className="text-[11px] text-slate-800 dark:text-slate-200 font-medium leading-relaxed line-clamp-2 pl-5 break-words">
-                                                    &ldquo;{facultyRemarksText}&rdquo;
-                                                  </p>
-                                                </div>
-                                              ) : null}
-
-                                              {req.status === "Rejected" ? (
-                                                <div
-                                                  className="rounded-lg border border-slate-200/90 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-900/40 px-2.5 py-1.5 text-xs shadow-2xs min-w-0"
-                                                  title={
-                                                    reviewerFeedbackText ||
-                                                    "Revision requested. Please check and resubmit."
-                                                  }
-                                                >
-                                                  <div className="flex items-center gap-1.5 mb-1">
-                                                    <span className="inline-flex items-center justify-center h-4 w-4 rounded-full bg-slate-200/70 dark:bg-slate-800 text-slate-600 dark:text-slate-400 shrink-0 [&>svg]:h-2.5 [&>svg]:w-2.5">
-                                                      <AppIcon
-                                                        icon={Xmark}
-                                                        size="xs"
-                                                        color="inherit"
-                                                        strokeWidth={2.5}
-                                                      />
-                                                    </span>
-                                                    <span className="text-[10px] font-bold text-slate-700 dark:text-slate-300 tracking-tight">
-                                                      Revision Sent
-                                                    </span>
-                                                  </div>
-                                                  <p className="text-[11px] text-slate-800 dark:text-slate-200 font-medium leading-relaxed line-clamp-2 pl-5 break-words">
-                                                    &ldquo;
-                                                    {reviewerFeedbackText ||
-                                                      "Revision requested. Please check and resubmit."}
-                                                    &rdquo;
-                                                  </p>
-                                                </div>
-                                              ) : req.status === "Validated" &&
-                                                reviewerFeedbackText ? (
-                                                <div
-                                                  className="rounded-lg border border-slate-200/90 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-900/40 px-2.5 py-1.5 text-xs shadow-2xs min-w-0"
-                                                  title={reviewerFeedbackText}
-                                                >
-                                                  <div className="flex items-center gap-1.5 mb-1">
-                                                    <span className="inline-flex items-center justify-center h-4 w-4 rounded-full bg-slate-200/70 dark:bg-slate-800 text-slate-600 dark:text-slate-400 shrink-0 [&>svg]:h-2.5 [&>svg]:w-2.5">
-                                                      <AppIcon
-                                                        icon={Check}
-                                                        size="xs"
-                                                        color="inherit"
-                                                        strokeWidth={2.5}
-                                                      />
-                                                    </span>
-                                                    <span className="text-[10px] font-bold text-slate-700 dark:text-slate-300 tracking-tight">
-                                                      Validated Remarks
-                                                    </span>
-                                                  </div>
-                                                  <p className="text-[11px] text-slate-800 dark:text-slate-200 font-medium leading-relaxed line-clamp-2 pl-5 break-words">
-                                                    &ldquo;{reviewerFeedbackText}&rdquo;
-                                                  </p>
-                                                </div>
-                                              ) : null}
-                                            </div>
-                                          ) : (
-                                            <div className="pt-0.5">
-                                              <span className="text-slate-400 dark:text-slate-600 text-xs italic block">
-                                                &mdash;
-                                              </span>
+                                      {(facultyRemarksText ||
+                                        reviewerFeedbackText ||
+                                        req.status === "Rejected") && (
+                                        <div className="space-y-1.5 min-w-0">
+                                          {facultyRemarksText && (
+                                            <div className="rounded-lg border border-slate-200/90 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-900/40 px-2.5 py-1.5 text-xs min-w-0">
+                                              <p className="text-[10px] font-bold text-slate-700 dark:text-slate-300 mb-0.5">
+                                                Faculty Remarks
+                                              </p>
+                                              <p className="text-[11px] text-slate-800 dark:text-slate-200 font-medium leading-relaxed break-words">
+                                                &ldquo;{facultyRemarksText}&rdquo;
+                                              </p>
                                             </div>
                                           )}
-                                        </td>
+                                          {req.status === "Rejected" ? (
+                                            <div className="rounded-lg border border-rose-200 dark:border-rose-900/50 bg-rose-50/60 dark:bg-rose-950/30 px-2.5 py-1.5 text-xs min-w-0">
+                                              <p className="text-[10px] font-bold text-rose-700 dark:text-rose-300 mb-0.5">
+                                                Revision Sent
+                                              </p>
+                                              <p className="text-[11px] text-slate-800 dark:text-slate-200 font-medium leading-relaxed break-words">
+                                                &ldquo;
+                                                {reviewerFeedbackText ||
+                                                  "Revision requested. Please check and resubmit."}
+                                                &rdquo;
+                                              </p>
+                                            </div>
+                                          ) : req.status === "Validated" &&
+                                            reviewerFeedbackText ? (
+                                            <div className="rounded-lg border border-emerald-200 dark:border-emerald-900/50 bg-emerald-50/60 dark:bg-emerald-950/30 px-2.5 py-1.5 text-xs min-w-0">
+                                              <p className="text-[10px] font-bold text-emerald-700 dark:text-emerald-300 mb-0.5">
+                                                Validated Remarks
+                                              </p>
+                                              <p className="text-[11px] text-slate-800 dark:text-slate-200 font-medium leading-relaxed break-words">
+                                                &ldquo;{reviewerFeedbackText}
+                                                &rdquo;
+                                              </p>
+                                            </div>
+                                          ) : null}
+                                        </div>
+                                      )}
 
-                                        {/* Column 5: Status */}
-                                        <td className="px-4 py-3.5 align-middle text-center">
-                                          <div className="flex items-center justify-center">
-                                            <SubmissionStatusBadge
-                                              status={
-                                                req.status === "Pending" &&
-                                                req.submittedAt &&
-                                                req.latestSubmissionId &&
-                                                (req.hasPriorRevision ||
-                                                  req.isRevision)
-                                                  ? "Revision Under Review"
-                                                  : req.status === "Pending" &&
-                                                      req.submittedAt &&
-                                                      req.latestSubmissionId
-                                                    ? "Pending Review"
-                                                    : isWindowNotConfigured &&
-                                                        (req.status ===
-                                                          "Not Submitted" ||
-                                                          req.status ===
-                                                            "Pending" ||
-                                                          req.status ===
-                                                            "Overdue")
-                                                      ? "Not Submitted"
-                                                      : req.isIndividualClosed
-                                                        ? "Not Submitted"
-                                                        : isWindowClosed &&
-                                                            (req.status ===
-                                                              "Not Submitted" ||
-                                                              req.status ===
-                                                                "Pending")
-                                                          ? "Overdue"
-                                                          : req.status
-                                              }
-                                              size="md"
-                                            />
-                                          </div>
-                                        </td>
+                                      <div className="pt-1 border-t border-slate-100 dark:border-slate-800">
+                                        {renderActions(true)}
+                                      </div>
+                                    </div>
+                                  ),
+                                )}
+                              </div>
+
+                              {/* Desktop Requirements Table */}
+                              <div className="hidden md:block overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs">
+                                <div className="overflow-x-auto">
+                                  <table className="w-full table-fixed text-left text-xs text-slate-600 dark:text-slate-300 min-w-[880px]">
+                                    <thead className="bg-slate-50/60 dark:bg-slate-950/50 border-b border-slate-200/80 dark:border-slate-800/80 text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                                      <tr>
+                                        <th className="px-4 py-3 w-[25%] text-center">
+                                          Requirement
+                                        </th>
+                                        <th className="px-3 py-3 w-[10%] text-center">
+                                          Type
+                                        </th>
+                                        <th className="px-4 py-3 w-[25%] text-center">
+                                          Attached File
+                                        </th>
+                                        <th className="px-4 py-3 w-[24%]">
+                                          Notes &amp; Feedback
+                                        </th>
+                                        <th className="px-4 py-3 w-[16%] text-center">
+                                          Status
+                                        </th>
                                       </tr>
-                                    );
-                                  });
-                                })()}
-                              </tbody>
-                            </table>
-                          </div>
-                        </div>
+                                    </thead>
+                                    <tbody className="divide-y divide-slate-100 dark:divide-slate-800/70">
+                                      {enrichedReqs.map(
+                                        ({
+                                          req,
+                                          submittedDateText,
+                                          maxMb,
+                                          isMandatory,
+                                          isCleanedFile,
+                                          rawDisplayFileName,
+                                          displayFileName,
+                                          hasUploadedFile,
+                                          facultyRemarksText,
+                                          reviewerFeedbackText,
+                                          badgeStatus,
+                                          renderActions,
+                                        }) => (
+                                          <tr
+                                            key={req.code}
+                                            id={`requirement-${req.code}`}
+                                            className="bg-white hover:bg-slate-50/70 dark:bg-slate-900 dark:hover:bg-slate-800/30 transition-colors"
+                                          >
+                                            {/* Column 1: Requirement */}
+                                            <td className="px-4 py-3.5 align-middle text-center">
+                                              <div className="space-y-1 min-w-0 text-center">
+                                                <span className="font-semibold text-slate-900 dark:text-slate-100 text-xs block leading-snug">
+                                                  {getRequirementTitle(req.code)}
+                                                </span>
+                                                {submittedDateText ? (
+                                                  <span className="text-[11px] text-slate-500 dark:text-slate-400 block">
+                                                    Submitted:{" "}
+                                                    {submittedDateText}
+                                                  </span>
+                                                ) : (
+                                                  <span className="text-[11px] text-slate-400 dark:text-slate-500 italic block">
+                                                    Not submitted
+                                                  </span>
+                                                )}
+                                                <span className="text-[10.5px] text-slate-400 dark:text-slate-500 block">
+                                                  {req.effectiveDeadline &&
+                                                  !req.submittedAt &&
+                                                  req.status !== "Exempted" ? (
+                                                    <span
+                                                      className={
+                                                        req.status === "Overdue"
+                                                          ? "text-[#780000] dark:text-rose-400 font-semibold"
+                                                          : req.status ===
+                                                              "Extended"
+                                                            ? "text-indigo-600 dark:text-indigo-400 font-semibold"
+                                                            : ""
+                                                      }
+                                                    >
+                                                      Due:{" "}
+                                                      {formatDeadlineDate(
+                                                        req.effectiveDeadline,
+                                                      )}{" "}
+                                                      &bull;{" "}
+                                                    </span>
+                                                  ) : null}
+                                                  Max {maxMb} MB
+                                                </span>
+                                              </div>
+                                            </td>
+
+                                            {/* Column 2: Type */}
+                                            <td className="px-3 py-3.5 align-middle text-center">
+                                              <div className="flex items-center justify-center">
+                                                {isMandatory ? (
+                                                  <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider bg-[#780000] text-white border border-[#5e0000] shadow-2xs">
+                                                    Required
+                                                  </span>
+                                                ) : (
+                                                  <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider bg-slate-700 text-white border border-slate-600 shadow-2xs">
+                                                    Optional
+                                                  </span>
+                                                )}
+                                              </div>
+                                            </td>
+
+                                            {/* Column 3: Attached File */}
+                                            <td className="px-4 py-3.5 align-middle text-center">
+                                              <div className="flex flex-col items-center justify-center gap-1.5 min-w-0 text-center">
+                                                {isCleanedFile ? (
+                                                  <>
+                                                    <span
+                                                      className="font-medium text-slate-700 dark:text-slate-300 break-words text-xs leading-snug"
+                                                      title={rawDisplayFileName}
+                                                    >
+                                                      {displayFileName}
+                                                    </span>
+                                                    <span className="inline-flex items-center gap-1 rounded-md border border-amber-600 bg-amber-500 px-2.5 py-0.5 text-[10px] font-bold text-slate-950 shadow-2xs">
+                                                      Cleaned (Archived to ZIP)
+                                                    </span>
+                                                  </>
+                                                ) : hasUploadedFile ? (
+                                                  <span
+                                                    className="font-medium text-slate-900 dark:text-slate-100 truncate max-w-full block text-xs leading-snug"
+                                                    title={rawDisplayFileName}
+                                                  >
+                                                    {displayFileName}
+                                                  </span>
+                                                ) : null}
+                                                {renderActions(false)}
+                                              </div>
+                                            </td>
+
+                                            {/* Column 4: Notes & Feedback */}
+                                            <td className="px-4 py-3.5 align-top">
+                                              {facultyRemarksText ||
+                                              reviewerFeedbackText ||
+                                              req.status === "Rejected" ? (
+                                                <div className="flex flex-col gap-1.5 min-w-0">
+                                                  {facultyRemarksText ? (
+                                                    <div
+                                                      className="rounded-lg border border-slate-200/90 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-900/40 px-2.5 py-1.5 text-xs shadow-2xs min-w-0"
+                                                      title={facultyRemarksText}
+                                                    >
+                                                      <div className="flex items-center gap-1.5 mb-1">
+                                                        <span className="inline-flex items-center justify-center h-4 w-4 rounded-full bg-slate-200/70 dark:bg-slate-800 text-slate-600 dark:text-slate-400 shrink-0 [&>svg]:h-2.5 [&>svg]:w-2.5">
+                                                          <AppIcon
+                                                            icon={ChatBubble}
+                                                            size="xs"
+                                                            color="inherit"
+                                                          />
+                                                        </span>
+                                                        <span className="text-[10px] font-bold text-slate-700 dark:text-slate-300 tracking-tight">
+                                                          Faculty Remarks
+                                                        </span>
+                                                      </div>
+                                                      <p className="text-[11px] text-slate-800 dark:text-slate-200 font-medium leading-relaxed line-clamp-2 pl-5 break-words">
+                                                        &ldquo;
+                                                        {facultyRemarksText}
+                                                        &rdquo;
+                                                      </p>
+                                                    </div>
+                                                  ) : null}
+
+                                                  {req.status === "Rejected" ? (
+                                                    <div
+                                                      className="rounded-lg border border-slate-200/90 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-900/40 px-2.5 py-1.5 text-xs shadow-2xs min-w-0"
+                                                      title={
+                                                        reviewerFeedbackText ||
+                                                        "Revision requested. Please check and resubmit."
+                                                      }
+                                                    >
+                                                      <div className="flex items-center gap-1.5 mb-1">
+                                                        <span className="inline-flex items-center justify-center h-4 w-4 rounded-full bg-slate-200/70 dark:bg-slate-800 text-slate-600 dark:text-slate-400 shrink-0 [&>svg]:h-2.5 [&>svg]:w-2.5">
+                                                          <AppIcon
+                                                            icon={Xmark}
+                                                            size="xs"
+                                                            color="inherit"
+                                                            strokeWidth={2.5}
+                                                          />
+                                                        </span>
+                                                        <span className="text-[10px] font-bold text-slate-700 dark:text-slate-300 tracking-tight">
+                                                          Revision Sent
+                                                        </span>
+                                                      </div>
+                                                      <p className="text-[11px] text-slate-800 dark:text-slate-200 font-medium leading-relaxed line-clamp-2 pl-5 break-words">
+                                                        &ldquo;
+                                                        {reviewerFeedbackText ||
+                                                          "Revision requested. Please check and resubmit."}
+                                                        &rdquo;
+                                                      </p>
+                                                    </div>
+                                                  ) : req.status ===
+                                                      "Validated" &&
+                                                    reviewerFeedbackText ? (
+                                                    <div
+                                                      className="rounded-lg border border-slate-200/90 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-900/40 px-2.5 py-1.5 text-xs shadow-2xs min-w-0"
+                                                      title={
+                                                        reviewerFeedbackText
+                                                      }
+                                                    >
+                                                      <div className="flex items-center gap-1.5 mb-1">
+                                                        <span className="inline-flex items-center justify-center h-4 w-4 rounded-full bg-slate-200/70 dark:bg-slate-800 text-slate-600 dark:text-slate-400 shrink-0 [&>svg]:h-2.5 [&>svg]:w-2.5">
+                                                          <AppIcon
+                                                            icon={Check}
+                                                            size="xs"
+                                                            color="inherit"
+                                                            strokeWidth={2.5}
+                                                          />
+                                                        </span>
+                                                        <span className="text-[10px] font-bold text-slate-700 dark:text-slate-300 tracking-tight">
+                                                          Validated Remarks
+                                                        </span>
+                                                      </div>
+                                                      <p className="text-[11px] text-slate-800 dark:text-slate-200 font-medium leading-relaxed line-clamp-2 pl-5 break-words">
+                                                        &ldquo;
+                                                        {reviewerFeedbackText}
+                                                        &rdquo;
+                                                      </p>
+                                                    </div>
+                                                  ) : null}
+                                                </div>
+                                              ) : (
+                                                <div className="pt-0.5">
+                                                  <span className="text-slate-400 dark:text-slate-600 text-xs italic block">
+                                                    &mdash;
+                                                  </span>
+                                                </div>
+                                              )}
+                                            </td>
+
+                                            {/* Column 5: Status */}
+                                            <td className="px-4 py-3.5 align-middle text-center">
+                                              <div className="flex items-center justify-center">
+                                                <SubmissionStatusBadge
+                                                  status={badgeStatus}
+                                                  size="md"
+                                                />
+                                              </div>
+                                            </td>
+                                          </tr>
+                                        ),
+                                      )}
+                                    </tbody>
+                                  </table>
+                                </div>
+                              </div>
+                            </>
+                          );
+                        })()}
                       </div>
                     )}
                       </div>
@@ -7130,18 +7337,19 @@ function FacultySubmissionPanelContent({
             )}
             {isMounted && selectedRequirementForUpload && (
               <div
-                className="fixed inset-0 z-50 overflow-y-auto bg-slate-950/80 p-3 sm:p-6 flex min-h-full items-center justify-center backdrop-blur-sm"
+                className="fixed inset-0 z-[60] overflow-y-auto overscroll-contain bg-slate-950/80 p-3 sm:p-4 flex min-h-full items-center justify-center backdrop-blur-sm"
                 role="dialog"
                 aria-modal="true"
                 aria-labelledby="upload-modal-title"
                 onClick={closeDirectUploadModal}
               >
                 <div
-                  className="w-full max-w-2xl max-h-[90vh] flex flex-col rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xl overflow-hidden my-auto"
+                  className="w-full max-w-2xl max-h-[90dvh] flex flex-col rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xl overflow-hidden my-auto"
                   onClick={(event) => event.stopPropagation()}
                 >
                   {/* Modal Header (Pinned Top) */}
                   <ModalHeader
+                    className="shrink-0"
                     icon={
                       isRevisionUpload ||
                       (selectedRequirementForUpload &&
@@ -7456,20 +7664,20 @@ function FacultySubmissionPanelContent({
                   progress={directUploadPercent}
                 />
               ) : isSubmitSuccess ? (
-                <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-950/80 p-4 sm:p-6 flex min-h-full items-center justify-center backdrop-blur-sm animate-in fade-in duration-200">
-                  <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-8 sm:p-10 max-w-lg w-full text-center shadow-2xl space-y-6 my-auto animate-in zoom-in-95 duration-200">
+                <div className="fixed inset-0 z-[70] overflow-y-auto bg-slate-950/80 p-3 sm:p-6 flex min-h-full items-center justify-center backdrop-blur-sm animate-in fade-in duration-200">
+                  <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 sm:p-10 max-w-lg max-h-[90dvh] overflow-y-auto w-full text-center shadow-2xl space-y-6 my-auto animate-in zoom-in-95 duration-200">
                     <div className="space-y-6 py-2">
                       {/* Large Solid PUP Green Icon Badge */}
-                      <div className="mx-auto flex h-24 w-24 sm:h-28 sm:w-28 items-center justify-center rounded-3xl bg-[#0b5336] text-white shadow-xl shadow-[#0b5336]/30 border-2 border-[#08412a] animate-in zoom-in duration-300">
-                        <CheckCircle className="w-12 h-12 sm:w-14 sm:h-14 stroke-[2.5]" />
+                      <div className="mx-auto flex h-20 w-20 sm:h-28 sm:w-28 items-center justify-center rounded-3xl bg-[#0b5336] text-white shadow-xl shadow-[#0b5336]/30 border-2 border-[#08412a] animate-in zoom-in duration-300">
+                        <CheckCircle className="w-10 h-10 sm:w-14 sm:h-14 stroke-[2.5]" />
                       </div>
 
                       {/* Title & Description */}
                       <div className="space-y-2">
-                        <h3 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-slate-100 tracking-tight">
+                        <h3 className="text-xl sm:text-3xl font-black text-slate-900 dark:text-slate-100 tracking-tight">
                           Submitted Successfully!
                         </h3>
-                        <p className="text-sm sm:text-base text-slate-600 dark:text-slate-300 leading-relaxed max-w-md mx-auto px-2">
+                        <p className="text-xs sm:text-base text-slate-600 dark:text-slate-300 leading-relaxed max-w-md mx-auto px-2">
                           Your requirement has been uploaded and queued for
                           admin validation.
                         </p>
@@ -7479,7 +7687,7 @@ function FacultySubmissionPanelContent({
                       {directUploadFile && (
                         <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/60 p-3.5 sm:p-4 text-sm font-semibold text-slate-800 dark:text-slate-200 flex items-center justify-center gap-2.5 shadow-xs">
                           <Page className="w-5 h-5 text-[#0b5336] dark:text-emerald-400 shrink-0" />
-                          <span className="truncate max-w-[280px] sm:max-w-[360px]">
+                          <span className="truncate max-w-full sm:max-w-[360px]">
                             {directUploadFile.name}
                           </span>
                         </div>
@@ -7501,7 +7709,7 @@ function FacultySubmissionPanelContent({
               ) : null)}
             {isMounted && successModalData.isOpen && (
               <div
-                className="fixed inset-0 z-50 overflow-y-auto bg-slate-950/80 p-4 sm:p-6 flex min-h-full items-center justify-center backdrop-blur-sm animate-in fade-in duration-200"
+                className="fixed inset-0 z-[70] overflow-y-auto bg-slate-950/80 p-3 sm:p-6 flex min-h-full items-center justify-center backdrop-blur-sm animate-in fade-in duration-200"
                 role="dialog"
                 aria-modal="true"
                 aria-labelledby="success-modal-title"
@@ -7510,20 +7718,20 @@ function FacultySubmissionPanelContent({
                 }
               >
                 <div
-                  className="w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-8 sm:p-10 text-center shadow-2xl my-auto space-y-6 animate-in zoom-in-95 duration-200"
+                  className="w-full max-w-lg max-h-[90dvh] overflow-y-auto rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 sm:p-10 text-center shadow-2xl my-auto space-y-6 animate-in zoom-in-95 duration-200"
                   onClick={(e) => e.stopPropagation()}
                 >
-                  <div className="mx-auto flex h-24 w-24 sm:h-28 sm:w-28 items-center justify-center rounded-3xl bg-[#0b5336] text-white shadow-xl shadow-[#0b5336]/30 border-2 border-[#08412a] animate-in zoom-in duration-300">
-                    <CheckCircle className="w-12 h-12 sm:w-14 sm:h-14 stroke-[2.5]" />
+                  <div className="mx-auto flex h-20 w-20 sm:h-28 sm:w-28 items-center justify-center rounded-3xl bg-[#0b5336] text-white shadow-xl shadow-[#0b5336]/30 border-2 border-[#08412a] animate-in zoom-in duration-300">
+                    <CheckCircle className="w-10 h-10 sm:w-14 sm:h-14 stroke-[2.5]" />
                   </div>
                   <div className="space-y-2">
                     <h3
                       id="success-modal-title"
-                      className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-slate-100 tracking-tight"
+                      className="text-xl sm:text-3xl font-black text-slate-900 dark:text-slate-100 tracking-tight"
                     >
                       Upload Successful!
                     </h3>
-                    <p className="text-sm sm:text-base text-slate-600 dark:text-slate-300 leading-relaxed max-w-md mx-auto px-2">
+                    <p className="text-xs sm:text-base text-slate-600 dark:text-slate-300 leading-relaxed max-w-md mx-auto px-2">
                       Your requirement has been uploaded and queued for admin
                       validation.
                     </p>
@@ -7548,7 +7756,7 @@ function FacultySubmissionPanelContent({
             )}
             {isMounted && isHistoryModalOpen && (
               <div
-                className="fixed inset-0 z-50 flex flex-col w-screen h-screen bg-white dark:bg-slate-900 overflow-hidden"
+                className="fixed inset-0 z-[70] flex flex-col w-full h-dvh bg-white dark:bg-slate-900 overflow-hidden overscroll-none"
                 role="dialog"
                 aria-modal="true"
                 aria-labelledby="submission-history-title"
@@ -7565,16 +7773,17 @@ function FacultySubmissionPanelContent({
                     icon={ClockRotateRight}
                     onClose={closeHistoryModal}
                     closeAriaLabel="Close history modal"
+                    className="shrink-0"
                   />
-                  <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 dark:border-slate-800/80 bg-slate-50/80 dark:bg-slate-950/60 px-6 py-3.5">
-                    <div className="flex flex-wrap items-center gap-3">
-                      <span className="text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400">
+                  <div className="flex flex-col sm:flex-row sm:flex-wrap sm:items-center justify-between gap-2.5 sm:gap-3 border-b border-slate-200 dark:border-slate-800/80 bg-slate-50/80 dark:bg-slate-950/60 px-4 sm:px-6 py-3 shrink-0">
+                    <div className="grid grid-cols-1 sm:flex sm:flex-wrap items-stretch sm:items-center gap-2 sm:gap-3 w-full sm:w-auto">
+                      <span className="text-[11px] sm:text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400">
                         Academic Term:
                       </span>
                       <select
                         id="modalHistoryAcademicYear"
                         aria-label="School Year"
-                        className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 px-3 py-1.5 text-xs font-semibold text-slate-900 dark:text-slate-100 outline-none transition focus:border-amber-500 shadow-2xs"
+                        className="w-full sm:w-auto rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 px-3 py-2 sm:py-1.5 text-xs font-semibold text-slate-900 dark:text-slate-100 outline-none transition focus:border-amber-500 shadow-2xs"
                         value={historyAcademicYear}
                         onChange={(event) => {
                           hasManuallyChangedHistoryTermRef.current = true;
@@ -7600,7 +7809,7 @@ function FacultySubmissionPanelContent({
                       <select
                         id="modalHistorySemester"
                         aria-label="Semester"
-                        className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 px-3 py-1.5 text-xs font-semibold text-slate-900 dark:text-slate-100 outline-none transition focus:border-amber-500 shadow-2xs"
+                        className="w-full sm:w-auto rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 px-3 py-2 sm:py-1.5 text-xs font-semibold text-slate-900 dark:text-slate-100 outline-none transition focus:border-amber-500 shadow-2xs"
                         value={historySemester}
                         onChange={(event) => {
                           hasManuallyChangedHistoryTermRef.current = true;
@@ -7629,7 +7838,7 @@ function FacultySubmissionPanelContent({
                         })}
                       </select>
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="grid grid-cols-2 sm:flex items-center gap-2 w-full sm:w-auto">
                       {(() => {
                         const hasDownloadableHistory =
                           filteredPastSubmissions.some((s) =>
@@ -7645,7 +7854,7 @@ function FacultySubmissionPanelContent({
                             disabled={
                               isBulkDownloading || !hasDownloadableHistory
                             }
-                            className="inline-flex items-center gap-2 rounded-xl bg-[#780000] hover:bg-[#5e0000] active:scale-[0.98] text-white border border-[#5e0000] text-xs font-bold px-3.5 py-1.5 shadow-xs hover:shadow transition-all cursor-pointer disabled:bg-slate-200 disabled:text-slate-400 disabled:border-slate-300 dark:disabled:bg-slate-800 dark:disabled:text-slate-500 dark:disabled:border-slate-700 disabled:shadow-none disabled:cursor-not-allowed disabled:hover:bg-slate-200 dark:disabled:hover:bg-slate-800 disabled:active:scale-100 shrink-0"
+                            className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 sm:gap-2 rounded-xl bg-[#780000] hover:bg-[#5e0000] active:scale-[0.98] text-white border border-[#5e0000] text-xs font-bold px-3 sm:px-3.5 py-2 sm:py-1.5 shadow-xs hover:shadow transition-all cursor-pointer disabled:bg-slate-200 disabled:text-slate-400 disabled:border-slate-300 dark:disabled:bg-slate-800 dark:disabled:text-slate-500 dark:disabled:border-slate-700 disabled:shadow-none disabled:cursor-not-allowed disabled:hover:bg-slate-200 dark:disabled:hover:bg-slate-800 disabled:active:scale-100 shrink-0"
                             title={
                               hasDownloadableHistory
                                 ? "Download History ZIP"
@@ -7655,7 +7864,7 @@ function FacultySubmissionPanelContent({
                             {isBulkDownloading ? (
                               <>
                                 <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white/30 border-t-white shrink-0" />
-                                <span>
+                                <span className="truncate">
                                   {bulkDownloadProgressText || "Zipping..."}
                                 </span>
                               </>
@@ -7666,7 +7875,7 @@ function FacultySubmissionPanelContent({
                                   size="sm"
                                   color="inherit"
                                 />
-                                <span>Download History ZIP</span>
+                                <span className="truncate">Download ZIP</span>
                               </>
                             )}
                           </button>
@@ -7676,7 +7885,7 @@ function FacultySubmissionPanelContent({
                         type="button"
                         onClick={() => void handleRefreshHistory()}
                         disabled={isRefreshingHistory || isBulkDownloading}
-                        className="inline-flex items-center gap-1.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white hover:bg-slate-50 dark:bg-slate-800 dark:hover:bg-slate-750 text-slate-700 dark:text-slate-200 font-semibold px-3.5 py-1.5 text-xs shadow-xs active:scale-[0.98] transition-all cursor-pointer disabled:opacity-50"
+                        className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white hover:bg-slate-50 dark:bg-slate-800 dark:hover:bg-slate-750 text-slate-700 dark:text-slate-200 font-semibold px-3 sm:px-3.5 py-2 sm:py-1.5 text-xs shadow-xs active:scale-[0.98] transition-all cursor-pointer disabled:opacity-50"
                       >
                         <AppIcon
                           icon={Refresh}
@@ -7690,10 +7899,10 @@ function FacultySubmissionPanelContent({
                       </button>
                     </div>
                   </div>
-                  <div className="flex-1 overflow-y-auto p-6 sm:p-8 bg-slate-50/50 dark:bg-slate-950/40 space-y-5">
+                  <div className="flex-1 overflow-y-auto overscroll-contain p-4 sm:p-6 lg:p-8 bg-slate-50/50 dark:bg-slate-950/40 space-y-4 sm:space-y-5">
                     <div
                       role="note"
-                      className="flex items-start gap-2.5 rounded-2xl border border-amber-600 bg-amber-500 px-4 py-3 text-xs font-semibold text-slate-950 shadow-sm"
+                      className="flex items-start gap-2.5 rounded-2xl border border-amber-600 bg-amber-500 px-3.5 sm:px-4 py-3 text-xs font-semibold text-slate-950 shadow-sm"
                     >
                       <AppIcon
                         icon={WarningCircle}
@@ -7760,7 +7969,7 @@ function FacultySubmissionPanelContent({
               deadlineDisplay={windowDeadlineDisplay}
             />
             {activeView === "settings" && (
-              <article className="space-y-5 p-2 sm:p-4 md:p-5">
+              <article className="space-y-4 sm:space-y-5">
                 <FacultySettingsPanel
                   initialFacultyName={currentFacultyName || facultyName}
                   initialFacultyEmail={facultyEmail}
@@ -7786,32 +7995,30 @@ function FacultySubmissionPanelContent({
               </article>
             )}
             {isMounted && isSubmitModalOpen && (
-              <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-950/80 p-4 sm:p-6 flex min-h-full items-center justify-center backdrop-blur-sm">
-                <div className="w-full max-w-3xl max-h-[90vh] flex flex-col overflow-hidden rounded-2xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-2xl my-auto">
-                  <ModalHeader title="Submit Requirement" icon={Upload} />
-                  <div className="flex-1 overflow-y-auto p-6 min-h-0">
+              <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-950/80 p-3 sm:p-4 flex min-h-full items-center justify-center backdrop-blur-sm">
+                <div className="w-full max-w-3xl max-h-[90dvh] flex flex-col overflow-hidden rounded-2xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-2xl my-auto">
+                  <ModalHeader title="Submit Requirement" icon={Upload} className="shrink-0" />
+                  <div className="flex-1 overflow-y-auto p-4 sm:p-6 min-h-0">
                     {isEffectivelyOpen ? (
                       <form className="space-y-4" onSubmit={handleSubmit}>
-                        <div className="grid gap-4 md:grid-cols-2">
-                          <div className="grid gap-4 md:grid-cols-2">
-                            <div>
-                              <label className="text-xs uppercase tracking-[0.18em] font-semibold text-slate-700 dark:text-amber-300">
-                                School Year
-                              </label>
-                              <p className="mt-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 px-3 py-3 text-sm text-slate-800 dark:text-slate-100 font-medium">
-                                {form.academicYear
-                                  ? `S.Y. ${form.academicYear}`
-                                  : "Loading current term..."}
-                              </p>
-                            </div>
-                            <div>
-                              <label className="text-xs uppercase tracking-[0.18em] font-semibold text-slate-700 dark:text-amber-300">
-                                Semester
-                              </label>
-                              <p className="mt-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 px-3 py-3 text-sm text-slate-800 dark:text-slate-100 font-medium">
-                                {form.semester}
-                              </p>
-                            </div>
+                        <div className="grid gap-4 sm:grid-cols-2">
+                          <div>
+                            <label className="text-xs uppercase tracking-[0.18em] font-semibold text-slate-700 dark:text-amber-300">
+                              School Year
+                            </label>
+                            <p className="mt-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 px-3 py-3 text-sm text-slate-800 dark:text-slate-100 font-medium">
+                              {form.academicYear
+                                ? `S.Y. ${form.academicYear}`
+                                : "Loading current term..."}
+                            </p>
+                          </div>
+                          <div>
+                            <label className="text-xs uppercase tracking-[0.18em] font-semibold text-slate-700 dark:text-amber-300">
+                              Semester
+                            </label>
+                            <p className="mt-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 px-3 py-3 text-sm text-slate-800 dark:text-slate-100 font-medium">
+                              {form.semester}
+                            </p>
                           </div>
                         </div>
                         <div>
@@ -7889,18 +8096,18 @@ function FacultySubmissionPanelContent({
                             }
                           />
                         </div>
-                        <div className="flex items-center justify-end gap-2.5 pt-2">
+                        <div className="grid grid-cols-2 sm:flex sm:items-center sm:justify-end gap-2.5 pt-2">
                           <button
                             type="button"
                             onClick={closeSubmitModal}
-                            className="px-4 py-2 rounded-xl text-xs font-semibold bg-[#780000] hover:bg-[#5e0000] text-white border border-[#5e0000] shadow-xs transition-colors cursor-pointer"
+                            className="w-full sm:w-auto px-4 py-2 rounded-xl text-xs font-semibold bg-[#780000] hover:bg-[#5e0000] text-white border border-[#5e0000] shadow-xs transition-colors cursor-pointer text-center"
                           >
                             Cancel
                           </button>
                           <button
                             type="submit"
                             disabled={isSubmitting}
-                            className="inline-flex items-center gap-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold px-4 py-2 rounded-xl text-xs shadow-xs transition-colors cursor-pointer disabled:opacity-50 active:scale-[0.98]"
+                            className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold px-4 py-2 rounded-xl text-xs shadow-xs transition-colors cursor-pointer disabled:opacity-50 active:scale-[0.98]"
                           >
                             <AppIcon icon={Upload} size="sm" color="inherit" />
                             <span>
@@ -7990,15 +8197,16 @@ function FacultySubmissionPanelContent({
 
             {/* Extension Details Modal */}
             {showExtensionDetailsModal && pendingExtensionData && (
-              <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm animate-in fade-in duration-200">
-                <div className="w-full max-w-md bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl overflow-hidden text-slate-900 dark:text-slate-100">
+              <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-3 sm:p-4 backdrop-blur-sm animate-in fade-in duration-200">
+                <div className="w-full max-w-md max-h-[90dvh] flex flex-col bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl overflow-hidden text-slate-900 dark:text-slate-100">
                   <ModalHeader
                     title="Extension Request Status"
                     icon={Hourglass}
+                    className="shrink-0"
                   />
-                  <div className="p-6 space-y-4">
+                  <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4">
                     <div className="space-y-3 text-xs">
-                      <div className="flex items-center justify-between p-3 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
+                      <div className="flex flex-wrap items-center justify-between gap-2 p-3 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
                         <span className="font-semibold text-xs text-slate-700 dark:text-slate-300">
                           Status
                         </span>
@@ -8049,7 +8257,7 @@ function FacultySubmissionPanelContent({
                         <span className="font-semibold text-slate-500 dark:text-slate-400">
                           Reason / Justification:
                         </span>
-                        <p className="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 italic">
+                        <p className="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 italic break-words">
                           &ldquo;{pendingExtensionData.reason}&rdquo;
                         </p>
                       </div>
@@ -8066,10 +8274,10 @@ function FacultySubmissionPanelContent({
                               href={`/api/faculty/submissions/extension-request/document?requestId=${pendingExtensionData.id}`}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-amber-500/30 bg-amber-500/10 hover:bg-amber-500/20 text-amber-900 dark:text-amber-200 text-xs font-semibold transition"
+                              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-amber-500/30 bg-amber-500/10 hover:bg-amber-500/20 text-amber-900 dark:text-amber-200 text-xs font-semibold transition max-w-full"
                             >
-                              <AppIcon icon={Page} size="xs" color="inherit" />
-                              <span>
+                              <AppIcon icon={Page} size="xs" color="inherit" className="shrink-0" />
+                              <span className="truncate">
                                 {pendingExtensionData.supporting_document_name ||
                                   "Download Supporting Document"}
                               </span>
@@ -8084,7 +8292,7 @@ function FacultySubmissionPanelContent({
                           <span className="font-semibold text-slate-700 dark:text-slate-300">
                             Approver Feedback Remarks:
                           </span>
-                          <p className="text-slate-800 dark:text-slate-200">
+                          <p className="text-slate-800 dark:text-slate-200 break-words">
                             &ldquo;{pendingExtensionData.admin_remarks}&rdquo;
                           </p>
                         </div>
@@ -8099,7 +8307,7 @@ function FacultySubmissionPanelContent({
                       </p>
                     </div>
 
-                    <div className="flex items-center justify-end gap-2.5 pt-2">
+                    <div className="flex flex-col-reverse sm:flex-row sm:items-center justify-end gap-2.5 pt-2">
                       {isWindowClosed && hasLackings && (
                         <button
                           type="button"
@@ -8107,7 +8315,7 @@ function FacultySubmissionPanelContent({
                             setShowExtensionDetailsModal(false);
                             openExtensionRequestModal();
                           }}
-                          className="bg-amber-500 hover:bg-amber-400 text-slate-950 border border-amber-600 px-4 py-2 text-xs font-bold rounded-xl transition cursor-pointer shadow-xs inline-flex items-center gap-1.5"
+                          className="w-full sm:w-auto bg-amber-500 hover:bg-amber-400 text-slate-950 border border-amber-600 px-4 py-2 text-xs font-bold rounded-xl transition cursor-pointer shadow-xs inline-flex items-center justify-center gap-1.5"
                         >
                           <AppIcon icon={Hourglass} size="xs" color="inherit" />
                           <span>Request Again</span>
@@ -8116,7 +8324,7 @@ function FacultySubmissionPanelContent({
                       <button
                         type="button"
                         onClick={() => setShowExtensionDetailsModal(false)}
-                        className="bg-[#780000] hover:bg-[#5e0000] text-white border border-[#5e0000] px-4 py-2 text-xs font-semibold rounded-xl transition cursor-pointer shadow-xs"
+                        className="w-full sm:w-auto bg-[#780000] hover:bg-[#5e0000] text-white border border-[#5e0000] px-4 py-2 text-xs font-semibold rounded-xl transition cursor-pointer shadow-xs text-center"
                       >
                         Close
                       </button>
@@ -8129,7 +8337,7 @@ function FacultySubmissionPanelContent({
             {/* Add Class / Subject Load Modal */}
             {isAddClassModalOpen && (
               <div
-                className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 p-4 backdrop-blur-sm"
+                className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 p-3 sm:p-4 backdrop-blur-sm"
                 role="dialog"
                 aria-modal="true"
                 aria-labelledby="add-class-modal-title"
@@ -8141,7 +8349,7 @@ function FacultySubmissionPanelContent({
                 }}
               >
                 <div
-                  className="w-full max-w-lg rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xl overflow-hidden my-auto"
+                  className="w-full max-w-lg max-h-[90dvh] flex flex-col rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xl overflow-hidden my-auto"
                   onClick={(e) => e.stopPropagation()}
                 >
                   <ModalHeader
@@ -8152,11 +8360,12 @@ function FacultySubmissionPanelContent({
                         ? `Register a subject load for A.Y. ${activeAY} • ${activeSem}`
                         : "No active academic term configured"
                     }
+                    className="shrink-0"
                   />
 
                   <form
                     onSubmit={handleAddClassSubmit}
-                    className="p-5 sm:p-6 space-y-4"
+                    className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4"
                   >
                     {!hasActiveAcademicTerm && (
                       <div className="rounded-xl border-2 border-amber-400 bg-[#780000] p-3.5 flex items-start gap-2.5 text-xs text-white shadow-lg shadow-black/20">
@@ -8280,7 +8489,7 @@ function FacultySubmissionPanelContent({
                       </div>
                     </div>
 
-                    <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-slate-200 dark:border-slate-800">
+                    <div className="grid grid-cols-2 sm:flex sm:items-center sm:justify-end gap-2.5 pt-3 border-t border-slate-200 dark:border-slate-800">
                       <button
                         type="button"
                         disabled={isSubmittingClass}
@@ -8288,14 +8497,14 @@ function FacultySubmissionPanelContent({
                           setIsAddClassModalOpen(false);
                           setClassFormError(null);
                         }}
-                        className="px-4 py-2 rounded-xl text-xs font-semibold bg-[#780000] hover:bg-[#5e0000] text-white border border-[#5e0000] shadow-xs transition-colors cursor-pointer disabled:opacity-50"
+                        className="w-full sm:w-auto px-4 py-2 rounded-xl text-xs font-semibold bg-[#780000] hover:bg-[#5e0000] text-white border border-[#5e0000] shadow-xs transition-colors cursor-pointer disabled:opacity-50 text-center"
                       >
                         Cancel
                       </button>
                       <button
                         type="submit"
                         disabled={!hasActiveAcademicTerm}
-                        className="inline-flex items-center justify-center gap-1.5 px-4.5 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-bold shadow-xs transition cursor-pointer disabled:opacity-50 active:scale-[0.98]"
+                        className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-4.5 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-bold shadow-xs transition cursor-pointer disabled:opacity-50 active:scale-[0.98]"
                       >
                         <AppIcon icon={Check} size="sm" color="inherit" />
                         <span>Save Class Load</span>
@@ -8312,10 +8521,10 @@ function FacultySubmissionPanelContent({
                 role="dialog"
                 aria-modal="true"
                 aria-labelledby="confirm-create-class-title"
-                className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-slate-950/75 backdrop-blur-xs animate-in fade-in duration-200"
+                className="fixed inset-0 z-[60] flex items-center justify-center p-3 sm:p-4 bg-slate-950/75 backdrop-blur-xs animate-in fade-in duration-200"
               >
                 <div
-                  className="w-full max-w-md rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xl p-6 space-y-4 animate-in zoom-in-95 duration-200"
+                  className="w-full max-w-md max-h-[90dvh] overflow-y-auto rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xl p-4 sm:p-6 space-y-4 animate-in zoom-in-95 duration-200"
                   onClick={(e) => e.stopPropagation()}
                 >
                   <div className="flex items-start gap-3.5">
@@ -8349,7 +8558,7 @@ function FacultySubmissionPanelContent({
                       <span className="text-amber-950 font-bold shrink-0">
                         Description:
                       </span>
-                      <span className="font-bold text-slate-950 text-right">
+                      <span className="font-bold text-slate-950 text-right break-words">
                         {classForm.description.trim()}
                       </span>
                     </div>
@@ -8367,7 +8576,7 @@ function FacultySubmissionPanelContent({
                         {Number(classForm.units || 3.0).toFixed(1)} Units
                       </span>
                     </div>
-                    <div className="flex items-center justify-between gap-2">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
                       <span className="text-amber-950 font-bold">
                         Academic Term:
                       </span>
@@ -8377,7 +8586,7 @@ function FacultySubmissionPanelContent({
                     </div>
                   </div>
 
-                  <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-slate-200 dark:border-slate-800">
+                  <div className="grid grid-cols-2 sm:flex sm:items-center sm:justify-end gap-2.5 pt-3 border-t border-slate-200 dark:border-slate-800">
                     <button
                       type="button"
                       disabled={isSubmittingClass}
@@ -8385,7 +8594,7 @@ function FacultySubmissionPanelContent({
                         setIsSubmittingClass(false);
                         setIsConfirmCreateClassModalOpen(false);
                       }}
-                      className="px-4.5 py-2.5 rounded-xl text-xs font-bold bg-[#780000] hover:bg-[#5e0000] text-white border border-[#5e0000] shadow-sm transition-all cursor-pointer disabled:cursor-not-allowed active:scale-[0.98]"
+                      className="w-full sm:w-auto px-4 py-2.5 rounded-xl text-xs font-bold bg-[#780000] hover:bg-[#5e0000] text-white border border-[#5e0000] shadow-sm transition-all cursor-pointer disabled:cursor-not-allowed active:scale-[0.98] text-center"
                     >
                       Back to Edit
                     </button>
@@ -8393,7 +8602,7 @@ function FacultySubmissionPanelContent({
                       type="button"
                       disabled={isSubmittingClass}
                       onClick={handleConfirmCreateClass}
-                      className={`inline-flex items-center justify-center gap-1.5 px-5 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-black shadow-md border border-amber-600/40 transition-all cursor-pointer ${
+                      className={`w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-5 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-black shadow-md border border-amber-600/40 transition-all cursor-pointer ${
                         isSubmittingClass
                           ? "opacity-50 cursor-not-allowed"
                           : "active:scale-[0.98]"
@@ -8424,7 +8633,7 @@ function FacultySubmissionPanelContent({
             {/* Create Class Success Modal */}
             {isCreateClassSuccessModalOpen && createdClassSuccessData && (
               <div
-                className="fixed inset-0 z-[60] overflow-y-auto bg-slate-950/80 p-4 sm:p-6 flex min-h-full items-center justify-center backdrop-blur-sm animate-in fade-in duration-200"
+                className="fixed inset-0 z-[60] overflow-y-auto bg-slate-950/80 p-3 sm:p-6 flex min-h-full items-center justify-center backdrop-blur-sm animate-in fade-in duration-200"
                 role="dialog"
                 aria-modal="true"
                 aria-labelledby="class-created-success-title"
@@ -8434,20 +8643,20 @@ function FacultySubmissionPanelContent({
                 }}
               >
                 <div
-                  className="w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-8 sm:p-10 text-center shadow-2xl my-auto space-y-6 animate-in zoom-in-95 duration-200"
+                  className="w-full max-w-lg max-h-[90dvh] overflow-y-auto rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 sm:p-10 text-center shadow-2xl my-auto space-y-6 animate-in zoom-in-95 duration-200"
                   onClick={(e) => e.stopPropagation()}
                 >
-                  <div className="mx-auto flex h-24 w-24 sm:h-28 sm:w-28 items-center justify-center rounded-3xl bg-[#0b5336] text-white shadow-xl shadow-[#0b5336]/30 border-2 border-[#08412a] animate-in zoom-in duration-300">
-                    <CheckCircle className="w-12 h-12 sm:w-14 sm:h-14 stroke-[2.5]" />
+                  <div className="mx-auto flex h-20 w-20 sm:h-28 sm:w-28 items-center justify-center rounded-3xl bg-[#0b5336] text-white shadow-xl shadow-[#0b5336]/30 border-2 border-[#08412a] animate-in zoom-in duration-300">
+                    <CheckCircle className="w-10 h-10 sm:w-14 sm:h-14 stroke-[2.5]" />
                   </div>
                   <div className="space-y-2">
                     <h3
                       id="class-created-success-title"
-                      className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-slate-100 tracking-tight"
+                      className="text-xl sm:text-3xl font-black text-slate-900 dark:text-slate-100 tracking-tight"
                     >
                       Subject Load Created!
                     </h3>
-                    <p className="text-sm sm:text-base text-slate-600 dark:text-slate-300 leading-relaxed max-w-md mx-auto px-2">
+                    <p className="text-xs sm:text-base text-slate-600 dark:text-slate-300 leading-relaxed max-w-md mx-auto px-2">
                       <strong className="text-slate-900 dark:text-slate-100">
                         {createdClassSuccessData.subject_code} &bull;{" "}
                         {createdClassSuccessData.section_code}
@@ -8491,30 +8700,30 @@ function FacultySubmissionPanelContent({
                 role="dialog"
                 aria-modal="true"
                 aria-labelledby="view-class-modal-title"
-                className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/75 backdrop-blur-xs animate-in fade-in duration-200"
+                className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-950/75 backdrop-blur-xs animate-in fade-in duration-200"
                 onClick={() => {
                   setIsViewClassModalOpen(false);
                   setClassToView(null);
                 }}
               >
                 <div
-                  className="w-full max-w-lg rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xl p-6 space-y-4 animate-in zoom-in-95 duration-200 my-auto"
+                  className="w-full max-w-lg max-h-[90dvh] overflow-y-auto rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xl p-4 sm:p-6 space-y-4 animate-in zoom-in-95 duration-200 my-auto"
                   onClick={(e) => e.stopPropagation()}
                 >
                   {/* Header */}
                   <div className="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-slate-800">
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-3 min-w-0">
                       <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-amber-500 text-slate-950 shadow-md border-2 border-amber-600">
                         <AppIcon icon={Eye} size="md" color="inherit" />
                       </div>
-                      <div>
+                      <div className="min-w-0">
                         <h3
                           id="view-class-modal-title"
                           className="text-base sm:text-lg font-black text-slate-900 dark:text-slate-100"
                         >
                           Subject Load Details
                         </h3>
-                        <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">
+                        <p className="text-xs text-slate-500 dark:text-slate-400 font-medium truncate">
                           {classToView.subject_code} &bull;{" "}
                           {classToView.section_code}
                         </p>
@@ -8536,7 +8745,7 @@ function FacultySubmissionPanelContent({
                       <span className="text-amber-950 font-bold shrink-0">
                         Subject Name / Description:
                       </span>
-                      <span className="font-bold text-slate-950 text-right">
+                      <span className="font-bold text-slate-950 text-right break-words">
                         {classToView.description}
                       </span>
                     </div>
@@ -8556,7 +8765,7 @@ function FacultySubmissionPanelContent({
                         {Number(classToView.units || 3.0).toFixed(1)} Units
                       </span>
                     </div>
-                    <div className="flex items-center justify-between gap-2 border-b border-amber-500/50 pb-2">
+                    <div className="flex flex-wrap items-center justify-between gap-2 border-b border-amber-500/50 pb-2">
                       <span className="text-amber-950 font-bold">
                         Academic Term:
                       </span>
@@ -8581,14 +8790,14 @@ function FacultySubmissionPanelContent({
                   </div>
 
                   {/* Modal Footer Actions */}
-                  <div className="flex flex-wrap items-center justify-end gap-2.5 pt-3 border-t border-slate-200 dark:border-slate-800">
+                  <div className="flex flex-col-reverse sm:flex-row sm:flex-wrap items-stretch sm:items-center justify-end gap-2 pt-3 border-t border-slate-200 dark:border-slate-800">
                     <button
                       type="button"
                       onClick={() => {
                         setIsViewClassModalOpen(false);
                         setClassToView(null);
                       }}
-                      className="px-4 py-2 rounded-xl text-xs font-bold bg-[#780000] hover:bg-[#5e0000] text-white border border-[#5e0000] shadow-sm transition cursor-pointer active:scale-95"
+                      className="w-full sm:w-auto px-4 py-2 rounded-xl text-xs font-bold bg-[#780000] hover:bg-[#5e0000] text-white border border-[#5e0000] shadow-sm transition cursor-pointer active:scale-95 text-center"
                     >
                       Close
                     </button>
@@ -8600,7 +8809,7 @@ function FacultySubmissionPanelContent({
                         setClassToView(null);
                         handleOpenEditClass(target);
                       }}
-                      className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 shadow-2xs transition cursor-pointer active:scale-95"
+                      className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 shadow-2xs transition cursor-pointer active:scale-95"
                     >
                       <AppIcon icon={EditPencil} size="xs" color="inherit" />
                       <span>Edit</span>
@@ -8621,10 +8830,10 @@ function FacultySubmissionPanelContent({
                           silent: true,
                         });
                       }}
-                      className="inline-flex items-center gap-1.5 px-4.5 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-black shadow-md border border-amber-600/40 transition cursor-pointer active:scale-95"
+                      className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-4.5 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-black shadow-md border border-amber-600/40 transition cursor-pointer active:scale-95"
                     >
                       <AppIcon icon={Folder} size="xs" color="inherit" />
-                      <span>View & Upload Documents</span>
+                      <span>View &amp; Upload Documents</span>
                     </button>
                   </div>
                 </div>
@@ -8636,15 +8845,15 @@ function FacultySubmissionPanelContent({
               <div
                 role="dialog"
                 aria-modal="true"
-                className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-xs animate-in fade-in duration-200"
+                className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-950/70 backdrop-blur-xs animate-in fade-in duration-200"
               >
-                <div className="w-full max-w-lg rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xl p-6 space-y-5">
+                <div className="w-full max-w-lg max-h-[90dvh] overflow-y-auto rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xl p-4 sm:p-6 space-y-5">
                   <div className="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-slate-800">
-                    <div className="flex items-center gap-3">
-                      <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-500/15 text-amber-700 dark:text-amber-400 border border-amber-500/30">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-500/15 text-amber-700 dark:text-amber-400 border border-amber-500/30">
                         <AppIcon icon={EditPencil} size="md" color="inherit" />
                       </div>
-                      <div>
+                      <div className="min-w-0">
                         <h3 className="text-base sm:text-lg font-black text-slate-900 dark:text-slate-100">
                           Edit Class / Subject Load
                         </h3>
@@ -8767,7 +8976,7 @@ function FacultySubmissionPanelContent({
                       </div>
                     </div>
 
-                    <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-slate-200 dark:border-slate-800">
+                    <div className="grid grid-cols-2 sm:flex sm:items-center sm:justify-end gap-2.5 pt-3 border-t border-slate-200 dark:border-slate-800">
                       <button
                         type="button"
                         disabled={isUpdatingClass}
@@ -8776,14 +8985,14 @@ function FacultySubmissionPanelContent({
                           setClassToEdit(null);
                           setEditClassError(null);
                         }}
-                        className="px-4 py-2 rounded-xl text-xs font-semibold bg-[#780000] hover:bg-[#5e0000] text-white border border-[#5e0000] shadow-xs transition-colors cursor-pointer disabled:opacity-50"
+                        className="w-full sm:w-auto px-4 py-2 rounded-xl text-xs font-semibold bg-[#780000] hover:bg-[#5e0000] text-white border border-[#5e0000] shadow-xs transition-colors cursor-pointer disabled:opacity-50 text-center"
                       >
                         Cancel
                       </button>
                       <button
                         type="submit"
                         disabled={isUpdatingClass}
-                        className="inline-flex items-center justify-center gap-1.5 px-4.5 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-bold shadow-xs transition cursor-pointer disabled:opacity-50"
+                        className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-4.5 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-bold shadow-xs transition cursor-pointer disabled:opacity-50"
                       >
                         {isUpdatingClass ? (
                           <>
@@ -8813,9 +9022,9 @@ function FacultySubmissionPanelContent({
               <div
                 role="dialog"
                 aria-modal="true"
-                className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-xs animate-in fade-in duration-200"
+                className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-950/70 backdrop-blur-xs animate-in fade-in duration-200"
               >
-                <div className="w-full max-w-md rounded-3xl border border-amber-300 dark:border-amber-700/60 bg-white dark:bg-slate-900 shadow-2xl p-6 space-y-4">
+                <div className="w-full max-w-md max-h-[90dvh] overflow-y-auto rounded-3xl border border-amber-300 dark:border-amber-700/60 bg-white dark:bg-slate-900 shadow-2xl p-4 sm:p-6 space-y-4">
                   <div className="flex items-start gap-3.5">
                     <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-amber-500 text-slate-950 shadow-md border-2 border-amber-600">
                       <AppIcon icon={Archive} size="md" color="inherit" />
@@ -8845,7 +9054,7 @@ function FacultySubmissionPanelContent({
                     tab.
                   </div>
 
-                  <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-slate-200 dark:border-slate-800">
+                  <div className="grid grid-cols-2 sm:flex sm:items-center sm:justify-end gap-2.5 pt-3 border-t border-slate-200 dark:border-slate-800">
                     <button
                       type="button"
                       disabled={isArchivingClass}
@@ -8853,7 +9062,7 @@ function FacultySubmissionPanelContent({
                         setIsArchiveModalOpen(false);
                         setClassToArchive(null);
                       }}
-                      className="px-4 py-2 rounded-xl text-xs font-semibold bg-[#780000] hover:bg-[#5e0000] text-white border border-[#5e0000] shadow-xs transition-colors cursor-pointer disabled:opacity-50"
+                      className="w-full sm:w-auto px-4 py-2 rounded-xl text-xs font-semibold bg-[#780000] hover:bg-[#5e0000] text-white border border-[#5e0000] shadow-xs transition-colors cursor-pointer disabled:opacity-50 text-center"
                     >
                       Cancel
                     </button>
@@ -8861,7 +9070,7 @@ function FacultySubmissionPanelContent({
                       type="button"
                       disabled={isArchivingClass}
                       onClick={handleArchiveClassConfirm}
-                      className="inline-flex items-center justify-center gap-1.5 px-4.5 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-bold shadow-xs transition cursor-pointer disabled:opacity-50 border border-amber-600/40"
+                      className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-4.5 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-bold shadow-xs transition cursor-pointer disabled:opacity-50 border border-amber-600/40"
                     >
                       {isArchivingClass ? (
                         <>
@@ -8890,9 +9099,9 @@ function FacultySubmissionPanelContent({
               <div
                 role="dialog"
                 aria-modal="true"
-                className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-xs animate-in fade-in duration-200"
+                className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-950/70 backdrop-blur-xs animate-in fade-in duration-200"
               >
-                <div className="w-full max-w-md rounded-3xl border border-rose-200 dark:border-rose-900/60 bg-white dark:bg-slate-900 shadow-2xl p-6 space-y-4">
+                <div className="w-full max-w-md max-h-[90dvh] overflow-y-auto rounded-3xl border border-rose-200 dark:border-rose-900/60 bg-white dark:bg-slate-900 shadow-2xl p-4 sm:p-6 space-y-4">
                   <div className="flex items-start gap-3.5">
                     <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-[#780000] text-white shadow-md border-2 border-[#5e0000]">
                       <AppIcon icon={Trash} size="md" color="inherit" />
@@ -8947,7 +9156,7 @@ function FacultySubmissionPanelContent({
                     )}
                   </div>
 
-                  <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-slate-200 dark:border-slate-800">
+                  <div className="grid grid-cols-2 sm:flex sm:items-center sm:justify-end gap-2.5 pt-3 border-t border-slate-200 dark:border-slate-800">
                     <button
                       type="button"
                       disabled={isDeletingClass}
@@ -8957,7 +9166,7 @@ function FacultySubmissionPanelContent({
                         setDeleteCountdown(0);
                         setDeleteConfirmText("");
                       }}
-                      className="px-4 py-2 rounded-xl text-xs font-semibold bg-[#780000] hover:bg-[#5e0000] text-white border border-[#5e0000] shadow-xs transition-colors cursor-pointer disabled:opacity-50 active:scale-95"
+                      className="w-full sm:w-auto px-4 py-2 rounded-xl text-xs font-semibold bg-[#780000] hover:bg-[#5e0000] text-white border border-[#5e0000] shadow-xs transition-colors cursor-pointer disabled:opacity-50 active:scale-95 text-center"
                     >
                       Cancel
                     </button>
@@ -8969,7 +9178,7 @@ function FacultySubmissionPanelContent({
                         deleteConfirmText.trim().toLowerCase() !== "delete"
                       }
                       onClick={handleDeleteClassConfirm}
-                      className="inline-flex items-center justify-center gap-1.5 px-4.5 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 border border-rose-700 text-white text-xs font-bold shadow-xs transition cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed active:scale-95"
+                      className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-4.5 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 border border-rose-700 text-white text-xs font-bold shadow-xs transition cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed active:scale-95"
                     >
                       {isDeletingClass ? (
                         <>

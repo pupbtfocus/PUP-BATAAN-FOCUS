@@ -513,14 +513,14 @@ export function FacultyRequirementsModule({
       {/* ─── Metric Summary Cards & Progress ─── */}
       <section
         aria-label="Compliance Summary Metrics"
-        className="rounded-2xl border border-slate-300 dark:border-slate-800 bg-white dark:bg-slate-900/70 p-5 shadow-xs transition-colors space-y-4"
+        className="rounded-2xl border border-slate-300 dark:border-slate-800 bg-white dark:bg-slate-900/70 p-4 sm:p-5 shadow-xs transition-colors space-y-4"
       >
         {isLoading && !initialStatuses ? (
           <StatusMetricsSkeleton />
         ) : (
           <>
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
                 <span className="font-bold text-slate-900 dark:text-slate-100 text-sm">
                   Overall Compliance Progress
                 </span>
@@ -528,7 +528,7 @@ export function FacultyRequirementsModule({
                   ({summary.validated} of {summary.total} Validated)
                 </span>
               </div>
-              <div className="flex flex-wrap items-center gap-2">
+              <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
                 <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-300 bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-800 dark:border-emerald-500/30 dark:bg-emerald-500/15 dark:text-emerald-300">
                   <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
                   {summary.validated} Validated
@@ -571,11 +571,11 @@ export function FacultyRequirementsModule({
               Term: S.Y. {form.academicYear} • {form.semester}
             </p>
           </div>
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="grid grid-cols-1 sm:flex sm:flex-wrap items-center gap-2 w-full sm:w-auto">
             <button
               type="button"
               aria-label="Open University Academic Calendar"
-              className="inline-flex items-center gap-1.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3.5 py-2 text-xs font-semibold text-slate-800 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 transition cursor-pointer shadow-2xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500"
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3.5 py-2 text-xs font-semibold text-slate-800 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 transition cursor-pointer shadow-2xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500"
               onClick={openCalendarModal}
             >
               <AppIcon icon={Calendar} size="sm" color="active" />
@@ -584,7 +584,7 @@ export function FacultyRequirementsModule({
             <button
               type="button"
               aria-label="Open document submission modal"
-              className="inline-flex items-center gap-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold px-4 py-2 text-xs shadow-sm active:scale-[0.98] transition cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500"
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold px-4 py-2 text-xs shadow-sm active:scale-[0.98] transition cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500"
               onClick={() => openModal()}
             >
               <AppIcon icon={Upload} size="sm" color="inherit" />
@@ -595,7 +595,7 @@ export function FacultyRequirementsModule({
               onClick={() => void handleRefresh()}
               disabled={isRefreshing}
               aria-label="Refresh requirement statuses"
-              className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white hover:bg-slate-50 dark:bg-slate-800 dark:hover:bg-slate-750 text-slate-700 dark:text-slate-200 px-3.5 py-2 text-xs font-semibold transition-all disabled:opacity-50 cursor-pointer shadow-xs active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400"
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white hover:bg-slate-50 dark:bg-slate-800 dark:hover:bg-slate-750 text-slate-700 dark:text-slate-200 px-3.5 py-2 text-xs font-semibold transition-all disabled:opacity-50 cursor-pointer shadow-xs active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400"
             >
               <Refresh
                 className={`h-3.5 w-3.5 ${isRefreshing ? "animate-spin" : ""}`}
@@ -822,15 +822,15 @@ export function FacultyRequirementsModule({
                     <div className="flex items-start justify-between gap-2">
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-2 flex-wrap">
-                          <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100 truncate">
+                          <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100 break-words">
                             {req.title}
                           </h3>
                           {req.is_mandatory !== false ? (
-                            <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider bg-[#780000] text-white border border-[#5e0000] shadow-2xs">
+                            <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider bg-[#780000] text-white border border-[#5e0000] shadow-2xs shrink-0">
                               Required
                             </span>
                           ) : (
-                            <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider bg-slate-700 dark:bg-slate-700 text-white border border-slate-600 shadow-2xs">
+                            <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider bg-slate-700 dark:bg-slate-700 text-white border border-slate-600 shadow-2xs shrink-0">
                               Optional
                             </span>
                           )}
@@ -874,7 +874,7 @@ export function FacultyRequirementsModule({
                           )}
                           <span>{status === "Rejected" ? "Revision Remarks:" : "Reviewer Remarks:"}</span>
                         </span>
-                        <p className="italic leading-relaxed">
+                        <p className="italic leading-relaxed break-words">
                           &ldquo;{adminRemarks}&rdquo;
                         </p>
                       </div>
@@ -950,11 +950,11 @@ export function FacultyRequirementsModule({
           role="dialog"
           aria-modal="true"
           aria-labelledby="submit-modal-title"
-          className="fixed inset-0 z-50 overflow-y-auto bg-slate-950/80 p-4 sm:p-6 flex min-h-full items-center justify-center backdrop-blur-sm"
+          className="fixed inset-0 z-50 overflow-y-auto bg-slate-950/80 p-3 sm:p-4 flex min-h-full items-center justify-center backdrop-blur-sm"
           onClick={closeModal}
         >
           <div
-            className="w-full max-w-xl max-h-[90vh] flex flex-col rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xl overflow-hidden my-auto"
+            className="w-full max-w-xl max-h-[90dvh] flex flex-col rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xl overflow-hidden my-auto"
             onClick={(event) => event.stopPropagation()}
           >
             <ModalHeader
@@ -970,6 +970,7 @@ export function FacultyRequirementsModule({
               }
               titleId="submit-modal-title"
               icon={isRevisionModal || selectedReqStatus?.status === "Rejected" ? WarningCircle : Upload}
+              className="shrink-0"
             />
 
             {/* Modal Form with Scrollable Content */}
@@ -977,7 +978,7 @@ export function FacultyRequirementsModule({
               className="flex flex-col flex-1 min-h-0 overflow-hidden"
               onSubmit={handleSubmit}
             >
-              <div className="flex-1 overflow-y-auto p-6 space-y-4">
+              <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4">
                 {/* Reviewer Feedback / Revision Request Alert Box */}
                 {(isRevisionModal || selectedReqStatus?.status === "Rejected") && (() => {
                   const reviewerRemarks =
@@ -1140,11 +1141,11 @@ export function FacultyRequirementsModule({
           role="dialog"
           aria-modal="true"
           aria-labelledby="calendar-modal-title"
-          className="fixed inset-0 z-50 overflow-y-auto bg-slate-950/80 p-4 sm:p-6 flex min-h-full items-center justify-center backdrop-blur-sm"
+          className="fixed inset-0 z-50 overflow-y-auto bg-slate-950/80 p-3 sm:p-4 flex min-h-full items-center justify-center backdrop-blur-sm"
           onClick={closeCalendarModal}
         >
           <div
-            className="w-full max-w-lg max-h-[90vh] overflow-hidden flex flex-col rounded-3xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-2xl my-auto"
+            className="w-full max-w-lg max-h-[90dvh] overflow-hidden flex flex-col rounded-3xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-2xl my-auto"
             onClick={(event) => event.stopPropagation()}
           >
             <ModalHeader
@@ -1152,8 +1153,9 @@ export function FacultyRequirementsModule({
               subtitle="Reference dates and submission window guidelines."
               titleId="calendar-modal-title"
               icon={Calendar}
+              className="shrink-0"
             />
-            <div className="p-6 overflow-y-auto space-y-4">
+            <div className="p-4 sm:p-6 overflow-y-auto space-y-4">
 
             <div className="space-y-3 text-xs text-slate-600 dark:text-slate-300">
               <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/60 p-3.5 space-y-2">
@@ -1192,12 +1194,12 @@ export function FacultyRequirementsModule({
               </p>
             </div>
 
-            <div className="flex justify-between items-center pt-2 border-t border-slate-200 dark:border-slate-800">
+            <div className="flex flex-col-reverse sm:flex-row sm:justify-between sm:items-center gap-2.5 pt-3 border-t border-slate-200 dark:border-slate-800">
               <a
                 href="https://www.pup.edu.ph/about/calendar"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-xs font-semibold text-amber-600 dark:text-amber-400 hover:underline"
+                className="text-xs font-semibold text-amber-600 dark:text-amber-400 hover:underline text-center sm:text-left"
               >
                 Open PUP Portal &rarr;
               </a>
@@ -1206,7 +1208,7 @@ export function FacultyRequirementsModule({
                 variant="maroon"
                 size="sm"
                 onClick={closeCalendarModal}
-                className="cursor-pointer"
+                className="w-full sm:w-auto justify-center cursor-pointer"
               >
                 Close
               </Button>

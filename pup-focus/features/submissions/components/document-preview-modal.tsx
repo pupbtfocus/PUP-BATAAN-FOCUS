@@ -647,11 +647,11 @@ export function DocumentPreviewModal({
         </div>
 
         {/* Content Body: Wide Viewer + Compact Details Sidebar */}
-        <div className="p-2.5 sm:p-3.5 flex-1 overflow-hidden min-h-0 flex flex-col">
-          <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs overflow-hidden flex flex-col lg:grid lg:grid-cols-[minmax(0,1fr)_270px] xl:grid-cols-[minmax(0,1fr)_290px] divide-y lg:divide-y-0 lg:divide-x divide-slate-200 dark:divide-slate-800 flex-1 min-h-0">
+        <div className="p-2.5 sm:p-3.5 flex-1 overflow-y-auto lg:overflow-hidden min-h-0 flex flex-col">
+          <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs lg:overflow-hidden flex flex-col lg:grid lg:grid-cols-[minmax(0,1fr)_270px] xl:grid-cols-[minmax(0,1fr)_290px] divide-y lg:divide-y-0 lg:divide-x divide-slate-200 dark:divide-slate-800 lg:flex-1 lg:min-h-0">
             {/* Main Viewer Area (Left Side - Wide) */}
             {isOfficeDoc ? (
-              <div className="w-full h-full flex flex-col min-h-0 overflow-hidden bg-white dark:bg-slate-900">
+              <div className="w-full h-[42dvh] min-h-[260px] sm:h-[48dvh] lg:h-full flex flex-col min-h-0 overflow-hidden bg-white dark:bg-slate-900">
                 <OnlineDocumentPreview
                   key={fileUrl}
                   fileName={effectiveFileName || documentTitle}
@@ -672,7 +672,7 @@ export function DocumentPreviewModal({
                 />
               </div>
             ) : (
-              <div className="flex-1 min-h-[320px] lg:min-h-0 overflow-hidden bg-slate-100 dark:bg-slate-950 flex items-center justify-center relative h-full w-full">
+              <div className="h-[42dvh] min-h-[260px] sm:h-[48dvh] lg:flex-1 lg:min-h-0 overflow-hidden bg-slate-100 dark:bg-slate-950 flex items-center justify-center relative lg:h-full w-full">
                 {typeInfo.isPdf && (isLoadingBlob || (!blobUrl && !resolvedInfo)) ? (
                   <div className="flex flex-col items-center justify-center h-full w-full bg-slate-100 dark:bg-slate-950 text-slate-500 dark:text-slate-400 gap-2">
                     <AppIcon icon={SystemRestart} size="md" color="inherit" className="animate-spin text-slate-400" />
@@ -703,9 +703,9 @@ export function DocumentPreviewModal({
             )}
 
             {/* Compact Details & Actions Sidebar (Right Side) */}
-            <div className="flex flex-col bg-white dark:bg-slate-900 h-full min-h-0 text-xs overflow-hidden">
+            <div className="flex flex-col bg-white dark:bg-slate-900 lg:h-full lg:min-h-0 text-xs lg:overflow-hidden">
               {/* Scrollable Details */}
-              <div className="flex-1 overflow-y-auto min-h-0 divide-y divide-slate-200/80 dark:divide-slate-800/80">
+              <div className="lg:flex-1 lg:overflow-y-auto lg:min-h-0 divide-y divide-slate-200/80 dark:divide-slate-800/80">
                 {/* 1. Remarks & Notes */}
                 {!isUpload && (
                   <div className="p-3 space-y-2">

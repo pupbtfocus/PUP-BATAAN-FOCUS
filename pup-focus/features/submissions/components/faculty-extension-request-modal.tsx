@@ -116,7 +116,7 @@ export function FacultyExtensionRequestModal({
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-950/80 p-3 sm:p-4 flex min-h-full items-center justify-center backdrop-blur-sm animate-in fade-in duration-200">
       <div
-        className="relative w-full max-w-lg max-h-[90vh] flex flex-col rounded-2xl bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-800 shadow-2xl overflow-hidden my-auto animate-in zoom-in-95 duration-200"
+        className="relative w-full max-w-lg max-h-[90dvh] flex flex-col rounded-2xl bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-800 shadow-2xl overflow-hidden my-auto animate-in zoom-in-95 duration-200"
         role="dialog"
         aria-modal="true"
         aria-labelledby="extension-modal-title"
@@ -129,7 +129,7 @@ export function FacultyExtensionRequestModal({
         />
 
         {successState ? (
-          <div className="p-8 text-center space-y-4">
+          <div className="p-6 sm:p-8 text-center space-y-4">
             <div className="w-16 h-16 bg-emerald-500/10 border border-emerald-500/30 rounded-full flex items-center justify-center mx-auto text-emerald-600 dark:text-emerald-400">
               <AppIcon icon={CheckCircle} size="lg" color="inherit" />
             </div>
@@ -143,7 +143,7 @@ export function FacultyExtensionRequestModal({
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="flex flex-col flex-1 min-h-0 overflow-hidden">
-            <div className="flex-1 overflow-y-auto p-5 space-y-4 min-h-0">
+            <div className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-4 min-h-0">
               {errorMessage && (
                 <div
                   role="alert"
@@ -156,7 +156,7 @@ export function FacultyExtensionRequestModal({
 
               {/* Reason / Justification */}
               <div>
-                <div className="flex items-center justify-between mb-1.5">
+                <div className="flex flex-wrap items-center justify-between gap-1 mb-1.5">
                   <label className="block text-xs font-bold text-slate-800 dark:text-slate-200">
                     Reason / Justification <span className="text-red-500">*</span>
                   </label>
@@ -258,19 +258,19 @@ export function FacultyExtensionRequestModal({
             </div>
 
             {/* Sticky Fixed Action Buttons */}
-            <div className="shrink-0 flex items-center justify-end gap-2.5 px-5 py-3 border-t border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-950/50">
+            <div className="shrink-0 grid grid-cols-2 sm:flex sm:items-center sm:justify-end gap-2.5 px-4 sm:px-5 py-3 border-t border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-950/50">
               <button
                 type="button"
                 onClick={onClose}
                 disabled={isSubmitting}
-                className="px-4 py-2 rounded-xl text-xs font-semibold bg-[#780000] hover:bg-[#5e0000] text-white border border-[#5e0000] transition cursor-pointer disabled:opacity-50 shadow-xs"
+                className="w-full sm:w-auto inline-flex items-center justify-center px-4 py-2 rounded-xl text-xs font-semibold bg-[#780000] hover:bg-[#5e0000] text-white border border-[#5e0000] transition cursor-pointer disabled:opacity-50 shadow-xs"
               >
                 Cancel
               </button>
               <button
                 type="submit"
                 disabled={isSubmitting || !reason.trim()}
-                className="inline-flex items-center gap-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold px-4 py-2 rounded-xl text-xs shadow-sm active:scale-[0.98] transition-all cursor-pointer disabled:opacity-50"
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold px-4 py-2 rounded-xl text-xs shadow-sm active:scale-[0.98] transition-all cursor-pointer disabled:opacity-50"
               >
                 {isSubmitting ? (
                   <>
@@ -280,7 +280,7 @@ export function FacultyExtensionRequestModal({
                 ) : (
                   <>
                     <AppIcon icon={Hourglass} size="sm" color="inherit" />
-                    <span>Submit Extension Request</span>
+                    <span>Submit Request</span>
                   </>
                 )}
               </button>

@@ -269,15 +269,15 @@ export function SubmissionHistoryList<T extends PastSubmissionItem = PastSubmiss
 
   if (submissions.length === 0) {
     return (
-      <div className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 p-10 sm:p-14 text-center shadow-sm max-w-xl mx-auto my-4 space-y-4 animate-in zoom-in-95 duration-200">
-        <div className="mx-auto flex h-20 w-20 sm:h-24 sm:w-24 items-center justify-center rounded-3xl bg-[#0b5336] text-white shadow-xl shadow-[#0b5336]/25 border-2 border-[#08412a] animate-in zoom-in duration-300">
-          <CheckCircle className="w-10 h-10 sm:w-12 sm:h-12 stroke-[2.5]" />
+      <div className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 p-6 sm:p-14 text-center shadow-sm max-w-xl mx-auto my-4 space-y-4 animate-in zoom-in-95 duration-200">
+        <div className="mx-auto flex h-16 w-16 sm:h-24 sm:w-24 items-center justify-center rounded-3xl bg-[#0b5336] text-white shadow-xl shadow-[#0b5336]/25 border-2 border-[#08412a] animate-in zoom-in duration-300">
+          <CheckCircle className="w-8 h-8 sm:w-12 sm:h-12 stroke-[2.5]" />
         </div>
         <div className="space-y-1.5">
-          <h3 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-slate-100 tracking-tight">
+          <h3 className="text-lg sm:text-2xl font-black text-slate-900 dark:text-slate-100 tracking-tight">
             No Validated Documents Found
           </h3>
-          <p className="text-sm text-slate-500 dark:text-slate-400 max-w-md mx-auto leading-relaxed">
+          <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 max-w-md mx-auto leading-relaxed">
             {emptyMessage}
           </p>
         </div>
@@ -464,11 +464,11 @@ export function SubmissionHistoryList<T extends PastSubmissionItem = PastSubmiss
         </div>
 
         {/* Quick Subject Switcher */}
-        <div className="flex items-center gap-2 shrink-0">
+        <div className="flex items-center gap-2 w-full sm:w-auto shrink-0">
           <select
             value={selectedClassKey}
             onChange={(e) => setSelectedClassKey(e.target.value)}
-            className="rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-1.5 text-xs font-bold text-slate-800 dark:text-slate-200 outline-none focus:border-amber-500 cursor-pointer shadow-2xs"
+            className="w-full sm:w-auto rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-2 sm:py-1.5 text-xs font-bold text-slate-800 dark:text-slate-200 outline-none focus:border-amber-500 cursor-pointer shadow-2xs"
           >
             {classGroups.map((g) => (
               <option key={g.key} value={g.key}>
@@ -736,18 +736,18 @@ export function SubmissionHistoryList<T extends PastSubmissionItem = PastSubmiss
               className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 sm:p-5 space-y-3.5 shadow-sm transition hover:border-slate-300 dark:border-slate-700"
             >
               {/* Header: Title & Status Badge */}
-              <div className="flex items-start justify-between gap-3">
+              <div className="flex items-start justify-between gap-2.5 sm:gap-3">
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-1.5 flex-wrap">
-                    <h4 className="text-sm font-bold text-slate-900 dark:text-slate-100 truncate">
+                    <h4 className="text-sm font-bold text-slate-900 dark:text-slate-100 break-words">
                       {title}
                     </h4>
                     {isMandatory ? (
-                      <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider bg-[#780000] text-white border border-[#5e0000] shadow-2xs">
+                      <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider bg-[#780000] text-white border border-[#5e0000] shadow-2xs shrink-0">
                         Required
                       </span>
                     ) : (
-                      <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider bg-slate-700 dark:bg-slate-700 text-white border border-slate-600 shadow-2xs">
+                      <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider bg-slate-700 dark:bg-slate-700 text-white border border-slate-600 shadow-2xs shrink-0">
                         Optional
                       </span>
                     )}
