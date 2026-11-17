@@ -2579,7 +2579,7 @@ export function SuperAdminDashboard({
             ) : null}
 
             {activeSection === "settings" ? (
-              <article className="space-y-4 p-2 sm:p-4 md:p-5">
+              <article className="space-y-4 sm:space-y-5">
                 <SuperAdminSettings
                   adminName={currentAdminName}
                   adminEmail={currentAdminEmail}

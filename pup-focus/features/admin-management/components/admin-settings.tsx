@@ -677,14 +677,14 @@ export function SuperAdminSettings({
   ];
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       {/* Solid Amber Card Header */}
-      <div className="relative overflow-hidden rounded-2xl border-2 border-amber-500 bg-amber-400 p-5 sm:p-6 shadow-md shadow-amber-500/10 flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+      <div className="relative overflow-hidden rounded-2xl border-2 border-amber-500 bg-amber-400 p-4 sm:p-6 shadow-md shadow-amber-500/10 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-black text-slate-950 tracking-tight">
+          <h1 className="text-xl sm:text-3xl font-black text-slate-950 tracking-tight">
             Settings
           </h1>
-          <p className="mt-1.5 text-sm sm:text-base text-amber-950/90 font-medium leading-relaxed">
+          <p className="mt-1.5 text-xs sm:text-base text-amber-950/90 font-medium leading-relaxed">
             Manage your super administrator account details, security settings, and system preferences.
           </p>
         </div>
@@ -703,9 +703,9 @@ export function SuperAdminSettings({
       </div>
 
       {/* Grid Layout (2-Column) */}
-      <section className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+      <section className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 items-start">
         {/* Profile Details Card */}
-        <article className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white shadow-xs dark:bg-slate-900 p-6 transition-colors">
+        <article className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white shadow-xs dark:bg-slate-900 p-4 sm:p-6 transition-colors">
           <div className="pb-4 border-b border-slate-200 dark:border-slate-800">
             <h2 className="text-base sm:text-lg font-bold text-slate-900 dark:text-slate-100 tracking-normal">
               Profile Details
@@ -717,7 +717,7 @@ export function SuperAdminSettings({
 
           <form onSubmit={handleSaveProfile} className="mt-5 space-y-5">
             {/* Profile Avatar Layout */}
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-3.5 sm:gap-4">
               <div
                 className="relative group shrink-0 cursor-pointer"
                 onClick={() => setIsProfileImageMenuOpen(true)}
@@ -731,7 +731,7 @@ export function SuperAdminSettings({
                 }}
                 aria-label="Profile photo options"
               >
-                <div className="relative h-20 w-20 rounded-full border-2 border-amber-500/40 overflow-hidden flex items-center justify-center shadow-md">
+                <div className="relative h-16 w-16 sm:h-20 sm:w-20 rounded-full border-2 border-amber-500/40 overflow-hidden flex items-center justify-center shadow-md">
                   <img
                     src={displayedProfileImage}
                     alt="PUP FOCUS Administrator"
@@ -763,7 +763,7 @@ export function SuperAdminSettings({
               </div>
 
               <div className="min-w-0 flex-1">
-                <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100 truncate">
+                <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100 break-words">
                   {buildFacultyFullName({
                     firstName: savedForm.firstName,
                     middleName: savedForm.middleName,
@@ -790,8 +790,8 @@ export function SuperAdminSettings({
             </div>
 
             {profileImageFile && (
-              <div className="flex items-center justify-between rounded-xl border border-amber-200 bg-amber-50 dark:border-amber-900/60 dark:bg-amber-950/40 px-3.5 py-2 text-xs text-amber-800 dark:text-amber-300 font-medium">
-                <span className="truncate">New image selected: {profileImageFile.name}</span>
+              <div className="flex items-center justify-between gap-2 rounded-xl border border-amber-200 bg-amber-50 dark:border-amber-900/60 dark:bg-amber-950/40 px-3 sm:px-3.5 py-2 text-xs text-amber-800 dark:text-amber-300 font-medium">
+                <span className="truncate min-w-0">New image selected: {profileImageFile.name}</span>
                 <button
                   type="button"
                   onClick={() => {
@@ -800,7 +800,7 @@ export function SuperAdminSettings({
                       profileImageInputRef.current.value = "";
                     }
                   }}
-                  className="ml-2 text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 shrink-0 cursor-pointer"
+                  className="text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 shrink-0 cursor-pointer"
                 >
                   Remove
                 </button>
@@ -808,12 +808,12 @@ export function SuperAdminSettings({
             )}
 
             {isAvatarMarkedForRemoval && (
-              <div className="flex items-center justify-between rounded-xl border border-rose-200 bg-rose-50 dark:border-rose-900/60 dark:bg-rose-950/30 px-3.5 py-2 text-xs text-rose-800 dark:text-rose-300 font-medium">
-                <span className="truncate">Avatar will reset to default PUP FOCUS emblem upon saving</span>
+              <div className="flex items-center justify-between gap-2 rounded-xl border border-rose-200 bg-rose-50 dark:border-rose-900/60 dark:bg-rose-950/30 px-3 sm:px-3.5 py-2 text-xs text-rose-800 dark:text-rose-300 font-medium">
+                <span className="min-w-0 break-words">Avatar will reset to default PUP FOCUS emblem upon saving</span>
                 <button
                   type="button"
                   onClick={() => setIsAvatarMarkedForRemoval(false)}
-                  className="ml-2 text-rose-600 hover:text-rose-800 dark:text-rose-400 dark:hover:text-rose-200 shrink-0 cursor-pointer"
+                  className="text-rose-600 hover:text-rose-800 dark:text-rose-400 dark:hover:text-rose-200 shrink-0 cursor-pointer"
                 >
                   Undo
                 </button>
@@ -835,7 +835,7 @@ export function SuperAdminSettings({
                     id="admin-first-name"
                     ref={firstNameInputRef}
                     readOnly={activeField !== "firstName"}
-                    className={`w-full bg-slate-50 dark:bg-slate-950 border rounded-xl px-4 py-2.5 pr-20 text-xs font-medium text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 outline-none focus:outline-none focus-visible:outline-none transition-all ${
+                    className={`w-full bg-slate-50 dark:bg-slate-950 border rounded-xl px-3.5 sm:px-4 py-2.5 pr-24 text-xs font-medium text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 outline-none focus:outline-none focus-visible:outline-none transition-all ${
                       activeField === "firstName"
                         ? "border-amber-500 ring-2 ring-amber-500/80 dark:ring-amber-500/60"
                         : "border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 cursor-default"
@@ -885,7 +885,7 @@ export function SuperAdminSettings({
                     id="admin-middle-name"
                     ref={middleNameInputRef}
                     readOnly={activeField !== "middleName"}
-                    className={`w-full bg-slate-50 dark:bg-slate-950 border rounded-xl px-4 py-2.5 pr-20 text-xs font-medium text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 outline-none focus:outline-none focus-visible:outline-none transition-all ${
+                    className={`w-full bg-slate-50 dark:bg-slate-950 border rounded-xl px-3.5 sm:px-4 py-2.5 pr-24 text-xs font-medium text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 outline-none focus:outline-none focus-visible:outline-none transition-all ${
                       activeField === "middleName"
                         ? "border-amber-500 ring-2 ring-amber-500/80 dark:ring-amber-500/60"
                         : "border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 cursor-default"
@@ -935,7 +935,7 @@ export function SuperAdminSettings({
                     id="admin-last-name"
                     ref={lastNameInputRef}
                     readOnly={activeField !== "lastName"}
-                    className={`w-full bg-slate-50 dark:bg-slate-950 border rounded-xl px-4 py-2.5 pr-20 text-xs font-medium text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 outline-none focus:outline-none focus-visible:outline-none transition-all ${
+                    className={`w-full bg-slate-50 dark:bg-slate-950 border rounded-xl px-3.5 sm:px-4 py-2.5 pr-24 text-xs font-medium text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 outline-none focus:outline-none focus-visible:outline-none transition-all ${
                       activeField === "lastName"
                         ? "border-amber-500 ring-2 ring-amber-500/80 dark:ring-amber-500/60"
                         : "border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 cursor-default"
@@ -986,7 +986,7 @@ export function SuperAdminSettings({
                     ref={emailInputRef}
                     type="email"
                     readOnly={activeField !== "email"}
-                    className={`w-full bg-slate-50 dark:bg-slate-950 border rounded-xl px-4 py-2.5 pr-20 text-xs font-medium text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 outline-none focus:outline-none focus-visible:outline-none transition-all ${
+                    className={`w-full bg-slate-50 dark:bg-slate-950 border rounded-xl px-3.5 sm:px-4 py-2.5 pr-24 text-xs font-medium text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 outline-none focus:outline-none focus-visible:outline-none transition-all ${
                       activeField === "email"
                         ? "border-amber-500 ring-2 ring-amber-500/80 dark:ring-amber-500/60"
                         : "border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 cursor-default"
@@ -1029,7 +1029,7 @@ export function SuperAdminSettings({
                   Role / Campus Office
                 </label>
                 <input
-                  className="w-full bg-slate-100 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-400 cursor-not-allowed rounded-xl px-4 py-2.5 text-xs font-medium"
+                  className="w-full bg-slate-100 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-400 cursor-not-allowed rounded-xl px-3.5 sm:px-4 py-2.5 text-xs font-medium"
                   value="Administrator — System Oversight & Security"
                   disabled
                   readOnly
@@ -1038,12 +1038,12 @@ export function SuperAdminSettings({
             </div>
 
             {/* Card Buttons */}
-            <div className="flex items-center justify-end gap-2.5 pt-2">
+            <div className="flex flex-col-reverse sm:flex-row sm:items-center sm:justify-end gap-2.5 pt-2">
               <button
                 type="button"
                 onClick={handleResetProfile}
                 disabled={!isProfileChanged || isSavingProfile}
-                className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700/80 bg-slate-100/80 dark:bg-slate-800/80 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-white transition-all text-xs font-semibold shadow-2xs disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer active:scale-[0.98]"
+                className="w-full sm:w-auto flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700/80 bg-slate-100/80 dark:bg-slate-800/80 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-white transition-all text-xs font-semibold shadow-2xs disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer active:scale-[0.98]"
               >
                 <AppIcon icon={Refresh} size="sm" color="inherit" />
                 <span>Reset</span>
@@ -1051,7 +1051,7 @@ export function SuperAdminSettings({
               <button
                 type="submit"
                 disabled={isSavingProfile || !isProfileChanged}
-                className="bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold px-4 py-2.5 rounded-xl text-xs shadow-sm active:scale-[0.98] transition-all disabled:opacity-50 cursor-pointer"
+                className="w-full sm:w-auto bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold px-4 py-2.5 rounded-xl text-xs shadow-sm active:scale-[0.98] transition-all disabled:opacity-50 cursor-pointer text-center"
               >
                 {isSavingProfile ? "Saving..." : "Save Profile Changes"}
               </button>
@@ -1060,9 +1060,9 @@ export function SuperAdminSettings({
         </article>
 
         {/* Change Password Card */}
-        <article className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white shadow-xs dark:bg-slate-900 p-6 transition-colors">
-          <div className="pb-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
-            <div>
+        <article className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white shadow-xs dark:bg-slate-900 p-4 sm:p-6 transition-colors">
+          <div className="pb-4 border-b border-slate-200 dark:border-slate-800 flex flex-wrap sm:flex-nowrap items-start sm:items-center justify-between gap-3">
+            <div className="min-w-0">
               <h2 className="text-base sm:text-lg font-bold text-slate-900 dark:text-slate-100 tracking-normal">
                 Change Password
               </h2>
@@ -1074,7 +1074,7 @@ export function SuperAdminSettings({
               <button
                 type="button"
                 onClick={handleEnablePasswordEditing}
-                className="flex items-center gap-1.5 text-xs font-medium px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800/80 text-slate-700 dark:text-slate-300 hover:border-amber-500 hover:text-amber-500 dark:hover:border-amber-400 dark:hover:text-amber-400 transition-all shadow-2xs cursor-pointer active:scale-95"
+                className="shrink-0 flex items-center gap-1.5 text-xs font-medium px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800/80 text-slate-700 dark:text-slate-300 hover:border-amber-500 hover:text-amber-500 dark:hover:border-amber-400 dark:hover:text-amber-400 transition-all shadow-2xs cursor-pointer active:scale-95"
                 title="Change Password"
                 aria-label="Change Password"
               >
@@ -1085,7 +1085,7 @@ export function SuperAdminSettings({
               <button
                 type="button"
                 onClick={handleCancelPasswordEditing}
-                className="flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1.5 rounded-lg border border-[#5e0000] bg-[#780000] hover:bg-[#5e0000] text-white transition-all shadow-2xs cursor-pointer active:scale-95"
+                className="shrink-0 flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1.5 rounded-lg border border-[#5e0000] bg-[#780000] hover:bg-[#5e0000] text-white transition-all shadow-2xs cursor-pointer active:scale-95"
                 title="Cancel Change Password"
                 aria-label="Cancel Change Password"
               >
@@ -1213,10 +1213,10 @@ export function SuperAdminSettings({
                   : "bg-slate-50/80 dark:bg-slate-950/50 border-slate-200 dark:border-slate-800/80"
               }`}
             >
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div className="flex items-center gap-2 min-w-0">
                   <div
-                    className={`h-5 w-5 rounded-md flex items-center justify-center transition-colors ${
+                    className={`h-5 w-5 rounded-md flex items-center justify-center shrink-0 transition-colors ${
                       isPasswordFormValid
                         ? "bg-emerald-500 text-white"
                         : "bg-slate-200 dark:bg-slate-800 text-slate-500"
@@ -1234,7 +1234,7 @@ export function SuperAdminSettings({
                   </span>
                 </div>
                 <span
-                  className={`text-[11px] font-bold px-2 py-0.5 rounded-full transition-colors ${
+                  className={`text-[11px] font-bold px-2 py-0.5 rounded-full shrink-0 transition-colors ${
                     isPasswordFormValid
                       ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/80 dark:text-emerald-300 border border-emerald-300/80 dark:border-emerald-700/60"
                       : "bg-slate-200/70 text-slate-600 dark:bg-slate-800 dark:text-slate-400"
@@ -1268,7 +1268,7 @@ export function SuperAdminSettings({
                 {passwordRequirementsList.map((req) => (
                   <div
                     key={req.id}
-                    className={`flex items-center gap-2.5 px-2.5 py-1.5 rounded-xl transition-all duration-150 ${
+                    className={`flex items-center gap-2.5 px-2.5 py-1.5 rounded-xl min-w-0 transition-all duration-150 ${
                       req.isValid
                         ? "bg-emerald-100/60 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-300 border border-emerald-200/70 dark:border-emerald-800/50"
                         : "bg-white/60 dark:bg-slate-900/60 text-slate-500 dark:text-slate-400 border border-slate-200/50 dark:border-slate-800/40"
@@ -1283,7 +1283,7 @@ export function SuperAdminSettings({
                     >
                       <AppIcon icon={Check} size="xs" color="inherit" strokeWidth={3} />
                     </div>
-                    <span className="text-xs font-semibold">{req.label}</span>
+                    <span className="text-xs font-semibold break-words">{req.label}</span>
                   </div>
                 ))}
               </div>
@@ -1293,7 +1293,7 @@ export function SuperAdminSettings({
               <button
                 type="submit"
                 disabled={!isPasswordEditing || !isPasswordFormValid || isChangingPassword}
-                className="inline-flex items-center justify-center gap-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold px-4 py-2 rounded-xl text-xs shadow-sm active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-amber-500 disabled:shadow-none cursor-pointer"
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold px-4 py-2.5 sm:py-2 rounded-xl text-xs shadow-sm active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-amber-500 disabled:shadow-none cursor-pointer"
               >
                 {isChangingPassword ? (
                   <>
@@ -1310,7 +1310,7 @@ export function SuperAdminSettings({
       </section>
 
       {/* System Preferences & Session Duration Section */}
-      <article className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white shadow-xs dark:bg-slate-900 p-6 transition-colors">
+      <article className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white shadow-xs dark:bg-slate-900 p-4 sm:p-6 transition-colors">
         <div className="pb-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
           <div>
             <h2 className="text-base sm:text-lg font-bold text-slate-900 dark:text-slate-100 tracking-normal">
@@ -1322,21 +1322,21 @@ export function SuperAdminSettings({
           </div>
         </div>
 
-        <div className="mt-5 space-y-5">
+        <div className="mt-5 space-y-4 sm:space-y-5">
           {/* Notification Rule 1: Automated Email Reminders */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-slate-50 border border-slate-200/80 dark:bg-slate-900/50 dark:border-slate-800 p-4 rounded-lg transition-colors">
-            <div className="space-y-1">
-              <div className="flex items-center gap-2">
+          <div className="flex items-start sm:items-center justify-between gap-3 sm:gap-4 bg-slate-50 border border-slate-200/80 dark:bg-slate-900/50 dark:border-slate-800 p-3.5 sm:p-4 rounded-xl transition-colors">
+            <div className="space-y-1 min-w-0 flex-1">
+              <div className="flex flex-wrap items-center gap-2">
                 <AppIcon icon={Bell} size="md" color="active" />
                 <span className="text-slate-900 dark:text-slate-100 font-semibold text-xs">
                   Automated Email Reminders on Submission Windows
                 </span>
                 {emailReminders ? (
-                  <span className="bg-[#0b5336] text-white border border-[#08412a] px-2 py-0.5 text-xs font-bold rounded-md shadow-2xs">
+                  <span className="bg-[#0b5336] text-white border border-[#08412a] px-2 py-0.5 text-[11px] sm:text-xs font-bold rounded-md shadow-2xs shrink-0">
                     Active
                   </span>
                 ) : (
-                  <span className="bg-slate-600 text-white border border-slate-700 px-2 py-0.5 text-xs font-bold rounded-md shadow-2xs">
+                  <span className="bg-slate-600 text-white border border-slate-700 px-2 py-0.5 text-[11px] sm:text-xs font-bold rounded-md shadow-2xs shrink-0">
                     Disabled
                   </span>
                 )}
@@ -1351,7 +1351,7 @@ export function SuperAdminSettings({
               role="switch"
               aria-checked={emailReminders}
               onClick={() => setEmailReminders((prev) => !prev)}
-              className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-amber-500/50 ${
+              className={`relative inline-flex h-6 w-11 shrink-0 mt-0.5 sm:mt-0 cursor-pointer rounded-full transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-amber-500/50 ${
                 emailReminders
                   ? "bg-amber-500 border border-amber-400 shadow-xs"
                   : "bg-slate-300 dark:bg-slate-800 border border-slate-300 dark:border-slate-700"
@@ -1366,19 +1366,19 @@ export function SuperAdminSettings({
           </div>
 
           {/* Notification Rule 2: New Submission Alerts */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-slate-50 border border-slate-200/80 dark:bg-slate-900/50 dark:border-slate-800 p-4 rounded-lg transition-colors">
-            <div className="space-y-1">
-              <div className="flex items-center gap-2">
+          <div className="flex items-start sm:items-center justify-between gap-3 sm:gap-4 bg-slate-50 border border-slate-200/80 dark:bg-slate-900/50 dark:border-slate-800 p-3.5 sm:p-4 rounded-xl transition-colors">
+            <div className="space-y-1 min-w-0 flex-1">
+              <div className="flex flex-wrap items-center gap-2">
                 <AppIcon icon={Bell} size="md" color="active" />
                 <span className="text-slate-900 dark:text-slate-100 font-semibold text-xs">
                   New Submission Alert Notifications
                 </span>
                 {submissionAlerts ? (
-                  <span className="bg-[#0b5336] text-white border border-[#08412a] px-2 py-0.5 text-xs font-bold rounded-md shadow-2xs">
+                  <span className="bg-[#0b5336] text-white border border-[#08412a] px-2 py-0.5 text-[11px] sm:text-xs font-bold rounded-md shadow-2xs shrink-0">
                     Active
                   </span>
                 ) : (
-                  <span className="bg-slate-600 text-white border border-slate-700 px-2 py-0.5 text-xs font-bold rounded-md shadow-2xs">
+                  <span className="bg-slate-600 text-white border border-slate-700 px-2 py-0.5 text-[11px] sm:text-xs font-bold rounded-md shadow-2xs shrink-0">
                     Disabled
                   </span>
                 )}
@@ -1393,7 +1393,7 @@ export function SuperAdminSettings({
               role="switch"
               aria-checked={submissionAlerts}
               onClick={() => setSubmissionAlerts((prev) => !prev)}
-              className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-amber-500/50 ${
+              className={`relative inline-flex h-6 w-11 shrink-0 mt-0.5 sm:mt-0 cursor-pointer rounded-full transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-amber-500/50 ${
                 submissionAlerts
                   ? "bg-amber-500 border border-amber-400 shadow-xs"
                   : "bg-slate-300 dark:bg-slate-800 border border-slate-300 dark:border-slate-700"
@@ -1408,9 +1408,9 @@ export function SuperAdminSettings({
           </div>
 
           {/* Session Duration Control */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-slate-50 border border-slate-200/80 dark:bg-slate-900/50 dark:border-slate-800 p-4 rounded-lg transition-colors">
-            <div className="space-y-1">
-              <div className="flex items-center gap-2">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 bg-slate-50 border border-slate-200/80 dark:bg-slate-900/50 dark:border-slate-800 p-3.5 sm:p-4 rounded-xl transition-colors">
+            <div className="space-y-1 min-w-0">
+              <div className="flex flex-wrap items-center gap-2">
                 <AppIcon icon={Hourglass} size="md" color="active" />
                 <span className="text-slate-900 dark:text-slate-100 font-semibold text-xs">
                   Session Timeout Duration
@@ -1421,11 +1421,11 @@ export function SuperAdminSettings({
               </p>
             </div>
 
-            <div className="shrink-0">
+            <div className="w-full sm:w-auto shrink-0">
               <select
                 value={sessionTimeout}
                 onChange={(e) => setSessionTimeout(e.target.value)}
-                className="w-full sm:w-48 rounded-xl border border-slate-200 bg-white text-slate-900 focus:border-slate-400 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-100 dark:focus:border-slate-600 px-4 py-2.5 text-xs font-medium focus:outline-none cursor-pointer transition"
+                className="w-full sm:w-48 rounded-xl border border-slate-200 bg-white text-slate-900 focus:border-slate-400 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-100 dark:focus:border-slate-600 px-3.5 sm:px-4 py-2.5 text-xs font-medium focus:outline-none cursor-pointer transition"
               >
                 <option value="15">15 minutes</option>
                 <option value="30">30 minutes</option>
@@ -1441,7 +1441,7 @@ export function SuperAdminSettings({
               type="button"
               onClick={handleSavePreferences}
               disabled={isSavingPreferences || !isPreferencesChanged}
-              className="inline-flex items-center gap-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold px-4 py-2.5 rounded-xl text-xs shadow-sm active:scale-[0.98] transition-all disabled:opacity-50 cursor-pointer"
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold px-4 py-2.5 rounded-xl text-xs shadow-sm active:scale-[0.98] transition-all disabled:opacity-50 cursor-pointer"
             >
               {isSavingPreferences ? (
                 <>
@@ -1473,11 +1473,11 @@ export function SuperAdminSettings({
       {/* Profile Image Action Modal */}
       {isProfileImageMenuOpen && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 p-4 backdrop-blur-sm animate-in fade-in duration-200"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 p-3 sm:p-4 backdrop-blur-sm animate-in fade-in duration-200"
           onClick={() => setIsProfileImageMenuOpen(false)}
         >
           <div
-            className="w-full max-w-md rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xl overflow-hidden"
+            className="w-full max-w-md max-h-[90dvh] flex flex-col rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xl overflow-hidden"
             onClick={(event) => event.stopPropagation()}
           >
             <ModalHeader
@@ -1485,23 +1485,24 @@ export function SuperAdminSettings({
               icon={Camera}
               onClose={() => setIsProfileImageMenuOpen(false)}
               closeAriaLabel="Close"
+              className="shrink-0"
             />
-            <div className="p-6 space-y-3">
+            <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-3">
               <button
                 type="button"
                 onClick={() => {
                   setIsProfileImageMenuOpen(false);
                   profileImageInputRef.current?.click();
                 }}
-                className="flex w-full items-center justify-between rounded-xl border border-slate-200 bg-slate-50 hover:bg-slate-100 dark:border-slate-800 dark:bg-slate-950/60 px-4 py-3.5 text-left text-slate-800 dark:text-slate-200 transition hover:border-slate-300 dark:hover:border-slate-700 dark:hover:bg-slate-800/40 cursor-pointer"
+                className="flex w-full items-center justify-between gap-3 rounded-xl border border-slate-200 bg-slate-50 hover:bg-slate-100 dark:border-slate-800 dark:bg-slate-950/60 px-4 py-3.5 text-left text-slate-800 dark:text-slate-200 transition hover:border-slate-300 dark:hover:border-slate-700 dark:hover:bg-slate-800/40 cursor-pointer"
               >
-                <div>
+                <div className="min-w-0">
                   <p className="text-xs font-semibold">Upload Photo</p>
                   <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 font-normal">
                     Select a new image file from your device
                   </p>
                 </div>
-                <AppIcon icon={Camera} size="md" color="muted" />
+                <AppIcon icon={Camera} size="md" color="muted" className="shrink-0" />
               </button>
 
               {displayedProfileImage && (
@@ -1511,15 +1512,15 @@ export function SuperAdminSettings({
                     setIsProfileImageMenuOpen(false);
                     setIsFullImageOpen(true);
                   }}
-                  className="flex w-full items-center justify-between rounded-xl border border-slate-200 bg-slate-50 hover:bg-slate-100 dark:border-slate-800 dark:bg-slate-950/60 px-4 py-3.5 text-left text-slate-800 dark:text-slate-200 transition hover:border-slate-300 dark:hover:border-slate-700 dark:hover:bg-slate-800/40 cursor-pointer"
+                  className="flex w-full items-center justify-between gap-3 rounded-xl border border-slate-200 bg-slate-50 hover:bg-slate-100 dark:border-slate-800 dark:bg-slate-950/60 px-4 py-3.5 text-left text-slate-800 dark:text-slate-200 transition hover:border-slate-300 dark:hover:border-slate-700 dark:hover:bg-slate-800/40 cursor-pointer"
                 >
-                  <div>
+                  <div className="min-w-0">
                     <p className="text-xs font-semibold">View Full Image</p>
                     <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 font-normal">
                       Preview your current profile picture in full size
                     </p>
                   </div>
-                  <AppIcon icon={Eye} size="md" color="muted" />
+                  <AppIcon icon={Eye} size="md" color="muted" className="shrink-0" />
                 </button>
               )}
 
@@ -1531,15 +1532,15 @@ export function SuperAdminSettings({
                     setProfileImageFile(null);
                     setIsAvatarMarkedForRemoval(true);
                   }}
-                  className="flex w-full items-center justify-between rounded-xl border border-rose-200 bg-rose-50/50 hover:bg-rose-100/70 dark:border-rose-900/60 dark:bg-rose-950/20 dark:hover:bg-rose-950/40 px-4 py-3.5 text-left text-rose-800 dark:text-rose-300 transition cursor-pointer"
+                  className="flex w-full items-center justify-between gap-3 rounded-xl border border-rose-200 bg-rose-50/50 hover:bg-rose-100/70 dark:border-rose-900/60 dark:bg-rose-950/20 dark:hover:bg-rose-950/40 px-4 py-3.5 text-left text-rose-800 dark:text-rose-300 transition cursor-pointer"
                 >
-                  <div>
+                  <div className="min-w-0">
                     <p className="text-xs font-semibold">Reset to Default Logo</p>
                     <p className="text-[11px] text-rose-600/80 dark:text-rose-400/80 mt-0.5 font-normal">
                       Reset avatar to PUP FOCUS emblem logo
                     </p>
                   </div>
-                  <AppIcon icon={Trash} size="md" color="danger" />
+                  <AppIcon icon={Trash} size="md" color="danger" className="shrink-0" />
                 </button>
               )}
             </div>
@@ -1550,11 +1551,11 @@ export function SuperAdminSettings({
       {/* Full Image Preview Modal */}
       {isFullImageOpen && displayedProfileImage && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 p-4 backdrop-blur-md animate-in fade-in duration-200"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 p-3 sm:p-4 backdrop-blur-md animate-in fade-in duration-200"
           onClick={() => setIsFullImageOpen(false)}
         >
           <div
-            className="relative max-w-lg w-full rounded-2xl overflow-hidden bg-slate-950 border border-slate-800 shadow-2xl p-2 flex flex-col items-center"
+            className="relative max-w-lg w-full max-h-[90dvh] rounded-2xl overflow-hidden bg-slate-950 border border-slate-800 shadow-2xl p-2 flex flex-col items-center"
             onClick={(e) => e.stopPropagation()}
           >
             <ModalHeader
@@ -1568,7 +1569,7 @@ export function SuperAdminSettings({
               icon={User}
               onClose={() => setIsFullImageOpen(false)}
               closeAriaLabel="Close"
-              className="w-full bg-transparent border-slate-800 px-3 py-2 mb-2"
+              className="w-full shrink-0 bg-transparent border-slate-800 px-3 py-2 mb-2"
             />
             <img
               src={displayedProfileImage}
@@ -1579,7 +1580,7 @@ export function SuperAdminSettings({
                   lastName: form.lastName,
                 }) || "Administrator"
               }
-              className="max-h-[70vh] w-auto rounded-xl object-contain shadow-lg"
+              className="max-h-[65dvh] sm:max-h-[70dvh] w-auto rounded-xl object-contain shadow-lg"
             />
           </div>
         </div>
