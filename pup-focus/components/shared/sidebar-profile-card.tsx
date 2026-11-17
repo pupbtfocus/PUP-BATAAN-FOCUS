@@ -58,11 +58,13 @@ export function SidebarProfileCard({
               onError={() => setHasAvatarError(true)}
             />
           ) : fallbackAvatarSrc ? (
-            <img
-              src={fallbackAvatarSrc}
-              alt={displayName}
-              className="h-16 w-16 rounded-2xl object-cover border-2 border-[#480000] ring-2 ring-amber-400/85 shadow-sm group-hover:ring-amber-300 transition-all bg-[#5c0000]"
-            />
+            <div className="h-16 w-16 rounded-2xl border-2 border-[#480000] ring-2 ring-amber-400/85 shadow-sm group-hover:ring-amber-300 transition-all bg-[#5c0000] p-1 flex items-center justify-center">
+              <img
+                src={fallbackAvatarSrc}
+                alt={displayName}
+                className="h-full w-full rounded-full object-contain"
+              />
+            </div>
           ) : (
             <div className="h-16 w-16 rounded-2xl bg-amber-500/20 text-amber-200 border-2 border-[#480000] ring-2 ring-amber-400/75 font-extrabold text-lg flex items-center justify-center shadow-sm group-hover:ring-amber-300 transition-all">
               {initials}
