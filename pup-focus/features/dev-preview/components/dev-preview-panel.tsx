@@ -55,6 +55,7 @@ import {
   type DbStatusData,
 } from "@/features/admin-management/components/database-capacity-alert";
 import { SystemErrorView } from "@/components/errors/system-error-view";
+import { ConcurrentSessionModal } from "@/components/auth/concurrent-session-modal";
 
 type PreviewTab =
   | "gmail"
@@ -186,7 +187,7 @@ export function DevPreviewPanel() {
 
   // Modals Showcase State
   const [activeShowcaseModal, setActiveShowcaseModal] = useState<
-    "extension-logs" | "close-safety" | "warning-requirements" | "faculty-not-submitted" | "logout" | null
+    "extension-logs" | "close-safety" | "warning-requirements" | "faculty-not-submitted" | "logout" | "concurrent-session" | null
   >(null);
   const [isSimulatingLogout, setIsSimulatingLogout] = useState(false);
   const [safetyCountdown, setSafetyCountdown] = useState(10);
@@ -2015,6 +2016,28 @@ export function DevPreviewPanel() {
                 </div>
               </div>
             </div>
+
+            {/* Modal Card 15: Single Active Session (Signed In Elsewhere) Modal */}
+            <div className="rounded-2xl border border-amber-400/60 dark:border-amber-500/60 bg-white dark:bg-slate-900 p-5 shadow-xs flex flex-col justify-between space-y-4">
+              <div className="space-y-2">
+                <div className="flex items-center gap-2 text-[#800000] dark:text-amber-400">
+                  <AppIcon icon={WarningTriangle} size="lg" color="inherit" />
+                  <h4 className="text-sm font-bold text-slate-900 dark:text-slate-100">
+                    Signed In Elsewhere Modal
+                  </h4>
+                </div>
+                <p className="text-xs text-slate-500 dark:text-slate-400">
+                  Single active session notice shown when an account logs in from another device or browser.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setActiveShowcaseModal("concurrent-session")}
+                className="w-full py-2 px-3 text-xs font-bold rounded-lg bg-[#780000] hover:bg-[#5e0000] text-white border border-[#5e0000] transition cursor-pointer shadow-xs active:scale-[0.98]"
+              >
+                Launch Signed In Elsewhere Modal
+              </button>
+            </div>
           </div>
         </div>
       )}
@@ -2747,6 +2770,24 @@ export function DevPreviewPanel() {
           </div>
         </div>
       )}
+
+      {/* SHOWCASE MODAL 6: CONCURRENT SESSION (SIGNED IN ELSEWHERE) MODAL */}
+      <ConcurrentSessionModal
+        isOpen={activeShowcaseModal === "concurrent-session"}
+        isLoggingOut={isSimulatingLogout}
+        onPreviewClose={() => setActiveShowcaseModal(null)}
+        onConfirm={() => {
+          setIsSimulatingLogout(true);
+          setTimeout(() => {
+            setIsSimulatingLogout(false);
+            setActiveShowcaseModal(null);
+            setDevToast({
+              type: "success",
+              message: "Single session simulation complete. Redirected to login.",
+            });
+          }, 900);
+        }}
+      />
 
       {/* FULL-SCREEN SYSTEM LOADING PREVIEW OVERLAY */}
       {showSystemLoadingScreen && (

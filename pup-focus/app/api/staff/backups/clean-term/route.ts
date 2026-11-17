@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
 import { ROLE } from "@/config/roles";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { getServiceRoleClient } from "@/lib/supabase/service-role";
@@ -594,26 +593,35 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (!user.email) {
+    // Resolve canonical email(s) and verify password via service role client (matching /api/auth/change-password)
+    const { data: authAdminData } = await supabase.auth.admin
+      .getUserById(user.id)
+      .catch(() => ({ data: null }));
+    const authUser = authAdminData?.user ?? user;
+
+    const { data: profileRow } = await supabase
+      .from("profiles")
+      .select("email")
+      .eq("user_id", user.id)
+      .maybeSingle();
+
+    const candidateEmails = Array.from(
+      new Set(
+        [
+          authUser?.email,
+          authUser?.email?.trim().toLowerCase(),
+          user.email,
+          user.email?.trim().toLowerCase(),
+          profileRow?.email,
+          profileRow?.email?.trim().toLowerCase(),
+        ].filter((e): e is string => typeof e === "string" && e.trim().length > 0),
+      ),
+    );
+
+    if (candidateEmails.length === 0) {
       return NextResponse.json(
         { error: "Unable to verify admin account email." },
         { status: 400 },
-      );
-    }
-
-    const authCheckClient = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      { auth: { persistSession: false, autoRefreshToken: false } },
-    );
-    const { error: pwErr } = await authCheckClient.auth.signInWithPassword({
-      email: user.email,
-      password: adminPassword,
-    });
-    if (pwErr) {
-      return NextResponse.json(
-        { error: "Incorrect admin password." },
-        { status: 401 },
       );
     }
 
@@ -627,6 +635,104 @@ export async function POST(request: NextRequest) {
         { error: "A specific Academic Year and Semester are required." },
         { status: 400 },
       );
+    }
+
+    let isPasswordValid = false;
+    let verifiedLoginTime: string | null = null;
+    let verifiedSession: NonNullable<
+      Awaited<ReturnType<typeof supabase.auth.signInWithPassword>>["data"]["session"]
+    > | null = null;
+    let lastAuthError: { message?: string; status?: number } | null = null;
+
+    for (const emailToVerify of candidateEmails) {
+      const { data: signInData, error: pwErr } =
+        await supabase.auth.signInWithPassword({
+          email: emailToVerify,
+          password: adminPassword,
+        });
+
+      if (!pwErr && signInData?.user) {
+        isPasswordValid = true;
+        verifiedSession = signInData.session ?? null;
+        verifiedLoginTime =
+          signInData.user.last_sign_in_at ||
+          signInData.session?.user?.last_sign_in_at ||
+          new Date().toISOString();
+        break;
+      }
+
+      if (pwErr) {
+        lastAuthError = pwErr;
+        const msg = (pwErr.message || "").toLowerCase();
+        // Only retry other candidate emails on credential mismatch, not rate limits/network errors
+        if (
+          !msg.includes("invalid login credentials") &&
+          !msg.includes("invalid credentials")
+        ) {
+          break;
+        }
+      }
+    }
+
+    if (!isPasswordValid) {
+      const errMsg = lastAuthError?.message || "";
+      const lowerErr = errMsg.toLowerCase();
+      const primaryEmail = candidateEmails[0];
+
+      if (
+        lastAuthError?.status === 429 ||
+        lowerErr.includes("rate limit") ||
+        lowerErr.includes("too many")
+      ) {
+        return NextResponse.json(
+          { error: "Too many verification attempts. Please wait a moment and try again." },
+          { status: 429 },
+        );
+      }
+
+      if (
+        errMsg &&
+        !lowerErr.includes("invalid login credentials") &&
+        !lowerErr.includes("invalid credentials")
+      ) {
+        return NextResponse.json(
+          { error: `Password check failed: ${errMsg}` },
+          { status: 401 },
+        );
+      }
+
+      const providers = Array.isArray(authUser?.app_metadata?.providers)
+        ? (authUser.app_metadata.providers as string[])
+        : [];
+      const hasEmailIdentity =
+        providers.includes("email") ||
+        Boolean(authUser?.identities?.some((i) => i.provider === "email"));
+
+      if (
+        (providers.length > 0 || (authUser?.identities?.length ?? 0) > 0) &&
+        !hasEmailIdentity
+      ) {
+        return NextResponse.json(
+          {
+            error: `Account (${primaryEmail}) signs in via OAuth and does not have a password set.`,
+          },
+          { status: 400 },
+        );
+      }
+
+      return NextResponse.json(
+        { error: `Incorrect admin password for ${primaryEmail}.` },
+        { status: 401 },
+      );
+    }
+
+    if (verifiedSession) {
+      try {
+        const userClient = await createServerSupabaseClient();
+        await userClient.auth.setSession(verifiedSession).catch(() => null);
+      } catch {
+        // Non-fatal cookie refresh
+      }
     }
 
     const scope = await resolveTermScope(supabase, academicYear, semester);
@@ -812,6 +918,8 @@ export async function POST(request: NextRequest) {
       extensionRequestsRemoved: extensionsRemoved,
       keepaliveLogsRemoved,
       freedBytes,
+      loginTime: verifiedLoginTime,
+      userId: user.id,
       message: summaryText,
     });
   } catch (error) {

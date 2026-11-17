@@ -9,6 +9,7 @@ import {
   Database,
   Download,
   Eye,
+  EyeClosed,
   HardDrive,
   Hourglass,
   MultiplePages,
@@ -24,6 +25,11 @@ import { AppIcon } from "@/components/ui/app-icon";
 import { ModalHeader } from "@/components/ui/modal-header";
 import { AlertPopup } from "@/components/ui/alert-popup";
 import { emitRealtimeSync, useRealtimeSync } from "@/lib/realtime";
+import {
+  pauseSessionVerification,
+  recordActiveSessionLogin,
+  resumeSessionVerification,
+} from "@/components/auth/single-session-enforcer";
 import type {
   SystemBackup,
   ArchivedTermSummary,
@@ -160,6 +166,7 @@ export function BackupArchivePanel() {
   const [cleanCountdown, setCleanCountdown] = useState<number>(30);
   const [cleanConfirmText, setCleanConfirmText] = useState("");
   const [cleanAdminPassword, setCleanAdminPassword] = useState("");
+  const [showCleanPassword, setShowCleanPassword] = useState(false);
   const [cleanModalError, setCleanModalError] = useState<string | null>(null);
 
   const loadBackupData = async (options?: { silent?: boolean }) => {
@@ -874,6 +881,7 @@ export function BackupArchivePanel() {
     setCleanPreview(null);
     setCleanConfirmText("");
     setCleanAdminPassword("");
+    setShowCleanPassword(false);
     setCleanModalError(null);
     setCleanTermTarget({ academic_year: ay, semester: sem });
     setIsLoadingCleanPreview(true);
@@ -903,10 +911,12 @@ export function BackupArchivePanel() {
       setCleanModalError("Enter your admin password.");
       return;
     }
+    let didRecordSessionLogin = false;
     try {
       setIsCleaningTerm(true);
       setCleanModalError(null);
       setError(null);
+      pauseSessionVerification(30000);
       const res = await fetch("/api/staff/backups/clean-term", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -921,8 +931,16 @@ export function BackupArchivePanel() {
         }),
       });
       const data = await res.json();
+      if (data?.loginTime) {
+        recordActiveSessionLogin(data.loginTime, data.userId);
+        didRecordSessionLogin = true;
+      }
       if (!res.ok) {
         throw new Error(data.error || "Failed to clean semester storage");
+      }
+      if (!didRecordSessionLogin) {
+        recordActiveSessionLogin(new Date().toISOString(), data?.userId);
+        didRecordSessionLogin = true;
       }
       setSuccess(
         data.message ||
@@ -932,6 +950,7 @@ export function BackupArchivePanel() {
       setCleanTermTarget(null);
       setCleanConfirmText("");
       setCleanAdminPassword("");
+      setShowCleanPassword(false);
       emitRealtimeSync();
       await loadBackupData({ silent: true });
     } catch (err) {
@@ -939,6 +958,9 @@ export function BackupArchivePanel() {
         err instanceof Error ? err.message : "Failed to clean semester storage",
       );
     } finally {
+      if (!didRecordSessionLogin) {
+        resumeSessionVerification();
+      }
       setIsCleaningTerm(false);
     }
   };
@@ -2278,17 +2300,44 @@ export function BackupArchivePanel() {
                   <label className="text-[11px] font-bold text-slate-700 dark:text-slate-300 block">
                     Admin password
                   </label>
-                  <input
-                    type="password"
-                    value={cleanAdminPassword}
-                    onChange={(e) => {
-                      setCleanAdminPassword(e.target.value);
-                      if (cleanModalError) setCleanModalError(null);
-                    }}
-                    placeholder="Enter password"
-                    autoComplete="current-password"
-                    className="w-full h-9 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-3 text-xs text-slate-900 dark:text-slate-100 outline-none focus:border-[#780000]"
-                  />
+                  <div className="relative">
+                    <input
+                      type={showCleanPassword ? "text" : "password"}
+                      value={cleanAdminPassword}
+                      onChange={(e) => {
+                        setCleanAdminPassword(e.target.value);
+                        if (cleanModalError) setCleanModalError(null);
+                      }}
+                      placeholder="Enter password"
+                      autoComplete="current-password"
+                      className="w-full h-9 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 pl-3 pr-9 text-xs text-slate-900 dark:text-slate-100 outline-none focus:border-[#780000]"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowCleanPassword((prev) => !prev)}
+                      className="absolute right-2.5 top-1/2 -translate-y-1/2 p-1 text-amber-600 hover:text-amber-700 dark:text-amber-400 dark:hover:text-amber-300 transition-colors cursor-pointer"
+                      aria-label={
+                        showCleanPassword ? "Hide password" : "Show password"
+                      }
+                      title={showCleanPassword ? "Hide password" : "Show password"}
+                    >
+                      {showCleanPassword ? (
+                        <AppIcon
+                          icon={Eye}
+                          size="md"
+                          color="inherit"
+                          strokeWidth={2.2}
+                        />
+                      ) : (
+                        <AppIcon
+                          icon={EyeClosed}
+                          size="md"
+                          color="inherit"
+                          strokeWidth={2.2}
+                        />
+                      )}
+                    </button>
+                  </div>
                 </div>
               </div>
 
