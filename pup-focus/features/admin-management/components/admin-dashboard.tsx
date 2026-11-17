@@ -2457,7 +2457,9 @@ export function SuperAdminDashboard({
                   </div>
                 </div>
 
-                <BackupArchivePanel />
+                <BackupArchivePanel
+                  onNavigateToTerms={() => handleSetActiveSection("terms")}
+                />
               </article>
             ) : null}
 

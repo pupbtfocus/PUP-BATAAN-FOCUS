@@ -47,7 +47,13 @@ let cachedBackupData: {
   stats: BackupStats;
 } | null = null;
 
-export function BackupArchivePanel() {
+export interface BackupArchivePanelProps {
+  onNavigateToTerms?: () => void;
+}
+
+export function BackupArchivePanel({
+  onNavigateToTerms,
+}: BackupArchivePanelProps = {}) {
   const [backups, setBackups] = useState<SystemBackup[]>(() => {
     if (cachedBackupData) return cachedBackupData.backups;
     if (typeof window !== "undefined") {
@@ -1068,7 +1074,7 @@ export function BackupArchivePanel() {
 
         {/* Centered Operational Term Notice — Clean Inline Bold */}
         {currentActiveTerm && (
-          <div className="flex items-center justify-center gap-2 py-1 text-xs text-slate-800 dark:text-slate-200 text-center font-bold">
+          <div className="flex flex-wrap items-center justify-center gap-2 py-1 text-xs text-slate-800 dark:text-slate-200 text-center font-bold">
             <AppIcon
               icon={isCurrentTermBackedUp ? CheckCircle : WarningTriangle}
               size="sm"
@@ -1083,7 +1089,7 @@ export function BackupArchivePanel() {
               {" — "}
               {isCurrentTermBackedUp ? (
                 <span className="text-[#0b5336] dark:text-emerald-400 font-extrabold">
-                  Verified backup on file
+                  Verified backup on file · Safe to change semester now
                 </span>
               ) : (
                 <span className="text-amber-700 dark:text-amber-400 font-extrabold">
@@ -1091,6 +1097,23 @@ export function BackupArchivePanel() {
                 </span>
               )}
             </span>
+            {isCurrentTermBackedUp && (
+              <button
+                type="button"
+                onClick={() => {
+                  if (onNavigateToTerms) {
+                    onNavigateToTerms();
+                  } else if (typeof window !== "undefined") {
+                    window.location.assign("/admin/dashboard?section=terms");
+                  }
+                }}
+                className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-[#0b5336] hover:bg-[#08412a] text-white border border-[#08412a] text-[11px] font-bold shadow-2xs transition cursor-pointer active:scale-[0.98]"
+                title="Go to Academic Terms to switch to the next semester"
+              >
+                <AppIcon icon={Calendar} size="xs" color="white" />
+                <span>Change Semester</span>
+              </button>
+            )}
           </div>
         )}
 

@@ -28,6 +28,7 @@ type AcademicTermItem = {
   semester: string;
   status: AcademicTermStatus;
   canDelete: boolean;
+  isBackedUp?: boolean;
   deleteReason?: string;
 };
 
@@ -864,7 +865,18 @@ export function AdminAcademicTerms({
                       {term.semester}
                     </td>
                     <td className="py-2.5 px-4">
-                      {renderStatusBadge(term)}
+                      <div className="flex flex-wrap items-center gap-1.5">
+                        {renderStatusBadge(term)}
+                        {term.status === "Current" && term.isBackedUp && (
+                          <span
+                            className="inline-flex items-center gap-1 bg-emerald-600 text-white border border-emerald-700 px-2.5 py-0.5 text-[11px] font-semibold rounded-md shadow-2xs"
+                            title="This current semester is backed up and can safely be changed"
+                          >
+                            <AppIcon icon={Check} size="xs" color="white" />
+                            <span>Backed Up · Safe to Change</span>
+                          </span>
+                        )}
+                      </div>
                     </td>
                     <td className="py-2.5 px-4 text-right">
                       <div className="inline-flex items-center gap-2 justify-end">
@@ -982,7 +994,18 @@ export function AdminAcademicTerms({
                       {term.semester}
                     </td>
                     <td className="py-2.5 px-4">
-                      {renderStatusBadge(term)}
+                      <div className="flex flex-wrap items-center gap-1.5">
+                        {renderStatusBadge(term)}
+                        {term.status === "Current" && term.isBackedUp && (
+                          <span
+                            className="inline-flex items-center gap-1 bg-emerald-600 text-white border border-emerald-700 px-2.5 py-0.5 text-[11px] font-semibold rounded-md shadow-2xs"
+                            title="This current semester is backed up and can safely be changed"
+                          >
+                            <AppIcon icon={Check} size="xs" color="white" />
+                            <span>Backed Up · Safe to Change</span>
+                          </span>
+                        )}
+                      </div>
                     </td>
                     <td className="py-2.5 px-4 text-right">
                       <div className="inline-flex items-center gap-2 justify-end">

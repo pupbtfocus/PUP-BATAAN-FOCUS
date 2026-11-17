@@ -27,6 +27,7 @@ type AcademicTermResponseItem = {
   semester: string;
   status: AcademicTermStatus;
   canDelete: boolean;
+  isBackedUp?: boolean;
   deleteReason?: string;
 };
 
@@ -64,6 +65,62 @@ function buildTermKey(academicYear: string, semester: string) {
   return `${academicYear}|${semester}`;
 }
 
+function hasCompletedBackupForTerm(
+  backupRows: any[] | null | undefined,
+  academicYear: string,
+  semester: string,
+): boolean {
+  const targetAy = academicYear.trim().toLowerCase();
+  const targetSem = normalizeSemester(semester).toLowerCase();
+
+  return (backupRows ?? []).some((b: any) => {
+    if (!b) return false;
+    if (b.status && b.status !== "completed") return false;
+
+    const meta = b.metadata ?? {};
+    const metaScope =
+      typeof meta.scope === "object" && meta.scope !== null ? meta.scope : {};
+
+    const rawAy = b.academic_year || meta.academic_year || metaScope.academic_year;
+    if (!rawAy || typeof rawAy !== "string" || rawAy.trim().toLowerCase() === "all") {
+      return false;
+    }
+    if (rawAy.trim().toLowerCase() !== targetAy) {
+      return false;
+    }
+
+    const rawSem = meta.semester || metaScope.semester;
+    if (rawSem && typeof rawSem === "string" && rawSem.trim().toLowerCase() !== "all") {
+      const normBSem = normalizeSemester(rawSem).toLowerCase();
+      if (normBSem === targetSem) {
+        return true;
+      }
+    }
+
+    const name = (b.backup_name || "").toLowerCase();
+    const safeAY = targetAy.replace(/[^a-zA-Z0-9]/g, "_");
+    const safeSem = targetSem.replace(/[^a-zA-Z0-9]/g, "_");
+
+    if (name.includes(safeAY) && name.includes(safeSem)) {
+      return true;
+    }
+
+    if (name.includes(safeAY)) {
+      if (targetSem.includes("1st") && (name.includes("1st_sem") || name.includes("first_sem"))) {
+        return true;
+      }
+      if (targetSem.includes("2nd") && (name.includes("2nd_sem") || name.includes("second_sem"))) {
+        return true;
+      }
+      if (targetSem.includes("summer") && name.includes("summer")) {
+        return true;
+      }
+    }
+
+    return false;
+  });
+}
+
 let serverTermsCache: {
   timestamp: number;
   payload: any;
@@ -77,11 +134,34 @@ function invalidateServerTermsCache() {
 export async function GET() {
   try {
     if (serverTermsCache && Date.now() - serverTermsCache.timestamp < SERVER_TERMS_CACHE_TTL_MS) {
-      return NextResponse.json(serverTermsCache.payload, {
-        headers: {
-          "Cache-Control": "public, max-age=15, stale-while-revalidate=30",
+      const supabase = getServiceRoleClient();
+      const { data: freshBackupRows } = await supabase
+        .from("system_backups")
+        .select("id, backup_name, academic_year, metadata, status")
+        .eq("status", "completed");
+
+      const cachedTerms = Array.isArray(serverTermsCache.payload?.terms)
+        ? serverTermsCache.payload.terms.map((t: AcademicTermResponseItem) => ({
+            ...t,
+            isBackedUp: hasCompletedBackupForTerm(
+              freshBackupRows,
+              t.academicYear,
+              t.semester,
+            ),
+          }))
+        : [];
+
+      return NextResponse.json(
+        {
+          ...serverTermsCache.payload,
+          terms: cachedTerms,
         },
-      });
+        {
+          headers: {
+            "Cache-Control": "no-store",
+          },
+        },
+      );
     }
 
     const sessionClient = await createServerSupabaseClient();
@@ -241,6 +321,11 @@ export async function GET() {
       }
     }
 
+    const { data: backupRows } = await supabase
+      .from("system_backups")
+      .select("id, backup_name, academic_year, metadata, status")
+      .eq("status", "completed");
+
     const terms: AcademicTermResponseItem[] =
       Array.isArray(termRows) && termRows.length > 0
         ? termRows.map((term) => {
@@ -257,6 +342,11 @@ export async function GET() {
                 ? term.status
                 : "Upcoming",
               canDelete,
+              isBackedUp: hasCompletedBackupForTerm(
+                backupRows,
+                term.academic_year,
+                normalizedSemester,
+              ),
               deleteReason: canDelete
                 ? undefined
                 : "This academic term cannot be deleted because it already contains system records.",
@@ -272,7 +362,7 @@ export async function GET() {
 
     return NextResponse.json(payload, {
       headers: {
-        "Cache-Control": "public, max-age=15, stale-while-revalidate=30",
+        "Cache-Control": "no-store",
       },
     });
   } catch (error) {
@@ -648,60 +738,16 @@ export async function PATCH(request: NextRequest) {
       }
 
       // Guard 1: Strictly prevent archiving if no backup exists specifically for this semester
-      const targetAy = academicYear.trim().toLowerCase();
-      const targetSem = normalizeSemester(semester).toLowerCase();
-
       const { data: backupRows } = await supabase
         .from("system_backups")
         .select("id, backup_name, academic_year, metadata, status")
         .eq("status", "completed");
 
-      const hasSemesterBackup = (backupRows ?? []).some((b: any) => {
-        if (!b) return false;
-        if (b.status && b.status !== "completed") return false;
-
-        const meta = b.metadata ?? {};
-        const metaScope =
-          typeof meta.scope === "object" && meta.scope !== null ? meta.scope : {};
-
-        const rawAy = b.academic_year || meta.academic_year || metaScope.academic_year;
-        if (!rawAy || typeof rawAy !== "string" || rawAy.trim().toLowerCase() === "all") {
-          return false;
-        }
-        if (rawAy.trim().toLowerCase() !== targetAy) {
-          return false;
-        }
-
-        const rawSem = meta.semester || metaScope.semester;
-        if (rawSem && typeof rawSem === "string" && rawSem.trim().toLowerCase() !== "all") {
-          const normBSem = normalizeSemester(rawSem).toLowerCase();
-          if (normBSem === targetSem) {
-            return true;
-          }
-        }
-
-        const name = (b.backup_name || "").toLowerCase();
-        const safeAY = targetAy.replace(/[^a-zA-Z0-9]/g, "_");
-        const safeSem = targetSem.replace(/[^a-zA-Z0-9]/g, "_");
-
-        if (name.includes(safeAY) && name.includes(safeSem)) {
-          return true;
-        }
-
-        if (name.includes(safeAY)) {
-          if (targetSem.includes("1st") && (name.includes("1st_sem") || name.includes("first_sem"))) {
-            return true;
-          }
-          if (targetSem.includes("2nd") && (name.includes("2nd_sem") || name.includes("second_sem"))) {
-            return true;
-          }
-          if (targetSem.includes("summer") && name.includes("summer")) {
-            return true;
-          }
-        }
-
-        return false;
-      });
+      const hasSemesterBackup = hasCompletedBackupForTerm(
+        backupRows,
+        academicYear,
+        semester,
+      );
 
       if (!hasSemesterBackup) {
         return NextResponse.json(
@@ -929,63 +975,16 @@ export async function PATCH(request: NextRequest) {
       }
 
       // Guard 1: Strictly prevent changing the active term if no backup exists specifically for this semester
-      const targetAy = currentTerm.academic_year.trim().toLowerCase();
-      const targetSem = normalizeSemester(currentTerm.semester).toLowerCase();
-
       const { data: backupRows } = await supabase
         .from("system_backups")
         .select("id, backup_name, academic_year, metadata, status")
         .eq("status", "completed");
 
-      const hasSemesterBackup = (backupRows ?? []).some((b: any) => {
-        if (!b) return false;
-        if (b.status && b.status !== "completed") return false;
-
-        const meta = b.metadata ?? {};
-        const metaScope =
-          typeof meta.scope === "object" && meta.scope !== null ? meta.scope : {};
-
-        // 1. Resolve Academic Year for this backup
-        const rawAy = b.academic_year || meta.academic_year || metaScope.academic_year;
-        if (!rawAy || typeof rawAy !== "string" || rawAy.trim().toLowerCase() === "all") {
-          return false;
-        }
-        if (rawAy.trim().toLowerCase() !== targetAy) {
-          return false;
-        }
-
-        // 2. Resolve Semester for this backup - must strictly match this semester (not 'all' or empty)
-        const rawSem = meta.semester || metaScope.semester;
-        if (rawSem && typeof rawSem === "string" && rawSem.trim().toLowerCase() !== "all") {
-          const normBSem = normalizeSemester(rawSem).toLowerCase();
-          if (normBSem === targetSem) {
-            return true;
-          }
-        }
-
-        // 3. Check backup_name if explicitly tagged with this specific AY and Semester
-        const name = (b.backup_name || "").toLowerCase();
-        const safeAY = targetAy.replace(/[^a-zA-Z0-9]/g, "_");
-        const safeSem = targetSem.replace(/[^a-zA-Z0-9]/g, "_");
-
-        if (name.includes(safeAY) && name.includes(safeSem)) {
-          return true;
-        }
-
-        if (name.includes(safeAY)) {
-          if (targetSem.includes("1st") && (name.includes("1st_sem") || name.includes("first_sem"))) {
-            return true;
-          }
-          if (targetSem.includes("2nd") && (name.includes("2nd_sem") || name.includes("second_sem"))) {
-            return true;
-          }
-          if (targetSem.includes("summer") && name.includes("summer")) {
-            return true;
-          }
-        }
-
-        return false;
-      });
+      const hasSemesterBackup = hasCompletedBackupForTerm(
+        backupRows,
+        currentTerm.academic_year,
+        currentTerm.semester,
+      );
 
       if (!hasSemesterBackup) {
         return NextResponse.json(
