@@ -134,10 +134,20 @@ export function AdminFacultyDashboard({
   useEffect(() => {
     const tabParam = searchParams?.get("tab") || searchParams?.get("section");
     const normalizedParam = normalizeAdminSection(tabParam);
-    if (normalizedParam && normalizedParam !== activeSection) {
-      setActiveSection(normalizedParam);
+    if (!normalizedParam) return;
+
+    if (typeof window !== "undefined") {
+      const urlParams = new URLSearchParams(window.location.search);
+      const urlParam = normalizeAdminSection(
+        urlParams.get("tab") || urlParams.get("section"),
+      );
+      if (urlParam && urlParam !== normalizedParam) {
+        return;
+      }
     }
-  }, [searchParams, activeSection]);
+
+    setActiveSection((prev) => (prev === normalizedParam ? prev : normalizedParam));
+  }, [searchParams]);
 
   // Browser back/forward popstate listener for accurate history back navigation
   useEffect(() => {
@@ -146,8 +156,8 @@ export function AdminFacultyDashboard({
         const params = new URLSearchParams(window.location.search);
         const tabParam = params.get("tab") || params.get("section");
         const norm = normalizeAdminSection(tabParam);
-        if (norm && norm !== activeSection) {
-          setActiveSection(norm);
+        if (norm) {
+          setActiveSection((prev) => (prev === norm ? prev : norm));
         }
         const fId = params.get("facultyId");
         setSelectedFacultyId(fId || null);
@@ -155,7 +165,7 @@ export function AdminFacultyDashboard({
     }
     window.addEventListener("popstate", handlePopState);
     return () => window.removeEventListener("popstate", handlePopState);
-  }, [activeSection]);
+  }, []);
 
   const handleSetActiveSection = (section: AdminSection) => {
     setActiveSection(section);

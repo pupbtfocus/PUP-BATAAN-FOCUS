@@ -387,10 +387,20 @@ export function SuperAdminDashboard({
   useEffect(() => {
     const tabParam = searchParams?.get("tab") || searchParams?.get("section");
     const normalizedParam = normalizeSuperAdminSection(tabParam);
-    if (normalizedParam && normalizedParam !== activeSection) {
-      setActiveSection(normalizedParam);
+    if (!normalizedParam) return;
+
+    if (typeof window !== "undefined") {
+      const urlParams = new URLSearchParams(window.location.search);
+      const urlParam = normalizeSuperAdminSection(
+        urlParams.get("tab") || urlParams.get("section"),
+      );
+      if (urlParam && urlParam !== normalizedParam) {
+        return;
+      }
     }
-  }, [searchParams, activeSection]);
+
+    setActiveSection((prev) => (prev === normalizedParam ? prev : normalizedParam));
+  }, [searchParams]);
 
   // Listener for instant admin view navigation requests from notification drawer
   useEffect(() => {
