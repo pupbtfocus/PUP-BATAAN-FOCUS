@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { Check, CheckCircle, Download, Eye, Folder, NavArrowLeft, NavArrowRight, Notes, WarningCircle } from "iconoir-react";
+import { ChatBubble, Check, CheckCircle, Download, Eye, Folder, NavArrowLeft, NavArrowRight, Notes, WarningCircle } from "iconoir-react";
 import { AppIcon } from "@/components/ui/app-icon";
 import { REQUIREMENT_LABEL, type RequirementCode } from "@/config/compliance";
 import { SubmissionStatusBadge } from "./submission-status-badge";
@@ -56,6 +56,7 @@ export interface SubmissionHistoryListProps<T extends PastSubmissionItem = PastS
   viewedSubmissionIds?: Set<string>;
   getRequirementTitle?: (code: string) => string;
   templateMandatoryMap?: Map<string, boolean>;
+  totalRequiredCount?: number;
   emptyMessage?: string;
   className?: string;
 }
@@ -145,6 +146,10 @@ interface HistoryClassCardGroup<T> {
   isGeneral?: boolean;
 }
 
+function cleanDisplayFileName(rawName: string): string {
+  return rawName.replace(/^\d+_/, "");
+}
+
 export function SubmissionHistoryList<T extends PastSubmissionItem = PastSubmissionItem>({
   submissions,
   classes = [],
@@ -153,6 +158,7 @@ export function SubmissionHistoryList<T extends PastSubmissionItem = PastSubmiss
   viewedSubmissionIds = new Set(),
   getRequirementTitle,
   templateMandatoryMap,
+  totalRequiredCount,
   emptyMessage = "No validated documents found for the selected academic term.",
   className = "",
 }: SubmissionHistoryListProps<T>) {
@@ -184,7 +190,7 @@ export function SubmissionHistoryList<T extends PastSubmissionItem = PastSubmiss
 
     // 2. Discover classes from submissions
     submissions.forEach((sub) => {
-      if (sub.faculty_class && !sub.faculty_class.is_archived) {
+      if (sub.faculty_class) {
         const fc = sub.faculty_class;
         const key = fc.id || `${fc.section_code}_${fc.subject_code}`;
         if (!classMap.has(key) && !(fc.id && classMap.has(fc.id))) {
@@ -236,7 +242,7 @@ export function SubmissionHistoryList<T extends PastSubmissionItem = PastSubmiss
       });
     }
 
-    return groups;
+    return groups.filter((g) => g.submissions.length > 0);
   }, [classes, submissions]);
 
   const selectedGroup = React.useMemo(() => {
@@ -285,7 +291,18 @@ export function SubmissionHistoryList<T extends PastSubmissionItem = PastSubmiss
       <div className={cn("w-full space-y-4", className)}>
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5 pt-1">
           {classGroups.map((group) => {
-            const validatedCount = group.submissions.length;
+            const validatedCount = group.submissions.filter((s) => {
+              const st = (s.status || "").toLowerCase();
+              return st === "validated" || st === "approved";
+            }).length;
+            const totalReqs =
+              typeof totalRequiredCount === "number" && totalRequiredCount > 0
+                ? totalRequiredCount
+                : Math.max(validatedCount, 1);
+            const progressPct = Math.min(
+              100,
+              Math.round((validatedCount / totalReqs) * 100),
+            );
 
             return (
               <div
@@ -332,7 +349,7 @@ export function SubmissionHistoryList<T extends PastSubmissionItem = PastSubmiss
                         <div className="flex items-center gap-1.5 flex-wrap">
                           {group.units !== null ? (
                             <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-bold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
-                              {group.units} Units
+                              {Number(group.units).toFixed(1)} Units
                             </span>
                           ) : (
                             <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-bold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700">
@@ -369,6 +386,22 @@ export function SubmissionHistoryList<T extends PastSubmissionItem = PastSubmiss
                           </p>
                         </div>
                       </div>
+
+                      {/* Validation Progress Bar */}
+                      <div className="pt-1">
+                        <div className="flex items-center justify-between text-[11px] font-medium text-slate-500 dark:text-slate-400 mb-1.5">
+                          <span>Validation Progress</span>
+                          <span className="font-bold text-slate-700 dark:text-slate-300">
+                            {progressPct}% ({validatedCount}/{totalReqs} Validated)
+                          </span>
+                        </div>
+                        <div className="h-1.5 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                          <div
+                            className="h-full bg-gradient-to-r from-amber-500 to-emerald-500 transition-all duration-300 rounded-full"
+                            style={{ width: `${progressPct}%` }}
+                          />
+                        </div>
+                      </div>
                     </div>
 
                     {/* Bottom Action Footer: Solid Amber CTA */}
@@ -376,7 +409,7 @@ export function SubmissionHistoryList<T extends PastSubmissionItem = PastSubmiss
                       <div className="w-full flex items-center justify-between px-3.5 py-2 rounded-xl bg-amber-400 group-hover:bg-amber-500 border border-amber-500 transition-all duration-200 shadow-2xs">
                         <span className="text-xs font-extrabold text-amber-950 flex items-center gap-2">
                           <AppIcon icon={Folder} size="xs" color="inherit" />
-                          <span>View Validated Documents</span>
+                          <span>View Verified Documents</span>
                         </span>
                         <span className="inline-flex items-center justify-center h-6 w-6 rounded-full bg-[#780000] text-white group-hover:bg-[#5e0000] transition-colors shadow-2xs">
                           <AppIcon icon={NavArrowRight} size="xs" color="white" />
@@ -398,17 +431,17 @@ export function SubmissionHistoryList<T extends PastSubmissionItem = PastSubmiss
 
   return (
     <div className={cn("w-full space-y-4", className)}>
-      {/* Subject Context Header with Back Button */}
-      <div className="rounded-2xl border-2 border-amber-400/80 dark:border-amber-500/60 bg-amber-50/80 dark:bg-amber-950/20 p-3 sm:p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs">
+      {/* Subject Context Header with Back Button matching Admin Validation History */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 py-1">
         <div className="flex items-center gap-2.5 min-w-0 flex-1">
           <button
             type="button"
             onClick={() => setSelectedClassKey(null)}
             className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-[#780000] hover:bg-[#5e0000] text-white border border-[#5e0000] text-xs font-bold transition-all cursor-pointer shadow-xs active:scale-95 shrink-0"
-            title="Return to Subject Cards"
+            title="Return to Class List"
           >
             <AppIcon icon={NavArrowLeft} size="sm" color="white" />
-            <span>Back to Subject Cards</span>
+            <span>Back to Class List</span>
           </button>
 
           <div className="h-6 w-px bg-amber-400/60 dark:bg-amber-600/40 hidden sm:block shrink-0" />
@@ -452,36 +485,33 @@ export function SubmissionHistoryList<T extends PastSubmissionItem = PastSubmiss
         </div>
       ) : null}
 
-      {/* ─── Desktop Table View with Horizontal Scroll Container ─── */}
-      <div className="hidden md:block overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm transition-colors">
+      {/* ─── Desktop Table View matching Admin Validation History ─── */}
+      <div className="hidden md:block overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xs transition-colors">
         <div className="w-full overflow-x-auto custom-scrollbar">
-          <table className="w-full text-left text-xs min-w-[920px]" aria-label="Validation history table">
-            <thead className="border-b border-slate-200 dark:border-slate-800 bg-slate-50/90 dark:bg-slate-950/80 text-slate-600 dark:text-slate-400 text-[11px] font-bold uppercase tracking-wider">
+          <table className="w-full table-fixed text-left text-xs text-slate-600 dark:text-slate-300 min-w-[960px]" aria-label="Validation history table">
+            <thead className="bg-slate-50 dark:bg-slate-950/70 border-b border-slate-200 dark:border-slate-800 text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
               <tr>
-                <th scope="col" className="w-[30%] px-6 py-4">
+                <th scope="col" className="px-4 py-3 w-[23%] text-center">
                   Requirement
                 </th>
-                <th scope="col" className="w-[10%] px-4 py-4 text-center whitespace-nowrap">
+                <th scope="col" className="px-3 py-3 w-[10%] text-center">
                   Type
                 </th>
-                <th scope="col" className="w-[16%] px-5 py-4 whitespace-nowrap">
-                  Academic Term
+                <th scope="col" className="px-4 py-3 w-[23%] text-center">
+                  File Versions
                 </th>
-                <th scope="col" className="w-[14%] px-5 py-4 whitespace-nowrap">
-                  Date Validated
+                <th scope="col" className="px-4 py-3 w-[22%]">
+                  Notes &amp; Remarks
                 </th>
-                <th scope="col" className="w-[8%] px-4 py-4 text-center whitespace-nowrap">
+                <th scope="col" className="px-3 py-3 w-[12%] text-center">
                   Status
                 </th>
-                <th scope="col" className="w-[12%] px-4 py-4">
-                  Reviewer Remarks
-                </th>
-                <th scope="col" className="w-[10%] px-6 py-4 text-right whitespace-nowrap">
-                  Action
+                <th scope="col" className="px-3 py-3 w-[10%] text-center">
+                  Actions
                 </th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60">
+            <tbody className="divide-y divide-slate-100 dark:divide-slate-800/70">
               {displayedSubmissions.map((sub) => {
                 const title = getRequirementTitle
                   ? getRequirementTitle(sub.requirementCode)
@@ -491,101 +521,177 @@ export function SubmissionHistoryList<T extends PastSubmissionItem = PastSubmiss
                   : true;
                 const adminFeedback =
                   sub.adminRemarks || sub.admin_remarks || sub.feedback;
-                const dateValidated =
-                  sub.dateValidated || sub.updatedAt || sub.reviewedAt || sub.submittedAt;
+                const facultyNote =
+                  (sub.remarks || sub.note) &&
+                  (sub.remarks || sub.note) !== adminFeedback
+                    ? sub.remarks || sub.note
+                    : null;
+                const isCleanedDoc = Boolean(
+                  sub.storagePath?.startsWith("__cleaned__"),
+                );
+                const rawName =
+                  sub.fileName ||
+                  (isCleanedDoc
+                    ? sub.storagePath?.replace(/^__cleaned__\/?/, "").trim() || ""
+                    : sub.storagePath?.split("/").pop() || "") ||
+                  "Document";
+                const displayFileName = cleanDisplayFileName(rawName);
+                const submittedDateText = sub.submittedAt
+                  ? formatDateTime(sub.submittedAt)
+                  : null;
 
                 return (
                   <tr
                     key={sub.id}
-                    className="bg-white dark:bg-slate-900 hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-colors"
+                    className="hover:bg-slate-50/70 dark:hover:bg-slate-800/40 transition-colors"
                   >
-                    {/* Requirement Name */}
-                    <td className="px-6 py-4.5 font-medium text-slate-900 dark:text-slate-100">
-                      <div className="min-w-0 flex-1">
-                        <span className="font-bold text-sm text-slate-900 dark:text-slate-100 leading-snug">
+                    {/* Requirement */}
+                    <td className="px-4 py-3.5 align-middle text-center">
+                      <div className="space-y-1 min-w-0 text-center">
+                        <span className="font-semibold text-slate-900 dark:text-slate-100 text-xs block leading-snug">
                           {title}
                         </span>
-                        {sub.fileName && (
-                          <span className="text-[11px] text-slate-500 dark:text-slate-400 font-medium truncate block max-w-[260px] mt-0.5" title={sub.fileName}>
-                            {sub.fileName}
+                        {submittedDateText && submittedDateText !== "—" ? (
+                          <span className="text-[11px] text-slate-500 dark:text-slate-400 block">
+                            Submitted: {submittedDateText}
+                          </span>
+                        ) : (
+                          <span className="text-[11px] text-slate-400 dark:text-slate-500 italic block">
+                            Not submitted
                           </span>
                         )}
                       </div>
                     </td>
 
-                    {/* Type (Required / Optional) column */}
-                    <td className="px-4 py-4.5 align-middle text-center whitespace-nowrap">
-                      {isMandatory ? (
-                        <span className="inline-flex items-center px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider bg-[#780000] text-white border border-[#5e0000] shadow-2xs">
-                          Required
-                        </span>
-                      ) : (
-                        <span className="inline-flex items-center px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider bg-slate-700 dark:bg-slate-700 text-white border border-slate-600 shadow-2xs">
-                          Optional
-                        </span>
-                      )}
-                    </td>
-
-                    {/* Academic Term */}
-                    <td className="px-5 py-4.5 text-slate-600 dark:text-slate-400 whitespace-nowrap">
-                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 shadow-2xs">
-                        {sub.semester} • S.Y. {sub.academicYear}
-                      </span>
-                    </td>
-
-                    {/* Date Validated */}
-                    <td className="px-5 py-4.5 whitespace-nowrap">
-                      <div className="text-xs font-semibold text-slate-800 dark:text-slate-200">
-                        {formatDateOnly(dateValidated)}
-                      </div>
-                      <div className="text-[11px] text-slate-400 dark:text-slate-500 font-medium">
-                        {formatTimeOnly(dateValidated)}
-                      </div>
-                    </td>
-
-                    {/* Status Column: Check Icon Only */}
-                    <td className="px-4 py-4.5 whitespace-nowrap text-center">
+                    {/* Type */}
+                    <td className="px-3 py-3.5 align-middle text-center">
                       <div className="flex items-center justify-center">
-                        <SubmissionStatusBadge status="validated" size="md" iconOnly />
+                        {isMandatory ? (
+                          <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider bg-[#780000] text-white border border-[#5e0000] shadow-2xs">
+                            Required
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider bg-slate-700 text-white border border-slate-600 shadow-2xs">
+                            Optional
+                          </span>
+                        )}
                       </div>
                     </td>
 
-                    {/* Reviewer Remarks */}
-                    <td className="px-4 py-4.5 text-slate-600 dark:text-slate-400">
-                      {adminFeedback ? (
-                        <div className="max-w-[240px] rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/60 p-2.5 text-xs text-slate-700 dark:text-slate-300 leading-relaxed shadow-2xs" title={adminFeedback}>
-                          <span className="font-bold text-[10px] uppercase tracking-wider text-[#0b5336] dark:text-emerald-400 block mb-0.5">Remarks:</span>
-                          <p className="italic">&ldquo;{adminFeedback}&rdquo;</p>
+                    {/* File Versions */}
+                    <td className="px-4 py-3.5 align-middle text-center">
+                      <div className="space-y-1.5 min-w-0 flex flex-col items-center justify-center">
+                        {isCleanedDoc ? (
+                          <div className="flex flex-col items-center justify-center gap-1.5 rounded-lg border border-slate-200/80 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-950/60 px-3 py-2 text-center text-xs w-full">
+                            <span
+                              className="font-medium text-slate-800 dark:text-slate-200 text-xs break-words leading-snug max-w-full"
+                              title={rawName}
+                            >
+                              {displayFileName}
+                            </span>
+                            <span className="shrink-0 rounded-md border border-amber-600 bg-amber-500 px-2.5 py-0.5 text-[10px] font-bold text-slate-950 shadow-2xs">
+                              Cleaned (Archived)
+                            </span>
+                          </div>
+                        ) : (
+                          <div className="flex items-center justify-center gap-2 rounded-lg border border-slate-200/80 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-950/60 px-3 py-2 text-xs w-full">
+                            <span
+                              className="truncate font-medium text-slate-800 dark:text-slate-200 text-xs"
+                              title={rawName}
+                            >
+                              {displayFileName}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    </td>
+
+                    {/* Notes & Remarks */}
+                    <td className="px-4 py-3.5 align-middle">
+                      {facultyNote || adminFeedback ? (
+                        <div className="flex flex-col gap-1.5 min-w-0">
+                          {facultyNote ? (
+                            <div
+                              className="rounded-lg border border-slate-200/90 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-900/40 px-2.5 py-1.5 text-xs shadow-2xs min-w-0"
+                              title={facultyNote}
+                            >
+                              <div className="flex items-center gap-1.5 mb-1">
+                                <span className="inline-flex items-center justify-center h-4 w-4 rounded-full bg-slate-200/70 dark:bg-slate-800 text-slate-600 dark:text-slate-400 shrink-0 [&>svg]:h-2.5 [&>svg]:w-2.5">
+                                  <AppIcon icon={ChatBubble} size="xs" color="inherit" />
+                                </span>
+                                <span className="text-[10px] font-bold text-slate-700 dark:text-slate-300 tracking-tight">
+                                  Faculty Remarks
+                                </span>
+                              </div>
+                              <p className="text-[11px] text-slate-800 dark:text-slate-200 font-medium leading-relaxed line-clamp-2 pl-5 break-words">
+                                &ldquo;{facultyNote}&rdquo;
+                              </p>
+                            </div>
+                          ) : null}
+
+                          {adminFeedback ? (
+                            <div
+                              className="rounded-lg border border-slate-200/90 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-900/40 px-2.5 py-1.5 text-xs shadow-2xs min-w-0"
+                              title={adminFeedback}
+                            >
+                              <div className="flex items-center gap-1.5 mb-1">
+                                <span className="inline-flex items-center justify-center h-4 w-4 rounded-full bg-slate-200/70 dark:bg-slate-800 text-slate-600 dark:text-slate-400 shrink-0 [&>svg]:h-2.5 [&>svg]:w-2.5">
+                                  <AppIcon icon={Check} size="xs" color="inherit" strokeWidth={2.5} />
+                                </span>
+                                <span className="text-[10px] font-bold text-slate-700 dark:text-slate-300 tracking-tight">
+                                  Validated Remarks
+                                </span>
+                              </div>
+                              <p className="text-[11px] text-slate-800 dark:text-slate-200 font-medium leading-relaxed line-clamp-2 pl-5 break-words">
+                                &ldquo;{adminFeedback}&rdquo;
+                              </p>
+                            </div>
+                          ) : null}
                         </div>
                       ) : (
-                        <span className="text-slate-400 dark:text-slate-600 text-xs">—</span>
+                        <div className="pt-0.5 text-center">
+                          <span className="text-slate-400 dark:text-slate-600 text-xs italic block">
+                            &mdash;
+                          </span>
+                        </div>
                       )}
                     </td>
 
-                    {/* Action Column */}
-                    <td className="px-6 py-4.5 text-right whitespace-nowrap">
-                      <div className="flex items-center justify-end gap-2">
-                        <button
-                          type="button"
-                          aria-label={`View submitted file for ${title}`}
-                          onClick={() => onViewFile(sub)}
-                          className="inline-flex items-center gap-1.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white hover:bg-slate-50 dark:bg-slate-800 dark:hover:bg-slate-700 px-3 py-1.5 text-xs font-bold text-slate-700 dark:text-slate-200 transition cursor-pointer shadow-2xs active:scale-95"
-                          title="Preview Document"
-                        >
-                          <AppIcon icon={Eye} size="sm" color="default" />
-                          <span>View</span>
-                        </button>
-                        <button
-                          type="button"
-                          aria-label={`Download file for ${title}`}
-                          onClick={() => handleDownload(sub)}
-                          className="inline-flex items-center gap-1.5 rounded-xl border border-[#08412a] bg-[#0b5336] hover:bg-[#08412a] text-white px-3 py-1.5 text-xs font-bold transition cursor-pointer shadow-xs active:scale-95"
-                          title="Download File"
-                        >
-                          <AppIcon icon={Download} size="sm" color="white" />
-                          <span>Download</span>
-                        </button>
+                    {/* Status */}
+                    <td className="px-3 py-3.5 align-middle text-center whitespace-nowrap">
+                      <div className="flex items-center justify-center">
+                        <SubmissionStatusBadge status={sub.status || "Validated"} size="md" />
                       </div>
+                    </td>
+
+                    {/* Actions */}
+                    <td className="px-3 py-3.5 align-middle text-center whitespace-nowrap">
+                      {isCleanedDoc ? (
+                        <span className="text-slate-400 dark:text-slate-600 text-xs">
+                          &mdash;
+                        </span>
+                      ) : (
+                        <div className="flex items-center justify-center gap-1.5">
+                          <button
+                            type="button"
+                            aria-label={`View submitted file for ${title}`}
+                            onClick={() => onViewFile(sub)}
+                            className="p-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 transition cursor-pointer shadow-2xs"
+                            title="Preview Document"
+                          >
+                            <AppIcon icon={Eye} size="sm" color="inherit" />
+                          </button>
+                          <button
+                            type="button"
+                            aria-label={`Download file for ${title}`}
+                            onClick={() => handleDownload(sub)}
+                            className="p-1.5 rounded-lg border border-[#08412a] bg-[#0b5336] hover:bg-[#08412a] text-white transition cursor-pointer shadow-2xs"
+                            title="Download File"
+                          >
+                            <AppIcon icon={Download} size="sm" color="white" />
+                          </button>
+                        </div>
+                      )}
                     </td>
                   </tr>
                 );
@@ -606,6 +712,21 @@ export function SubmissionHistoryList<T extends PastSubmissionItem = PastSubmiss
             : true;
           const adminFeedback =
             sub.adminRemarks || sub.admin_remarks || sub.feedback;
+          const facultyNote =
+            (sub.remarks || sub.note) &&
+            (sub.remarks || sub.note) !== adminFeedback
+              ? sub.remarks || sub.note
+              : null;
+          const isCleanedDoc = Boolean(
+            sub.storagePath?.startsWith("__cleaned__"),
+          );
+          const rawName =
+            sub.fileName ||
+            (isCleanedDoc
+              ? sub.storagePath?.replace(/^__cleaned__\/?/, "").trim() || ""
+              : sub.storagePath?.split("/").pop() || "") ||
+            "Document";
+          const displayFileName = cleanDisplayFileName(rawName);
           const dateValidated =
             sub.dateValidated || sub.updatedAt || sub.reviewedAt || sub.submittedAt;
 
@@ -631,17 +752,22 @@ export function SubmissionHistoryList<T extends PastSubmissionItem = PastSubmiss
                       </span>
                     )}
                   </div>
-                  {sub.fileName && (
-                    <p className="text-xs text-slate-500 dark:text-slate-400 font-medium truncate mt-0.5" title={sub.fileName}>
-                      {sub.fileName}
-                    </p>
-                  )}
-                  <span className="bg-slate-100 text-slate-700 border border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700 px-2.5 py-0.5 text-[10px] font-semibold rounded-md inline-flex items-center mt-1.5 shadow-2xs">
-                    {sub.semester} • S.Y. {sub.academicYear}
-                  </span>
+                  <p className="text-xs text-slate-600 dark:text-slate-300 font-medium break-words mt-1" title={rawName}>
+                    {displayFileName}
+                  </p>
+                  <div className="flex flex-wrap items-center gap-1.5 mt-1.5">
+                    <span className="bg-slate-100 text-slate-700 border border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700 px-2.5 py-0.5 text-[10px] font-semibold rounded-md inline-flex items-center shadow-2xs">
+                      {sub.semester} • S.Y. {sub.academicYear}
+                    </span>
+                    {isCleanedDoc && (
+                      <span className="rounded-md border border-amber-600 bg-amber-500 px-2.5 py-0.5 text-[10px] font-bold text-slate-950 shadow-2xs">
+                        Cleaned (Archived)
+                      </span>
+                    )}
+                  </div>
                 </div>
 
-                <SubmissionStatusBadge status="validated" size="md" iconOnly />
+                <SubmissionStatusBadge status={sub.status || "Validated"} size="md" />
               </div>
 
               {/* Date Validated */}
@@ -650,38 +776,50 @@ export function SubmissionHistoryList<T extends PastSubmissionItem = PastSubmiss
                 <span>Validated: {formatDateTime(dateValidated)}</span>
               </div>
 
-              {/* Reviewer Feedback Callout */}
+              {/* Remarks Callouts */}
+              {facultyNote && (
+                <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/60 text-slate-800 dark:text-slate-200 p-3 text-xs shadow-2xs">
+                  <span className="font-bold uppercase tracking-wider text-[10px] text-slate-600 dark:text-slate-300 mb-1 flex items-center gap-1">
+                    <AppIcon icon={ChatBubble} size="xs" color="inherit" />
+                    Faculty Remarks:
+                  </span>
+                  <p className="italic leading-relaxed">&ldquo;{facultyNote}&rdquo;</p>
+                </div>
+              )}
+
               {adminFeedback && (
                 <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/60 text-slate-800 dark:text-slate-200 p-3 text-xs shadow-2xs">
                   <span className="font-bold uppercase tracking-wider text-[10px] text-[#0b5336] dark:text-emerald-400 mb-1 flex items-center gap-1">
                     <AppIcon icon={Notes} size="xs" color="success" />
-                    Reviewer Remarks:
+                    Validated Remarks:
                   </span>
                   <p className="italic leading-relaxed">&ldquo;{adminFeedback}&rdquo;</p>
                 </div>
               )}
 
               {/* Footer Actions */}
-              <div className="flex items-center justify-end gap-2.5 pt-2.5 border-t border-slate-100 dark:border-slate-800">
-                <button
-                  type="button"
-                  aria-label={`View submitted file for ${title}`}
-                  onClick={() => onViewFile(sub)}
-                  className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white hover:bg-slate-50 dark:bg-slate-800 dark:hover:bg-slate-700 px-3 py-2 text-xs font-bold text-slate-700 dark:text-slate-200 transition cursor-pointer shadow-2xs active:scale-95"
-                >
-                  <AppIcon icon={Eye} size="sm" color="default" />
-                  <span>View</span>
-                </button>
-                <button
-                  type="button"
-                  aria-label={`Download file for ${title}`}
-                  onClick={() => handleDownload(sub)}
-                  className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-xl border border-[#08412a] bg-[#0b5336] hover:bg-[#08412a] text-white px-3 py-2 text-xs font-bold transition cursor-pointer shadow-xs active:scale-95"
-                >
-                  <AppIcon icon={Download} size="sm" color="white" />
-                  <span>Download</span>
-                </button>
-              </div>
+              {!isCleanedDoc && (
+                <div className="flex items-center justify-end gap-2.5 pt-2.5 border-t border-slate-100 dark:border-slate-800">
+                  <button
+                    type="button"
+                    aria-label={`View submitted file for ${title}`}
+                    onClick={() => onViewFile(sub)}
+                    className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white hover:bg-slate-50 dark:bg-slate-800 dark:hover:bg-slate-700 px-3 py-2 text-xs font-bold text-slate-700 dark:text-slate-200 transition cursor-pointer shadow-2xs active:scale-95"
+                  >
+                    <AppIcon icon={Eye} size="sm" color="default" />
+                    <span>View</span>
+                  </button>
+                  <button
+                    type="button"
+                    aria-label={`Download file for ${title}`}
+                    onClick={() => handleDownload(sub)}
+                    className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-xl border border-[#08412a] bg-[#0b5336] hover:bg-[#08412a] text-white px-3 py-2 text-xs font-bold transition cursor-pointer shadow-xs active:scale-95"
+                  >
+                    <AppIcon icon={Download} size="sm" color="white" />
+                    <span>Download</span>
+                  </button>
+                </div>
+              )}
             </article>
           );
         })}

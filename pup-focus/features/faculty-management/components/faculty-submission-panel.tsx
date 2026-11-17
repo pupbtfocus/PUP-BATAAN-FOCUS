@@ -55,6 +55,7 @@ import {
   Activity,
   Archive,
   Calendar,
+  ChatBubble,
   Check,
   CheckCircle,
   ClockRotateRight,
@@ -321,6 +322,16 @@ type PastSubmission = {
   is_read?: boolean;
   isViewed?: boolean;
   viewed_at?: string;
+  classId?: string | null;
+  class_id?: string | null;
+  faculty_class?: {
+    id: string;
+    subject_code: string;
+    description: string;
+    units: number;
+    section_code: string;
+    is_archived?: boolean;
+  } | null;
 };
 type SubmissionFormState = {
   academicYear: string;
@@ -782,10 +793,37 @@ function FacultySubmissionPanelContent({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitModalOpen, setIsSubmitModalOpen] = useState(false);
   const [isGuideOpen, setIsGuideOpen] = useState(false);
-  const [historyAcademicYear, setHistoryAcademicYear] = useState<string>("All");
+  const [historyAcademicYear, setHistoryAcademicYear] = useState<string>(
+    () =>
+      initialData?.academicYear ||
+      initialData?.availableAcademicYears?.[0] ||
+      "",
+  );
   const [historySemester, setHistorySemester] = useState<
     (typeof SEMESTER_OPTIONS)[number] | "All"
-  >("All");
+  >(
+    () =>
+      (initialData?.semester as (typeof SEMESTER_OPTIONS)[number]) ||
+      "1st Semester",
+  );
+  const [historyDbYears, setHistoryDbYears] = useState<string[]>(
+    () => initialData?.availableAcademicYears ?? [],
+  );
+  const [historyTermsByYear, setHistoryTermsByYear] = useState<
+    Record<string, (typeof SEMESTER_OPTIONS)[number][]>
+  >(() => initialData?.termsByYear ?? {});
+  const [historyCurrentTerm, setHistoryCurrentTerm] = useState<{
+    academicYear: string;
+    semester: (typeof SEMESTER_OPTIONS)[number];
+  } | null>(() =>
+    initialData?.academicYear && initialData?.semester
+      ? {
+          academicYear: initialData.academicYear,
+          semester: initialData.semester as (typeof SEMESTER_OPTIONS)[number],
+        }
+      : null,
+  );
+  const hasManuallyChangedHistoryTermRef = useRef(false);
   const [pastSubmissions, setPastSubmissions] = useState<PastSubmission[]>(
     () => (initialData?.pastSubmissions as PastSubmission[]) || [],
   );
@@ -959,6 +997,9 @@ function FacultySubmissionPanelContent({
 
   // Class Edit, Archive, Delete, and Filter States
   const [classTab, setClassTab] = useState<"active" | "archived">("active");
+  const [step2FilterMode, setStep2FilterMode] = useState<
+    "all" | "pending" | "validated" | "revision" | "not_submitted"
+  >("all");
   const [classSearchQuery, setClassSearchQuery] = useState("");
   const [classSectionFilter, setClassSectionFilter] = useState<string>("ALL");
   const [isEditClassModalOpen, setIsEditClassModalOpen] = useState(false);
@@ -1059,17 +1100,106 @@ function FacultySubmissionPanelContent({
     submissionWindow.semester,
   );
   const historyAcademicYears = useMemo(() => {
-    const yearsSet = new Set<string>(academicYears);
+    const yearsSet = new Set<string>();
+    historyDbYears.forEach((ay) => {
+      if (ay) yearsSet.add(ay);
+    });
+    if (initialData?.availableAcademicYears) {
+      initialData.availableAcademicYears.forEach((ay) => {
+        if (ay) yearsSet.add(ay);
+      });
+    }
+      const preferredActiveAy =
+      historyCurrentTerm?.academicYear ||
+      currentAcademicTerm?.academic_year ||
+      submissionWindow?.academicYear ||
+      initialData?.academicYear ||
+      "";
+    if (preferredActiveAy) {
+      yearsSet.add(preferredActiveAy);
+    }
     pastSubmissions.forEach((sub) => {
       if (sub.academicYear) yearsSet.add(sub.academicYear);
     });
-    return ["All", ...Array.from(yearsSet)];
-  }, [academicYears, pastSubmissions]);
+    const sortedYears = Array.from(yearsSet).sort((a, b) =>
+      b.localeCompare(a),
+    );
+    if (sortedYears.length === 0 && academicYears[0]) {
+      return [academicYears[0]];
+    }
+    return sortedYears;
+  }, [
+    historyDbYears,
+    initialData?.availableAcademicYears,
+    initialData?.academicYear,
+    historyCurrentTerm?.academicYear,
+    currentAcademicTerm?.academic_year,
+    submissionWindow?.academicYear,
+    pastSubmissions,
+    academicYears,
+  ]);
   const historySemesterOptions = useMemo<
-    Array<(typeof SEMESTER_OPTIONS)[number] | "All">
+    Array<(typeof SEMESTER_OPTIONS)[number]>
   >(() => {
-    return ["All", ...SEMESTER_OPTIONS];
-  }, []);
+    const sortOrder: Record<string, number> = {
+      "1st Semester": 1,
+      "2nd Semester": 2,
+      "Summer Semester": 3,
+    };
+    const semestersSet = new Set<(typeof SEMESTER_OPTIONS)[number]>();
+    const dbSemesters = historyAcademicYear
+      ? historyTermsByYear[historyAcademicYear] ??
+        initialData?.termsByYear?.[historyAcademicYear] ??
+        []
+      : [];
+    dbSemesters.forEach((sem) => {
+      if (sem) semestersSet.add(sem);
+    });
+    const preferredActiveAy =
+      historyCurrentTerm?.academicYear ||
+      currentAcademicTerm?.academic_year ||
+      submissionWindow?.academicYear ||
+      initialData?.academicYear ||
+      "";
+    const preferredActiveSem = (historyCurrentTerm?.semester ||
+      currentAcademicTerm?.semester ||
+      submissionWindow?.semester ||
+      initialData?.semester ||
+      "") as (typeof SEMESTER_OPTIONS)[number] | "";
+    if (
+      preferredActiveSem &&
+      (!historyAcademicYear ||
+        !preferredActiveAy ||
+        historyAcademicYear === preferredActiveAy)
+    ) {
+      semestersSet.add(preferredActiveSem as (typeof SEMESTER_OPTIONS)[number]);
+    }
+    pastSubmissions.forEach((sub) => {
+      if (
+        sub.semester &&
+        (!historyAcademicYear || sub.academicYear === historyAcademicYear)
+      ) {
+        semestersSet.add(sub.semester);
+      }
+    });
+    const sorted = Array.from(semestersSet).sort(
+      (a, b) => (sortOrder[a] ?? 99) - (sortOrder[b] ?? 99),
+    );
+    return sorted.length > 0 ? sorted : [...SEMESTER_OPTIONS];
+  }, [
+    historyAcademicYear,
+    historyTermsByYear,
+    initialData?.termsByYear,
+    initialData?.academicYear,
+    initialData?.semester,
+    historyCurrentTerm?.academicYear,
+    historyCurrentTerm?.semester,
+    currentAcademicTerm?.academic_year,
+    currentAcademicTerm?.semester,
+    submissionWindow?.academicYear,
+    submissionWindow?.semester,
+    pastSubmissions,
+  ]);
   const [isRequirementAlertOpen, setIsRequirementAlertOpen] = useState(false);
   const [hasTriggeredRequirementAlert, setHasTriggeredRequirementAlert] =
     useState(false);
@@ -1110,6 +1240,25 @@ function FacultySubmissionPanelContent({
       const data = await response.json();
       const historyList: PastSubmission[] = data.submissions || [];
       setPastSubmissions(historyList);
+      if (Array.isArray(data.availableAcademicYears)) {
+        setHistoryDbYears(data.availableAcademicYears);
+      }
+      if (data.termsByYear && typeof data.termsByYear === "object") {
+        setHistoryTermsByYear(data.termsByYear);
+      }
+      if (
+        data.currentAcademicTerm?.academicYear &&
+        data.currentAcademicTerm?.semester
+      ) {
+        setHistoryCurrentTerm({
+          academicYear: data.currentAcademicTerm.academicYear,
+          semester: data.currentAcademicTerm.semester,
+        });
+        if (!hasManuallyChangedHistoryTermRef.current) {
+          setHistoryAcademicYear(data.currentAcademicTerm.academicYear);
+          setHistorySemester(data.currentAcademicTerm.semester);
+        }
+      }
       setViewedSubmissionIds((current) => {
         const next = new Set(current);
         historyList.forEach((s) => {
@@ -1128,14 +1277,17 @@ function FacultySubmissionPanelContent({
     }
   }
   async function handleBulkDownload() {
-    if (filteredPastSubmissions.length === 0 || isBulkDownloading) return;
+    const downloadableSubs = filteredPastSubmissions.filter((s) =>
+      Boolean(s.storagePath && !s.storagePath.startsWith("__cleaned__")),
+    );
+    if (downloadableSubs.length === 0 || isBulkDownloading) return;
     try {
       setIsBulkDownloading(true);
       setBulkDownloadProgressText("Preparing...");
       const zip = new JSZip();
       let processed = 0;
-      const total = filteredPastSubmissions.length;
-      for (const sub of filteredPastSubmissions) {
+      const total = downloadableSubs.length;
+      for (const sub of downloadableSubs) {
         processed++;
         setBulkDownloadProgressText(`Downloading ${processed}/${total}...`);
         const downloadUrl = `/api/faculty/submissions/view?submissionId=${encodeURIComponent(sub.id)}&download=true`;
@@ -1557,14 +1709,99 @@ function FacultySubmissionPanelContent({
     setSelectedSemester(currentTerm.semester);
   }, [submissionWindow]);
   useEffect(() => {
-    if (!historyAcademicYears.includes(historyAcademicYear)) {
-      setHistoryAcademicYear(historyAcademicYears[0] ?? "All");
+    const preferredAy =
+      historyCurrentTerm?.academicYear ||
+      currentAcademicTerm?.academic_year ||
+      submissionWindow?.academicYear ||
+      initialData?.academicYear ||
+      "";
+    const preferredSem = (historyCurrentTerm?.semester ||
+      currentAcademicTerm?.semester ||
+      submissionWindow?.semester ||
+      initialData?.semester ||
+      "") as (typeof SEMESTER_OPTIONS)[number] | "";
+
+    if (
+      isHistoryModalOpen &&
+      !hasManuallyChangedHistoryTermRef.current &&
+      preferredAy &&
+      preferredSem
+    ) {
+      if (
+        historyAcademicYears.includes(preferredAy) &&
+        historyAcademicYear !== preferredAy
+      ) {
+        setHistoryAcademicYear(preferredAy);
+      }
+      if (
+        historySemesterOptions.includes(
+          preferredSem as (typeof SEMESTER_OPTIONS)[number],
+        ) &&
+        historySemester !== preferredSem
+      ) {
+        setHistorySemester(preferredSem as (typeof SEMESTER_OPTIONS)[number]);
+      }
+      return;
     }
-    if (!historySemesterOptions.includes(historySemester)) {
-      setHistorySemester(historySemesterOptions[0] ?? "All");
+
+    if (
+      historyAcademicYears.length > 0 &&
+      !historyAcademicYears.includes(historyAcademicYear)
+    ) {
+      setHistoryAcademicYear(
+        preferredAy && historyAcademicYears.includes(preferredAy)
+          ? preferredAy
+          : historyAcademicYears[0],
+      );
     }
-  }, [historyAcademicYears, historySemesterOptions]);
+    if (
+      historySemesterOptions.length > 0 &&
+      (historySemester === "All" ||
+        !historySemesterOptions.includes(historySemester))
+    ) {
+      setHistorySemester(
+        preferredSem &&
+          historySemesterOptions.includes(
+            preferredSem as (typeof SEMESTER_OPTIONS)[number],
+          )
+          ? (preferredSem as (typeof SEMESTER_OPTIONS)[number])
+          : historySemesterOptions[0],
+      );
+    }
+  }, [
+    isHistoryModalOpen,
+    historyAcademicYears,
+    historyAcademicYear,
+    historySemesterOptions,
+    historySemester,
+    historyCurrentTerm?.academicYear,
+    historyCurrentTerm?.semester,
+    currentAcademicTerm?.academic_year,
+    currentAcademicTerm?.semester,
+    submissionWindow?.academicYear,
+    submissionWindow?.semester,
+    initialData?.academicYear,
+    initialData?.semester,
+  ]);
   function openHistoryModal() {
+    hasManuallyChangedHistoryTermRef.current = false;
+    const preferredAy =
+      historyCurrentTerm?.academicYear ||
+      currentAcademicTerm?.academic_year ||
+      submissionWindow?.academicYear ||
+      initialData?.academicYear ||
+      "";
+    const preferredSem = (historyCurrentTerm?.semester ||
+      currentAcademicTerm?.semester ||
+      submissionWindow?.semester ||
+      initialData?.semester ||
+      "") as (typeof SEMESTER_OPTIONS)[number] | "";
+    if (preferredAy) {
+      setHistoryAcademicYear(preferredAy);
+    }
+    if (preferredSem) {
+      setHistorySemester(preferredSem);
+    }
     setIsHistoryModalOpen(true);
     void fetchHistory({ silent: pastSubmissions.length > 0 });
     try {
@@ -1593,6 +1830,20 @@ function FacultySubmissionPanelContent({
     if (view === "history") {
       targetView = "status";
       openHistory = true;
+      hasManuallyChangedHistoryTermRef.current = false;
+      const preferredAy =
+        historyCurrentTerm?.academicYear ||
+        currentAcademicTerm?.academic_year ||
+        submissionWindow?.academicYear ||
+        initialData?.academicYear ||
+        "";
+      const preferredSem = (historyCurrentTerm?.semester ||
+        currentAcademicTerm?.semester ||
+        submissionWindow?.semester ||
+        initialData?.semester ||
+        "") as (typeof SEMESTER_OPTIONS)[number] | "";
+      if (preferredAy) setHistoryAcademicYear(preferredAy);
+      if (preferredSem) setHistorySemester(preferredSem);
     }
     setActiveView(targetView);
     setIsHistoryModalOpen(openHistory);
@@ -1627,6 +1878,31 @@ function FacultySubmissionPanelContent({
       return matchesYear && matchesSemester;
     });
   }, [historyAcademicYear, historySemester, pastSubmissions]);
+  const historyScopedClasses = useMemo(() => {
+    const classIdsWithSubmissions = new Set(
+      filteredPastSubmissions
+        .map((s) => s.classId || s.class_id)
+        .filter((id): id is string => Boolean(id)),
+    );
+    const normTargetSem = historySemester.toLowerCase().trim();
+    return facultyClasses.filter((cls) => {
+      if (classIdsWithSubmissions.has(cls.id)) {
+        return true;
+      }
+      if (!cls.academic_year && !cls.semester) {
+        return false;
+      }
+      const matchesYear =
+        historyAcademicYear === "All" ||
+        !cls.academic_year ||
+        cls.academic_year === historyAcademicYear;
+      const matchesSem =
+        historySemester === "All" ||
+        !cls.semester ||
+        cls.semester.toLowerCase().trim() === normTargetSem;
+      return matchesYear && matchesSem;
+    });
+  }, [facultyClasses, filteredPastSubmissions, historyAcademicYear, historySemester]);
   const deduplicatedRecentActivities = useMemo(() => {
     const seen = new Set<string>();
     const list: PastSubmission[] = [];
@@ -1912,12 +2188,16 @@ function FacultySubmissionPanelContent({
       const resData = await res.json();
       const newClass: FacultyClass = resData.class;
       await fetchFacultyClasses({ silent: true });
-      selectedClassIdRef.current = newClass.id;
+      classStatusesCacheRef.current[`${newClass.id}_${activeAY}_${activeSem}`] =
+        [];
       classStatusesCacheRef.current[newClass.id] = [];
-      setRequirementStatuses([]);
+      selectedClassIdRef.current = null;
+      setSelectedClassId(null);
+      setClassTab("active");
+      setClassSectionFilter("ALL");
+      setClassSearchQuery("");
       setIsUploadSectionVisible(false);
-      setSelectedClassId(newClass.id);
-      void fetchStatuses(activeAY, activeSem, newClass.id, { silent: true });
+      void fetchStatuses(activeAY, activeSem, null, { silent: true });
       emitRealtimeSync({
         source: "class-created",
         table: "faculty_classes",
@@ -4951,111 +5231,78 @@ function FacultySubmissionPanelContent({
                       </div>
                     </div>
 
-                    {/* Top row with PUP SIS style Faculty Name Header */}
-                    <div className="flex items-center justify-between gap-3 flex-wrap">
-                      <div className="flex items-center gap-2.5">
-                        <div className="flex h-7 w-7 shrink-0 items-center justify-center overflow-hidden rounded-full border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 text-[10px] font-bold text-slate-800 dark:text-slate-200 shadow-2xs">
-                          {avatarUrl ? (
-                            <img
-                              src={avatarUrl}
-                              alt={currentFacultyName || "Faculty Profile"}
-                              className="h-full w-full object-cover"
-                            />
-                          ) : (
-                            <span>
-                              {buildFacultyInitials(
-                                currentFacultyName || "Faculty",
+                    <div className="w-full flex flex-col rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 shadow-xs transition-all animate-in fade-in duration-150 overflow-hidden">
+                      {/* Header Info Box matching Requirements Verification */}
+                      <div className="border-b border-slate-200 dark:border-slate-800/80 p-5 sm:p-6 bg-slate-50/50 dark:bg-slate-950/30 rounded-t-2xl space-y-3">
+                        {/* Top row with PUP SIS style Faculty Name Header */}
+                        <div className="flex items-center justify-between gap-3 flex-wrap">
+                          <div className="flex items-center gap-2.5">
+                            <div className="flex h-7 w-7 shrink-0 items-center justify-center overflow-hidden rounded-full border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 text-[10px] font-bold text-slate-800 dark:text-slate-200 shadow-2xs">
+                              {avatarUrl ? (
+                                <img
+                                  src={avatarUrl}
+                                  alt={currentFacultyName || "Faculty Profile"}
+                                  className="h-full w-full object-cover"
+                                />
+                              ) : (
+                                <span>
+                                  {buildFacultyInitials(
+                                    currentFacultyName || "Faculty",
+                                  )}
+                                </span>
                               )}
+                            </div>
+                            <span className="text-xs sm:text-sm font-black text-[#780000] dark:text-rose-400 tracking-wide uppercase">
+                              {facultyDisplayName}
                             </span>
-                          )}
-                        </div>
-                        <span className="text-xs sm:text-sm font-black text-[#780000] dark:text-rose-400 tracking-wide uppercase">
-                          {facultyDisplayName}
-                        </span>
-                      </div>
-                    </div>
-
-                    {/* PUP SIS Style Academic Term & Info Card */}
-                    <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 overflow-hidden shadow-2xs">
-                      <div className="bg-[#780000] text-white px-4 py-2 font-bold text-xs sm:text-sm tracking-wide">
-                        {hasActiveAcademicTerm && activeAY
-                          ? `School Year ${activeAY} ${activeSem}`
-                          : "No Active Academic Term Configured"}
-                      </div>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-y-3.5 gap-x-6 p-4 bg-white dark:bg-slate-900 text-xs">
-                        <div>
-                          <span className="font-bold text-slate-900 dark:text-slate-100 block mb-0.5">
-                            Faculty Department &amp; Program
-                          </span>
-                          <p className="font-medium text-slate-700 dark:text-slate-300">
-                            {departmentName}
-                          </p>
+                          </div>
                         </div>
 
-                        <div>
-                          <span className="font-bold text-slate-900 dark:text-slate-100 block mb-0.5">
-                            Assigned Class Loads
-                          </span>
-                          <p className="font-medium text-slate-700 dark:text-slate-300">
-                            {facultyClasses.length} Registered Class Load
-                            {facultyClasses.length === 1 ? "" : "s"}
-                          </p>
-                        </div>
+                        {/* PUP SIS Style Academic Term & Info Card */}
+                        <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 overflow-hidden shadow-2xs">
+                          <div className="bg-[#780000] text-white px-4 py-2 font-bold text-xs sm:text-sm tracking-wide">
+                            {hasActiveAcademicTerm && activeAY
+                              ? `School Year ${activeAY} ${activeSem}`
+                              : "No Active Academic Term Configured"}
+                          </div>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-y-3.5 gap-x-6 p-4 bg-white dark:bg-slate-900 text-xs">
+                            <div>
+                              <span className="font-bold text-slate-900 dark:text-slate-100 block mb-0.5">
+                                Faculty Department &amp; Program
+                              </span>
+                              <p className="font-medium text-slate-700 dark:text-slate-300">
+                                {departmentName}
+                              </p>
+                            </div>
 
-                        <div>
-                          <span className="font-bold text-slate-900 dark:text-slate-100 block mb-0.5">
-                            Faculty Email
-                          </span>
-                          <p
-                            className="font-medium text-slate-700 dark:text-slate-300 truncate"
-                            title={facultyEmail || undefined}
-                          >
-                            {facultyEmail || "—"}
-                          </p>
-                        </div>
-                      </div>
-                    </div>
+                            <div>
+                              <span className="font-bold text-slate-900 dark:text-slate-100 block mb-0.5">
+                                Assigned Class Loads
+                              </span>
+                              <p className="font-medium text-slate-700 dark:text-slate-300">
+                                {facultyClasses.length} Registered Class Load
+                                {facultyClasses.length === 1 ? "" : "s"}
+                              </p>
+                            </div>
 
-                    {/* Classes Grid / Loading / Empty */}
-                    {isLoadingClasses ? (
-                      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 pt-2">
-                        {[1, 2, 3].map((i) => (
-                          <div
-                            key={i}
-                            className="h-44 rounded-2xl border-2 border-slate-200 dark:border-slate-800 bg-white/50 dark:bg-slate-900/50 animate-pulse p-5"
-                          />
-                        ))}
-                      </div>
-                    ) : facultyClasses.length === 0 ? (
-                      <div className="flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-slate-300 dark:border-slate-800 bg-white dark:bg-slate-900/60 p-8 sm:p-14 text-center">
-                        <div className="h-16 w-16 rounded-2xl bg-amber-500 text-slate-950 flex items-center justify-center mb-4 shadow-md">
-                          <AppIcon icon={TaskList} size="lg" color="inherit" />
+                            <div>
+                              <span className="font-bold text-slate-900 dark:text-slate-100 block mb-0.5">
+                                Faculty Email
+                              </span>
+                              <p
+                                className="font-medium text-slate-700 dark:text-slate-300 truncate"
+                                title={facultyEmail || undefined}
+                              >
+                                {facultyEmail || "—"}
+                              </p>
+                            </div>
+                          </div>
                         </div>
-                        <h3 className="text-base sm:text-lg font-black text-slate-900 dark:text-slate-100">
-                          No Classes or Subject Loads Added Yet
-                        </h3>
-                        <p className="mt-2 max-w-md text-xs sm:text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
-                          Faculty requirements are organized per assigned
-                          subject load. Please add your first class section
-                          (e.g., COMP 023 • BSIT 4-1) to unlock the document
-                          upload zone.
-                        </p>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setClassFormError(null);
-                            setIsAddClassModalOpen(true);
-                          }}
-                          className="mt-6 inline-flex items-center gap-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold px-5 py-2.5 text-xs sm:text-sm shadow-md transition-all cursor-pointer active:scale-95"
-                        >
-                          <AppIcon icon={Plus} size="sm" color="inherit" />
-                          <span>Add Class / Subject Load</span>
-                        </button>
                       </div>
-                    ) : (
-                      <div className="space-y-4">
-                        {/* Unified Tabs & Search/Filter Controls in 1 Row */}
-                        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 shadow-sm">
+
+                      {/* Tabs & Search/Filter Controls matching Requirements Verification */}
+                      {facultyClasses.length > 0 && (
+                        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 border-b border-slate-200 dark:border-slate-800/80 px-6 py-3 bg-white dark:bg-slate-900">
                           {/* Active / Archive Toggle Pills with Solid Highlight */}
                           <div className="inline-flex p-1 bg-slate-100 dark:bg-slate-950/80 rounded-2xl border border-slate-200/80 dark:border-slate-800/80 shrink-0 self-start lg:self-auto">
                             <button
@@ -5064,7 +5311,7 @@ function FacultySubmissionPanelContent({
                                 setClassTab("active");
                                 setClassSectionFilter("ALL");
                               }}
-                              className={`inline-flex items-center gap-2 rounded-xl px-4 py-2 text-xs sm:text-sm font-bold transition cursor-pointer ${
+                              className={`inline-flex items-center gap-2 rounded-xl px-4 py-1.5 text-xs font-bold transition cursor-pointer ${
                                 classTab === "active"
                                   ? "bg-amber-500 text-slate-950 border border-amber-600 shadow-xs"
                                   : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200"
@@ -5072,7 +5319,7 @@ function FacultySubmissionPanelContent({
                             >
                               <span>Active Loads</span>
                               <span
-                                className={`inline-flex items-center justify-center rounded-full px-2 py-0.5 text-xs font-black leading-none ${
+                                className={`inline-flex items-center justify-center rounded-full px-2 py-0.5 text-[11px] font-black leading-none ${
                                   classTab === "active"
                                     ? "bg-white text-slate-950 border border-amber-600/30 shadow-2xs"
                                     : "bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300"
@@ -5088,7 +5335,7 @@ function FacultySubmissionPanelContent({
                                 setClassTab("archived");
                                 setClassSectionFilter("ALL");
                               }}
-                              className={`inline-flex items-center gap-1.5 rounded-xl px-4 py-2 text-xs sm:text-sm font-bold transition cursor-pointer ${
+                              className={`inline-flex items-center gap-1.5 rounded-xl px-4 py-1.5 text-xs font-bold transition cursor-pointer ${
                                 classTab === "archived"
                                   ? "bg-amber-500 text-slate-950 border border-amber-600 shadow-xs"
                                   : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200"
@@ -5096,12 +5343,12 @@ function FacultySubmissionPanelContent({
                             >
                               <AppIcon
                                 icon={Archive}
-                                size="sm"
+                                size="xs"
                                 color="inherit"
                               />
                               <span>Archived</span>
                               <span
-                                className={`inline-flex items-center justify-center rounded-full px-2 py-0.5 text-xs font-black leading-none ${
+                                className={`inline-flex items-center justify-center rounded-full px-2 py-0.5 text-[11px] font-black leading-none ${
                                   classTab === "archived"
                                     ? "bg-white text-slate-950 border border-amber-600/30 shadow-2xs"
                                     : "bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300"
@@ -5128,8 +5375,8 @@ function FacultySubmissionPanelContent({
                                 onChange={(e) =>
                                   setClassSearchQuery(e.target.value)
                                 }
-                                placeholder="Search by subject code, description, or section..."
-                                className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 pl-9 pr-8 py-2 text-xs sm:text-sm font-medium text-slate-900 dark:text-slate-100 placeholder:text-slate-400 outline-none transition focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20"
+                                placeholder="Search subject or section..."
+                                className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 pl-9 pr-8 py-2 text-xs text-slate-900 dark:text-slate-100 placeholder:text-slate-400 outline-none transition focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20"
                               />
                               {classSearchQuery && (
                                 <button
@@ -5161,7 +5408,7 @@ function FacultySubmissionPanelContent({
                                   setClassSectionFilter(e.target.value)
                                 }
                                 aria-label="Filter by section"
-                                className="w-full sm:w-auto rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 pl-9 pr-8 py-2 text-xs sm:text-sm font-semibold text-slate-900 dark:text-slate-100 focus:border-amber-500 outline-none cursor-pointer shadow-2xs"
+                                className="w-full sm:w-auto rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 pl-9 pr-8 py-2 text-xs font-semibold text-slate-900 dark:text-slate-100 focus:border-amber-500 outline-none cursor-pointer shadow-2xs"
                               >
                                 <option value="ALL">
                                   All Sections (
@@ -5198,49 +5445,130 @@ function FacultySubmissionPanelContent({
                             )}
                           </div>
                         </div>
+                      )}
 
-                        {/* Class Grid or Empty View */}
-                        {displayedClasses.length === 0 ? (
-                          <div className="flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-slate-300 dark:border-slate-800 bg-white dark:bg-slate-900 p-8 text-center">
-                            <div className="h-12 w-12 rounded-xl bg-amber-400 text-amber-950 flex items-center justify-center mb-3">
+                      {/* Body Content */}
+                      <div className="px-6 py-5">
+                        {isLoadingClasses ? (
+                          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5 pt-1">
+                            {[1, 2, 3].map((i) => (
+                              <div
+                                key={i}
+                                className="h-64 rounded-2xl border-2 border-slate-200 dark:border-slate-800 bg-white/50 dark:bg-slate-900/50 animate-pulse p-5"
+                              />
+                            ))}
+                          </div>
+                        ) : facultyClasses.length === 0 ? (
+                          <div className="flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-slate-300 dark:border-slate-800 bg-white dark:bg-slate-900/60 p-8 sm:p-14 text-center">
+                            <div className="h-16 w-16 rounded-2xl bg-amber-500 text-slate-950 flex items-center justify-center mb-4 shadow-md">
+                              <AppIcon icon={TaskList} size="lg" color="inherit" />
+                            </div>
+                            <h3 className="text-base sm:text-lg font-black text-slate-900 dark:text-slate-100">
+                              No Classes or Subject Loads Added Yet
+                            </h3>
+                            <p className="mt-2 max-w-md text-xs sm:text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
+                              Faculty requirements are organized per assigned
+                              subject load. Please add your first class section
+                              (e.g., COMP 023 • BSIT 4-1) to unlock the document
+                              upload zone.
+                            </p>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setClassFormError(null);
+                                setIsAddClassModalOpen(true);
+                              }}
+                              className="mt-6 inline-flex items-center gap-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold px-5 py-2.5 text-xs sm:text-sm shadow-md transition-all cursor-pointer active:scale-95"
+                            >
+                              <AppIcon icon={Plus} size="sm" color="inherit" />
+                              <span>Add Class / Subject Load</span>
+                            </button>
+                          </div>
+                        ) : displayedClasses.length === 0 ? (
+                          <div className="overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xs py-14 text-center text-slate-500 dark:text-slate-400">
+                            <div className="flex flex-col items-center justify-center gap-2 max-w-sm mx-auto">
                               <AppIcon
                                 icon={
                                   classTab === "archived" ? Archive : TaskList
                                 }
-                                size="md"
-                                color="inherit"
+                                size="lg"
+                                color="muted"
                               />
+                              <h5 className="text-sm font-bold text-slate-800 dark:text-slate-200">
+                                {classSearchQuery.trim() !== "" ||
+                                classSectionFilter !== "ALL"
+                                  ? "No Matching Subjects"
+                                  : classTab === "archived"
+                                    ? "No Archived Subject Loads"
+                                    : "No Active Subject Loads"}
+                              </h5>
+                              <p className="text-xs text-slate-500 dark:text-slate-400">
+                                {classSearchQuery.trim() !== "" ||
+                                classSectionFilter !== "ALL"
+                                  ? "No subject loads match the current search or section filter."
+                                  : classTab === "archived"
+                                    ? "Classes you archive when completed will appear here."
+                                    : "All assigned classes have been archived or none match."}
+                              </p>
                             </div>
-                            <h4 className="text-sm font-black text-[#780000]">
-                              {classSearchQuery.trim() !== "" ||
-                              classSectionFilter !== "ALL"
-                                ? "No Matching Subject Loads Found"
-                                : classTab === "archived"
-                                  ? "No Archived Subject Loads"
-                                  : "No Active Subject Loads"}
-                            </h4>
-                            <p className="mt-1 max-w-sm text-xs font-medium text-slate-600">
-                              {classSearchQuery.trim() !== "" ||
-                              classSectionFilter !== "ALL"
-                                ? "Try adjusting your search keywords or section filter to see your assigned subjects."
-                                : classTab === "archived"
-                                  ? "Classes you archive when completed or done will appear here. You can unarchive and return them to active anytime."
-                                  : "All assigned classes have been archived. You can unarchive them from the Archived tab or add a new class load."}
-                            </p>
                           </div>
                         ) : (
-                          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5 pt-3">
+                          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5 pt-1">
                             {displayedClasses.map((cls) => {
                               const isArchived = Boolean(cls.is_archived);
+                              const cachedClassStatuses =
+                                classStatusesCacheRef.current[
+                                  `${cls.id}_${activeAY}_${activeSem}`
+                                ] ||
+                                classStatusesCacheRef.current[cls.id] ||
+                                [];
+                              const clsTotalReqs = activeTemplates.length;
+                              const clsValidatedCount =
+                                cachedClassStatuses.filter((s) => {
+                                  const st = (s.status || "").toLowerCase();
+                                  return st === "validated" || st === "approved";
+                                }).length;
+                              const clsPendingCount =
+                                cachedClassStatuses.filter((s) => {
+                                  const st = (s.status || "").toLowerCase();
+                                  return (
+                                    (st === "pending" ||
+                                      st === "uploaded" ||
+                                      st === "submitted") &&
+                                    Boolean(s.latestSubmissionId || s.submittedAt)
+                                  );
+                                }).length;
+                              const clsRevisionCount =
+                                cachedClassStatuses.filter((s) => {
+                                  const st = (s.status || "").toLowerCase();
+                                  return (
+                                    st === "rejected" ||
+                                    st === "needs_revision"
+                                  );
+                                }).length;
+                              const clsProgressPct =
+                                clsTotalReqs > 0
+                                  ? Math.min(
+                                      100,
+                                      Math.round(
+                                        (clsValidatedCount / clsTotalReqs) *
+                                          100,
+                                      ),
+                                    )
+                                  : 0;
+
                               return (
                                 <div
                                   key={cls.id}
                                   onClick={() => {
+                                    const cacheKey = `${cls.id}_${activeAY}_${activeSem}`;
                                     selectedClassIdRef.current = cls.id;
                                     setRequirementStatuses(
-                                      classStatusesCacheRef.current[cls.id] ||
+                                      classStatusesCacheRef.current[cacheKey] ||
+                                        classStatusesCacheRef.current[cls.id] ||
                                         [],
                                     );
+                                    setStep2FilterMode("all");
                                     setIsUploadSectionVisible(false);
                                     setSelectedClassId(cls.id);
                                     void fetchStatuses(
@@ -5254,7 +5582,6 @@ function FacultySubmissionPanelContent({
                                 >
                                   {/* Folder Top Tab with Smooth Slanted Shoulder */}
                                   <div className="flex items-end -mb-[2px] relative z-10 self-start">
-                                    {/* Tab Left + Content */}
                                     <div
                                       className={`h-7.5 px-3.5 rounded-tl-xl flex items-center gap-2 text-xs font-black tracking-wide border-t-2 border-l-2 transition-colors duration-200 ${
                                         isArchived
@@ -5267,7 +5594,7 @@ function FacultySubmissionPanelContent({
                                         size="xs"
                                         color="inherit"
                                       />
-                                      <span className="truncate max-w-[140px]">
+                                      <span className="truncate max-w-[150px]">
                                         {cls.section_code}
                                       </span>
                                     </div>
@@ -5280,7 +5607,7 @@ function FacultySubmissionPanelContent({
                                         className={`w-full h-full ${
                                           isArchived
                                             ? "text-slate-200 dark:text-slate-800"
-                                            : "text-amber-400 dark:bg-amber-500"
+                                            : "text-amber-400 dark:text-amber-500"
                                         }`}
                                       >
                                         <path
@@ -5314,14 +5641,25 @@ function FacultySubmissionPanelContent({
                                         : "border-amber-500 dark:border-amber-600 group-hover:border-amber-400"
                                     }`}
                                   >
-                                    <div className="p-4 sm:p-5 flex-1 flex flex-col justify-between gap-4">
+                                    <div className="p-5 flex-1 flex flex-col justify-between gap-4">
                                       <div className="space-y-3.5">
-                                        {/* Top Row: Units & Action Buttons */}
+                                        {/* Top Row: Units, Status Badges & Class Controls */}
                                         <div className="flex flex-wrap items-center justify-between gap-1.5">
-                                          <div className="flex items-center gap-1.5 shrink-0">
+                                          <div className="flex items-center gap-1.5 flex-wrap">
                                             <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-bold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
-                                              {cls.units} Units
+                                              {Number(cls.units || 0).toFixed(1)} Units
                                             </span>
+                                            {clsPendingCount > 0 && (
+                                              <span className="inline-flex items-center gap-1 rounded-full bg-amber-500 border border-amber-600 text-slate-950 px-2 py-0.5 text-[10px] font-bold shadow-2xs">
+                                                <span className="h-1.5 w-1.5 rounded-full bg-[#780000] animate-pulse" />
+                                                {clsPendingCount} Pending
+                                              </span>
+                                            )}
+                                            {clsRevisionCount > 0 && (
+                                              <span className="inline-flex items-center gap-1 rounded-full bg-[#780000] border border-[#5e0000] text-white px-2 py-0.5 text-[10px] font-bold shadow-2xs">
+                                                {clsRevisionCount} Revision
+                                              </span>
+                                            )}
                                             {isArchived && (
                                               <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-300 dark:border-slate-700">
                                                 <AppIcon
@@ -5334,12 +5672,11 @@ function FacultySubmissionPanelContent({
                                             )}
                                           </div>
 
-                                          {/* Action Buttons Toolbar with Labels */}
+                                          {/* Action Buttons Toolbar */}
                                           <div
                                             className="flex flex-wrap items-center justify-end gap-1"
                                             onClick={(e) => e.stopPropagation()}
                                           >
-                                            {/* Details button */}
                                             <button
                                               type="button"
                                               onClick={(e) =>
@@ -5356,7 +5693,6 @@ function FacultySubmissionPanelContent({
                                               <span>Details</span>
                                             </button>
 
-                                            {/* Edit button */}
                                             <button
                                               type="button"
                                               onClick={(e) =>
@@ -5373,7 +5709,6 @@ function FacultySubmissionPanelContent({
                                               <span>Edit</span>
                                             </button>
 
-                                            {/* Archive / Unarchive button */}
                                             <button
                                               type="button"
                                               disabled={
@@ -5431,7 +5766,6 @@ function FacultySubmissionPanelContent({
                                               </span>
                                             </button>
 
-                                            {/* Delete button (Solid Maroon) */}
                                             <button
                                               type="button"
                                               onClick={(e) =>
@@ -5470,6 +5804,28 @@ function FacultySubmissionPanelContent({
                                             </p>
                                           </div>
                                         </div>
+
+                                        {/* Validation Progress Bar matching Requirements Verification */}
+                                        {clsTotalReqs > 0 && (
+                                          <div className="pt-1">
+                                            <div className="flex items-center justify-between text-[11px] font-medium text-slate-500 dark:text-slate-400 mb-1.5">
+                                              <span>Validation Progress</span>
+                                              <span className="font-bold text-slate-700 dark:text-slate-300">
+                                                {clsProgressPct}% (
+                                                {clsValidatedCount}/
+                                                {clsTotalReqs} Validated)
+                                              </span>
+                                            </div>
+                                            <div className="h-1.5 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                                              <div
+                                                className="h-full bg-gradient-to-r from-amber-500 to-emerald-500 transition-all duration-300 rounded-full"
+                                                style={{
+                                                  width: `${clsProgressPct}%`,
+                                                }}
+                                              />
+                                            </div>
+                                          </div>
+                                        )}
                                       </div>
 
                                       {/* Bottom Footer */}
@@ -5505,7 +5861,7 @@ function FacultySubmissionPanelContent({
                                                 color="inherit"
                                               />
                                               <span>
-                                                View & Upload Documents
+                                                View &amp; Upload Documents
                                               </span>
                                             </span>
                                             <span className="inline-flex items-center justify-center h-6 w-6 rounded-full bg-[#780000] text-white group-hover:bg-[#5e0000] transition-colors shadow-2xs">
@@ -5526,7 +5882,7 @@ function FacultySubmissionPanelContent({
                           </div>
                         )}
                       </div>
-                    )}
+                    </div>
                   </div>
                 ) : (
                   /* ─── STEP 2: CLASS REQUIREMENTS UPLOAD ZONE ─────────────────── */
@@ -5586,6 +5942,9 @@ function FacultySubmissionPanelContent({
                       </div>
                     </div>
 
+                    {/* Unified White Container matching Requirements Verification */}
+                    <div className="w-full flex flex-col rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 shadow-xs transition-all animate-in fade-in duration-150 overflow-hidden">
+                      <div className="px-6 py-5 space-y-4">
                     {/* Class Context Navigation Bar (Between Header & Status Filter/Counts) */}
                     <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 py-1">
                       <div className="flex flex-col sm:flex-row sm:items-center gap-2.5 min-w-0 flex-1">
@@ -5595,6 +5954,7 @@ function FacultySubmissionPanelContent({
                             type="button"
                             onClick={() => {
                               selectedClassIdRef.current = null;
+                              setStep2FilterMode("all");
                               setIsUploadSectionVisible(false);
                               setSelectedClassId(null);
                               void fetchStatuses(activeAY, activeSem, null, {
@@ -5611,6 +5971,8 @@ function FacultySubmissionPanelContent({
                             />
                             <span>Back to Class List</span>
                           </button>
+
+                          <div className="h-6 w-px bg-amber-400/60 dark:bg-amber-600/40 hidden sm:block shrink-0" />
 
                           {selectedClass && (
                             <div className="flex sm:hidden items-center gap-1.5 shrink-0">
@@ -5852,132 +6214,128 @@ function FacultySubmissionPanelContent({
                       </div>
                     )}
 
-                    {/* Clean Header Progress & Status Counts with Legend */}
+                    {/* Scoped Filter Toolbar matching Requirements Verification */}
                     {displayedStatusCounts && !isLoadingStatuses && (
-                      <div className="flex flex-wrap items-center gap-3 sm:gap-4 text-xs sm:text-sm text-slate-600 dark:text-slate-400 font-medium pt-1">
-                        <span
-                          className="inline-flex items-center gap-1.5"
-                          title="Validated: Requirements verified and approved"
-                        >
-                          <span className="inline-flex items-center justify-center h-5 w-5 rounded-full bg-[#0b5336] text-white border border-[#08412a] shrink-0 shadow-2xs">
-                            <AppIcon icon={Check} size="xs" color="white" />
-                          </span>
-                          <span>
-                            <strong className="text-slate-900 dark:text-slate-100 font-semibold">
-                              {displayedStatusCounts.validated}
-                            </strong>{" "}
-                            Validated
-                          </span>
-                        </span>
-                        <span
-                          className="inline-flex items-center gap-1.5"
-                          title="Pending: Uploaded document awaiting review or verification"
-                        >
-                          <span className="inline-flex items-center justify-center h-5 w-5 rounded-full bg-amber-500 text-slate-950 border border-amber-600 shrink-0 shadow-2xs">
-                            <AppIcon
-                              icon={Hourglass}
-                              size="xs"
-                              color="inherit"
-                            />
-                          </span>
-                          <span>
-                            <strong className="text-slate-900 dark:text-slate-100 font-semibold">
-                              {isAllValidated
-                                ? 0
-                                : displayedStatusCounts.pending}
-                            </strong>{" "}
-                            Pending
-                          </span>
-                        </span>
-                        <span
-                          className="inline-flex items-center gap-1.5"
-                          title="Needs Revision: Correction requested by reviewer"
-                        >
-                          <span className="inline-flex items-center justify-center h-5 w-5 rounded-full bg-[#780000] text-white border border-[#5e0000] shrink-0 shadow-2xs">
-                            <AppIcon icon={Xmark} size="xs" color="white" />
-                          </span>
-                          <span>
-                            <strong className="text-slate-900 dark:text-slate-100 font-semibold">
-                              {isAllValidated
-                                ? 0
-                                : displayedStatusCounts.rejected}
-                            </strong>{" "}
-                            Needs Revision
-                          </span>
-                        </span>
-                        <span
-                          className="inline-flex items-center gap-1.5"
-                          title="Not Submitted: Requirement has not been submitted yet"
-                        >
-                          <span className="inline-flex items-center justify-center h-5 w-5 rounded-full bg-slate-500 text-white border border-slate-600 shrink-0 shadow-2xs">
-                            <AppIcon icon={Minus} size="xs" color="white" />
-                          </span>
-                          <span>
-                            <strong className="text-slate-900 dark:text-slate-100 font-semibold">
-                              {isAllValidated
-                                ? 0
-                                : displayedStatusCounts.notSubmitted}
-                            </strong>{" "}
-                            Not Submitted
-                          </span>
-                        </span>
-                        <span
-                          className="inline-flex items-center gap-1.5"
-                          title="Overdue: Past deadline and no file submitted"
-                        >
-                          <span className="inline-flex items-center justify-center h-5 w-5 rounded-full bg-[#780000] text-white border border-[#5e0000] shrink-0 shadow-2xs">
-                            <AppIcon
-                              icon={ClockRotateRight}
-                              size="xs"
-                              color="white"
-                            />
-                          </span>
-                          <span>
-                            <strong className="text-slate-900 dark:text-slate-100 font-semibold">
-                              {isAllValidated
-                                ? 0
-                                : displayedStatusCounts.overdue}
-                            </strong>{" "}
-                            Overdue
-                          </span>
-                        </span>
-                        {displayedStatusCounts.extended > 0 &&
-                          !isAllValidated && (
-                            <span
-                              className="inline-flex items-center gap-1.5"
-                              title="Extended: Extension request approved"
-                            >
-                              <span className="inline-flex items-center justify-center h-5 w-5 rounded-full bg-indigo-600 text-white border border-indigo-700 shrink-0 shadow-2xs">
-                                <AppIcon
-                                  icon={Hourglass}
-                                  size="xs"
-                                  color="white"
-                                />
-                              </span>
-                              <span>
-                                <strong className="text-slate-900 dark:text-slate-100 font-semibold">
-                                  {displayedStatusCounts.extended}
-                                </strong>{" "}
-                                Extended
-                              </span>
-                            </span>
-                          )}
-                        {displayedStatusCounts.exempted > 0 && (
-                          <span
-                            className="inline-flex items-center gap-1.5"
-                            title="Exempted: Requirement not applicable / excused"
+                      <div className="flex flex-wrap items-center justify-between gap-2.5 rounded-2xl border border-slate-200 dark:border-slate-800/80 bg-slate-50/80 dark:bg-slate-950/40 p-2 sm:p-2.5 shadow-2xs overflow-x-auto">
+                        <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+                          <button
+                            type="button"
+                            onClick={() => setStep2FilterMode("all")}
+                            className={`inline-flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-semibold whitespace-nowrap transition cursor-pointer shadow-2xs ${
+                              step2FilterMode === "all"
+                                ? "bg-amber-500 hover:bg-amber-400 text-slate-950 border border-amber-600/30 shadow-xs font-bold"
+                                : "bg-white hover:bg-slate-50 text-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800 border border-slate-300 dark:border-slate-700"
+                            }`}
                           >
-                            <span className="inline-flex items-center justify-center h-5 w-5 rounded-full bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 border border-slate-300 dark:border-slate-600 shrink-0 shadow-2xs">
+                            <AppIcon icon={Page} size="xs" color="inherit" />
+                            <span>All Files</span>
+                            <span
+                              className={`rounded-full px-1.5 py-0.5 text-[10.5px] font-bold ${
+                                step2FilterMode === "all"
+                                  ? "bg-white text-slate-950 border border-amber-600/30 shadow-2xs"
+                                  : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400"
+                              }`}
+                            >
+                              {displayedRequirementStatuses.length}
+                            </span>
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => setStep2FilterMode("pending")}
+                            className={`inline-flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-semibold whitespace-nowrap transition cursor-pointer shadow-2xs ${
+                              step2FilterMode === "pending"
+                                ? "bg-amber-500 hover:bg-amber-400 text-slate-950 border border-amber-600/30 shadow-xs font-bold"
+                                : "bg-white hover:bg-slate-50 text-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800 border border-slate-300 dark:border-slate-700"
+                            }`}
+                          >
+                            <AppIcon icon={Hourglass} size="xs" color="inherit" />
+                            <span>Pending Review</span>
+                            <span
+                              className={`rounded-full px-1.5 py-0.5 text-[10.5px] font-bold ${
+                                step2FilterMode === "pending"
+                                  ? "bg-white text-slate-950 border border-amber-600/30 shadow-2xs"
+                                  : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400"
+                              }`}
+                            >
+                              {isAllValidated ? 0 : displayedStatusCounts.pending}
+                            </span>
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => setStep2FilterMode("validated")}
+                            className={`inline-flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-semibold whitespace-nowrap transition cursor-pointer shadow-2xs ${
+                              step2FilterMode === "validated"
+                                ? "bg-amber-500 hover:bg-amber-400 text-slate-950 border border-amber-600/30 shadow-xs font-bold"
+                                : "bg-white hover:bg-slate-50 text-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800 border border-slate-300 dark:border-slate-700"
+                            }`}
+                          >
+                            <AppIcon icon={Check} size="xs" color="inherit" />
+                            <span>Validated</span>
+                            <span
+                              className={`rounded-full px-1.5 py-0.5 text-[10.5px] font-bold ${
+                                step2FilterMode === "validated"
+                                  ? "bg-white text-slate-950 border border-amber-600/30 shadow-2xs"
+                                  : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400"
+                              }`}
+                            >
+                              {displayedStatusCounts.validated}
+                            </span>
+                          </button>
+
+                          {!isAllValidated && displayedStatusCounts.rejected > 0 ? (
+                            <button
+                              type="button"
+                              onClick={() => setStep2FilterMode("revision")}
+                              className={`inline-flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-semibold whitespace-nowrap transition cursor-pointer shadow-2xs ${
+                                step2FilterMode === "revision"
+                                  ? "bg-amber-500 hover:bg-amber-400 text-slate-950 border border-amber-600/30 shadow-xs font-bold"
+                                  : "bg-white hover:bg-slate-50 text-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800 border border-slate-300 dark:border-slate-700"
+                              }`}
+                            >
+                              <AppIcon icon={Xmark} size="xs" color="inherit" />
+                              <span>Needs Revision</span>
+                              <span
+                                className={`rounded-full px-1.5 py-0.5 text-[10.5px] font-bold ${
+                                  step2FilterMode === "revision"
+                                    ? "bg-white text-slate-950 border border-amber-600/30 shadow-2xs"
+                                    : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400"
+                                }`}
+                              >
+                                {displayedStatusCounts.rejected}
+                              </span>
+                            </button>
+                          ) : null}
+
+                          {!isAllValidated &&
+                          displayedStatusCounts.notSubmitted +
+                            displayedStatusCounts.overdue >
+                            0 ? (
+                            <button
+                              type="button"
+                              onClick={() => setStep2FilterMode("not_submitted")}
+                              className={`inline-flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-semibold whitespace-nowrap transition cursor-pointer shadow-2xs ${
+                                step2FilterMode === "not_submitted"
+                                  ? "bg-amber-500 hover:bg-amber-400 text-slate-950 border border-amber-600/30 shadow-xs font-bold"
+                                  : "bg-white hover:bg-slate-50 text-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800 border border-slate-300 dark:border-slate-700"
+                              }`}
+                            >
                               <AppIcon icon={Minus} size="xs" color="inherit" />
-                            </span>
-                            <span>
-                              <strong className="text-slate-900 dark:text-slate-100 font-semibold">
-                                {displayedStatusCounts.exempted}
-                              </strong>{" "}
-                              Exempted
-                            </span>
-                          </span>
-                        )}
+                              <span>Not Submitted</span>
+                              <span
+                                className={`rounded-full px-1.5 py-0.5 text-[10.5px] font-bold ${
+                                  step2FilterMode === "not_submitted"
+                                    ? "bg-white text-slate-950 border border-amber-600/30 shadow-2xs"
+                                    : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400"
+                                }`}
+                              >
+                                {displayedStatusCounts.notSubmitted +
+                                  displayedStatusCounts.overdue}
+                              </span>
+                            </button>
+                          ) : null}
+                        </div>
                       </div>
                     )}
 
@@ -6148,174 +6506,235 @@ function FacultySubmissionPanelContent({
                             </span>
                           </div>
                         )}
-                        <div className="bg-white border border-slate-200 dark:border-slate-800 shadow-xs dark:bg-slate-900 dark:shadow-none rounded-xl overflow-hidden transition-colors">
+                        <div className="overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs">
                           <div className="overflow-x-auto">
-                            <table className="w-full text-left text-sm min-w-[640px]">
-                              <thead>
-                                <tr className="border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/60">
-                                  <th className="px-3 py-3 text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 w-10 text-center">
-                                    #
+                            <table className="w-full table-fixed text-left text-xs text-slate-600 dark:text-slate-300 min-w-[880px]">
+                              <thead className="bg-slate-50/60 dark:bg-slate-950/50 border-b border-slate-200/80 dark:border-slate-800/80 text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                                <tr>
+                                  <th className="px-4 py-3 w-[25%] text-center">
+                                    Requirement
                                   </th>
-                                  <th className="px-5 py-3 text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 w-[45%]">
-                                    Document
-                                  </th>
-                                  <th className="px-4 py-3 text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 text-center w-[15%]">
+                                  <th className="px-3 py-3 w-[10%] text-center">
                                     Type
                                   </th>
-                                  <th className="px-4 py-3 text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 text-center w-[25%]">
-                                    Actions
+                                  <th className="px-4 py-3 w-[25%] text-center">
+                                    Attached File
                                   </th>
-                                  <th className="px-4 py-3 text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 text-center w-[15%]">
+                                  <th className="px-4 py-3 w-[24%]">
+                                    Notes &amp; Feedback
+                                  </th>
+                                  <th className="px-4 py-3 w-[16%] text-center">
                                     Status
                                   </th>
                                 </tr>
                               </thead>
-                              <tbody className="divide-y divide-slate-200 dark:divide-slate-800/60">
-                                {displayedRequirementStatuses.length === 0 ? (
-                                  <tr>
-                                    <td
-                                      colSpan={5}
-                                      className="px-6 py-12 text-center text-xs text-slate-500 dark:text-slate-400 font-medium"
-                                    >
-                                      <div className="flex flex-col items-center justify-center gap-1.5">
-                                        <p className="font-bold text-slate-700 dark:text-slate-300 text-sm">
-                                          No Active Documents Required
-                                        </p>
-                                        <p className="text-xs text-slate-400 dark:text-slate-500">
-                                          All compliance document requirements are currently hidden or not active for this term.
-                                        </p>
-                                      </div>
-                                    </td>
-                                  </tr>
-                                ) : (
-                                  displayedRequirementStatuses.map(
-                                    (req, index) => (
-                                    <tr
-                                      key={req.code}
-                                      id={`requirement-${req.code}`}
-                                      className="bg-white hover:bg-slate-50 dark:bg-slate-900 dark:hover:bg-slate-800/40 transition-colors"
-                                    >
-                                      {/* # column */}
-                                      <td className="px-3 py-3.5 text-center text-xs font-mono text-slate-400 dark:text-slate-500 align-middle">
-                                        {index + 1}
-                                      </td>
+                              <tbody className="divide-y divide-slate-100 dark:divide-slate-800/70">
+                                {(() => {
+                                  const filteredStep2Reqs =
+                                    displayedRequirementStatuses.filter((req) => {
+                                      if (step2FilterMode === "all") return true;
+                                      if (step2FilterMode === "validated")
+                                        return req.status === "Validated";
+                                      if (step2FilterMode === "pending")
+                                        return (
+                                          req.status === "Pending" &&
+                                          Boolean(
+                                            req.submittedAt ||
+                                              req.latestSubmissionId,
+                                          )
+                                        );
+                                      if (step2FilterMode === "revision")
+                                        return req.status === "Rejected";
+                                      if (step2FilterMode === "not_submitted")
+                                        return (
+                                          req.status === "Not Submitted" ||
+                                          req.status === "Overdue" ||
+                                          (req.status === "Pending" &&
+                                            !req.latestSubmissionId &&
+                                            !req.submittedAt)
+                                        );
+                                      return true;
+                                    });
 
-                                      {/* Document column */}
-                                      <td className="px-5 py-3.5 align-middle">
-                                        <div className="flex-1 min-w-0">
-                                          <h4 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
-                                            {getRequirementTitle(req.code)}
-                                          </h4>
-                                          <div className="mt-0.5 flex flex-wrap items-center gap-x-3 text-xs text-slate-500 dark:text-slate-400">
-                                            {req.submittedAt &&
-                                            formatSubmittedDateTime(
-                                              req.submittedAt,
-                                            ) ? (
-                                              <span>
-                                                Submitted:{" "}
-                                                {formatSubmittedDateTime(
-                                                  req.submittedAt,
-                                                )}
+                                  if (filteredStep2Reqs.length === 0) {
+                                    return (
+                                      <tr>
+                                        <td
+                                          colSpan={5}
+                                          className="px-6 py-12 text-center text-xs text-slate-500 dark:text-slate-400 font-medium"
+                                        >
+                                          <div className="flex flex-col items-center justify-center gap-2">
+                                            <p className="font-bold text-slate-700 dark:text-slate-300 text-sm">
+                                              {displayedRequirementStatuses.length === 0
+                                                ? "No Active Documents Required"
+                                                : "No requirements match the selected filter."}
+                                            </p>
+                                            {step2FilterMode !== "all" ? (
+                                              <button
+                                                type="button"
+                                                onClick={() =>
+                                                  setStep2FilterMode("all")
+                                                }
+                                                className="text-xs font-semibold text-amber-600 dark:text-amber-400 hover:underline cursor-pointer"
+                                              >
+                                                View All Files
+                                              </button>
+                                            ) : (
+                                              <p className="text-xs text-slate-400 dark:text-slate-500">
+                                                All compliance document requirements are currently hidden or not active for this term.
+                                              </p>
+                                            )}
+                                          </div>
+                                        </td>
+                                      </tr>
+                                    );
+                                  }
+
+                                  return filteredStep2Reqs.map((req) => {
+                                    const submittedDateText =
+                                      req.submittedAt &&
+                                      formatSubmittedDateTime(req.submittedAt)
+                                        ? formatSubmittedDateTime(
+                                            req.submittedAt,
+                                          )
+                                        : null;
+                                    const tpl = activeTemplates.find(
+                                      (t) => t.code === req.code,
+                                    );
+                                    const maxMb = tpl?.max_size_mb
+                                      ? Number(tpl.max_size_mb)
+                                      : 10;
+                                    const isMandatory =
+                                      templateMandatoryMap.get(req.code) !==
+                                      false;
+                                    const isCleanedFile = Boolean(
+                                      req.storagePath?.startsWith("__cleaned__"),
+                                    );
+                                    const rawDisplayFileName =
+                                      req.fileName ||
+                                      (isCleanedFile
+                                        ? req.storagePath
+                                            ?.replace(/^__cleaned__\/?/, "")
+                                            .trim() || ""
+                                        : req.storagePath?.split("/").pop() ||
+                                          "") ||
+                                      "Uploaded Document";
+                                    const displayFileName = rawDisplayFileName.replace(
+                                      /^\d+_/,
+                                      "",
+                                    );
+                                    const hasUploadedFile = Boolean(
+                                      !isCleanedFile &&
+                                        req.status !== "Not Submitted" &&
+                                        req.status !== "Exempted" &&
+                                        req.status !== "Overdue" &&
+                                        req.latestSubmissionId &&
+                                        (req.submittedAt ||
+                                          req.storagePath ||
+                                          req.fileName),
+                                    );
+                                    const facultyRemarksText =
+                                      req.remarks || req.note || null;
+                                    const reviewerFeedbackText =
+                                      req.adminRemarks ||
+                                      req.admin_remarks ||
+                                      req.feedback ||
+                                      null;
+
+                                    return (
+                                      <tr
+                                        key={req.code}
+                                        id={`requirement-${req.code}`}
+                                        className="bg-white hover:bg-slate-50/70 dark:bg-slate-900 dark:hover:bg-slate-800/30 transition-colors"
+                                      >
+                                        {/* Column 1: Requirement */}
+                                        <td className="px-4 py-3.5 align-middle text-center">
+                                          <div className="space-y-1 min-w-0 text-center">
+                                            <span className="font-semibold text-slate-900 dark:text-slate-100 text-xs block leading-snug">
+                                              {getRequirementTitle(req.code)}
+                                            </span>
+                                            {submittedDateText ? (
+                                              <span className="text-[11px] text-slate-500 dark:text-slate-400 block">
+                                                Submitted: {submittedDateText}
                                               </span>
                                             ) : (
-                                              <span>
-                                                No submission recorded yet
+                                              <span className="text-[11px] text-slate-400 dark:text-slate-500 italic block">
+                                                Not submitted
                                               </span>
                                             )}
-                                            {req.reviewedAt && (
-                                              <span>
-                                                • Reviewed: {req.reviewedAt}
-                                              </span>
-                                            )}
-                                            {req.effectiveDeadline &&
+                                            <span className="text-[10.5px] text-slate-400 dark:text-slate-500 block">
+                                              {req.effectiveDeadline &&
                                               !req.submittedAt &&
-                                              req.status !== "Exempted" && (
+                                              req.status !== "Exempted" ? (
                                                 <span
                                                   className={
                                                     req.status === "Overdue"
                                                       ? "text-[#780000] dark:text-rose-400 font-semibold"
-                                                      : req.status ===
-                                                          "Extended"
+                                                      : req.status === "Extended"
                                                         ? "text-indigo-600 dark:text-indigo-400 font-semibold"
                                                         : ""
                                                   }
                                                 >
-                                                  • Due:{" "}
+                                                  Due:{" "}
                                                   {formatDeadlineDate(
                                                     req.effectiveDeadline,
-                                                  )}
+                                                  )}{" "}
+                                                  &bull;{" "}
                                                 </span>
-                                              )}
-                                            {(() => {
-                                              const tpl = activeTemplates.find(
-                                                (t) => t.code === req.code,
-                                              );
-                                              const maxMb = tpl?.max_size_mb
-                                                ? Number(tpl.max_size_mb)
-                                                : 10;
-                                              return (
-                                                <span className="text-slate-500 dark:text-slate-400 font-medium">
-                                                  • Max {maxMb} MB
-                                                </span>
-                                              );
-                                            })()}
+                                              ) : null}
+                                              Max {maxMb} MB
+                                            </span>
                                           </div>
-                                          {/* Inline Revision Note */}
-                                          {req.status === "Rejected" && (
-                                            <p className="text-xs text-[#780000] dark:text-rose-400 flex items-center gap-1.5 mt-1 font-medium">
-                                              <AppIcon
-                                                icon={WarningCircle}
-                                                size="sm"
-                                                color="danger"
-                                              />
-                                              <span className="italic truncate">
-                                                &ldquo;
-                                                {req.adminRemarks ||
-                                                  req.admin_remarks ||
-                                                  req.feedback ||
-                                                  "Revision requested. Please check and resubmit."}
-                                                &rdquo;
+                                        </td>
+
+                                        {/* Column 2: Type */}
+                                        <td className="px-3 py-3.5 align-middle text-center">
+                                          <div className="flex items-center justify-center">
+                                            {isMandatory ? (
+                                              <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider bg-[#780000] text-white border border-[#5e0000] shadow-2xs">
+                                                Required
                                               </span>
-                                            </p>
-                                          )}
-                                        </div>
-                                      </td>
+                                            ) : (
+                                              <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider bg-slate-700 text-white border border-slate-600 shadow-2xs">
+                                                Optional
+                                              </span>
+                                            )}
+                                          </div>
+                                        </td>
 
-                                      {/* Type (Required / Optional) column */}
-                                      <td className="px-4 py-3.5 align-middle text-center">
-                                        {templateMandatoryMap.get(req.code) !==
-                                        false ? (
-                                          <span className="inline-flex items-center px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider bg-[#780000] text-white border border-[#5e0000] shadow-2xs">
-                                            Required
-                                          </span>
-                                        ) : (
-                                          <span className="inline-flex items-center px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider bg-slate-700 dark:bg-slate-700 text-white border border-slate-600 shadow-2xs">
-                                            Optional
-                                          </span>
-                                        )}
-                                      </td>
+                                        {/* Column 3: Attached File */}
+                                        <td className="px-4 py-3.5 align-middle text-center">
+                                          <div className="flex flex-col items-center justify-center gap-1.5 min-w-0 text-center">
+                                            {isCleanedFile ? (
+                                              <>
+                                                <span
+                                                  className="font-medium text-slate-700 dark:text-slate-300 break-words text-xs leading-snug"
+                                                  title={rawDisplayFileName}
+                                                >
+                                                  {displayFileName}
+                                                </span>
+                                                <span className="inline-flex items-center gap-1 rounded-md border border-amber-600 bg-amber-500 px-2.5 py-0.5 text-[10px] font-bold text-slate-950 shadow-2xs">
+                                                  Cleaned (Archived to ZIP)
+                                                </span>
+                                              </>
+                                            ) : hasUploadedFile ? (
+                                              <span
+                                                className="font-medium text-slate-900 dark:text-slate-100 truncate max-w-full block text-xs leading-snug"
+                                                title={rawDisplayFileName}
+                                              >
+                                                {displayFileName}
+                                              </span>
+                                            ) : null}
 
-                                      {/* Actions column */}
-                                      <td className="px-4 py-3.5 align-middle text-center">
-                                        <div className="flex flex-col items-center justify-center gap-1.5">
-                                          {selectedClass?.is_archived ? (
-                                            <>
-                                              {/* VIEW FILE: Allow viewing files already submitted before archiving */}
-                                              {req.status !== "Not Submitted" &&
-                                                req.status !== "Exempted" &&
-                                                req.status !== "Overdue" &&
-                                                req.latestSubmissionId &&
-                                                Boolean(
-                                                  req.submittedAt ||
-                                                  req.storagePath ||
-                                                  req.fileName,
-                                                ) && (
+                                            {selectedClass?.is_archived ? (
+                                              <>
+                                                {hasUploadedFile && (
                                                   <button
                                                     type="button"
                                                     onClick={() =>
                                                       openSubmissionPreview(req)
                                                     }
-                                                    className="inline-flex items-center justify-center gap-1.5 bg-white hover:bg-slate-50 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-300 dark:border-slate-700 rounded-xl w-36 h-8 text-xs font-bold transition-all cursor-pointer shadow-2xs active:scale-95"
+                                                    className="inline-flex items-center justify-center gap-1 rounded-lg border border-slate-200 bg-slate-100 hover:bg-slate-200 text-slate-800 dark:border-slate-700 dark:bg-slate-800 dark:hover:bg-slate-750 dark:text-slate-200 px-2.5 py-1 text-[11px] font-semibold transition cursor-pointer shadow-2xs"
                                                   >
                                                     <AppIcon
                                                       icon={Eye}
@@ -6325,130 +6744,127 @@ function FacultySubmissionPanelContent({
                                                     <span>View File</span>
                                                   </button>
                                                 )}
-                                              <div
-                                                className="inline-flex items-center justify-center gap-1.5 bg-slate-200/80 dark:bg-slate-800/80 text-slate-500 dark:text-slate-400 font-semibold w-36 h-8 rounded-xl text-xs cursor-not-allowed border border-slate-300 dark:border-slate-700 select-none"
-                                                title="This class is archived. Unarchive it to upload or request extensions."
-                                              >
-                                                <AppIcon
-                                                  icon={Lock}
-                                                  size="sm"
-                                                  color="inherit"
-                                                />
-                                                <span>Class Archived</span>
-                                              </div>
-                                            </>
-                                          ) : (
-                                            (() => {
-                                              const ongoingUpload =
-                                                uploadTasks.find(
-                                                  (t) =>
-                                                    t.requirementCode ===
-                                                      req.code &&
-                                                    t.status === "uploading" &&
-                                                    (selectedClassId
-                                                      ? t.classId ===
-                                                        selectedClassId
-                                                      : !t.classId),
-                                                );
-                                              if (ongoingUpload) {
-                                                return (
-                                                  <div className="inline-flex items-center justify-center gap-1.5 bg-amber-500 border border-amber-600 text-slate-950 font-bold w-36 h-8 rounded-xl text-xs shadow-xs px-2">
-                                                    <AppIcon
-                                                      icon={SystemRestart}
-                                                      size="xs"
-                                                      color="inherit"
-                                                      className="animate-spin shrink-0"
-                                                    />
-                                                    <span className="truncate">
-                                                      Uploading{" "}
-                                                      {ongoingUpload.progress}%
-                                                    </span>
-                                                  </div>
-                                                );
-                                              }
-                                              return (
-                                                <>
-                                                  {/* 1. EXEMPTED: Disable both file uploads and extension requests */}
-                                                  {req.status ===
-                                                    "Exempted" && (
-                                                    <button
-                                                      type="button"
-                                                      disabled
-                                                      className="inline-flex items-center justify-center gap-1.5 bg-slate-200/70 dark:bg-slate-800/70 text-slate-500 dark:text-slate-400 font-medium w-36 h-8 rounded-xl text-xs cursor-not-allowed opacity-80"
-                                                      title="This requirement is exempted. No submission or extension is needed."
-                                                    >
+                                                <span
+                                                  className="inline-flex items-center justify-center gap-1 bg-slate-200/80 dark:bg-slate-800/80 text-slate-500 dark:text-slate-400 font-semibold px-2.5 py-1 rounded-lg text-[11px] cursor-not-allowed border border-slate-300 dark:border-slate-700 select-none"
+                                                  title="This class is archived. Unarchive it to upload or request extensions."
+                                                >
+                                                  <AppIcon
+                                                    icon={Lock}
+                                                    size="xs"
+                                                    color="inherit"
+                                                  />
+                                                  <span>Class Archived</span>
+                                                </span>
+                                              </>
+                                            ) : (
+                                              (() => {
+                                                const ongoingUpload =
+                                                  uploadTasks.find(
+                                                    (t) =>
+                                                      t.requirementCode ===
+                                                        req.code &&
+                                                      t.status === "uploading" &&
+                                                      (selectedClassId
+                                                        ? t.classId ===
+                                                          selectedClassId
+                                                        : !t.classId),
+                                                  );
+                                                if (ongoingUpload) {
+                                                  return (
+                                                    <div className="inline-flex items-center justify-center gap-1.5 bg-amber-500 border border-amber-600 text-slate-950 font-bold px-3 py-1 rounded-lg text-[11px] shadow-xs">
                                                       <AppIcon
-                                                        icon={Minus}
-                                                        size="sm"
+                                                        icon={SystemRestart}
+                                                        size="xs"
                                                         color="inherit"
+                                                        className="animate-spin shrink-0"
                                                       />
-                                                      <span>Exempted</span>
-                                                    </button>
-                                                  )}
-
-                                                  {/* 2. REJECTED: Upload Revision or Request Extension if closed/overdue */}
-                                                  {req.status === "Rejected" &&
-                                                    ((isWindowNotConfigured ||
-                                                      req.isIndividualClosed) &&
-                                                    !req.isExtended &&
-                                                    !hasActiveGracePeriod &&
-                                                    !isEffectivelyOpen ? (
+                                                      <span className="truncate">
+                                                        Uploading{" "}
+                                                        {ongoingUpload.progress}%
+                                                      </span>
+                                                    </div>
+                                                  );
+                                                }
+                                                return (
+                                                  <div className="flex flex-wrap items-center justify-center gap-1.5">
+                                                    {req.status === "Exempted" && (
                                                       <button
                                                         type="button"
                                                         disabled
-                                                        className="inline-flex items-center justify-center gap-1.5 bg-slate-200/70 dark:bg-slate-800/70 text-slate-500 dark:text-slate-400 font-medium w-36 h-8 rounded-xl text-xs cursor-not-allowed opacity-80"
-                                                        title="Submissions will open once the administration announces the submission schedule."
+                                                        className="inline-flex items-center justify-center gap-1 bg-slate-200 text-slate-500 dark:bg-slate-800 dark:text-slate-400 border border-slate-300 dark:border-slate-700 font-medium px-2.5 py-1 rounded-lg text-[11px] cursor-not-allowed"
+                                                        title="This requirement is exempted."
                                                       >
                                                         <AppIcon
-                                                          icon={Calendar}
-                                                          size="sm"
+                                                          icon={Minus}
+                                                          size="xs"
                                                           color="inherit"
                                                         />
-                                                        <span>
-                                                          Awaiting Schedule
-                                                        </span>
+                                                        <span>Exempted</span>
                                                       </button>
-                                                    ) : req.isExtended ? (
-                                                      <button
-                                                        type="button"
-                                                        onClick={() =>
-                                                          openDirectUploadModal(
-                                                            req.code,
-                                                            true,
-                                                          )
-                                                        }
-                                                        className="inline-flex items-center justify-center gap-1.5 bg-indigo-600 hover:bg-indigo-500 text-white border border-indigo-700 font-semibold w-36 h-8 rounded-xl text-xs shadow-xs active:scale-[0.98] transition-all cursor-pointer"
-                                                        title={`Upload revision unlocked until extended date: ${formatDeadlineDate(req.extendedUntil)}`}
-                                                      >
-                                                        <AppIcon
-                                                          icon={Upload}
-                                                          size="sm"
-                                                          color="white"
-                                                        />
-                                                        <span>
-                                                          Upload Revision
-                                                        </span>
-                                                      </button>
-                                                    ) : (isWindowClosed ||
-                                                        Boolean(
-                                                          req.effectiveDeadline &&
-                                                          Date.now() >
-                                                            new Date(
-                                                              req.effectiveDeadline,
-                                                            ).getTime(),
-                                                        )) &&
+                                                    )}
+
+                                                    {req.status === "Rejected" &&
+                                                      ((isWindowNotConfigured ||
+                                                        req.isIndividualClosed) &&
+                                                      !req.isExtended &&
                                                       !hasActiveGracePeriod &&
-                                                      !isEffectivelyOpen &&
-                                                      !req.customDueDate ? (
+                                                      !isEffectivelyOpen ? (
                                                         <button
                                                           type="button"
                                                           disabled
-                                                          className="inline-flex items-center justify-center gap-1.5 bg-slate-200/70 dark:bg-slate-800/70 text-slate-500 dark:text-slate-400 font-medium w-36 h-8 rounded-xl text-xs cursor-not-allowed opacity-80"
+                                                          className="inline-flex items-center justify-center gap-1 bg-slate-200 text-slate-500 dark:bg-slate-800 dark:text-slate-400 border border-slate-300 dark:border-slate-700 font-medium px-2.5 py-1 rounded-lg text-[11px] cursor-not-allowed"
+                                                          title="Submissions will open once the administration announces the submission schedule."
+                                                        >
+                                                          <AppIcon
+                                                            icon={Calendar}
+                                                            size="xs"
+                                                            color="inherit"
+                                                          />
+                                                          <span>
+                                                            Awaiting Schedule
+                                                          </span>
+                                                        </button>
+                                                      ) : req.isExtended ? (
+                                                        <button
+                                                          type="button"
+                                                          onClick={() =>
+                                                            openDirectUploadModal(
+                                                              req.code,
+                                                              true,
+                                                            )
+                                                          }
+                                                          className="inline-flex items-center justify-center gap-1 bg-indigo-600 hover:bg-indigo-500 text-white border border-indigo-700 font-semibold px-2.5 py-1 rounded-lg text-[11px] shadow-2xs transition-all cursor-pointer"
+                                                          title={`Upload revision unlocked until ${formatDeadlineDate(req.extendedUntil)}`}
+                                                        >
+                                                          <AppIcon
+                                                            icon={Upload}
+                                                            size="xs"
+                                                            color="white"
+                                                          />
+                                                          <span>
+                                                            Upload Revision
+                                                          </span>
+                                                        </button>
+                                                      ) : (isWindowClosed ||
+                                                          Boolean(
+                                                            req.effectiveDeadline &&
+                                                              Date.now() >
+                                                                new Date(
+                                                                  req.effectiveDeadline,
+                                                                ).getTime(),
+                                                          )) &&
+                                                        !hasActiveGracePeriod &&
+                                                        !isEffectivelyOpen &&
+                                                        !req.customDueDate ? (
+                                                        <button
+                                                          type="button"
+                                                          disabled
+                                                          className="inline-flex items-center justify-center gap-1 bg-slate-200 text-slate-500 dark:bg-slate-800 dark:text-slate-400 border border-slate-300 dark:border-slate-700 font-medium px-2.5 py-1 rounded-lg text-[11px] cursor-not-allowed"
                                                           title="Uploads are locked because the submission window is closed."
                                                         >
                                                           <AppIcon
                                                             icon={Lock}
-                                                            size="sm"
+                                                            size="xs"
                                                             color="inherit"
                                                           />
                                                           <span>
@@ -6456,225 +6872,301 @@ function FacultySubmissionPanelContent({
                                                           </span>
                                                         </button>
                                                       ) : (
+                                                        <button
+                                                          type="button"
+                                                          onClick={() =>
+                                                            openDirectUploadModal(
+                                                              req.code,
+                                                              true,
+                                                            )
+                                                          }
+                                                          className="inline-flex items-center justify-center gap-1 bg-amber-500 hover:bg-amber-400 text-slate-950 border border-amber-600/40 font-semibold px-2.5 py-1 rounded-lg text-[11px] shadow-2xs transition-all cursor-pointer"
+                                                        >
+                                                          <AppIcon
+                                                            icon={Upload}
+                                                            size="xs"
+                                                            color="inherit"
+                                                          />
+                                                          <span>
+                                                            Upload Revision
+                                                          </span>
+                                                        </button>
+                                                      ))}
+
+                                                    {hasUploadedFile ? (
                                                       <button
                                                         type="button"
                                                         onClick={() =>
-                                                          openDirectUploadModal(
-                                                            req.code,
-                                                            true,
+                                                          openSubmissionPreview(
+                                                            req,
                                                           )
                                                         }
-                                                        className="inline-flex items-center justify-center gap-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 border border-amber-600/40 font-semibold w-36 h-8 rounded-xl text-xs shadow-xs active:scale-[0.98] transition-all cursor-pointer"
+                                                        className="inline-flex items-center justify-center gap-1 rounded-lg border border-slate-200 bg-slate-100 hover:bg-slate-200 text-slate-800 dark:border-slate-700 dark:bg-slate-800 dark:hover:bg-slate-750 dark:text-slate-200 px-2.5 py-1 text-[11px] font-semibold transition cursor-pointer shadow-2xs"
                                                       >
                                                         <AppIcon
-                                                          icon={Upload}
-                                                          size="sm"
+                                                          icon={Eye}
+                                                          size="xs"
                                                           color="inherit"
                                                         />
-                                                        <span>
-                                                          Upload Revision
-                                                        </span>
+                                                        <span>View File</span>
                                                       </button>
-                                                    ))}
+                                                    ) : null}
 
-                                                  {/* 3. VIEW FILE: For submitted requirements */}
-                                                  {req.status !==
-                                                    "Not Submitted" &&
-                                                  req.status !== "Exempted" &&
-                                                  req.status !== "Overdue" &&
-                                                  (!req.isExtended ||
-                                                    req.latestSubmissionId) &&
-                                                  req.latestSubmissionId &&
-                                                  Boolean(
-                                                    req.submittedAt ||
-                                                    req.storagePath ||
-                                                    req.fileName,
-                                                  ) ? (
-                                                    <button
-                                                      type="button"
-                                                      onClick={() =>
-                                                        openSubmissionPreview(
-                                                          req,
-                                                        )
-                                                      }
-                                                      className="inline-flex items-center justify-center gap-1.5 bg-white hover:bg-slate-50 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-300 dark:border-slate-700 rounded-xl w-36 h-8 text-xs font-bold transition-all cursor-pointer shadow-2xs active:scale-95"
-                                                    >
-                                                      <AppIcon
-                                                        icon={Eye}
-                                                        size="sm"
-                                                        color="inherit"
-                                                      />
-                                                      <span>View File</span>
-                                                    </button>
-                                                  ) : null}
+                                                    {req.status === "Extended" &&
+                                                      !req.latestSubmissionId && (
+                                                        <button
+                                                          type="button"
+                                                          onClick={() =>
+                                                            openDirectUploadModal(
+                                                              req.code,
+                                                            )
+                                                          }
+                                                          className="inline-flex items-center justify-center gap-1 bg-amber-500 hover:bg-amber-400 text-slate-950 border border-amber-600/40 font-semibold px-2.5 py-1 rounded-lg text-[11px] shadow-2xs transition-all cursor-pointer"
+                                                        >
+                                                          <AppIcon
+                                                            icon={Upload}
+                                                            size="xs"
+                                                            color="inherit"
+                                                          />
+                                                          <span>Upload</span>
+                                                        </button>
+                                                      )}
 
-                                                  {/* 4. EXTENDED: Normal Upload UI */}
-                                                  {req.status === "Extended" &&
-                                                    !req.latestSubmissionId && (
-                                                      <button
-                                                        type="button"
-                                                        onClick={() =>
-                                                          openDirectUploadModal(
-                                                            req.code,
-                                                          )
-                                                        }
-                                                        className="inline-flex items-center justify-center gap-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 border border-amber-600/40 font-semibold w-36 h-8 rounded-xl text-xs shadow-xs active:scale-[0.98] transition-all cursor-pointer"
-                                                      >
-                                                        <AppIcon
-                                                          icon={Upload}
-                                                          size="sm"
-                                                          color="inherit"
-                                                        />
-                                                        <span>Upload</span>
-                                                      </button>
-                                                    )}
-
-                                                  {/* 5. OVERDUE: Lock file upload */}
-                                                  {req.status === "Overdue" && (
-                                                    <button
-                                                      type="button"
-                                                      disabled
-                                                      className="inline-flex items-center justify-center gap-1.5 bg-slate-200/70 dark:bg-slate-800/70 text-slate-500 dark:text-slate-400 font-medium w-36 h-8 rounded-xl text-xs cursor-not-allowed opacity-80"
-                                                      title={
-                                                        isWindowNotConfigured ||
-                                                        req.isIndividualClosed
-                                                          ? "Submissions will open once the administration announces the submission schedule."
-                                                          : "Uploads are locked because the submission window is closed."
-                                                      }
-                                                    >
-                                                      <AppIcon
-                                                        icon={
-                                                          isWindowNotConfigured ||
-                                                          req.isIndividualClosed
-                                                            ? Calendar
-                                                            : Lock
-                                                        }
-                                                        size="sm"
-                                                        color="inherit"
-                                                      />
-                                                      <span>
-                                                        {isWindowNotConfigured ||
-                                                        req.isIndividualClosed
-                                                          ? "Awaiting Schedule"
-                                                          : "Uploads Locked"}
-                                                      </span>
-                                                    </button>
-                                                  )}
-
-                                                  {/* 6. PENDING: Current date is on or before effective deadline, enable file upload */}
-                                                  {(req.status === "Pending" &&
-                                                    (!req.latestSubmissionId ||
-                                                      !req.submittedAt)) ||
-                                                  req.status ===
-                                                    "Not Submitted" ? (
-                                                    (isWindowClosed ||
-                                                      isWindowNotConfigured ||
-                                                      req.isIndividualClosed) &&
-                                                    !req.customDueDate &&
-                                                    !hasActiveGracePeriod &&
-                                                    !isEffectivelyOpen ? (
+                                                    {req.status === "Overdue" && (
                                                       <button
                                                         type="button"
                                                         disabled
-                                                        className="inline-flex items-center justify-center gap-1.5 bg-slate-200/70 dark:bg-slate-800/70 text-slate-500 dark:text-slate-400 font-medium w-36 h-8 rounded-xl text-xs cursor-not-allowed opacity-80"
+                                                        className="inline-flex items-center justify-center gap-1 bg-slate-200 text-slate-500 dark:bg-slate-800 dark:text-slate-400 border border-slate-300 dark:border-slate-700 font-medium px-2.5 py-1 rounded-lg text-[11px] cursor-not-allowed"
                                                         title={
-                                                          isWindowClosed &&
-                                                          !req.isIndividualClosed
-                                                            ? "Uploads are locked because the submission window is closed."
-                                                            : "Submissions will open once the administration announces the submission schedule."
+                                                          isWindowNotConfigured ||
+                                                          req.isIndividualClosed
+                                                            ? "Submissions will open once the administration announces the submission schedule."
+                                                            : "Uploads are locked because the submission window is closed."
                                                         }
                                                       >
                                                         <AppIcon
                                                           icon={
-                                                            isWindowClosed &&
-                                                            !req.isIndividualClosed
-                                                              ? Lock
-                                                              : Calendar
+                                                            isWindowNotConfigured ||
+                                                            req.isIndividualClosed
+                                                              ? Calendar
+                                                              : Lock
                                                           }
-                                                          size="sm"
+                                                          size="xs"
                                                           color="inherit"
                                                         />
                                                         <span>
-                                                          {isWindowClosed &&
-                                                          !req.isIndividualClosed
-                                                            ? "Uploads Locked"
-                                                            : "Awaiting Schedule"}
+                                                          {isWindowNotConfigured ||
+                                                          req.isIndividualClosed
+                                                            ? "Awaiting Schedule"
+                                                            : "Uploads Locked"}
                                                         </span>
                                                       </button>
-                                                    ) : (
-                                                      <button
-                                                        type="button"
-                                                        onClick={() =>
-                                                          openDirectUploadModal(
-                                                            req.code,
-                                                          )
-                                                        }
-                                                        className="inline-flex items-center justify-center gap-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 border border-amber-600/40 font-semibold w-36 h-8 rounded-xl text-xs shadow-xs active:scale-[0.98] transition-all cursor-pointer"
-                                                      >
-                                                        <AppIcon
-                                                          icon={Upload}
-                                                          size="sm"
-                                                          color="inherit"
-                                                        />
-                                                        <span>Upload</span>
-                                                      </button>
-                                                    )
-                                                  ) : null}
-                                                </>
-                                              );
-                                            })()
-                                          )}
-                                        </div>
-                                      </td>
+                                                    )}
 
-                                      {/* Status column */}
-                                      <td className="px-4 py-3.5 align-middle text-center">
-                                        <div className="flex items-center justify-center">
-                                          <SubmissionStatusBadge
-                                            status={
-                                              req.status === "Pending" &&
-                                              req.submittedAt &&
-                                              req.latestSubmissionId &&
-                                              (req.hasPriorRevision ||
-                                                req.isRevision)
-                                                ? "Revision Under Review"
-                                                : req.status === "Pending" &&
-                                                    req.submittedAt &&
-                                                    req.latestSubmissionId
-                                                  ? "Pending Review"
-                                                  : isWindowNotConfigured &&
-                                                      (req.status ===
-                                                        "Not Submitted" ||
-                                                        req.status ===
-                                                          "Pending" ||
-                                                        req.status ===
-                                                          "Overdue")
-                                                    ? "Not Submitted"
-                                                    : req.isIndividualClosed
+                                                    {((req.status === "Pending" &&
+                                                      (!req.latestSubmissionId ||
+                                                        !req.submittedAt)) ||
+                                                      req.status ===
+                                                        "Not Submitted") &&
+                                                      ((isWindowClosed ||
+                                                        isWindowNotConfigured ||
+                                                        req.isIndividualClosed) &&
+                                                      !req.customDueDate &&
+                                                      !hasActiveGracePeriod &&
+                                                      !isEffectivelyOpen ? (
+                                                        <button
+                                                          type="button"
+                                                          disabled
+                                                          className="inline-flex items-center justify-center gap-1 bg-slate-200 text-slate-500 dark:bg-slate-800 dark:text-slate-400 border border-slate-300 dark:border-slate-700 font-medium px-2.5 py-1 rounded-lg text-[11px] cursor-not-allowed"
+                                                          title={
+                                                            isWindowClosed &&
+                                                            !req.isIndividualClosed
+                                                              ? "Uploads are locked because the submission window is closed."
+                                                              : "Submissions will open once the administration announces the submission schedule."
+                                                          }
+                                                        >
+                                                          <AppIcon
+                                                            icon={
+                                                              isWindowClosed &&
+                                                              !req.isIndividualClosed
+                                                                ? Lock
+                                                                : Calendar
+                                                            }
+                                                            size="xs"
+                                                            color="inherit"
+                                                          />
+                                                          <span>
+                                                            {isWindowClosed &&
+                                                            !req.isIndividualClosed
+                                                              ? "Uploads Locked"
+                                                              : "Awaiting Schedule"}
+                                                          </span>
+                                                        </button>
+                                                      ) : (
+                                                        <button
+                                                          type="button"
+                                                          onClick={() =>
+                                                            openDirectUploadModal(
+                                                              req.code,
+                                                            )
+                                                          }
+                                                          className="inline-flex items-center justify-center gap-1 bg-amber-500 hover:bg-amber-400 text-slate-950 border border-amber-600/40 font-semibold px-2.5 py-1 rounded-lg text-[11px] shadow-2xs transition-all cursor-pointer"
+                                                        >
+                                                          <AppIcon
+                                                            icon={Upload}
+                                                            size="xs"
+                                                            color="inherit"
+                                                          />
+                                                          <span>Upload</span>
+                                                        </button>
+                                                      ))}
+                                                  </div>
+                                                );
+                                              })()
+                                            )}
+                                          </div>
+                                        </td>
+
+                                        {/* Column 4: Notes & Feedback */}
+                                        <td className="px-4 py-3.5 align-top">
+                                          {facultyRemarksText ||
+                                          reviewerFeedbackText ||
+                                          req.status === "Rejected" ? (
+                                            <div className="flex flex-col gap-1.5 min-w-0">
+                                              {facultyRemarksText ? (
+                                                <div
+                                                  className="rounded-lg border border-slate-200/90 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-900/40 px-2.5 py-1.5 text-xs shadow-2xs min-w-0"
+                                                  title={facultyRemarksText}
+                                                >
+                                                  <div className="flex items-center gap-1.5 mb-1">
+                                                    <span className="inline-flex items-center justify-center h-4 w-4 rounded-full bg-slate-200/70 dark:bg-slate-800 text-slate-600 dark:text-slate-400 shrink-0 [&>svg]:h-2.5 [&>svg]:w-2.5">
+                                                      <AppIcon
+                                                        icon={ChatBubble}
+                                                        size="xs"
+                                                        color="inherit"
+                                                      />
+                                                    </span>
+                                                    <span className="text-[10px] font-bold text-slate-700 dark:text-slate-300 tracking-tight">
+                                                      Faculty Remarks
+                                                    </span>
+                                                  </div>
+                                                  <p className="text-[11px] text-slate-800 dark:text-slate-200 font-medium leading-relaxed line-clamp-2 pl-5 break-words">
+                                                    &ldquo;{facultyRemarksText}&rdquo;
+                                                  </p>
+                                                </div>
+                                              ) : null}
+
+                                              {req.status === "Rejected" ? (
+                                                <div
+                                                  className="rounded-lg border border-slate-200/90 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-900/40 px-2.5 py-1.5 text-xs shadow-2xs min-w-0"
+                                                  title={
+                                                    reviewerFeedbackText ||
+                                                    "Revision requested. Please check and resubmit."
+                                                  }
+                                                >
+                                                  <div className="flex items-center gap-1.5 mb-1">
+                                                    <span className="inline-flex items-center justify-center h-4 w-4 rounded-full bg-slate-200/70 dark:bg-slate-800 text-slate-600 dark:text-slate-400 shrink-0 [&>svg]:h-2.5 [&>svg]:w-2.5">
+                                                      <AppIcon
+                                                        icon={Xmark}
+                                                        size="xs"
+                                                        color="inherit"
+                                                        strokeWidth={2.5}
+                                                      />
+                                                    </span>
+                                                    <span className="text-[10px] font-bold text-slate-700 dark:text-slate-300 tracking-tight">
+                                                      Revision Sent
+                                                    </span>
+                                                  </div>
+                                                  <p className="text-[11px] text-slate-800 dark:text-slate-200 font-medium leading-relaxed line-clamp-2 pl-5 break-words">
+                                                    &ldquo;
+                                                    {reviewerFeedbackText ||
+                                                      "Revision requested. Please check and resubmit."}
+                                                    &rdquo;
+                                                  </p>
+                                                </div>
+                                              ) : req.status === "Validated" &&
+                                                reviewerFeedbackText ? (
+                                                <div
+                                                  className="rounded-lg border border-slate-200/90 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-900/40 px-2.5 py-1.5 text-xs shadow-2xs min-w-0"
+                                                  title={reviewerFeedbackText}
+                                                >
+                                                  <div className="flex items-center gap-1.5 mb-1">
+                                                    <span className="inline-flex items-center justify-center h-4 w-4 rounded-full bg-slate-200/70 dark:bg-slate-800 text-slate-600 dark:text-slate-400 shrink-0 [&>svg]:h-2.5 [&>svg]:w-2.5">
+                                                      <AppIcon
+                                                        icon={Check}
+                                                        size="xs"
+                                                        color="inherit"
+                                                        strokeWidth={2.5}
+                                                      />
+                                                    </span>
+                                                    <span className="text-[10px] font-bold text-slate-700 dark:text-slate-300 tracking-tight">
+                                                      Validated Remarks
+                                                    </span>
+                                                  </div>
+                                                  <p className="text-[11px] text-slate-800 dark:text-slate-200 font-medium leading-relaxed line-clamp-2 pl-5 break-words">
+                                                    &ldquo;{reviewerFeedbackText}&rdquo;
+                                                  </p>
+                                                </div>
+                                              ) : null}
+                                            </div>
+                                          ) : (
+                                            <div className="pt-0.5">
+                                              <span className="text-slate-400 dark:text-slate-600 text-xs italic block">
+                                                &mdash;
+                                              </span>
+                                            </div>
+                                          )}
+                                        </td>
+
+                                        {/* Column 5: Status */}
+                                        <td className="px-4 py-3.5 align-middle text-center">
+                                          <div className="flex items-center justify-center">
+                                            <SubmissionStatusBadge
+                                              status={
+                                                req.status === "Pending" &&
+                                                req.submittedAt &&
+                                                req.latestSubmissionId &&
+                                                (req.hasPriorRevision ||
+                                                  req.isRevision)
+                                                  ? "Revision Under Review"
+                                                  : req.status === "Pending" &&
+                                                      req.submittedAt &&
+                                                      req.latestSubmissionId
+                                                    ? "Pending Review"
+                                                    : isWindowNotConfigured &&
+                                                        (req.status ===
+                                                          "Not Submitted" ||
+                                                          req.status ===
+                                                            "Pending" ||
+                                                          req.status ===
+                                                            "Overdue")
                                                       ? "Not Submitted"
-                                                      : isWindowClosed &&
-                                                          (req.status ===
-                                                            "Not Submitted" ||
-                                                            req.status ===
-                                                              "Pending")
-                                                        ? "Overdue"
-                                                        : req.status
-                                            }
-                                            size="md"
-                                            iconOnly
-                                          />
-                                        </div>
-                                      </td>
-                                    </tr>
-                                  ),
-                                )
-                              )}
+                                                      : req.isIndividualClosed
+                                                        ? "Not Submitted"
+                                                        : isWindowClosed &&
+                                                            (req.status ===
+                                                              "Not Submitted" ||
+                                                              req.status ===
+                                                                "Pending")
+                                                          ? "Overdue"
+                                                          : req.status
+                                              }
+                                              size="md"
+                                            />
+                                          </div>
+                                        </td>
+                                      </tr>
+                                    );
+                                  });
+                                })()}
                               </tbody>
                             </table>
                           </div>
                         </div>
                       </div>
                     )}
+                      </div>
+                    </div>
                   </div>
                 )}
               </article>
@@ -7099,14 +7591,14 @@ function FacultySubmissionPanelContent({
             )}
             {isMounted && isHistoryModalOpen && (
               <div
-                className="fixed inset-0 z-50 overflow-y-auto bg-slate-950/80 p-4 sm:p-6 flex min-h-full items-center justify-center backdrop-blur-sm"
+                className="fixed inset-0 z-50 flex flex-col w-screen h-screen bg-white dark:bg-slate-900 overflow-hidden"
                 role="dialog"
                 aria-modal="true"
                 aria-labelledby="submission-history-title"
                 onClick={closeHistoryModal}
               >
                 <div
-                  className="relative w-full max-w-7xl mx-auto flex max-h-[90vh] flex-col rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xl overflow-hidden my-auto"
+                  className="relative flex w-full h-full flex-col bg-white dark:bg-slate-900 overflow-hidden"
                   onClick={(event) => event.stopPropagation()}
                 >
                   <ModalHeader
@@ -7117,91 +7609,117 @@ function FacultySubmissionPanelContent({
                     onClose={closeHistoryModal}
                     closeAriaLabel="Close history modal"
                   />
-                  <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-950/60 px-6 py-3.5">
-                    <div className="flex flex-wrap items-center gap-4">
-                      <div className="flex items-center gap-2">
-                        <label
-                          htmlFor="modalHistoryAcademicYear"
-                          className="text-xs uppercase tracking-wider text-slate-700 dark:text-slate-300 font-bold"
-                        >
-                          School Year:
-                        </label>
-                        <select
-                          id="modalHistoryAcademicYear"
-                          className="rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-3.5 py-1.5 text-xs font-semibold text-slate-900 dark:text-slate-200 outline-none focus:ring-2 focus:ring-[#0b5336]/20 focus:border-[#0b5336] shadow-2xs"
-                          value={historyAcademicYear}
-                          onChange={(event) =>
-                            setHistoryAcademicYear(event.target.value)
-                          }
-                        >
-                          {historyAcademicYears.map((year) => (
+                  <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 dark:border-slate-800/80 bg-slate-50/80 dark:bg-slate-950/60 px-6 py-3.5">
+                    <div className="flex flex-wrap items-center gap-3">
+                      <span className="text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400">
+                        Academic Term:
+                      </span>
+                      <select
+                        id="modalHistoryAcademicYear"
+                        aria-label="School Year"
+                        className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 px-3 py-1.5 text-xs font-semibold text-slate-900 dark:text-slate-100 outline-none transition focus:border-amber-500 shadow-2xs"
+                        value={historyAcademicYear}
+                        onChange={(event) => {
+                          hasManuallyChangedHistoryTermRef.current = true;
+                          setHistoryAcademicYear(event.target.value);
+                        }}
+                      >
+                        {historyAcademicYears.map((year) => {
+                          const currentAy =
+                            historyCurrentTerm?.academicYear || activeAY;
+                          const isCurrentYear = Boolean(
+                            currentAy && year === currentAy,
+                          );
+                          return (
                             <option key={year} value={year}>
                               {year === "All"
                                 ? "All Academic Years"
-                                : `S.Y. ${year}`}
+                                : `A.Y. ${year}${isCurrentYear ? " (Current)" : ""}`}
                             </option>
-                          ))}
-                        </select>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <label
-                          htmlFor="modalHistorySemester"
-                          className="text-xs uppercase tracking-wider text-slate-700 dark:text-slate-300 font-bold"
-                        >
-                          Semester:
-                        </label>
-                        <select
-                          id="modalHistorySemester"
-                          className="rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-3.5 py-1.5 text-xs font-semibold text-slate-900 dark:text-slate-200 outline-none focus:ring-2 focus:ring-[#0b5336]/20 focus:border-[#0b5336] shadow-2xs"
-                          value={historySemester}
-                          onChange={(event) =>
-                            setHistorySemester(
-                              event.target.value as
-                                | (typeof SEMESTER_OPTIONS)[number]
-                                | "All",
-                            )
-                          }
-                        >
-                          {historySemesterOptions.map((semester) => (
-                            <option key={semester} value={semester}>
-                              {semester === "All" ? "All Semesters" : semester}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2.5">
-                      <button
-                        type="button"
-                        onClick={handleBulkDownload}
-                        disabled={
-                          isBulkDownloading ||
-                          filteredPastSubmissions.length === 0
-                        }
-                        className="inline-flex items-center gap-2 rounded-xl border border-[#08412a] bg-[#0b5336] hover:bg-[#08412a] disabled:opacity-50 disabled:pointer-events-none text-white font-bold text-xs px-4 py-2 shadow-xs transition-all cursor-pointer active:scale-95"
-                        title="Download all validated requirements in current view as ZIP"
+                          );
+                        })}
+                      </select>
+
+                      <select
+                        id="modalHistorySemester"
+                        aria-label="Semester"
+                        className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 px-3 py-1.5 text-xs font-semibold text-slate-900 dark:text-slate-100 outline-none transition focus:border-amber-500 shadow-2xs"
+                        value={historySemester}
+                        onChange={(event) => {
+                          hasManuallyChangedHistoryTermRef.current = true;
+                          setHistorySemester(
+                            event.target.value as
+                              | (typeof SEMESTER_OPTIONS)[number]
+                              | "All",
+                          );
+                        }}
                       >
-                        {isBulkDownloading ? (
-                          <AppIcon
-                            icon={SystemRestart}
-                            size="sm"
-                            color="white"
-                            className="animate-spin"
-                          />
-                        ) : (
-                          <AppIcon icon={Download} size="sm" color="white" />
-                        )}
-                        <span>
-                          {isBulkDownloading
-                            ? bulkDownloadProgressText
-                            : "Download All (ZIP)"}
-                        </span>
-                      </button>
+                        {historySemesterOptions.map((semester) => {
+                          const currentAy =
+                            historyCurrentTerm?.academicYear || activeAY;
+                          const currentSem =
+                            historyCurrentTerm?.semester || activeSem;
+                          const isCurrentSemester = Boolean(
+                            currentSem &&
+                              semester === currentSem &&
+                              (!currentAy || historyAcademicYear === currentAy),
+                          );
+                          return (
+                            <option key={semester} value={semester}>
+                              {`${semester}${isCurrentSemester ? " (Current)" : ""}`}
+                            </option>
+                          );
+                        })}
+                      </select>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {(() => {
+                        const hasDownloadableHistory =
+                          filteredPastSubmissions.some((s) =>
+                            Boolean(
+                              s.storagePath &&
+                                !s.storagePath.startsWith("__cleaned__"),
+                            ),
+                          );
+                        return (
+                          <button
+                            type="button"
+                            onClick={handleBulkDownload}
+                            disabled={
+                              isBulkDownloading || !hasDownloadableHistory
+                            }
+                            className="inline-flex items-center gap-2 rounded-xl bg-[#780000] hover:bg-[#5e0000] active:scale-[0.98] text-white border border-[#5e0000] text-xs font-bold px-3.5 py-1.5 shadow-xs hover:shadow transition-all cursor-pointer disabled:bg-slate-200 disabled:text-slate-400 disabled:border-slate-300 dark:disabled:bg-slate-800 dark:disabled:text-slate-500 dark:disabled:border-slate-700 disabled:shadow-none disabled:cursor-not-allowed disabled:hover:bg-slate-200 dark:disabled:hover:bg-slate-800 disabled:active:scale-100 shrink-0"
+                            title={
+                              hasDownloadableHistory
+                                ? "Download History ZIP"
+                                : "Files have been cleaned (archived to ZIP backup)"
+                            }
+                          >
+                            {isBulkDownloading ? (
+                              <>
+                                <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white/30 border-t-white shrink-0" />
+                                <span>
+                                  {bulkDownloadProgressText || "Zipping..."}
+                                </span>
+                              </>
+                            ) : (
+                              <>
+                                <AppIcon
+                                  icon={Download}
+                                  size="sm"
+                                  color="inherit"
+                                />
+                                <span>Download History ZIP</span>
+                              </>
+                            )}
+                          </button>
+                        );
+                      })()}
                       <button
                         type="button"
                         onClick={() => void handleRefreshHistory()}
                         disabled={isRefreshingHistory || isBulkDownloading}
-                        className="inline-flex items-center gap-1.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white hover:bg-slate-50 dark:bg-slate-800 dark:hover:bg-slate-750 text-slate-700 dark:text-slate-200 font-semibold px-3.5 py-2 text-xs shadow-xs active:scale-[0.98] transition-all cursor-pointer disabled:opacity-50"
+                        className="inline-flex items-center gap-1.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white hover:bg-slate-50 dark:bg-slate-800 dark:hover:bg-slate-750 text-slate-700 dark:text-slate-200 font-semibold px-3.5 py-1.5 text-xs shadow-xs active:scale-[0.98] transition-all cursor-pointer disabled:opacity-50"
                       >
                         <AppIcon
                           icon={Refresh}
@@ -7215,7 +7733,27 @@ function FacultySubmissionPanelContent({
                       </button>
                     </div>
                   </div>
-                  <div className="flex-1 overflow-y-auto p-6 sm:p-8 bg-slate-50/50 dark:bg-slate-950/40">
+                  <div className="flex-1 overflow-y-auto p-6 sm:p-8 bg-slate-50/50 dark:bg-slate-950/40 space-y-5">
+                    <div
+                      role="note"
+                      className="flex items-start gap-2.5 rounded-2xl border border-amber-600 bg-amber-500 px-4 py-3 text-xs font-semibold text-slate-950 shadow-sm"
+                    >
+                      <AppIcon
+                        icon={WarningCircle}
+                        size="sm"
+                        color="inherit"
+                        className="mt-0.5 shrink-0 text-slate-950"
+                      />
+                      <span className="leading-relaxed">
+                        Only subjects with validated documents for{" "}
+                        <strong className="font-black">
+                          A.Y. {historyAcademicYear} &bull; {historySemester}
+                        </strong>{" "}
+                        are shown here. New subjects added in other semesters
+                        will not appear in this term&apos;s history unless they
+                        have validated submissions in this term.
+                      </span>
+                    </div>
                     {isLoadingHistory ? (
                       <SubmissionHistorySkeleton count={4} />
                     ) : historyError ? (
@@ -7234,11 +7772,12 @@ function FacultySubmissionPanelContent({
                     ) : (
                       <SubmissionHistoryList
                         submissions={filteredPastSubmissions}
-                        classes={facultyClasses}
+                        classes={historyScopedClasses}
                         onViewFile={openHistorySubmissionPreview}
                         viewedSubmissionIds={viewedSubmissionIds}
                         getRequirementTitle={getRequirementTitle}
                         templateMandatoryMap={templateMandatoryMap}
+                        totalRequiredCount={activeTemplates.length}
                         emptyMessage="No validated documents found for the selected academic term."
                       />
                     )}

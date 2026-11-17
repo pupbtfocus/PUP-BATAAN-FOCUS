@@ -116,6 +116,14 @@ export type PastSubmissionData = {
   storagePath?: string;
   classId?: string | null;
   class_id?: string | null;
+  faculty_class?: {
+    id: string;
+    subject_code: string;
+    description: string;
+    units: number;
+    section_code: string;
+    is_archived?: boolean;
+  } | null;
 };
 
 export type FacultyInitialData = {
@@ -124,6 +132,8 @@ export type FacultyInitialData = {
   counts: StatusCountsData;
   academicYear: string;
   semester: SubmissionWindowSemester | null;
+  availableAcademicYears?: string[];
+  termsByYear?: Record<string, SubmissionWindowSemester[]>;
   submissionWindow: SubmissionWindowStateData;
   pastSubmissions: PastSubmissionData[];
   hasActiveSchedule: boolean;
@@ -213,11 +223,9 @@ export async function getFacultyInitialData(
     extRes,
     initialPersonalDeadline,
   ] = await Promise.all([
-    supabase
+    (supabase as any)
       .from("academic_terms")
-      .select("id, academic_year, semester")
-      .eq("status", "Current")
-      .maybeSingle(),
+      .select("id, academic_year, semester, status"),
     supabase
       .from("requirement_templates")
       .select("code, title, is_mandatory, max_size_mb, allowed_formats, is_active")
@@ -238,7 +246,22 @@ export async function getFacultyInitialData(
     getFacultyPersonalDeadline(supabase, authUserId),
   ]);
 
-  const dbCurrentTerm = currentTermRes.data;
+  const allAcademicTermRows = (
+    Array.isArray(currentTermRes.data)
+      ? currentTermRes.data
+      : currentTermRes.data
+        ? [currentTermRes.data]
+        : []
+  ) as Array<{
+    id?: string;
+    academic_year?: string;
+    semester?: string;
+    status?: string;
+  }>;
+  const dbCurrentTerm =
+    allAcademicTermRows.find(
+      (t) => (t.status || "").trim().toLowerCase() === "current",
+    ) || null;
   const activeAcademicYear =
     requestedAcademicYear ||
     dbCurrentTerm?.academic_year ||
@@ -317,6 +340,7 @@ export async function getFacultyInitialData(
     signedAvatarRes,
     assignmentsRes,
     submissionsRes,
+    facultyClassesRes,
     notifsRes,
   ] = await Promise.all([
     activeAcademicYear && activeSemester
@@ -341,6 +365,10 @@ export async function getFacultyInitialData(
       .select("*")
       .in("faculty_profile_id", facultyIdList)
       .order("submitted_at", { ascending: false, nullsFirst: false }),
+    supabase
+      .from("faculty_classes")
+      .select("id, subject_code, description, units, section_code, academic_year, semester, academic_term_id, is_archived")
+      .in("faculty_profile_id", facultyIdList),
     approvedExtensions.length === 0
       ? supabase
           .from("notifications")
@@ -430,8 +458,10 @@ export async function getFacultyInitialData(
     is_archived?: boolean | null;
   }> = [];
 
+  let allSubmissionRows: typeof rawSubmissions = [];
   if (!submissionsRes.error && submissionsRes.data) {
-    rawSubmissions = (submissionsRes.data as any[]).filter((s) => s.is_archived !== true);
+    allSubmissionRows = submissionsRes.data as typeof rawSubmissions;
+    rawSubmissions = allSubmissionRows.filter((s) => s.is_archived !== true);
   }
 
   if (approvedExtensions.length === 0 && notifsRes.data) {
@@ -445,7 +475,7 @@ export async function getFacultyInitialData(
     }
   }
 
-  const submissionIds = rawSubmissions.map((s) => s.id);
+  const submissionIds = allSubmissionRows.map((s) => s.id);
   const targetProfileId = facultyProfileId || facultyIdList[0];
   const needsOnboardingUpsert = Boolean(
     activeAcademicYear &&
@@ -814,8 +844,78 @@ export async function getFacultyInitialData(
   };
 
   // 9. Historical & Active Submissions across all classes
+  const academicTermById = new Map<
+    string,
+    { academicYear: string; semester: SubmissionWindowSemester }
+  >();
+  const termsByYear: Record<string, SubmissionWindowSemester[]> = {};
+  const SEMESTER_SORT_ORDER: Record<string, number> = {
+    "1st Semester": 1,
+    "2nd Semester": 2,
+    "Summer Semester": 3,
+  };
+  const registerTerm = (ay?: string | null, sem?: string | null) => {
+    if (!ay || !sem) return;
+    const normalizedSem = normalizeSemester(sem);
+    if (!termsByYear[ay]) termsByYear[ay] = [];
+    if (!termsByYear[ay].includes(normalizedSem)) {
+      termsByYear[ay].push(normalizedSem);
+    }
+  };
+
+  for (const t of allAcademicTermRows) {
+    if (t.id && t.academic_year && t.semester) {
+      academicTermById.set(t.id, {
+        academicYear: t.academic_year,
+        semester: normalizeSemester(t.semester),
+      });
+    }
+    registerTerm(t.academic_year, t.semester);
+  }
+  for (const a of assignmentRows) {
+    registerTerm(a.academic_year, a.term);
+  }
+  if (activeAcademicYear && activeSemester) {
+    registerTerm(activeAcademicYear, activeSemester);
+  }
+
+  const classTermMap = new Map<
+    string,
+    { academicYear: string; semester: SubmissionWindowSemester }
+  >();
+  const classDetailsMap = new Map<
+    string,
+    {
+      id: string;
+      subject_code: string;
+      description: string;
+      units: number;
+      section_code: string;
+      is_archived?: boolean;
+    }
+  >();
+  for (const c of (facultyClassesRes?.data ?? []) as Array<any>) {
+    if (!c?.id) continue;
+    classDetailsMap.set(c.id, {
+      id: c.id,
+      subject_code: c.subject_code || "Subject",
+      description: c.description || "Course Load",
+      units: Number(c.units ?? 3),
+      section_code: c.section_code || "Section",
+      is_archived: Boolean(c.is_archived),
+    });
+    if (c.academic_year && c.semester) {
+      classTermMap.set(c.id, {
+        academicYear: c.academic_year,
+        semester: normalizeSemester(c.semester),
+      });
+    } else if (c.academic_term_id && academicTermById.has(c.academic_term_id)) {
+      classTermMap.set(c.id, academicTermById.get(c.academic_term_id)!);
+    }
+  }
+
   const pastSubmissions: PastSubmissionData[] = [];
-  for (const row of rawSubmissions) {
+  for (const row of allSubmissionRows) {
     if (!row || !row.requirement_code) continue;
 
     const rawSt = (row.status || "").toLowerCase().trim();
@@ -877,16 +977,29 @@ export async function getFacultyInitialData(
     const facultyNote = row.remarks?.trim() || undefined;
 
     const matchedAssignment = assignmentRows.find((a) => a.id === row.faculty_assignment_id);
-    let histAY = matchedAssignment?.academic_year || activeAcademicYear || null;
+    const matchedClassTerm = (row as any).class_id
+      ? classTermMap.get((row as any).class_id)
+      : undefined;
+    const matchedClassDetails = (row as any).class_id
+      ? classDetailsMap.get((row as any).class_id) || null
+      : null;
+
+    let histAY =
+      matchedAssignment?.academic_year ||
+      matchedClassTerm?.academicYear ||
+      activeAcademicYear ||
+      null;
     let histSem: SubmissionWindowSemester | null = matchedAssignment?.term
       ? normalizeSemester(matchedAssignment.term)
-      : activeSemester || null;
+      : matchedClassTerm?.semester || activeSemester || null;
 
     if (!histAY || !histSem) {
       const dateTerm = toAcademicYearAndSemester(row.submitted_at || row.created_at);
       histAY = histAY || dateTerm.academicYear;
       histSem = histSem || dateTerm.semester;
     }
+
+    registerTerm(histAY, histSem);
 
     const storagePath = resolvedStorage;
     const fileName =
@@ -921,8 +1034,18 @@ export async function getFacultyInitialData(
       viewed_at: row.viewed_at || undefined,
       classId: (row as any).class_id || undefined,
       class_id: (row as any).class_id || undefined,
+      faculty_class: matchedClassDetails,
     });
   }
+
+  Object.keys(termsByYear).forEach((ay) => {
+    termsByYear[ay].sort(
+      (a, b) => (SEMESTER_SORT_ORDER[a] ?? 99) - (SEMESTER_SORT_ORDER[b] ?? 99),
+    );
+  });
+  const availableAcademicYears = Object.keys(termsByYear).sort((a, b) =>
+    b.localeCompare(a),
+  );
 
   const hasActiveGracePeriod = Boolean(personalDeadline);
 
@@ -964,6 +1087,8 @@ export async function getFacultyInitialData(
     counts,
     academicYear: activeAcademicYear,
     semester: activeSemester || null,
+    availableAcademicYears,
+    termsByYear,
     submissionWindow: effectiveSubmissionWindow,
     pastSubmissions,
     hasActiveSchedule: Boolean(hasActiveGracePeriod || (effectiveSubmissionWindow.isConfigured && effectiveSubmissionWindow.isOpen)),

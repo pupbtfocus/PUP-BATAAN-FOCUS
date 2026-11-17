@@ -9,14 +9,18 @@ import {
   type RequirementCode,
 } from "@/config/compliance";
 import { logger } from "@/lib/observability/logger";
-import { getSubmissionWindow } from "@/features/submissions/services/submission-window.service";
+import {
+  getSubmissionWindow,
+  normalizeSemester,
+  type SubmissionWindowSemester,
+} from "@/features/submissions/services/submission-window.service";
 
 type HistoryStatus = "Pending" | "Validated" | "Rejected";
 
 type HistorySubmission = {
   id: string;
   academicYear: string;
-  semester: "1st Semester" | "2nd Semester";
+  semester: SubmissionWindowSemester;
   requirementCode: RequirementCode | string;
   status: HistoryStatus;
   submittedAt: string;
@@ -35,6 +39,14 @@ type HistorySubmission = {
   viewed_at?: string;
   classId?: string | null;
   class_id?: string | null;
+  faculty_class?: {
+    id: string;
+    subject_code: string;
+    description: string;
+    units: number;
+    section_code: string;
+    is_archived?: boolean;
+  } | null;
 };
 
 type ReviewDecision = {
@@ -85,7 +97,7 @@ function normalizeRequirementCode(
 
 function toAcademicYearAndSemester(dateInput: string | null | undefined): {
   academicYear: string;
-  semester: "1st Semester" | "2nd Semester";
+  semester: SubmissionWindowSemester;
 } {
   const sourceDate = dateInput ? new Date(dateInput) : new Date();
   const date = Number.isNaN(sourceDate.getTime()) ? new Date() : sourceDate;
@@ -170,16 +182,42 @@ export async function GET(request: NextRequest) {
     }
 
     const facultyIds = Array.from(new Set([user.id, profile.id]));
-    const windowConfig = await getSubmissionWindow(supabase);
+    const [windowConfig, termsRes, classesRes] = await Promise.all([
+      getSubmissionWindow(supabase),
+      supabase
+        .from("academic_terms")
+        .select("id, academic_year, semester, status"),
+      supabase
+        .from("faculty_classes")
+        .select("id, academic_year, semester, academic_term_id, subject_code, description, units, section_code, is_archived")
+        .in("faculty_profile_id", facultyIds),
+    ]);
+
+    const dbTerms = (termsRes.data ?? []) as Array<{
+      id?: string;
+      academic_year?: string;
+      semester?: string;
+      status?: string;
+    }>;
+
+    const currentDbTerm = dbTerms.find(
+      (t) => (t.status || "").trim().toLowerCase() === "current",
+    );
+    const currentAcademicTerm =
+      currentDbTerm?.academic_year && currentDbTerm?.semester
+        ? {
+            academicYear: currentDbTerm.academic_year,
+            semester: normalizeSemester(currentDbTerm.semester),
+          }
+        : null;
+
     const activeWindowTerm =
       windowConfig?.academicYear && windowConfig?.semester
         ? {
             academicYear: windowConfig.academicYear,
-            semester: (windowConfig.semester.toLowerCase().includes("2nd")
-              ? "2nd Semester"
-              : "1st Semester") as "1st Semester" | "2nd Semester",
+            semester: normalizeSemester(windowConfig.semester),
           }
-        : null;
+        : currentAcademicTerm;
 
     let activeTemplateCodes: string[] = [];
     try {
@@ -202,12 +240,61 @@ export async function GET(request: NextRequest) {
         .order("submitted_at", { ascending: false, nullsFirst: false });
 
       if (!subError && subData) {
-        rawSubmissions = (subData as any[]).filter((s) => s.is_archived !== true) as SubmissionRow[];
+        // Include archived past-semester submissions so Validation History preserves prior terms
+        rawSubmissions = subData as SubmissionRow[];
       }
     } catch (queryErr) {
       logger.error("history_submissions_query_failed", {
         error: queryErr instanceof Error ? queryErr.message : String(queryErr),
       });
+    }
+
+    const academicTermById = new Map<
+      string,
+      { academicYear: string; semester: SubmissionWindowSemester }
+    >();
+    for (const t of dbTerms) {
+      if (t.id && t.academic_year && t.semester) {
+        academicTermById.set(t.id, {
+          academicYear: t.academic_year,
+          semester: normalizeSemester(t.semester),
+        });
+      }
+    }
+
+    const classTermMap = new Map<
+      string,
+      { academicYear: string; semester: SubmissionWindowSemester }
+    >();
+    const classDetailsMap = new Map<
+      string,
+      {
+        id: string;
+        subject_code: string;
+        description: string;
+        units: number;
+        section_code: string;
+        is_archived?: boolean;
+      }
+    >();
+    for (const c of (classesRes.data ?? []) as Array<any>) {
+      if (!c?.id) continue;
+      classDetailsMap.set(c.id, {
+        id: c.id,
+        subject_code: c.subject_code || "Subject",
+        description: c.description || "Course Load",
+        units: Number(c.units ?? 3),
+        section_code: c.section_code || "Section",
+        is_archived: Boolean(c.is_archived),
+      });
+      if (c.academic_year && c.semester) {
+        classTermMap.set(c.id, {
+          academicYear: c.academic_year,
+          semester: normalizeSemester(c.semester),
+        });
+      } else if (c.academic_term_id && academicTermById.has(c.academic_term_id)) {
+        classTermMap.set(c.id, academicTermById.get(c.academic_term_id)!);
+      }
     }
 
     // Program assignments term mapping
@@ -218,16 +305,14 @@ export async function GET(request: NextRequest) {
 
     const assignmentMap = new Map<
       string,
-      { academicYear: string; semester: "1st Semester" | "2nd Semester" }
+      { academicYear: string; semester: SubmissionWindowSemester }
     >();
     if (assignments) {
       for (const a of assignments) {
-        if (a.id) {
+        if (a.id && a.academic_year) {
           assignmentMap.set(a.id, {
             academicYear: a.academic_year,
-            semester: (a.term?.toLowerCase().includes("2nd")
-              ? "2nd Semester"
-              : "1st Semester") as "1st Semester" | "2nd Semester",
+            semester: normalizeSemester(a.term),
           });
         }
       }
@@ -348,6 +433,10 @@ export async function GET(request: NextRequest) {
 
       let term = assignmentMap.get(row.faculty_assignment_id || "");
 
+      if (!term && (row as any).class_id) {
+        term = classTermMap.get((row as any).class_id);
+      }
+
       if (!term && activeWindowTerm) {
         term = activeWindowTerm;
       }
@@ -355,6 +444,10 @@ export async function GET(request: NextRequest) {
       if (!term) {
         term = toAcademicYearAndSemester(row.submitted_at || row.created_at);
       }
+
+      const matchedClassDetails = (row as any).class_id
+        ? classDetailsMap.get((row as any).class_id) || null
+        : null;
 
       // Review feedback resolution from decisions or submission records
       const adminFeedback =
@@ -400,6 +493,7 @@ export async function GET(request: NextRequest) {
         storagePath: storagePath || undefined,
         classId: (row as any).class_id || undefined,
         class_id: (row as any).class_id || undefined,
+        faculty_class: matchedClassDetails,
         reviewedAt: (latestReviewWithRemarks || latestReview)?.created_at
           ? new Date((latestReviewWithRemarks || latestReview)!.created_at!)
               .toISOString()
@@ -410,6 +504,37 @@ export async function GET(request: NextRequest) {
         viewed_at: row.viewed_at || undefined,
       });
     }
+
+    const SEMESTER_SORT_ORDER: Record<string, number> = {
+      "1st Semester": 1,
+      "2nd Semester": 2,
+      "Summer Semester": 3,
+    };
+    const termsByYear: Record<string, SubmissionWindowSemester[]> = {};
+    const registerTerm = (ay?: string | null, sem?: string | null) => {
+      if (!ay || !sem) return;
+      const normalizedSem = normalizeSemester(sem);
+      if (!termsByYear[ay]) termsByYear[ay] = [];
+      if (!termsByYear[ay].includes(normalizedSem)) {
+        termsByYear[ay].push(normalizedSem);
+      }
+    };
+
+    dbTerms.forEach((t) => registerTerm(t.academic_year, t.semester));
+    (assignments ?? []).forEach((a) => registerTerm(a.academic_year, a.term));
+    if (activeWindowTerm) {
+      registerTerm(activeWindowTerm.academicYear, activeWindowTerm.semester);
+    }
+    history.forEach((item) => registerTerm(item.academicYear, item.semester));
+
+    Object.keys(termsByYear).forEach((ay) => {
+      termsByYear[ay].sort(
+        (a, b) => (SEMESTER_SORT_ORDER[a] ?? 99) - (SEMESTER_SORT_ORDER[b] ?? 99),
+      );
+    });
+    const availableAcademicYears = Object.keys(termsByYear).sort((a, b) =>
+      b.localeCompare(a),
+    );
 
     const filteredHistory = history.filter((item) => {
       if (filterAY && filterAY !== "All" && item.academicYear !== filterAY) {
@@ -424,6 +549,9 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       submissions: filteredHistory,
       total: filteredHistory.length,
+      availableAcademicYears,
+      termsByYear,
+      currentAcademicTerm: currentAcademicTerm ?? activeWindowTerm ?? null,
     });
   } catch (error) {
     logger.error("submission_history_endpoint_error", {
