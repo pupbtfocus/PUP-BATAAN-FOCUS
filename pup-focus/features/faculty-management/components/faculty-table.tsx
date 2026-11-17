@@ -158,7 +158,7 @@ export function FacultyTable({
   };
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-4">
       <AlertPopup
         type="error"
         message={deleteError}
@@ -194,7 +194,181 @@ export function FacultyTable({
         onExportExcel={() => exportReportToExcel(buildFacultyReportPayload())}
       />
 
-      <div className="w-full overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-800 bg-white text-slate-900 dark:bg-slate-900 dark:text-slate-100 shadow-xs overflow-hidden transition-colors">
+      {/* Mobile Card List (prevents table column clipping on narrow viewports) */}
+      <div className="md:hidden space-y-3">
+        {isLoading ? (
+          <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-4 py-8 text-center text-xs text-slate-500 dark:text-slate-400">
+            Loading faculty accounts...
+          </div>
+        ) : filteredFacultyAccounts.length === 0 ? (
+          <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-4 py-8 text-center text-xs text-slate-500 dark:text-slate-400">
+            No faculty members found.
+          </div>
+        ) : (
+          filteredFacultyAccounts.map((faculty, index) => {
+            const programCode =
+              faculty.program?.code || faculty.program?.name || "Unassigned";
+
+            return (
+              <div
+                key={faculty.id}
+                className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-3.5 shadow-xs space-y-3"
+              >
+                <div className="flex items-start justify-between gap-2.5">
+                  <div
+                    className="flex items-center gap-2.5 min-w-0 cursor-pointer flex-1"
+                    onClick={() => {
+                      onSelectFaculty(faculty.id);
+                      onViewDetails(faculty.id);
+                    }}
+                  >
+                    <span className="text-[11px] font-mono text-slate-400 dark:text-slate-500 shrink-0 w-4 text-center">
+                      {index + 1}
+                    </span>
+                    <div
+                      className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full border border-slate-300 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 text-xs font-semibold text-slate-700 dark:text-slate-300"
+                      aria-hidden="true"
+                    >
+                      {faculty.profileImageUrl ? (
+                        <img
+                          src={faculty.profileImageUrl}
+                          alt=""
+                          className="h-full w-full object-cover"
+                        />
+                      ) : (
+                        <span>{buildFacultyInitials(faculty.fullName)}</span>
+                      )}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="font-bold text-slate-900 dark:text-slate-100 text-xs sm:text-sm truncate">
+                        {faculty.fullName}
+                      </div>
+                      <div className="text-[11px] text-slate-500 dark:text-slate-400 truncate">
+                        {faculty.email}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex flex-col items-end gap-1 shrink-0">
+                    {faculty.is_active ? (
+                      <span className="bg-[#0b5336] text-white border border-[#08412a] px-2 py-0.5 text-[10px] font-bold rounded-md inline-flex items-center shadow-2xs">
+                        Active
+                      </span>
+                    ) : (
+                      <span className="bg-[#780000] text-white border border-[#5e0000] px-2 py-0.5 text-[10px] font-bold rounded-md inline-flex items-center shadow-2xs">
+                        Inactive
+                      </span>
+                    )}
+                    <span className="bg-slate-100 text-slate-700 border border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700 px-2 py-0.5 text-[10px] font-semibold rounded-md inline-flex items-center">
+                      {programCode}
+                    </span>
+                    {faculty.isLocked ? (
+                      <span className="bg-amber-500 text-slate-950 border border-amber-600 px-2 py-0.5 text-[10px] font-bold rounded-md inline-flex items-center gap-1 shadow-2xs">
+                        <AppIcon icon={Lock} size="xs" color="inherit" />
+                        <span>Locked</span>
+                      </span>
+                    ) : null}
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between text-[11px] text-slate-500 dark:text-slate-400 border-t border-slate-100 dark:border-slate-800 pt-2">
+                  <span>Last Login</span>
+                  <span className="font-medium text-slate-700 dark:text-slate-300">
+                    {faculty.last_sign_in_at || faculty.lastLoginAt
+                      ? formatLastLogin(
+                          faculty.last_sign_in_at || faculty.lastLoginAt,
+                        )
+                      : "Never logged in"}
+                  </span>
+                </div>
+
+                <div className="flex flex-wrap items-center gap-1.5 pt-1">
+                  <button
+                    type="button"
+                    onClick={() => onViewDetails(faculty.id)}
+                    className="flex-1 min-w-[100px] bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold border border-amber-600/30 text-xs rounded-lg px-2.5 py-1.5 transition-colors cursor-pointer inline-flex items-center justify-center gap-1.5 shadow-2xs"
+                  >
+                    <AppIcon icon={Eye} size="sm" color="inherit" className="text-slate-950" />
+                    <span>View Details</span>
+                  </button>
+                  {onEditFaculty ? (
+                    <button
+                      type="button"
+                      onClick={() => onEditFaculty(faculty.id)}
+                      className="bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold border border-amber-600/30 text-xs rounded-lg px-2.5 py-1.5 transition-colors cursor-pointer inline-flex items-center justify-center gap-1.5 shadow-2xs"
+                    >
+                      <AppIcon icon={EditPencil} size="sm" color="inherit" className="text-slate-950" />
+                      <span>Edit</span>
+                    </button>
+                  ) : null}
+                  {onUnlock && faculty.isLocked ? (
+                    <button
+                      type="button"
+                      onClick={() => onUnlock(faculty.id)}
+                      disabled={loadingFacultyIds?.has(faculty.id)}
+                      className="bg-[#0b5336] hover:bg-[#08412a] text-white font-semibold border border-[#08412a] text-xs rounded-lg px-2.5 py-1.5 transition-colors cursor-pointer inline-flex items-center justify-center gap-1.5 disabled:opacity-50 shadow-2xs"
+                    >
+                      <AppIcon icon={LockSlash} size="sm" color="white" />
+                      <span>
+                        {loadingFacultyIds?.has(faculty.id)
+                          ? "Unlocking..."
+                          : "Unlock"}
+                      </span>
+                    </button>
+                  ) : null}
+                  {onActivate && onDeactivate ? (
+                    faculty.is_active ? (
+                      <button
+                        type="button"
+                        onClick={() => onDeactivate(faculty.id)}
+                        disabled={loadingFacultyIds?.has(faculty.id)}
+                        className="bg-[#780000] hover:bg-[#5e0000] text-white font-semibold border border-[#5e0000] text-xs rounded-lg px-2.5 py-1.5 transition-colors cursor-pointer inline-flex items-center justify-center gap-1.5 disabled:opacity-50 shadow-2xs"
+                      >
+                        <AppIcon icon={UserXmark} size="sm" color="white" />
+                        <span>
+                          {loadingFacultyIds?.has(faculty.id)
+                            ? "Deactivating..."
+                            : "Deactivate"}
+                        </span>
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => onActivate(faculty.id)}
+                        disabled={loadingFacultyIds?.has(faculty.id)}
+                        className="bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold border border-amber-600/30 text-xs rounded-lg px-2.5 py-1.5 transition-colors cursor-pointer inline-flex items-center justify-center gap-1.5 disabled:opacity-50 shadow-2xs"
+                      >
+                        <AppIcon icon={UserBadgeCheck} size="sm" color="inherit" className="text-slate-950" />
+                        <span>
+                          {loadingFacultyIds?.has(faculty.id)
+                            ? "Activating..."
+                            : "Activate"}
+                        </span>
+                      </button>
+                    )
+                  ) : null}
+                  {onDeleteFaculty ? (
+                    <button
+                      type="button"
+                      onClick={() => onDeleteFaculty(faculty.id)}
+                      disabled={deletingFacultyIds?.has(faculty.id)}
+                      className="bg-[#780000] hover:bg-[#5e0000] text-white font-semibold border border-[#5e0000] text-xs rounded-lg px-2.5 py-1.5 transition-colors cursor-pointer inline-flex items-center justify-center gap-1.5 disabled:opacity-50 shadow-2xs"
+                    >
+                      <AppIcon icon={Trash} size="sm" color="white" />
+                      <span>
+                        {deletingFacultyIds?.has(faculty.id)
+                          ? "Deleting..."
+                          : "Delete"}
+                      </span>
+                    </button>
+                  ) : null}
+                </div>
+              </div>
+            );
+          })
+        )}
+      </div>
+
+      <div className="hidden md:block w-full overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-800 bg-white text-slate-900 dark:bg-slate-900 dark:text-slate-100 shadow-xs transition-colors">
         <table className="w-full text-left border-collapse text-xs text-slate-800 dark:text-slate-300 min-w-[700px]">
             <thead className="border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/60 uppercase tracking-wider text-[10px] text-slate-600 dark:text-slate-400">
               <tr>

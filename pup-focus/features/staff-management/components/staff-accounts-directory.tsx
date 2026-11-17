@@ -127,42 +127,42 @@ export function AdminStatsCards({
   const inactiveCount = adminAccounts.filter((a) => !a.is_active).length;
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+    <div className="grid grid-cols-3 gap-2.5 sm:gap-4">
       {/* 1. TOTAL */}
-      <div className="rounded-xl bg-white text-slate-900 border border-slate-200 shadow-xs dark:bg-slate-900 dark:text-slate-100 dark:border-slate-800 p-5 transition-colors">
-        <div className="flex items-center justify-between">
-          <p className="text-slate-500 dark:text-slate-400 text-xs font-medium uppercase tracking-wider">
+      <div className="rounded-xl bg-white text-slate-900 border border-slate-200 shadow-xs dark:bg-slate-900 dark:text-slate-100 dark:border-slate-800 p-3 sm:p-5 transition-colors flex flex-col justify-between">
+        <div className="flex items-center justify-between gap-1.5">
+          <p className="text-slate-500 dark:text-slate-400 text-[10px] sm:text-xs font-medium uppercase tracking-wide sm:tracking-wider leading-tight">
             Total {entityLabel}
           </p>
-          <Group className="h-5 w-5 text-slate-400" strokeWidth={2} />
+          <Group className="hidden sm:block h-5 w-5 text-slate-400 shrink-0" strokeWidth={2} />
         </div>
-        <p className="mt-2 text-2xl font-bold text-slate-900 dark:text-slate-100">
+        <p className="mt-1.5 sm:mt-2 text-xl sm:text-2xl font-bold text-slate-900 dark:text-slate-100">
           {isLoading ? "..." : totalCount}
         </p>
       </div>
 
       {/* 2. ACTIVE */}
-      <div className="rounded-xl bg-white text-slate-900 border border-slate-200 shadow-xs dark:bg-slate-900 dark:text-slate-100 dark:border-slate-800 p-5 transition-colors">
-        <div className="flex items-center justify-between">
-          <p className="text-slate-500 dark:text-slate-400 text-xs font-medium uppercase tracking-wider">
+      <div className="rounded-xl bg-white text-slate-900 border border-slate-200 shadow-xs dark:bg-slate-900 dark:text-slate-100 dark:border-slate-800 p-3 sm:p-5 transition-colors flex flex-col justify-between">
+        <div className="flex items-center justify-between gap-1.5">
+          <p className="text-slate-500 dark:text-slate-400 text-[10px] sm:text-xs font-medium uppercase tracking-wide sm:tracking-wider leading-tight">
             Active {entityLabel}
           </p>
-          <CheckCircle className="h-5 w-5 text-slate-400" strokeWidth={2} />
+          <CheckCircle className="hidden sm:block h-5 w-5 text-slate-400 shrink-0" strokeWidth={2} />
         </div>
-        <p className="mt-2 text-2xl font-bold text-slate-900 dark:text-slate-100">
+        <p className="mt-1.5 sm:mt-2 text-xl sm:text-2xl font-bold text-slate-900 dark:text-slate-100">
           {isLoading ? "..." : activeCount}
         </p>
       </div>
 
       {/* 3. INACTIVE */}
-      <div className="rounded-xl bg-white text-slate-900 border border-slate-200 shadow-xs dark:bg-slate-900 dark:text-slate-100 dark:border-slate-800 p-5 transition-colors">
-        <div className="flex items-center justify-between">
-          <p className="text-slate-500 dark:text-slate-400 text-xs font-medium uppercase tracking-wider">
+      <div className="rounded-xl bg-white text-slate-900 border border-slate-200 shadow-xs dark:bg-slate-900 dark:text-slate-100 dark:border-slate-800 p-3 sm:p-5 transition-colors flex flex-col justify-between">
+        <div className="flex items-center justify-between gap-1.5">
+          <p className="text-slate-500 dark:text-slate-400 text-[10px] sm:text-xs font-medium uppercase tracking-wide sm:tracking-wider leading-tight">
             Inactive {entityLabel}
           </p>
-          <XmarkCircle className="h-5 w-5 text-slate-400" strokeWidth={2} />
+          <XmarkCircle className="hidden sm:block h-5 w-5 text-slate-400 shrink-0" strokeWidth={2} />
         </div>
-        <p className="mt-2 text-2xl font-bold text-slate-900 dark:text-slate-100">
+        <p className="mt-1.5 sm:mt-2 text-xl sm:text-2xl font-bold text-slate-900 dark:text-slate-100">
           {isLoading ? "..." : inactiveCount}
         </p>
       </div>
@@ -196,14 +196,14 @@ export function AdminFilterBar({
   exportLabel?: string;
 }) {
   return (
-    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-4 bg-white text-slate-900 border border-slate-200 dark:border-slate-800 shadow-xs dark:bg-slate-900 dark:text-slate-100 rounded-xl mb-6 transition-colors">
-      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2.5 w-full sm:w-auto flex-wrap">
+    <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 p-3.5 sm:p-4 bg-white text-slate-900 border border-slate-200 dark:border-slate-800 shadow-xs dark:bg-slate-900 dark:text-slate-100 rounded-xl transition-colors">
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 w-full lg:w-auto flex-wrap flex-1">
         <input
           type="text"
           value={searchTerm}
           onChange={(event) => onSearchChange(event.target.value)}
           placeholder={placeholder}
-          className="w-full sm:w-64 h-9 rounded-xl bg-white text-slate-900 border border-slate-200 focus:border-slate-400 dark:bg-slate-900 dark:text-slate-100 dark:border-slate-800 dark:focus:border-slate-600 px-3 text-xs placeholder-slate-400 dark:placeholder-slate-500 outline-none transition"
+          className="w-full sm:flex-1 sm:min-w-[200px] lg:max-w-xs h-9 rounded-xl bg-white text-slate-900 border border-slate-200 focus:border-slate-400 dark:bg-slate-900 dark:text-slate-100 dark:border-slate-800 dark:focus:border-slate-600 px-3 text-xs placeholder-slate-400 dark:placeholder-slate-500 outline-none transition"
         />
 
         {showRoleFilter && (
@@ -218,52 +218,50 @@ export function AdminFilterBar({
           </select>
         )}
 
-        <div className="flex items-center justify-start gap-2 w-full sm:w-auto overflow-x-auto pb-1 sm:pb-0">
-          <div className="flex items-center gap-1 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 p-1 h-9 shrink-0">
-            <button
-              type="button"
-              onClick={() => onStatusFilterChange("all")}
-              className={`rounded-lg px-2.5 py-1 text-xs transition cursor-pointer ${
-                statusFilter === "all"
-                  ? "bg-amber-500 text-slate-950 font-semibold shadow-xs border border-amber-600/30"
-                  : "text-slate-600 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-400 dark:hover:text-slate-100 dark:hover:bg-slate-800/60 font-normal"
-              }`}
-            >
-              All
-            </button>
-            <button
-              type="button"
-              onClick={() => onStatusFilterChange("active")}
-              className={`rounded-lg px-2.5 py-1 text-xs transition cursor-pointer ${
-                statusFilter === "active"
-                  ? "bg-amber-500 text-slate-950 font-semibold shadow-xs border border-amber-600/30"
-                  : "text-slate-600 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-400 dark:hover:text-slate-100 dark:hover:bg-slate-800/60 font-normal"
-              }`}
-            >
-              Active
-            </button>
-            <button
-              type="button"
-              onClick={() => onStatusFilterChange("inactive")}
-              className={`rounded-lg px-2.5 py-1 text-xs transition cursor-pointer ${
-                statusFilter === "inactive"
-                  ? "bg-amber-500 text-slate-950 font-semibold shadow-xs border border-amber-600/30"
-                  : "text-slate-600 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-400 dark:hover:text-slate-100 dark:hover:bg-slate-800/60 font-normal"
-              }`}
-            >
-              Inactive
-            </button>
-          </div>
+        <div className="grid grid-cols-3 sm:inline-flex items-center gap-1 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 p-1 h-9 w-full sm:w-auto shrink-0">
+          <button
+            type="button"
+            onClick={() => onStatusFilterChange("all")}
+            className={`inline-flex items-center justify-center rounded-lg px-2.5 py-1 text-xs transition cursor-pointer ${
+              statusFilter === "all"
+                ? "bg-amber-500 text-slate-950 font-semibold shadow-xs border border-amber-600/30"
+                : "text-slate-600 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-400 dark:hover:text-slate-100 dark:hover:bg-slate-800/60 font-normal"
+            }`}
+          >
+            All
+          </button>
+          <button
+            type="button"
+            onClick={() => onStatusFilterChange("active")}
+            className={`inline-flex items-center justify-center rounded-lg px-2.5 py-1 text-xs transition cursor-pointer ${
+              statusFilter === "active"
+                ? "bg-amber-500 text-slate-950 font-semibold shadow-xs border border-amber-600/30"
+                : "text-slate-600 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-400 dark:hover:text-slate-100 dark:hover:bg-slate-800/60 font-normal"
+            }`}
+          >
+            Active
+          </button>
+          <button
+            type="button"
+            onClick={() => onStatusFilterChange("inactive")}
+            className={`inline-flex items-center justify-center rounded-lg px-2.5 py-1 text-xs transition cursor-pointer ${
+              statusFilter === "inactive"
+                ? "bg-amber-500 text-slate-950 font-semibold shadow-xs border border-amber-600/30"
+                : "text-slate-600 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-400 dark:hover:text-slate-100 dark:hover:bg-slate-800/60 font-normal"
+            }`}
+          >
+            Inactive
+          </button>
         </div>
       </div>
 
       {(onExportPdf || onExportExcel) && (
-        <div className="flex items-center gap-2 shrink-0 w-full sm:w-auto justify-end">
+        <div className="grid grid-cols-2 sm:inline-flex items-center gap-2 shrink-0 w-full lg:w-auto">
           {onExportPdf && (
             <button
               type="button"
               onClick={onExportPdf}
-              className="inline-flex items-center gap-1.5 rounded-xl bg-[#780000] hover:bg-[#5e0000] text-white border border-[#5e0000] px-3 py-1.5 text-xs font-bold transition cursor-pointer shadow-xs"
+              className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-[#780000] hover:bg-[#5e0000] text-white border border-[#5e0000] px-3 py-2 sm:py-1.5 text-xs font-bold transition cursor-pointer shadow-xs"
               title={`Export ${exportLabel} List to PDF`}
             >
               <img
@@ -278,7 +276,7 @@ export function AdminFilterBar({
             <button
               type="button"
               onClick={onExportExcel}
-              className="inline-flex items-center gap-1.5 rounded-xl bg-[#0b5336] hover:bg-[#08412a] text-white border border-[#08412a] px-3 py-1.5 text-xs font-bold transition cursor-pointer shadow-xs"
+              className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-[#0b5336] hover:bg-[#08412a] text-white border border-[#08412a] px-3 py-2 sm:py-1.5 text-xs font-bold transition cursor-pointer shadow-xs"
               title={`Export ${exportLabel} List to Excel`}
             >
               <img
@@ -445,23 +443,25 @@ export function AdminAccountsTable({
       />
 
       {/* Segmented Workspace Tabs - Separates Admin and Staff accounts */}
-      <div className="flex flex-wrap items-center gap-2 p-1.5 bg-slate-100 dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800">
+      <div className="grid grid-cols-1 sm:grid-cols-3 lg:inline-flex items-center gap-2 p-1.5 bg-slate-100 dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 w-full lg:w-auto">
         <button
           type="button"
           onClick={() => {
             setActiveTab("all");
             setRoleFilter("all");
           }}
-          className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer ${
+          className={`w-full lg:w-auto inline-flex items-center justify-between lg:justify-center gap-2 px-3.5 sm:px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer ${
             activeTab === "all"
               ? "bg-[#780000] text-white border border-[#5e0000] shadow-xs"
               : "bg-white dark:bg-slate-800/80 text-slate-700 dark:text-slate-300 border border-slate-300 dark:border-slate-700 hover:border-slate-400 dark:hover:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-750 shadow-2xs"
           }`}
         >
-          <AppIcon icon={Group} size="sm" color="inherit" />
-          <span>All Accounts</span>
+          <span className="inline-flex items-center gap-2 min-w-0">
+            <AppIcon icon={Group} size="sm" color="inherit" />
+            <span className="truncate">All Accounts</span>
+          </span>
           <span
-            className={`px-1.5 py-0.5 rounded-md text-[10px] font-black ${
+            className={`px-1.5 py-0.5 rounded-md text-[10px] font-black shrink-0 ${
               activeTab === "all"
                 ? "bg-amber-400 text-slate-950"
                 : "bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-600"
@@ -477,16 +477,18 @@ export function AdminAccountsTable({
             setActiveTab("admin");
             setRoleFilter("all");
           }}
-          className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer ${
+          className={`w-full lg:w-auto inline-flex items-center justify-between lg:justify-center gap-2 px-3.5 sm:px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer ${
             activeTab === "admin"
               ? "bg-[#780000] text-white border border-[#5e0000] shadow-xs"
               : "bg-white dark:bg-slate-800/80 text-slate-700 dark:text-slate-300 border border-slate-300 dark:border-slate-700 hover:border-slate-400 dark:hover:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-750 shadow-2xs"
           }`}
         >
-          <AppIcon icon={Shield} size="sm" color="inherit" />
-          <span>Administrator Accounts</span>
+          <span className="inline-flex items-center gap-2 min-w-0">
+            <AppIcon icon={Shield} size="sm" color="inherit" />
+            <span className="truncate">Administrator Accounts</span>
+          </span>
           <span
-            className={`px-1.5 py-0.5 rounded-md text-[10px] font-black ${
+            className={`px-1.5 py-0.5 rounded-md text-[10px] font-black shrink-0 ${
               activeTab === "admin"
                 ? "bg-amber-400 text-slate-950"
                 : "bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-600"
@@ -502,16 +504,18 @@ export function AdminAccountsTable({
             setActiveTab("staff");
             setRoleFilter("all");
           }}
-          className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer ${
+          className={`w-full lg:w-auto inline-flex items-center justify-between lg:justify-center gap-2 px-3.5 sm:px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer ${
             activeTab === "staff"
               ? "bg-[#780000] text-white border border-[#5e0000] shadow-xs"
               : "bg-white dark:bg-slate-800/80 text-slate-700 dark:text-slate-300 border border-slate-300 dark:border-slate-700 hover:border-slate-400 dark:hover:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-750 shadow-2xs"
           }`}
         >
-          <AppIcon icon={UserBadgeCheck} size="sm" color="inherit" />
-          <span>Staff Accounts</span>
+          <span className="inline-flex items-center gap-2 min-w-0">
+            <AppIcon icon={UserBadgeCheck} size="sm" color="inherit" />
+            <span className="truncate">Staff Accounts</span>
+          </span>
           <span
-            className={`px-1.5 py-0.5 rounded-md text-[10px] font-black ${
+            className={`px-1.5 py-0.5 rounded-md text-[10px] font-black shrink-0 ${
               activeTab === "staff"
                 ? "bg-amber-400 text-slate-950"
                 : "bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-600"
@@ -562,8 +566,183 @@ export function AdminAccountsTable({
         }
       />
 
-      {/* Clean Data Table */}
-      <div className="w-full overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-800 bg-white text-slate-900 dark:bg-slate-900 dark:text-slate-100 shadow-xs overflow-hidden transition-colors">
+      {/* Mobile Card List (aligned cleanly without horizontal table clipping) */}
+      <div className="md:hidden space-y-3">
+        {isLoading ? (
+          <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-4 py-8 text-center text-xs text-slate-500 dark:text-slate-400">
+            Loading accounts...
+          </div>
+        ) : filteredAccounts.length === 0 ? (
+          <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-4 py-8 text-center text-xs text-slate-500 dark:text-slate-400">
+            {activeTab === "staff"
+              ? "No staff members match the selected criteria."
+              : activeTab === "admin"
+              ? "No administrator accounts match the selected criteria."
+              : "No accounts match the selected criteria."}
+          </div>
+        ) : (
+          filteredAccounts.map((admin, index) => {
+            const isSuperAdmin = isAdministratorAccount(admin);
+            const hasAvatar =
+              admin.profileImageUrl && !failedImageIds.has(admin.profile_id);
+            const isDeactivatingOrActivating = loadingAdminIds.has(
+              admin.profile_id,
+            );
+            const isDeleting = deletingAdminIds.has(admin.profile_id);
+            const canEdit = canManageAdminAccount({
+              targetEmail: admin.email,
+              targetRole: admin.role,
+              actorEmail: currentAdminEmail,
+              action: "edit",
+            });
+            const canDeactivate = canManageAdminAccount({
+              targetEmail: admin.email,
+              targetRole: admin.role,
+              actorEmail: currentAdminEmail,
+              action: "deactivate",
+            });
+            const canDelete = canManageAdminAccount({
+              targetEmail: admin.email,
+              targetRole: admin.role,
+              actorEmail: currentAdminEmail,
+              action: "delete",
+            });
+
+            return (
+              <div
+                key={admin.profile_id}
+                className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-3.5 shadow-xs space-y-3"
+              >
+                <div className="flex items-start justify-between gap-2.5">
+                  <div
+                    className="flex items-center gap-2.5 min-w-0 cursor-pointer flex-1"
+                    onClick={() => onViewDetails(admin.profile_id)}
+                  >
+                    <span className="text-[11px] font-mono text-slate-400 dark:text-slate-500 shrink-0 w-4 text-center">
+                      {index + 1}
+                    </span>
+                    <div
+                      className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full border border-slate-300 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 text-xs font-semibold text-slate-700 dark:text-slate-300"
+                      aria-hidden="true"
+                    >
+                      {hasAvatar ? (
+                        <img
+                          src={admin.profileImageUrl!}
+                          alt=""
+                          className="h-full w-full object-cover"
+                          onError={() =>
+                            setFailedImageIds((prev) =>
+                              new Set(prev).add(admin.profile_id),
+                            )
+                          }
+                        />
+                      ) : (
+                        <span>
+                          {getInitials(
+                            formatAdminName(admin),
+                            isSuperAdmin ? "SA" : "AD",
+                          )}
+                        </span>
+                      )}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="font-bold text-slate-900 dark:text-slate-100 text-xs sm:text-sm truncate">
+                        {formatAdminName(admin)}
+                      </div>
+                      <div className="text-[11px] text-slate-500 dark:text-slate-400 truncate">
+                        {admin.email}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex flex-col items-end gap-1 shrink-0">
+                    {admin.is_active ? (
+                      <span className="bg-[#0b5336] text-white border border-[#08412a] px-2 py-0.5 text-[10px] font-bold rounded-md inline-flex items-center shadow-2xs">
+                        Active
+                      </span>
+                    ) : (
+                      <span className="bg-[#780000] text-white border border-[#5e0000] px-2 py-0.5 text-[10px] font-bold rounded-md inline-flex items-center shadow-2xs">
+                        Inactive
+                      </span>
+                    )}
+                    <span className="bg-slate-100 text-slate-700 border border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700 px-2 py-0.5 text-[10px] font-semibold rounded-md inline-flex items-center">
+                      {isSuperAdmin ? "Admin" : "Staff"}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between text-[11px] text-slate-500 dark:text-slate-400 border-t border-slate-100 dark:border-slate-800 pt-2">
+                  <span>Last Login</span>
+                  <span className="font-medium text-slate-700 dark:text-slate-300">
+                    {admin.last_sign_in_at || admin.lastLoginAt
+                      ? formatLastLogin(
+                          admin.last_sign_in_at || admin.lastLoginAt,
+                        )
+                      : "Never logged in"}
+                  </span>
+                </div>
+
+                <div className="flex flex-wrap items-center gap-1.5 pt-1">
+                  <button
+                    type="button"
+                    onClick={() => onViewDetails(admin.profile_id)}
+                    className="flex-1 min-w-[100px] bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold border border-amber-600/30 text-xs rounded-lg px-2.5 py-1.5 transition-colors cursor-pointer inline-flex items-center justify-center gap-1.5 shadow-2xs"
+                  >
+                    <AppIcon icon={Eye} size="sm" color="inherit" className="text-slate-950" />
+                    <span>View Details</span>
+                  </button>
+                  {canEdit && (
+                    <button
+                      type="button"
+                      onClick={() => onEditAdmin(admin.profile_id)}
+                      className="bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold border border-amber-600/30 text-xs rounded-lg px-2.5 py-1.5 transition-colors cursor-pointer inline-flex items-center justify-center gap-1.5 shadow-2xs"
+                    >
+                      <AppIcon icon={EditPencil} size="sm" color="inherit" className="text-slate-950" />
+                      <span>Edit</span>
+                    </button>
+                  )}
+                  {canDeactivate ? (
+                    admin.is_active ? (
+                      <button
+                        type="button"
+                        onClick={() => onDeactivateAdmin(admin.profile_id)}
+                        disabled={isDeactivatingOrActivating || isDeleting}
+                        className="bg-[#780000] hover:bg-[#5e0000] text-white font-semibold border border-[#5e0000] text-xs rounded-lg px-2.5 py-1.5 transition-colors cursor-pointer inline-flex items-center justify-center gap-1.5 disabled:opacity-50 shadow-2xs"
+                      >
+                        <AppIcon icon={UserXmark} size="sm" color="white" />
+                        <span>{isDeactivatingOrActivating ? "Deactivating..." : "Deactivate"}</span>
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => onActivateAdmin(admin.profile_id)}
+                        disabled={isDeactivatingOrActivating || isDeleting}
+                        className="bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold border border-amber-600/30 text-xs rounded-lg px-2.5 py-1.5 transition-colors cursor-pointer inline-flex items-center justify-center gap-1.5 disabled:opacity-50 shadow-2xs"
+                      >
+                        <AppIcon icon={UserBadgeCheck} size="sm" color="inherit" className="text-slate-950" />
+                        <span>{isDeactivatingOrActivating ? "Activating..." : "Activate"}</span>
+                      </button>
+                    )
+                  ) : null}
+                  {canDelete && (
+                    <button
+                      type="button"
+                      onClick={() => onDeleteAdmin(admin.profile_id)}
+                      disabled={isDeactivatingOrActivating || isDeleting}
+                      className="bg-[#780000] hover:bg-[#5e0000] text-white font-semibold border border-[#5e0000] text-xs rounded-lg px-2.5 py-1.5 transition-colors cursor-pointer inline-flex items-center justify-center gap-1.5 disabled:opacity-50 shadow-2xs"
+                    >
+                      <AppIcon icon={Trash} size="sm" color="white" />
+                      <span>{isDeleting ? "Deleting..." : "Delete"}</span>
+                    </button>
+                  )}
+                </div>
+              </div>
+            );
+          })
+        )}
+      </div>
+
+      {/* Desktop Data Table */}
+      <div className="hidden md:block w-full overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-800 bg-white text-slate-900 dark:bg-slate-900 dark:text-slate-100 shadow-xs transition-colors">
         <table className="w-full text-left border-collapse text-xs text-slate-800 dark:text-slate-300 min-w-[700px]">
           <thead className="border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/60 uppercase tracking-wider text-[10px] text-slate-600 dark:text-slate-400">
             <tr>

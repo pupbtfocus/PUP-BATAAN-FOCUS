@@ -40,7 +40,7 @@ export function SidebarProfileCard({
     <button
       type="button"
       onClick={onClick}
-      title="Manage Profile & Settings"
+      aria-label="Manage Profile & Settings"
       className={`group relative w-full text-left rounded-2xl bg-gradient-to-b from-[#660000]/95 to-[#480000]/95 hover:from-[#6d0000] hover:to-[#520000] border border-amber-400/25 hover:border-amber-400/50 p-4 sm:p-5 shadow-md transition-all duration-200 cursor-pointer overflow-hidden focus:outline-hidden ${className}`}
     >
       <div

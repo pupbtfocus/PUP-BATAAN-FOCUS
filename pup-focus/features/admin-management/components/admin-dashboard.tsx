@@ -2243,18 +2243,18 @@ export function SuperAdminDashboard({
             ) : null}
 
             {activeSection === "accounts" ? (
-              <article className="space-y-4 p-2 sm:p-4 md:p-5">
+              <article className="space-y-4 sm:space-y-5">
                 {/* Solid Amber Card Header */}
-                <div className="relative overflow-hidden rounded-2xl border-2 border-amber-500 bg-amber-400 p-5 sm:p-6 shadow-md shadow-amber-500/10 flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
-                  <div>
-                    <h1 className="text-2xl sm:text-3xl font-black text-slate-950 tracking-tight">
+                <div className="relative overflow-hidden rounded-2xl border-2 border-amber-500 bg-amber-400 p-4 sm:p-6 shadow-md shadow-amber-500/10 flex flex-col lg:flex-row lg:items-center justify-between gap-3.5 sm:gap-4">
+                  <div className="min-w-0">
+                    <h1 className="text-xl sm:text-3xl font-black text-slate-950 tracking-tight">
                       Admin & Staff Management
                     </h1>
-                    <p className="mt-1.5 text-sm sm:text-base text-amber-950/90 font-medium leading-relaxed">
+                    <p className="mt-1 sm:mt-1.5 text-xs sm:text-base text-amber-950/90 font-medium leading-relaxed">
                       Configure and oversee administrator and staff privileges and account accesses.
                     </p>
                   </div>
-                  <div className="flex items-center gap-2 w-full sm:w-auto flex-wrap">
+                  <div className="grid grid-cols-1 sm:flex sm:items-center gap-2 w-full lg:w-auto shrink-0 flex-wrap">
                     <button
                       type="button"
                       onClick={openCreateAdminModal}
@@ -2315,18 +2315,18 @@ export function SuperAdminDashboard({
             ) : null}
 
             {activeSection === "faculty" ? (
-              <article className="space-y-4 p-2 sm:p-4 md:p-5">
+              <article className="space-y-4 sm:space-y-5">
                 {/* Solid Amber Card Header */}
-                <div className="relative overflow-hidden rounded-2xl border-2 border-amber-500 bg-amber-400 p-5 sm:p-6 shadow-md shadow-amber-500/10 flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
-                  <div>
-                    <h1 className="text-2xl sm:text-3xl font-black text-slate-950 tracking-tight">
+                <div className="relative overflow-hidden rounded-2xl border-2 border-amber-500 bg-amber-400 p-4 sm:p-6 shadow-md shadow-amber-500/10 flex flex-col lg:flex-row lg:items-center justify-between gap-3.5 sm:gap-4">
+                  <div className="min-w-0">
+                    <h1 className="text-xl sm:text-3xl font-black text-slate-950 tracking-tight">
                       Faculty Management
                     </h1>
-                    <p className="mt-1.5 text-sm sm:text-base text-amber-950/90 font-medium leading-relaxed">
+                    <p className="mt-1 sm:mt-1.5 text-xs sm:text-base text-amber-950/90 font-medium leading-relaxed">
                       View, manage, and monitor faculty profiles, department assignments, and account statuses.
                     </p>
                   </div>
-                  <div className="flex items-center gap-2 w-full sm:w-auto shrink-0 flex-wrap">
+                  <div className="grid grid-cols-1 sm:flex sm:items-center gap-2 w-full lg:w-auto shrink-0 flex-wrap">
                     <button
                       type="button"
                       onClick={() => {

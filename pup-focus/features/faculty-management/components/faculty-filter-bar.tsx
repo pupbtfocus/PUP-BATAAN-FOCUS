@@ -26,14 +26,14 @@ export function FacultyFilterBar({
   onExportExcel,
 }: FacultyFilterBarProps) {
   return (
-    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-4 bg-white text-slate-900 border border-slate-200 dark:border-slate-800 shadow-xs dark:bg-slate-900 dark:text-slate-100 rounded-xl mb-6 transition-colors">
-      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2.5 w-full sm:w-auto flex-wrap">
+    <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 p-3.5 sm:p-4 bg-white text-slate-900 border border-slate-200 dark:border-slate-800 shadow-xs dark:bg-slate-900 dark:text-slate-100 rounded-xl transition-colors">
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 w-full lg:w-auto flex-wrap flex-1">
         <input
           type="text"
           value={searchTerm}
           onChange={(event) => onSearchChange(event.target.value)}
           placeholder={placeholder}
-          className="w-full sm:w-64 h-9 rounded-xl bg-white text-slate-900 border border-slate-200 focus:border-slate-400 dark:bg-slate-900 dark:text-slate-100 dark:border-slate-800 dark:focus:border-slate-600 px-3 text-xs placeholder-slate-400 dark:placeholder-slate-500 outline-none transition"
+          className="w-full sm:flex-1 sm:min-w-[200px] lg:max-w-xs h-9 rounded-xl bg-white text-slate-900 border border-slate-200 focus:border-slate-400 dark:bg-slate-900 dark:text-slate-100 dark:border-slate-800 dark:focus:border-slate-600 px-3 text-xs placeholder-slate-400 dark:placeholder-slate-500 outline-none transition"
         />
 
         {onProgramFilterChange ? (
@@ -52,53 +52,51 @@ export function FacultyFilterBar({
         ) : null}
 
         {onStatusFilterChange ? (
-          <div className="flex items-center justify-start gap-2 w-full sm:w-auto overflow-x-auto pb-1 sm:pb-0">
-            <div className="flex items-center gap-1 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 p-1 h-9 shrink-0">
-              <button
-                type="button"
-                onClick={() => onStatusFilterChange("all")}
-                className={`rounded-lg px-2.5 py-1 text-xs transition cursor-pointer ${
-                  statusFilter === "all"
-                    ? "bg-amber-500 text-slate-950 font-semibold shadow-xs border border-amber-600/30"
-                    : "text-slate-600 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-400 dark:hover:text-slate-100 dark:hover:bg-slate-800/60 font-normal"
-                }`}
-              >
-                All
-              </button>
-              <button
-                type="button"
-                onClick={() => onStatusFilterChange("active")}
-                className={`rounded-lg px-2.5 py-1 text-xs transition cursor-pointer ${
-                  statusFilter === "active"
-                    ? "bg-amber-500 text-slate-950 font-semibold shadow-xs border border-amber-600/30"
-                    : "text-slate-600 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-400 dark:hover:text-slate-100 dark:hover:bg-slate-800/60 font-normal"
-                }`}
-              >
-                Active
-              </button>
-              <button
-                type="button"
-                onClick={() => onStatusFilterChange("inactive")}
-                className={`rounded-lg px-2.5 py-1 text-xs transition cursor-pointer ${
-                  statusFilter === "inactive"
-                    ? "bg-amber-500 text-slate-950 font-semibold shadow-xs border border-amber-600/30"
-                    : "text-slate-600 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-400 dark:hover:text-slate-100 dark:hover:bg-slate-800/60 font-normal"
-                }`}
-              >
-                Inactive
-              </button>
-            </div>
+          <div className="grid grid-cols-3 sm:inline-flex items-center gap-1 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 p-1 h-9 w-full sm:w-auto shrink-0">
+            <button
+              type="button"
+              onClick={() => onStatusFilterChange("all")}
+              className={`inline-flex items-center justify-center rounded-lg px-2.5 py-1 text-xs transition cursor-pointer ${
+                statusFilter === "all"
+                  ? "bg-amber-500 text-slate-950 font-semibold shadow-xs border border-amber-600/30"
+                  : "text-slate-600 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-400 dark:hover:text-slate-100 dark:hover:bg-slate-800/60 font-normal"
+              }`}
+            >
+              All
+            </button>
+            <button
+              type="button"
+              onClick={() => onStatusFilterChange("active")}
+              className={`inline-flex items-center justify-center rounded-lg px-2.5 py-1 text-xs transition cursor-pointer ${
+                statusFilter === "active"
+                  ? "bg-amber-500 text-slate-950 font-semibold shadow-xs border border-amber-600/30"
+                  : "text-slate-600 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-400 dark:hover:text-slate-100 dark:hover:bg-slate-800/60 font-normal"
+              }`}
+            >
+              Active
+            </button>
+            <button
+              type="button"
+              onClick={() => onStatusFilterChange("inactive")}
+              className={`inline-flex items-center justify-center rounded-lg px-2.5 py-1 text-xs transition cursor-pointer ${
+                statusFilter === "inactive"
+                  ? "bg-amber-500 text-slate-950 font-semibold shadow-xs border border-amber-600/30"
+                  : "text-slate-600 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-400 dark:hover:text-slate-100 dark:hover:bg-slate-800/60 font-normal"
+              }`}
+            >
+              Inactive
+            </button>
           </div>
         ) : null}
       </div>
 
       {(onExportPdf || onExportExcel) && (
-        <div className="flex items-center gap-2 shrink-0 w-full sm:w-auto justify-end">
+        <div className="grid grid-cols-2 sm:inline-flex items-center gap-2 shrink-0 w-full lg:w-auto">
           {onExportPdf && (
             <button
               type="button"
               onClick={onExportPdf}
-              className="inline-flex items-center gap-1.5 rounded-xl bg-[#780000] hover:bg-[#5e0000] text-white border border-[#5e0000] px-3 py-1.5 text-xs font-bold transition cursor-pointer shadow-xs"
+              className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-[#780000] hover:bg-[#5e0000] text-white border border-[#5e0000] px-3 py-2 sm:py-1.5 text-xs font-bold transition cursor-pointer shadow-xs"
               title="Export Faculty List to PDF"
             >
               <img
@@ -113,7 +111,7 @@ export function FacultyFilterBar({
             <button
               type="button"
               onClick={onExportExcel}
-              className="inline-flex items-center gap-1.5 rounded-xl bg-[#0b5336] hover:bg-[#08412a] text-white border border-[#08412a] px-3 py-1.5 text-xs font-bold transition cursor-pointer shadow-xs"
+              className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-[#0b5336] hover:bg-[#08412a] text-white border border-[#08412a] px-3 py-2 sm:py-1.5 text-xs font-bold transition cursor-pointer shadow-xs"
               title="Export Faculty List to Excel"
             >
               <img
