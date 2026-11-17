@@ -42,6 +42,9 @@ export async function updateSupabaseSession(
     return { response, user: null, supabase: null };
   }
 
+  const isEphemeral =
+    request.cookies.get("pup_focus_session_mode")?.value === "ephemeral";
+
   const supabase = createServerClient(
     env.NEXT_PUBLIC_SUPABASE_URL,
     env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
@@ -52,8 +55,17 @@ export async function updateSupabaseSession(
         },
         setAll(cookiesToSet) {
           cookiesToSet.forEach(({ name, value, options }) => {
+            const nextOptions =
+              isEphemeral && name.startsWith("sb-") && options?.maxAge !== 0
+                ? (() => {
+                    const copy = { ...(options ?? {}) };
+                    delete copy.maxAge;
+                    delete copy.expires;
+                    return copy;
+                  })()
+                : options;
             request.cookies.set(name, value);
-            response.cookies.set(name, value, options);
+            response.cookies.set(name, value, nextOptions);
           });
         },
       },

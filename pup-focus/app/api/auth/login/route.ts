@@ -95,6 +95,11 @@ export async function POST(request: NextRequest) {
     const email =
       typeof body.email === "string" ? body.email.trim().toLowerCase() : "";
     const password = typeof body.password === "string" ? body.password : "";
+    const rememberMe =
+      body.rememberMe === true ||
+      body.rememberMe === "true" ||
+      body.remember_me === true ||
+      body.remember_me === "true";
     const token = extractTurnstileToken(body);
 
     if (!email || !password) {
@@ -340,15 +345,33 @@ export async function POST(request: NextRequest) {
       } catch {}
     }
 
-    // Synchronize session cookies
-    const userClient = await createServerSupabaseClient();
+    // Synchronize session cookies (session-only when Remember Me is unchecked)
+    const userClient = await createServerSupabaseClient({
+      ephemeralSession: !rememberMe,
+    });
     await userClient.auth.setSession(signInData.session).catch(() => null);
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       success: true,
       user: signInData.user,
       session: signInData.session,
+      rememberMe,
     });
+    response.cookies.set(
+      "pup_focus_session_mode",
+      rememberMe ? "persistent" : "ephemeral",
+      rememberMe
+        ? {
+            path: "/",
+            maxAge: 60 * 60 * 24 * 30,
+            sameSite: "lax",
+          }
+        : {
+            path: "/",
+            sameSite: "lax",
+          },
+    );
+    return response;
   } catch (err) {
     return NextResponse.json(
       {

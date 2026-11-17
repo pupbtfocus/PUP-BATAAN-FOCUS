@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { cn } from "@/utils/cn";
 import { createClient, clearBrowserSupabaseSession } from "@/lib/supabase/client";
+import { clearEphemeralSessionState } from "@/lib/auth/ephemeral-session";
 import { resetDashboardNavigationState } from "@/config/routes";
 import { stopRealtimeSync } from "@/lib/realtime";
 import { LogOut, Xmark } from "iconoir-react";
@@ -31,6 +32,7 @@ export function LogoutButton({ className }: { className?: string }) {
       // Ignore
     }
 
+    clearEphemeralSessionState();
     clearBrowserSupabaseSession();
     window.location.href = "/";
   }

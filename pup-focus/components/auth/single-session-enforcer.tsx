@@ -5,6 +5,15 @@ import { usePathname } from "next/navigation";
 import { createClient, clearBrowserSupabaseSession } from "@/lib/supabase/client";
 import { ConcurrentSessionModal } from "@/components/auth/concurrent-session-modal";
 import { resetDashboardNavigationState, AUTH_ROUTES } from "@/config/routes";
+import {
+  clearEphemeralSessionState,
+  enforceEphemeralBrowserCookies,
+  isEphemeralSessionActive,
+  markSiteLeft,
+  performEphemeralAutoLogout,
+  registerActiveTab,
+  shouldAutoLogoutOnVisit,
+} from "@/lib/auth/ephemeral-session";
 
 let verificationPausedUntil = 0;
 
@@ -42,8 +51,10 @@ export function SingleSessionEnforcer() {
   const pathname = usePathname();
   const [conflictModalOpen, setConflictModalOpen] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const [isAutoLoggingOut, setIsAutoLoggingOut] = useState(false);
   const checkingRef = useRef(false);
   const conflictDetectedRef = useRef(false);
+  const autoLoggingOutRef = useRef(false);
   const myLoginTimeRef = useRef<string | null>(null);
   const lastCheckTimeRef = useRef<number>(0);
 
@@ -78,6 +89,7 @@ export function SingleSessionEnforcer() {
           localStorage.removeItem("pup_focus_session_id");
           document.cookie =
             "pup_focus_session_id=; path=/; max-age=0; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+          clearEphemeralSessionState();
           clearBrowserSupabaseSession();
         }
 
@@ -170,6 +182,7 @@ export function SingleSessionEnforcer() {
       isPublicAuthPage ||
       checkingRef.current ||
       conflictDetectedRef.current ||
+      autoLoggingOutRef.current ||
       Date.now() < verificationPausedUntil
     ) {
       return;
@@ -342,11 +355,84 @@ export function SingleSessionEnforcer() {
     };
   }, [isPublicAuthPage, verifySession]);
 
+  // Ephemeral session lifecycle (auto-logout on leaving site when Remember Me is unchecked)
+  useEffect(() => {
+    if (isPublicAuthPage || typeof window === "undefined") {
+      return;
+    }
+
+    if (isEphemeralSessionActive()) {
+      if (shouldAutoLogoutOnVisit()) {
+        autoLoggingOutRef.current = true;
+        setIsAutoLoggingOut(true);
+        void performEphemeralAutoLogout();
+        return;
+      }
+      registerActiveTab();
+      enforceEphemeralBrowserCookies();
+    }
+
+    const heartbeatId = window.setInterval(() => {
+      if (isEphemeralSessionActive() && !autoLoggingOutRef.current) {
+        registerActiveTab();
+        enforceEphemeralBrowserCookies();
+      }
+    }, 10000);
+
+    const handlePageHide = () => {
+      if (isEphemeralSessionActive()) {
+        markSiteLeft();
+      }
+    };
+
+    const handlePageShow = (event: PageTransitionEvent) => {
+      if (event.persisted && isEphemeralSessionActive()) {
+        autoLoggingOutRef.current = true;
+        setIsAutoLoggingOut(true);
+        void performEphemeralAutoLogout();
+      } else if (isEphemeralSessionActive()) {
+        registerActiveTab();
+        enforceEphemeralBrowserCookies();
+      }
+    };
+
+    const handleVisibilityOrFocus = () => {
+      if (
+        document.visibilityState === "visible" &&
+        isEphemeralSessionActive() &&
+        !autoLoggingOutRef.current
+      ) {
+        registerActiveTab();
+      }
+    };
+
+    window.addEventListener("pagehide", handlePageHide);
+    window.addEventListener("pageshow", handlePageShow);
+    window.addEventListener("focus", handleVisibilityOrFocus);
+    document.addEventListener("visibilitychange", handleVisibilityOrFocus);
+
+    return () => {
+      window.clearInterval(heartbeatId);
+      window.removeEventListener("pagehide", handlePageHide);
+      window.removeEventListener("pageshow", handlePageShow);
+      window.removeEventListener("focus", handleVisibilityOrFocus);
+      document.removeEventListener("visibilitychange", handleVisibilityOrFocus);
+    };
+  }, [isPublicAuthPage, pathname]);
+
   return (
-    <ConcurrentSessionModal
-      isOpen={conflictModalOpen}
-      isLoggingOut={isLoggingOut}
-      onConfirm={handleLogout}
-    />
+    <>
+      {isAutoLoggingOut && (
+        <div
+          className="fixed inset-0 z-[9999] bg-slate-50"
+          aria-hidden="true"
+        />
+      )}
+      <ConcurrentSessionModal
+        isOpen={conflictModalOpen}
+        isLoggingOut={isLoggingOut}
+        onConfirm={handleLogout}
+      />
+    </>
   );
 }

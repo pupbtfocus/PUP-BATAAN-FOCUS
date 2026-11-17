@@ -21,9 +21,14 @@ if (!g.__pupFocusUndiciPatched) {
   } catch {}
 }
 
-export async function createServerSupabaseClient() {
+export async function createServerSupabaseClient(config?: {
+  ephemeralSession?: boolean;
+}) {
   const cookieStore = await cookies();
   const env = getPublicEnv();
+  const isEphemeral =
+    config?.ephemeralSession ??
+    cookieStore.get("pup_focus_session_mode")?.value === "ephemeral";
 
   const client = createServerClient(
     env.NEXT_PUBLIC_SUPABASE_URL,
@@ -36,7 +41,16 @@ export async function createServerSupabaseClient() {
         setAll(cookiesToSet) {
           try {
             cookiesToSet.forEach(({ name, value, options }) => {
-              cookieStore.set(name, value, options);
+              const nextOptions =
+                isEphemeral && name.startsWith("sb-") && options?.maxAge !== 0
+                  ? (() => {
+                      const copy = { ...(options ?? {}) };
+                      delete copy.maxAge;
+                      delete copy.expires;
+                      return copy;
+                    })()
+                  : options;
+              cookieStore.set(name, value, nextOptions);
             });
           } catch {
             // The `setAll` method was called from a Server Component.

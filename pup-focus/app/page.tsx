@@ -18,6 +18,12 @@ import { ROUTE_BY_ROLE, resetDashboardNavigationState } from "@/config/routes";
 import { ROLE, ROLE_LABEL, type AppRole, isQaFaculty } from "@/config/roles";
 import { isValidEmailAddress } from "@/lib/validation/email";
 import { recordActiveSessionLogin } from "@/components/auth/single-session-enforcer";
+import {
+  isEphemeralSessionActive,
+  markLoginPersistence,
+  performEphemeralAutoLogout,
+  shouldAutoLogoutOnVisit,
+} from "@/lib/auth/ephemeral-session";
 
 const SUPER_ADMIN_EMAIL = APP_CONFIG.superAdminEmail;
 const PUBLIC_ENV = getPublicEnvSafe();
@@ -348,6 +354,11 @@ export default function Home() {
         return;
       }
 
+      if (isEphemeralSessionActive() && shouldAutoLogoutOnVisit()) {
+        await performEphemeralAutoLogout({ skipRedirect: true });
+        return;
+      }
+
       // If user was explicitly logged out due to concurrent session, do not auto-redirect
       if (
         typeof window !== "undefined" &&
@@ -566,6 +577,7 @@ export default function Home() {
           body: JSON.stringify({
             email: normalizedEmail,
             password: currentPassword,
+            rememberMe: activeRememberMe,
             captchaToken: token,
             "cf-turnstile-response": token,
           }),
@@ -575,6 +587,7 @@ export default function Home() {
           if (json.session) {
             await supabase.auth.setSession(json.session).catch(() => null);
           }
+          markLoginPersistence(activeRememberMe);
           signInData = { user: json.user, session: json.session };
           signInError = null;
         } else {
@@ -757,6 +770,7 @@ export default function Home() {
           new Date().toISOString();
       }
 
+      markLoginPersistence(activeRememberMe);
       recordActiveSessionLogin(loginTime, user.id);
 
       await ensureMinLoadingTime();
