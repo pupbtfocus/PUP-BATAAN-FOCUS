@@ -806,6 +806,7 @@ export default function Home() {
           if (verifiedTotp?.id) {
             await ensureMinLoadingTime();
             setIsSubmitting(false);
+            setAuthModal(null);
             setMfaCode("");
             setMfaError(null);
             setMfaChallenge({
@@ -1229,6 +1230,9 @@ export default function Home() {
                       void (async () => {
                         const supabase = createClient();
                         await supabase.auth.signOut().catch(() => null);
+                        setAuthModal(null);
+                        setIsSubmitting(false);
+                        setIsVerifyingMfa(false);
                         setMfaChallenge(null);
                         setMfaCode("");
                         setMfaError(null);
