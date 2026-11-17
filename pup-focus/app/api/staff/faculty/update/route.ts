@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { getServiceRoleClient } from "@/lib/supabase/service-role";
-import { ROLE } from "@/config/roles";
+import { ROLE, resolveTrustedUserRole } from "@/config/roles";
 import { logTransactionEvent } from "@/features/transaction-logs/services/transaction-log.service";
 import { logAuditEvent } from "@/features/audit-logs/services/audit-log.service";
 import { logger } from "@/lib/observability/logger";
@@ -82,8 +82,7 @@ export async function PATCH(request: NextRequest) {
     } = await sessionClient.auth.getUser();
 
     const requesterRole = (
-      (user?.user_metadata?.role as string | undefined) ??
-      (user?.app_metadata?.role as string | undefined) ??
+      resolveTrustedUserRole(user) ??
       ""
     ).toLowerCase().trim();
     const userEmail = (user?.email ?? "").toLowerCase().trim();

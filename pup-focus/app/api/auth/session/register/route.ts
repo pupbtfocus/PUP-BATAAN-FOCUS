@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { getServiceRoleClient } from "@/lib/supabase/service-role";
 import { setActiveSession } from "@/lib/auth/session-tracker";
+import { resolveTrustedUserRole } from "@/config/roles";
 import { logTransactionEvent } from "@/features/transaction-logs/services/transaction-log.service";
 
 export async function POST(request: NextRequest) {
@@ -68,7 +69,7 @@ export async function POST(request: NextRequest) {
       entityId: user.id,
       metadata: {
         email: user.email,
-        role: user.user_metadata?.role || user.app_metadata?.role,
+        role: resolveTrustedUserRole(user),
         sessionId,
       },
     });

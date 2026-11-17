@@ -2,6 +2,8 @@ import { redirect } from "next/navigation";
 import { AppShell } from "@/components/layout/app-shell";
 import { ROLE } from "@/config/roles";
 import { getCurrentUser } from "@/lib/auth/session";
+import { createServerSupabaseClient } from "@/lib/supabase/server";
+import { verifyMfaAal2IfEnrolled } from "@/lib/auth/admin-security";
 import { AdminDashboard } from "@/features/admin-management/components/admin-dashboard";
 
 export default async function AdminDashboardPage(props: {
@@ -11,6 +13,12 @@ export default async function AdminDashboardPage(props: {
 
   if (!user || (user.role !== ROLE.ADMIN && user.role !== "super_admin")) {
     redirect("/");
+  }
+
+  const supabase = await createServerSupabaseClient();
+  const mfaStatus = await verifyMfaAal2IfEnrolled(supabase);
+  if (!mfaStatus.ok) {
+    redirect("/?reason=mfa_required");
   }
 
   const searchParams = props.searchParams ? await props.searchParams : undefined;

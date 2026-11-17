@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { getServiceRoleClient } from "@/lib/supabase/service-role";
-import { ROLE } from "@/config/roles";
+import { ROLE, resolveTrustedUserRole } from "@/config/roles";
 
 export async function POST(request: NextRequest) {
   try {
@@ -15,8 +15,7 @@ export async function POST(request: NextRequest) {
     }
 
     const requesterRole =
-      (user?.user_metadata?.role as string | undefined) ??
-      (user?.app_metadata?.role as string | undefined);
+      resolveTrustedUserRole(user);
 
     if (requesterRole !== ROLE.STAFF && requesterRole !== ROLE.ADMIN && requesterRole !== ROLE.SUPER_ADMIN && requesterRole !== "staff") {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });

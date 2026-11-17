@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { ROLE } from "@/config/roles";
+import { ROLE, resolveTrustedUserRole } from "@/config/roles";
 import {
   convert12HourTo24Hour,
   format24HourTo12Hour,
@@ -60,8 +60,7 @@ export async function GET() {
     } = await sessionClient.auth.getUser();
 
     const requesterRole =
-      (user?.user_metadata?.role as string | undefined) ??
-      (user?.app_metadata?.role as string | undefined);
+      resolveTrustedUserRole(user);
 
     if (!user || !isAdminRole(requesterRole)) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
@@ -132,8 +131,7 @@ export async function PUT(request: NextRequest) {
     } = await sessionClient.auth.getUser();
 
     const requesterRole =
-      (user?.user_metadata?.role as string | undefined) ??
-      (user?.app_metadata?.role as string | undefined);
+      resolveTrustedUserRole(user);
 
     if (!user || !isAdminRole(requesterRole)) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
@@ -575,8 +573,7 @@ export async function DELETE() {
     } = await sessionClient.auth.getUser();
 
     const requesterRole =
-      (user?.user_metadata?.role as string | undefined) ??
-      (user?.app_metadata?.role as string | undefined);
+      resolveTrustedUserRole(user);
 
     if (!user || !isAdminRole(requesterRole)) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });

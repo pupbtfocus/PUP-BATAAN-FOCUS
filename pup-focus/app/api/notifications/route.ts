@@ -7,6 +7,7 @@ import {
   markAllNotificationsAsRead,
   deleteAllUserNotifications,
 } from "@/features/notifications/services/notification.service";
+import { resolveTrustedUserRole } from "@/config/roles";
 
 const ADMIN_ONLY_NOTIFICATION_TYPES = [
   "NEW_SUBMISSION",
@@ -77,8 +78,7 @@ export async function GET() {
     }
 
     const metadataRole =
-      (user.user_metadata?.role as string | undefined) ??
-      (user.app_metadata?.role as string | undefined);
+      resolveTrustedUserRole(user);
 
     let isAdmin = metadataRole === "admin" || metadataRole === "super_admin";
 
@@ -175,8 +175,7 @@ export async function PATCH(request: NextRequest) {
     }
 
     const metadataRole =
-      (user.user_metadata?.role as string | undefined) ??
-      (user.app_metadata?.role as string | undefined);
+      resolveTrustedUserRole(user);
 
     let isAdmin = metadataRole === "admin" || metadataRole === "super_admin";
 

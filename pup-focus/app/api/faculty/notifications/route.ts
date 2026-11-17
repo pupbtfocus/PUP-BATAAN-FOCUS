@@ -7,6 +7,7 @@ import {
   markAllNotificationsAsRead,
   deleteAllUserNotifications,
 } from "@/features/notifications/services/notification.service";
+import { resolveTrustedUserRole } from "@/config/roles";
 
 const ADMIN_ONLY_NOTIFICATION_TYPES = [
   "NEW_SUBMISSION",
@@ -85,8 +86,7 @@ export async function GET() {
     }
 
     const userRole =
-      (user.user_metadata?.role as string | undefined) ??
-      (user.app_metadata?.role as string | undefined);
+      resolveTrustedUserRole(user);
 
     // Proactively clean up any errant submission alert notifications that were delivered to this faculty user
     // Strictly execute this cleanup only for faculty members so reviewer alerts for staff are never deleted

@@ -7,7 +7,7 @@ import {
   sendTempPasswordEmail,
   sendEmailChangeTempPasswordEmail,
 } from "@/lib/email/send-invite";
-import { ROLE } from "@/config/roles";
+import { ROLE, resolveTrustedUserRole } from "@/config/roles";
 import { generateTempPassword } from "@/lib/auth/temp-password";
 
 export async function POST(req: Request) {
@@ -284,9 +284,7 @@ export async function POST(req: Request) {
       }
     }
 
-    const userRole =
-      (updatedUser.user_metadata?.role as string | undefined) ??
-      ROLE.FACULTY;
+    const userRole = resolveTrustedUserRole(updatedUser) ?? ROLE.FACULTY;
 
     return NextResponse.json({
       success: true,

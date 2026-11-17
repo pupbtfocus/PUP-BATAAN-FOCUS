@@ -29,6 +29,58 @@ export function isOriginalAdmin(email?: string | null): boolean {
 
 export const isOriginalSuperAdmin = isOriginalAdmin;
 
+export function isAdminRoleToken(role?: string | null): boolean {
+  if (!role) return false;
+  const r = role.toLowerCase().trim();
+  return (
+    r === ROLE.ADMIN ||
+    r === ROLE.SUPER_ADMIN ||
+    r === "super_admin" ||
+    r === "superadmin"
+  );
+}
+
+/**
+ * Resolves the trusted effective role for an authenticated user.
+ * Prefers server-controlled `app_metadata.role` and prevents client-mutable
+ * `user_metadata.role` from elevating an account to Admin.
+ */
+export function resolveTrustedUserRole(
+  user?: {
+    email?: string | null;
+    app_metadata?: Record<string, unknown> | null;
+    user_metadata?: Record<string, unknown> | null;
+  } | null,
+): string | undefined {
+  if (!user) return undefined;
+  if (isOriginalAdmin(user.email) || isQaAdmin(user.email)) {
+    return ROLE.ADMIN;
+  }
+
+  const appRole =
+    typeof user.app_metadata?.role === "string"
+      ? user.app_metadata.role.trim()
+      : "";
+  if (appRole) {
+    return appRole;
+  }
+
+  const userRole =
+    typeof user.user_metadata?.role === "string"
+      ? user.user_metadata.role.trim()
+      : "";
+  if (!userRole) {
+    return undefined;
+  }
+
+  // Never allow client-mutable user_metadata alone to grant Admin privileges.
+  if (isAdminRoleToken(userRole)) {
+    return ROLE.STAFF;
+  }
+
+  return userRole;
+}
+
 export function isQaAdmin(email?: string | null): boolean {
   if (process.env.NODE_ENV === "production") return false;
   if (!email) return false;

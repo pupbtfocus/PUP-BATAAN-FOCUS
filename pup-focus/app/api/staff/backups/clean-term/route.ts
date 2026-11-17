@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { ROLE } from "@/config/roles";
+import { ROLE, resolveTrustedUserRole } from "@/config/roles";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { getServiceRoleClient } from "@/lib/supabase/service-role";
 import { logAudit } from "@/lib/audit/log-audit";
@@ -38,8 +38,7 @@ async function authorizeStaffOrAdmin() {
   if (!user) return null;
 
   let requesterRole =
-    (user.user_metadata?.role as string | undefined) ??
-    (user.app_metadata?.role as string | undefined);
+    resolveTrustedUserRole(user);
 
   const supabase = getServiceRoleClient();
 

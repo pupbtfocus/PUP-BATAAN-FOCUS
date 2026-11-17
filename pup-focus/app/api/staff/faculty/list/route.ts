@@ -328,8 +328,7 @@ export async function GET(request: NextRequest) {
         continue; // Don't list pending invited faculty until they accept the invite!
       }
       const metaRole = (
-        u.user_metadata?.role ||
-        u.app_metadata?.role ||
+        u.app_metadata?.role || u.user_metadata?.role ||
         ""
       ).toLowerCase().trim();
       if (metaRole === "faculty" || metaRole === "faculty_member") {

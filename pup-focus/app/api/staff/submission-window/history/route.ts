@@ -6,7 +6,7 @@ import {
 } from "@/features/submissions/services/submission-window.service";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { getServiceRoleClient } from "@/lib/supabase/service-role";
-import { ROLE } from "@/config/roles";
+import { ROLE, resolveTrustedUserRole } from "@/config/roles";
 
 function isAdminRole(role: string | undefined) {
   return role === ROLE.STAFF || role === ROLE.ADMIN || role === ROLE.SUPER_ADMIN || role === "staff";
@@ -31,8 +31,7 @@ export async function GET() {
     } = await sessionClient.auth.getUser();
 
     const requesterRole =
-      (user?.user_metadata?.role as string | undefined) ??
-      (user?.app_metadata?.role as string | undefined);
+      resolveTrustedUserRole(user);
 
     if (!user || !isAdminRole(requesterRole)) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });

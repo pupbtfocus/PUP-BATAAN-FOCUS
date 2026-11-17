@@ -1,7 +1,13 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
+import { verifyMfaAal2IfEnrolled } from "@/lib/auth/admin-security";
 import { getServiceRoleClient } from "@/lib/supabase/service-role";
-import { ROLE } from "@/config/roles";
+import {
+  ROLE,
+  isAdminRoleToken,
+  isOriginalAdmin,
+  resolveTrustedUserRole,
+} from "@/config/roles";
 import { isValidEmailAddress } from "@/lib/validation/email";
 import { sendAdminPasswordResetEmail, getAppBaseUrl } from "@/lib/email/send-invite";
 import { logAuditEvent } from "@/features/audit-logs/services/audit-log.service";
@@ -14,18 +20,23 @@ export async function POST(request: NextRequest) {
       data: { user: currentUser },
     } = await sessionClient.auth.getUser();
 
-    const requesterRole =
-      (currentUser?.user_metadata?.role as string | undefined) ??
-      (currentUser?.app_metadata?.role as string | undefined);
+    const requesterRole = resolveTrustedUserRole(currentUser);
 
     if (
       !currentUser ||
       (requesterRole !== ROLE.STAFF &&
-        requesterRole !== ROLE.ADMIN &&
-        requesterRole !== ROLE.SUPER_ADMIN &&
-        requesterRole !== "staff")
+        !isAdminRoleToken(requesterRole) &&
+        !isOriginalAdmin(currentUser.email))
     ) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+
+    const mfaCheck = await verifyMfaAal2IfEnrolled(sessionClient);
+    if (!mfaCheck.ok) {
+      return NextResponse.json(
+        { error: "Two-factor authentication verification required." },
+        { status: 403 },
+      );
     }
 
     const body = await request.json();
@@ -103,6 +114,21 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         { error: `Account with email ${targetEmail} was not found.` },
         { status: 404 },
+      );
+    }
+
+    if (
+      isOriginalAdmin(targetEmail) ||
+      isOriginalAdmin(authUser.email) ||
+      (requesterRole === ROLE.STAFF &&
+        isAdminRoleToken(resolveTrustedUserRole(authUser)))
+    ) {
+      return NextResponse.json(
+        {
+          error:
+            "You do not have permission to reset the password for this administrator account.",
+        },
+        { status: 403 },
       );
     }
 

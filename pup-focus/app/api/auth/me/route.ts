@@ -1,5 +1,5 @@
 import { createServerSupabaseClient } from "@/lib/supabase/server";
-import { ROLE, type AppRole } from "@/config/roles";
+import { ROLE, resolveTrustedUserRole, type AppRole } from "@/config/roles";
 import { NextResponse } from "next/server";
 
 export async function GET() {
@@ -33,7 +33,7 @@ export async function GET() {
       | undefined;
     const role =
       (userRoles?.[0]?.roles?.code as AppRole | undefined) ??
-      (user.user_metadata?.role as AppRole | undefined) ??
+      (resolveTrustedUserRole(user) as AppRole | undefined) ??
       ROLE.FACULTY;
 
     const profileId = profile?.id ?? user.id;

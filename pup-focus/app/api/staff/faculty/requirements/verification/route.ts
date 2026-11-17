@@ -10,8 +10,7 @@ import {
   isOriginalAdmin,
   isOriginalSuperAdmin,
   isQaAdmin,
-  isQaStaff,
-} from "@/config/roles";
+  isQaStaff, resolveTrustedUserRole } from "@/config/roles";
 import {
   escapeFilterValue,
   filterUuids,
@@ -285,8 +284,7 @@ export async function GET(request: NextRequest) {
     }
 
     const requesterRole =
-      (user?.user_metadata?.role as string | undefined) ??
-      (user?.app_metadata?.role as string | undefined);
+      resolveTrustedUserRole(user);
     const normalizedRequesterRole = (requesterRole ?? "").toLowerCase().trim();
 
     const isAuthorized =

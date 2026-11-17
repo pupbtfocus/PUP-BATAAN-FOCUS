@@ -4,7 +4,7 @@ import { useState, useEffect, type FormEvent } from "react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
-import { ROLE, type AppRole } from "@/config/roles";
+import { ROLE, resolveTrustedUserRole, type AppRole } from "@/config/roles";
 import { CampusBackground } from "@/components/shared/campus-background";
 import { Logo } from "@/components/ui/logo";
 import { AppIcon } from "@/components/ui/app-icon";
@@ -332,9 +332,8 @@ export default function ChangePasswordPage() {
       const { data } = await supabase.auth.getUser();
       const signedInRole =
         resolvedRole ??
-        (data.user?.user_metadata?.role as AppRole | undefined) ??
-        (data.user?.app_metadata?.role as AppRole | undefined) ??
-        ROLE.ADMIN;
+        (resolveTrustedUserRole(data.user) as AppRole | undefined) ??
+        ROLE.FACULTY;
 
       if (data.user) {
         const loginTime = data.user.last_sign_in_at || new Date().toISOString();

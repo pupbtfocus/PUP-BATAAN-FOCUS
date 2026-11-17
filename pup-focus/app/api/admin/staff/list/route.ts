@@ -3,8 +3,15 @@ export const revalidate = 0;
 
 import { NextResponse, type NextRequest } from "next/server";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
+import { verifyMfaAal2IfEnrolled } from "@/lib/auth/admin-security";
 import { getServiceRoleClient } from "@/lib/supabase/service-role";
-import { ROLE } from "@/config/roles";
+import {
+  ROLE,
+  isAdminRoleToken,
+  isOriginalAdmin,
+  isQaAdmin,
+  resolveTrustedUserRole,
+} from "@/config/roles";
 import { parseFullNameFallback, buildFacultyFullName } from "@/lib/faculty-profile";
 
 async function resolveAvatarUrl(
@@ -78,9 +85,10 @@ async function resolveAvatarUrl(
 export async function GET(request: NextRequest) {
   let user: any = null;
   let requesterRole: string | undefined = undefined;
+  let bearerToken: string | null = null;
+  const sessionClient = await createServerSupabaseClient();
 
   try {
-    const sessionClient = await createServerSupabaseClient();
     const res = await sessionClient.auth.getUser();
     user = res.data?.user ?? null;
   } catch {}
@@ -90,32 +98,33 @@ export async function GET(request: NextRequest) {
       request.headers.get("authorization") ||
       request.headers.get("Authorization");
     if (authHeader?.startsWith("Bearer ")) {
-      const token = authHeader.substring(7).trim();
+      bearerToken = authHeader.substring(7).trim();
       const adminSupabase = getServiceRoleClient();
-      const { data: tokenData } = await adminSupabase.auth.getUser(token);
+      const { data: tokenData } = await adminSupabase.auth.getUser(bearerToken);
       user = tokenData?.user ?? null;
     }
   }
 
-  requesterRole =
-    (user?.user_metadata?.role as string | undefined) ??
-    (user?.app_metadata?.role as string | undefined);
-  const normalizedRequesterRole = (requesterRole ?? "").toLowerCase().trim();
-  const normalizedEmail = (user?.email ?? "").toLowerCase().trim();
-  const isSuperAdminEmail =
-    normalizedEmail === "pupbataanfocus.superadmin@gmail.com" ||
-    normalizedEmail === "pupbataanfocus.admin@gmail.com" ||
-    normalizedEmail.startsWith("qa.superadmin");
+  requesterRole = resolveTrustedUserRole(user);
 
   if (
     !user ||
-    (!isSuperAdminEmail &&
-      normalizedRequesterRole !== ROLE.SUPER_ADMIN &&
-      normalizedRequesterRole !== ROLE.ADMIN &&
-      normalizedRequesterRole !== "super_admin" &&
-      normalizedRequesterRole !== "superadmin")
+    (!isOriginalAdmin(user.email) &&
+      !isQaAdmin(user.email) &&
+      !isAdminRoleToken(requesterRole))
   ) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
+  const mfaCheck = await verifyMfaAal2IfEnrolled(sessionClient, {
+    user,
+    bearerToken,
+  });
+  if (!mfaCheck.ok) {
+    return NextResponse.json(
+      { error: "Two-factor authentication verification required." },
+      { status: 403 },
+    );
   }
 
   try {
@@ -175,9 +184,7 @@ export async function GET(request: NextRequest) {
             return false;
           }
 
-          const userRole = String(
-            u.user_metadata?.role || u.app_metadata?.role || ""
-          ).toLowerCase().trim();
+          const userRole = String(resolveTrustedUserRole(u) || "").toLowerCase().trim();
           const isAdminOrStaff = (
             userRole === ROLE.STAFF ||
             userRole === ROLE.ADMIN ||
@@ -191,13 +198,11 @@ export async function GET(request: NextRequest) {
         })
         .map(async (u) => {
           const emailKey = (u.email || "").toLowerCase().trim();
-          const rawRole = String(
-            u.user_metadata?.role || u.app_metadata?.role || ROLE.STAFF
-          ).toLowerCase().trim();
+          const rawRole = String(resolveTrustedUserRole(u) || ROLE.STAFF)
+            .toLowerCase()
+            .trim();
           const isSuperAdminEmail =
-            emailKey === "pupbataanfocus.superadmin@gmail.com" ||
-            emailKey === "pupbataanfocus.admin@gmail.com" ||
-            emailKey.startsWith("qa.superadmin");
+            isOriginalAdmin(emailKey) || isQaAdmin(emailKey);
           const userRole =
             isSuperAdminEmail || rawRole.includes("super")
               ? ROLE.ADMIN

@@ -1,7 +1,12 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { getServiceRoleClient } from "@/lib/supabase/service-role";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
-import { ROLE } from "@/config/roles";
+import {
+  ROLE,
+  isAdminRoleToken,
+  isOriginalAdmin,
+  resolveTrustedUserRole,
+} from "@/config/roles";
 import { isValidEmailAddress } from "@/lib/validation/email";
 import { sendInviteEmail } from "@/lib/email/send-invite";
 import { logAuditEvent } from "@/features/audit-logs/services/audit-log.service";
@@ -248,13 +253,14 @@ export async function POST(request: NextRequest) {
       data: { user },
     } = await sessionClient.auth.getUser();
 
-    const requesterRole =
-      (user?.user_metadata?.role as string | undefined) ??
-      (user?.app_metadata?.role as string | undefined);
+    const requesterRole = resolveTrustedUserRole(user);
 
     if (
       !user ||
-      (requesterRole !== ROLE.STAFF && requesterRole !== ROLE.ADMIN && requesterRole !== ROLE.SUPER_ADMIN && requesterRole !== "staff")
+      (requesterRole !== ROLE.STAFF &&
+        requesterRole !== "staff" &&
+        !isAdminRoleToken(requesterRole) &&
+        !isOriginalAdmin(user.email))
     ) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
@@ -556,6 +562,12 @@ export async function POST(request: NextRequest) {
     // so the faculty account appears immediately in the admin faculty list.
     const createdAuthUser = genData?.user;
     if (createdAuthUser) {
+      try {
+        await supabase.auth.admin.updateUserById(createdAuthUser.id, {
+          app_metadata: { role: ROLE.FACULTY },
+        });
+      } catch {}
+
       try {
         const { data: newProfile, error: profileErr } = await supabase
           .from("profiles")

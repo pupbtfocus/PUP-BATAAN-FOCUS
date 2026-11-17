@@ -5,6 +5,7 @@ import { NextResponse } from "next/server";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { getServiceRoleClient } from "@/lib/supabase/service-role";
 import { resolveOnboardingContext } from "@/features/submissions/services/submission-window.service";
+import { resolveTrustedUserRole } from "@/config/roles";
 
 function isAuthorizedAdmin(role?: string): boolean {
   if (!role) return false;
@@ -31,8 +32,7 @@ export async function GET() {
     }
 
     const requesterRole =
-      (user.user_metadata?.role as string | undefined) ??
-      (user.app_metadata?.role as string | undefined);
+      resolveTrustedUserRole(user);
 
     let hasAccess = isAuthorizedAdmin(requesterRole);
     const supabase = getServiceRoleClient();

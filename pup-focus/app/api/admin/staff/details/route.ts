@@ -2,8 +2,16 @@ export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 import { NextResponse, type NextRequest } from "next/server";
-import { ROLE, canManageAdminAccount } from "@/config/roles";
+import {
+  ROLE,
+  canManageAdminAccount,
+  isAdminRoleToken,
+  isOriginalAdmin,
+  isQaAdmin,
+  resolveTrustedUserRole,
+} from "@/config/roles";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
+import { verifyMfaAal2IfEnrolled } from "@/lib/auth/admin-security";
 import { getServiceRoleClient } from "@/lib/supabase/service-role";
 import { isValidEmailAddress } from "@/lib/validation/email";
 import { sendEmailChangeVerificationEmail } from "@/lib/email/send-invite";
@@ -80,38 +88,12 @@ async function resolveAvatarUrl(
 
 function isAuthorizedStaffOrAdmin(user: any): boolean {
   if (!user) return false;
-  const role = (
-    (user.user_metadata?.role as string | undefined) ??
-    (user.app_metadata?.role as string | undefined) ??
-    ""
-  ).toLowerCase().trim();
-  const email = (user.email ?? "").toLowerCase().trim();
-
-  if (
-    role === "admin" ||
-    role === "super_admin" ||
-    role === "superadmin" ||
-    role === "staff" ||
-    role === ROLE.ADMIN ||
-    role === ROLE.STAFF ||
-    role.includes("admin") ||
-    role.includes("staff") ||
-    role.includes("super")
-  ) {
+  if (isOriginalAdmin(user.email) || isQaAdmin(user.email)) {
     return true;
   }
 
-  if (
-    email === "pupbataanfocus.admin@gmail.com" ||
-    email === "pupbataanfocus.superadmin@gmail.com" ||
-    email === "preview@pupfocus.dev" ||
-    email.startsWith("qa.admin") ||
-    email.startsWith("qa.superadmin")
-  ) {
-    return true;
-  }
-
-  return false;
+  const role = (resolveTrustedUserRole(user) ?? "").toLowerCase().trim();
+  return isAdminRoleToken(role) || role === ROLE.STAFF || role === "staff";
 }
 
 export async function GET(request: NextRequest) {
@@ -122,6 +104,14 @@ export async function GET(request: NextRequest) {
 
   if (!user || !isAuthorizedStaffOrAdmin(user)) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
+  const mfaCheck = await verifyMfaAal2IfEnrolled(sessionClient);
+  if (!mfaCheck.ok) {
+    return NextResponse.json(
+      { error: "Two-factor authentication verification required." },
+      { status: 403 },
+    );
   }
 
   const { searchParams } = new URL(request.url);
@@ -193,14 +183,10 @@ export async function GET(request: NextRequest) {
     const email = profile?.email || authUser?.email || "";
     const emailLower = email.toLowerCase().trim();
     const rawRole = String(
-      authUser?.user_metadata?.role ||
-      authUser?.app_metadata?.role ||
-      ROLE.STAFF
+      resolveTrustedUserRole(authUser) || ROLE.STAFF
     ).toLowerCase().trim();
     const isSuperAdminEmail =
-      emailLower === "pupbataanfocus.superadmin@gmail.com" ||
-      emailLower === "pupbataanfocus.admin@gmail.com" ||
-      emailLower.startsWith("qa.superadmin");
+      isOriginalAdmin(emailLower) || isQaAdmin(emailLower);
     const role =
       isSuperAdminEmail || rawRole.includes("super")
         ? ROLE.ADMIN
@@ -294,6 +280,14 @@ export async function PATCH(request: NextRequest) {
 
   if (!user || !isAuthorizedStaffOrAdmin(user)) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
+  const mfaCheck = await verifyMfaAal2IfEnrolled(sessionClient);
+  if (!mfaCheck.ok) {
+    return NextResponse.json(
+      { error: "Two-factor authentication verification required." },
+      { status: 403 },
+    );
   }
 
   try {
@@ -416,10 +410,7 @@ export async function PATCH(request: NextRequest) {
     const previousEmail = (targetUser.email || profile?.email || "")
       .trim()
       .toLowerCase();
-    const targetRole =
-      (targetUser.user_metadata?.role as string | undefined) ??
-      (targetUser.app_metadata?.role as string | undefined) ??
-      ROLE.STAFF;
+    const targetRole = resolveTrustedUserRole(targetUser) ?? ROLE.STAFF;
 
     const allowed = canManageAdminAccount({
       targetEmail: previousEmail,

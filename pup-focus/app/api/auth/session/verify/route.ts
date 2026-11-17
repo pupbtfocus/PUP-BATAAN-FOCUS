@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { getServiceRoleClient } from "@/lib/supabase/service-role";
+import { getActiveSession } from "@/lib/auth/session-tracker";
 
 export async function POST(request: NextRequest) {
   try {
@@ -36,6 +37,20 @@ export async function POST(request: NextRequest) {
     // If unauthenticated, don't flag as concurrent conflict
     if (!user) {
       return NextResponse.json({ valid: true, unauthenticated: true });
+    }
+
+    const cookieSessionId = request.cookies.get("pup_focus_session_id")?.value?.trim();
+    const persistedSessionId = await getActiveSession(user.id);
+    if (
+      cookieSessionId &&
+      persistedSessionId &&
+      cookieSessionId !== persistedSessionId
+    ) {
+      return NextResponse.json({
+        valid: false,
+        reason: "concurrent_login",
+        message: "This account was logged in from another device or browser.",
+      });
     }
 
     const body = await request.json().catch(() => ({}));

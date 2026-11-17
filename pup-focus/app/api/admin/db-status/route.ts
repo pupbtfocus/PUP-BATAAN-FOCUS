@@ -1,8 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import nodemailer from "nodemailer";
-import { ROLE } from "@/config/roles";
+import {
+  ROLE,
+  isOriginalAdmin,
+  resolveTrustedUserRole,
+} from "@/config/roles";
 import { APP_CONFIG } from "@/config/app";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
+import { verifyMfaAal2IfEnrolled } from "@/lib/auth/admin-security";
 import { getServiceRoleClient } from "@/lib/supabase/service-role";
 
 export const dynamic = "force-dynamic";
@@ -308,13 +313,11 @@ export async function GET(request: NextRequest) {
       data: { user },
     } = await sessionClient.auth.getUser();
 
-    let requesterRole =
-      (user?.user_metadata?.role as string | undefined) ??
-      (user?.app_metadata?.role as string | undefined);
+    let requesterRole = resolveTrustedUserRole(user);
 
     const supabase = getServiceRoleClient();
 
-    if (user && !isSuperAdminRole(requesterRole)) {
+    if (user && !isOriginalAdmin(user.email) && !isSuperAdminRole(requesterRole)) {
       const { data: profile } = await supabase
         .from("profiles")
         .select("id, user_roles(roles(code))")
@@ -330,6 +333,14 @@ export async function GET(request: NextRequest) {
 
     if (!user || !isSuperAdminRole(requesterRole)) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+
+    const mfaCheck = await verifyMfaAal2IfEnrolled(sessionClient);
+    if (!mfaCheck.ok) {
+      return NextResponse.json(
+        { error: "Two-factor authentication verification required." },
+        { status: 403 },
+      );
     }
 
     const capacity = await computeAllTablesAndBucketsCapacity(supabase);

@@ -9,10 +9,11 @@ import { filterCondition, orFilter } from "@/lib/supabase/filters";
 import {
   LOCKOUT_DURATION_MS,
   MAX_FAILED_ATTEMPTS,
-  clearLoginLockout,
-  getLoginAttemptRecord,
-  setLoginAttemptRecord,
+  clearPersistentLoginLockout,
+  getPersistentLoginAttempt,
+  persistLoginAttempt,
 } from "@/lib/auth/login-attempts";
+import { syncTrustedAppMetadataRole } from "@/lib/auth/admin-security";
 
 export async function GET(request: NextRequest) {
   try {
@@ -28,35 +29,10 @@ export async function GET(request: NextRequest) {
     }
 
     const now = Date.now();
-    const memoryRecord = getLoginAttemptRecord(email);
-    let lockedUntil =
-      memoryRecord?.lockedUntil && memoryRecord.lockedUntil > now
-        ? memoryRecord.lockedUntil
-        : 0;
-
-    if (!lockedUntil) {
-      try {
-        const serviceClient = getServiceRoleClient();
-        const { data: usersData } = await serviceClient.auth.admin.listUsers({
-          perPage: 1000,
-        });
-        const targetUser = (usersData?.users ?? []).find(
-          (u) => (u.email || "").toLowerCase().trim() === email,
-        );
-        const metaLockedUntil = Number(
-          targetUser?.user_metadata?.locked_until || 0,
-        );
-        if (metaLockedUntil > now) {
-          lockedUntil = metaLockedUntil;
-          setLoginAttemptRecord(email, {
-            count: MAX_FAILED_ATTEMPTS,
-            lockedUntil: metaLockedUntil,
-          });
-        }
-      } catch {
-        // Ignore lookup error
-      }
-    }
+    const serviceClient = getServiceRoleClient();
+    const { record } = await getPersistentLoginAttempt(serviceClient, email);
+    const lockedUntil =
+      record.lockedUntil && record.lockedUntil > now ? record.lockedUntil : 0;
 
     const isLocked = lockedUntil > now;
     const remainingSeconds = isLocked
@@ -135,43 +111,18 @@ export async function POST(request: NextRequest) {
     const serviceClient = getServiceRoleClient();
     const now = Date.now();
 
-    // 1. Check in-memory lock first
-    const memoryRecord = getLoginAttemptRecord(email);
-    if (memoryRecord?.lockedUntil && memoryRecord.lockedUntil > now) {
-      const remainingMins = Math.ceil((memoryRecord.lockedUntil - now) / 60000);
+    // 1. Check persistent & in-memory lockout state via indexed lookup (app_metadata)
+    const { record: attemptRecord, user: targetUser } =
+      await getPersistentLoginAttempt(serviceClient, email);
+
+    if (attemptRecord.lockedUntil && attemptRecord.lockedUntil > now) {
+      const remainingMins = Math.ceil((attemptRecord.lockedUntil - now) / 60000);
       return NextResponse.json(
         {
           error: `Account temporarily locked due to consecutive failed attempts. Please try again in ${remainingMins} minute${remainingMins > 1 ? "s" : ""}.`,
         },
         { status: 429 },
       );
-    }
-
-    // 2. Check persistent lock and deactivation status in Supabase user_metadata across all browsers/devices
-    let targetUser: any = null;
-    try {
-      const { data: usersData } = await serviceClient.auth.admin.listUsers({ perPage: 1000 });
-      targetUser = (usersData?.users ?? []).find(
-        (u) => (u.email || "").toLowerCase().trim() === email,
-      );
-      if (targetUser?.user_metadata?.locked_until) {
-        const persistentLockedUntil = Number(targetUser.user_metadata.locked_until);
-        if (persistentLockedUntil > now) {
-          setLoginAttemptRecord(email, {
-            count: MAX_FAILED_ATTEMPTS,
-            lockedUntil: persistentLockedUntil,
-          });
-          const remainingMins = Math.ceil((persistentLockedUntil - now) / 60000);
-          return NextResponse.json(
-            {
-              error: `Account temporarily locked due to consecutive failed attempts. Please try again in ${remainingMins} minute${remainingMins > 1 ? "s" : ""}.`,
-            },
-            { status: 429 },
-          );
-        }
-      }
-    } catch {
-      // Continue if listUsers fails
     }
 
     // Check if account is deactivated or inactive across user_metadata, profiles, staff, or admins tables
@@ -257,31 +208,17 @@ export async function POST(request: NextRequest) {
     });
 
     if (signInError || !signInData?.session) {
-      const existingCount =
-        (memoryRecord && (!memoryRecord.lockedUntil || memoryRecord.lockedUntil <= now))
-          ? memoryRecord.count
-          : Number(targetUser?.user_metadata?.failed_attempts || 0);
-
+      const existingCount = attemptRecord.count;
       const currentCount = existingCount + 1;
 
       if (currentCount >= MAX_FAILED_ATTEMPTS) {
         const lockedUntil = now + LOCKOUT_DURATION_MS;
-        setLoginAttemptRecord(email, {
-          count: currentCount,
-          lockedUntil,
-        });
-
-        if (targetUser?.id) {
-          try {
-            await serviceClient.auth.admin.updateUserById(targetUser.id, {
-              user_metadata: {
-                ...(targetUser.user_metadata ?? {}),
-                failed_attempts: currentCount,
-                locked_until: lockedUntil,
-              },
-            });
-          } catch {}
-        }
+        await persistLoginAttempt(
+          serviceClient,
+          email,
+          { count: currentCount, lockedUntil },
+          targetUser,
+        );
 
         return NextResponse.json(
           {
@@ -291,18 +228,12 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      setLoginAttemptRecord(email, { count: currentCount });
-      if (targetUser?.id) {
-        try {
-          await serviceClient.auth.admin.updateUserById(targetUser.id, {
-            user_metadata: {
-              ...(targetUser.user_metadata ?? {}),
-              failed_attempts: currentCount,
-              locked_until: null,
-            },
-          });
-        } catch {}
-      }
+      await persistLoginAttempt(
+        serviceClient,
+        email,
+        { count: currentCount },
+        targetUser,
+      );
 
       const remaining = MAX_FAILED_ATTEMPTS - currentCount;
       return NextResponse.json(
@@ -330,19 +261,17 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Reset failed attempts upon successful login in memory and database
-    clearLoginLockout(email);
-    const authedUserId = signInData.user?.id || targetUser?.id;
-    if (authedUserId) {
-      try {
-        await serviceClient.auth.admin.updateUserById(authedUserId, {
-          user_metadata: {
-            ...(signInData.user?.user_metadata ?? targetUser?.user_metadata ?? {}),
-            failed_attempts: 0,
-            locked_until: null,
-          },
-        });
-      } catch {}
+    // Reset failed attempts & auto-backfill immutable app_metadata.role upon login
+    await clearPersistentLoginLockout(serviceClient, email, authedUser);
+    const syncedRole = signInData.user
+      ? await syncTrustedAppMetadataRole(serviceClient, signInData.user)
+      : undefined;
+
+    if (signInData.user && syncedRole) {
+      signInData.user.app_metadata = {
+        ...(signInData.user.app_metadata ?? {}),
+        role: syncedRole,
+      };
     }
 
     // Synchronize session cookies (session-only when Remember Me is unchecked)

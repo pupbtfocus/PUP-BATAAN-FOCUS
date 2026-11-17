@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { ROLE } from "@/config/roles";
+import { ROLE, resolveTrustedUserRole } from "@/config/roles";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { getServiceRoleClient } from "@/lib/supabase/service-role";
 import { logAudit, AUDIT_ACTION } from "@/lib/audit/log-audit";
@@ -25,8 +25,7 @@ export async function GET(request: NextRequest) {
     } = await sessionClient.auth.getUser();
 
     const requesterRole =
-      (user?.user_metadata?.role as string | undefined) ??
-      (user?.app_metadata?.role as string | undefined);
+      resolveTrustedUserRole(user);
 
     if (!user || !isAdminRole(requesterRole)) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
@@ -430,7 +429,7 @@ export async function GET(request: NextRequest) {
     try {
       const { data: authData } = await supabase.auth.admin.listUsers({ page: 1, perPage: 1000 });
       for (const u of authData?.users || []) {
-        const r = ((u.user_metadata?.role as string) || (u.app_metadata?.role as string) || "").toLowerCase().trim();
+        const r = (resolveTrustedUserRole(u) ?? "").toLowerCase().trim();
         const em = (u.email || "").toLowerCase().trim();
 
         if (
@@ -572,8 +571,7 @@ export async function DELETE(request: NextRequest) {
     } = await sessionClient.auth.getUser();
 
     const requesterRole =
-      (user?.user_metadata?.role as string | undefined) ??
-      (user?.app_metadata?.role as string | undefined);
+      resolveTrustedUserRole(user);
 
     if (!user || !isAdminRole(requesterRole)) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });

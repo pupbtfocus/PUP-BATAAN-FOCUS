@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { getServiceRoleClient } from "@/lib/supabase/service-role";
 import { filterCondition, isUuid, orFilter } from "@/lib/supabase/filters";
-import { ROLE } from "@/config/roles";
+import { ROLE, resolveTrustedUserRole } from "@/config/roles";
 import {
   parseSubmissionOrigin,
   stripOriginTag,
@@ -20,8 +20,7 @@ export async function GET() {
     } = await sessionClient.auth.getUser();
 
     const requesterRole =
-      (user?.user_metadata?.role as string | undefined) ??
-      (user?.app_metadata?.role as string | undefined);
+      resolveTrustedUserRole(user);
 
     let hasAccess = isAdminRole(requesterRole);
     if (!hasAccess && user) {
@@ -401,8 +400,7 @@ export async function POST(request: Request) {
     } = await sessionClient.auth.getUser();
 
     const requesterRole =
-      (user?.user_metadata?.role as string | undefined) ??
-      (user?.app_metadata?.role as string | undefined);
+      resolveTrustedUserRole(user);
 
     let hasAccess = isAdminRole(requesterRole);
     if (!hasAccess && user) {

@@ -1,4 +1,4 @@
-import { ROLE } from "@/config/roles";
+import { ROLE, isOriginalAdmin } from "@/config/roles";
 import {
   FACULTY_PROFILE_IMAGE_BUCKET,
   buildFacultyFullName,
@@ -74,6 +74,14 @@ export async function bootstrapInvitedFacultyAccount(user: {
 
   if (profileError || !profile) {
     throw new Error(profileError?.message ?? "Failed to create profile");
+  }
+
+  if (!isOriginalAdmin(email)) {
+    try {
+      await serviceRoleClient.auth.admin.updateUserById(user.id, {
+        app_metadata: { role: ROLE.FACULTY },
+      });
+    } catch {}
   }
 
   // 1. Remove from staff or admins table if mistakenly present

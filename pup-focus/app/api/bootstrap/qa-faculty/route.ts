@@ -271,6 +271,12 @@ async function bootstrapQaFaculty() {
 }
 
 export async function GET() {
+  if (process.env.NODE_ENV === "production") {
+    return NextResponse.json(
+      { error: "QA bootstrap endpoint is disabled in production." },
+      { status: 403 }
+    );
+  }
   try {
     const data = await bootstrapQaFaculty();
     return NextResponse.json({ success: true, count: data.length, accounts: data });
@@ -283,6 +289,12 @@ export async function GET() {
 }
 
 export async function POST() {
+  if (process.env.NODE_ENV === "production") {
+    return NextResponse.json(
+      { error: "QA bootstrap endpoint is disabled in production." },
+      { status: 403 }
+    );
+  }
   try {
     const data = await bootstrapQaFaculty();
     return NextResponse.json({ success: true, count: data.length, accounts: data });

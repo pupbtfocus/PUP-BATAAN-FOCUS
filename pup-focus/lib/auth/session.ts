@@ -1,6 +1,6 @@
 import { cache } from "react";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
-import { ROLE, type AppRole } from "@/config/roles";
+import { ROLE, resolveTrustedUserRole, type AppRole } from "@/config/roles";
 import type { AuthUser } from "@/types/global";
 
 export const getCurrentUser = cache(async (): Promise<AuthUser | null> => {
@@ -13,7 +13,7 @@ export const getCurrentUser = cache(async (): Promise<AuthUser | null> => {
     return null;
   }
 
-  const role = (user.user_metadata.role as AppRole | undefined) ?? ROLE.FACULTY;
+  const role = (resolveTrustedUserRole(user) as AppRole | undefined) ?? ROLE.FACULTY;
 
   return {
     id: user.id,

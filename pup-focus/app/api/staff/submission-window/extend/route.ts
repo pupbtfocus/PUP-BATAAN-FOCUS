@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { getServiceRoleClient } from "@/lib/supabase/service-role";
-import { ROLE } from "@/config/roles";
+import { ROLE, resolveTrustedUserRole } from "@/config/roles";
 import { logger } from "@/lib/observability/logger";
 import { filterCondition, isUuid, orFilter } from "@/lib/supabase/filters";
 import { logAuditEvent } from "@/features/audit-logs/services/audit-log.service";
@@ -94,8 +94,7 @@ export async function POST(request: NextRequest) {
     } = await sessionClient.auth.getUser();
 
     const requesterRole =
-      (user?.user_metadata?.role as string | undefined) ??
-      (user?.app_metadata?.role as string | undefined);
+      resolveTrustedUserRole(user);
 
     if (
       !user ||

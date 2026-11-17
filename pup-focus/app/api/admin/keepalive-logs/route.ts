@@ -1,21 +1,20 @@
 import { NextRequest, NextResponse } from "next/server";
-import { ROLE } from "@/config/roles";
+import {
+  ROLE,
+  isAdminRoleToken,
+  isOriginalAdmin,
+  resolveTrustedUserRole,
+} from "@/config/roles";
 import { logger } from "@/lib/observability/logger";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
+import { verifyMfaAal2IfEnrolled } from "@/lib/auth/admin-security";
 import { getServiceRoleClient } from "@/lib/supabase/service-role";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 function isAdminRole(role?: string | null): boolean {
-  if (!role) return false;
-  const r = role.toLowerCase().trim();
-  return (
-    r === ROLE.ADMIN ||
-    r === ROLE.SUPER_ADMIN ||
-    r === "super_admin" ||
-    r === "superadmin"
-  );
+  return isAdminRoleToken(role);
 }
 
 async function authorizeAdmin() {
@@ -26,13 +25,11 @@ async function authorizeAdmin() {
 
   if (!user) return null;
 
-  let requesterRole =
-    (user.user_metadata?.role as string | undefined) ??
-    (user.app_metadata?.role as string | undefined);
+  let requesterRole = resolveTrustedUserRole(user);
 
   const supabase = getServiceRoleClient();
 
-  if (!isAdminRole(requesterRole)) {
+  if (!isOriginalAdmin(user.email) && !isAdminRole(requesterRole)) {
     const { data: profile } = await supabase
       .from("profiles")
       .select("id, user_roles(roles(code))")
@@ -49,6 +46,10 @@ async function authorizeAdmin() {
   }
 
   if (!isAdminRole(requesterRole)) return null;
+
+  const mfaCheck = await verifyMfaAal2IfEnrolled(sessionClient);
+  if (!mfaCheck.ok) return null;
+
   return supabase;
 }
 

@@ -111,6 +111,16 @@ export async function POST(request: NextRequest) {
     let authUserId = existingUser?.id;
 
     if (existingUser) {
+      if (process.env.NODE_ENV === "production") {
+        return NextResponse.json(
+          {
+            error:
+              "Primary admin account is already provisioned. Password/metadata overwrite via bootstrap is disabled in production.",
+          },
+          { status: 409 },
+        );
+      }
+
       const { error: updateError } = await supabase.auth.admin.updateUserById(
         existingUser.id,
         {
@@ -119,6 +129,7 @@ export async function POST(request: NextRequest) {
           email_confirm: true,
           app_metadata: {
             role: ROLE.SUPER_ADMIN,
+            is_primary_admin: true,
           },
           user_metadata: {
             full_name: SUPER_ADMIN_FULL_NAME,
@@ -141,6 +152,7 @@ export async function POST(request: NextRequest) {
           email_confirm: true,
           app_metadata: {
             role: ROLE.SUPER_ADMIN,
+            is_primary_admin: true,
           },
           user_metadata: {
             full_name: SUPER_ADMIN_FULL_NAME,

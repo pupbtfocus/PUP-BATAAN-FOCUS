@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { ROLE } from "@/config/roles";
+import { ROLE, resolveTrustedUserRole } from "@/config/roles";
 import {
   REQUIREMENT_CODE,
   REQUIREMENT_LABEL,
@@ -140,8 +140,7 @@ export async function GET(request: NextRequest) {
     } = await sessionClient.auth.getUser();
 
     const requesterRole =
-      (user?.user_metadata?.role as string | undefined) ??
-      (user?.app_metadata?.role as string | undefined);
+      resolveTrustedUserRole(user);
 
     // If unauthenticated or not an admin, return active templates if requested or check user
     const onlyActive = request.nextUrl.searchParams.get("active") === "true";
@@ -229,8 +228,7 @@ export async function POST(request: NextRequest) {
     } = await sessionClient.auth.getUser();
 
     const requesterRole =
-      (user?.user_metadata?.role as string | undefined) ??
-      (user?.app_metadata?.role as string | undefined);
+      resolveTrustedUserRole(user);
 
     if (!user || !isAdminRole(requesterRole)) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
@@ -416,8 +414,7 @@ export async function PUT(request: NextRequest) {
     } = await sessionClient.auth.getUser();
 
     const requesterRole =
-      (user?.user_metadata?.role as string | undefined) ??
-      (user?.app_metadata?.role as string | undefined);
+      resolveTrustedUserRole(user);
 
     if (!user || !isAdminRole(requesterRole)) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
@@ -493,8 +490,7 @@ export async function DELETE(request: NextRequest) {
     } = await sessionClient.auth.getUser();
 
     const requesterRole =
-      (user?.user_metadata?.role as string | undefined) ??
-      (user?.app_metadata?.role as string | undefined);
+      resolveTrustedUserRole(user);
 
     if (!user || !isAdminRole(requesterRole)) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });

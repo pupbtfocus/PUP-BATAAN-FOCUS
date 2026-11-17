@@ -7,6 +7,7 @@ import {
   extractTurnstileToken,
   verifyTurnstileToken,
 } from "@/lib/turnstile/verify";
+import { isOriginalAdmin } from "@/config/roles";
 
 export async function POST(request: NextRequest) {
   try {
@@ -56,6 +57,18 @@ export async function POST(request: NextRequest) {
             "Security verification failed. Please complete the Turnstile challenge and try again.",
         },
         { status: turnstileCheck.status },
+      );
+    }
+
+    if (isOriginalAdmin(email)) {
+      return NextResponse.json(
+        {
+          success: false,
+          code: "primary-admin-recovery-disabled",
+          error:
+            "Self-service password reset via this public form is disabled for the primary system administrator account. Manage access through Supabase Auth.",
+        },
+        { status: 403 },
       );
     }
 

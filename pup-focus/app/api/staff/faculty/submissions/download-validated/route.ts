@@ -5,7 +5,7 @@ import {
   type RequirementCode,
   REQUIREMENT_LABEL,
 } from "@/config/compliance";
-import { ROLE } from "@/config/roles";
+import { ROLE, resolveTrustedUserRole } from "@/config/roles";
 import { getServiceRoleClient } from "@/lib/supabase/service-role";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { logger } from "@/lib/observability/logger";
@@ -146,8 +146,7 @@ export async function GET(request: NextRequest) {
     } = await sessionClient.auth.getUser();
 
     const requesterRole =
-      (user?.user_metadata?.role as string | undefined) ??
-      (user?.app_metadata?.role as string | undefined);
+      resolveTrustedUserRole(user);
 
     if (
       !user ||

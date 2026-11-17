@@ -1,6 +1,12 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { ROLE } from "@/config/roles";
+import {
+  ROLE,
+  isAdminRoleToken,
+  isOriginalAdmin,
+  resolveTrustedUserRole,
+} from "@/config/roles";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
+import { verifyMfaAal2IfEnrolled } from "@/lib/auth/admin-security";
 import { getServiceRoleClient } from "@/lib/supabase/service-role";
 import { isValidEmailAddress } from "@/lib/validation/email";
 import {
@@ -14,15 +20,21 @@ export async function GET() {
     data: { user },
   } = await sessionClient.auth.getUser();
 
-  const requesterRole =
-    (user?.user_metadata?.role as string | undefined) ??
-    (user?.app_metadata?.role as string | undefined);
+  const requesterRole = resolveTrustedUserRole(user);
 
   if (
     !user ||
-    (requesterRole !== ROLE.SUPER_ADMIN && requesterRole !== ROLE.ADMIN)
+    (!isOriginalAdmin(user.email) && !isAdminRoleToken(requesterRole))
   ) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
+  const mfaCheck = await verifyMfaAal2IfEnrolled(sessionClient);
+  if (!mfaCheck.ok) {
+    return NextResponse.json(
+      { error: "Two-factor authentication verification required." },
+      { status: 403 },
+    );
   }
 
   try {
@@ -96,15 +108,21 @@ export async function PATCH(request: NextRequest) {
     data: { user },
   } = await sessionClient.auth.getUser();
 
-  const requesterRole =
-    (user?.user_metadata?.role as string | undefined) ??
-    (user?.app_metadata?.role as string | undefined);
+  const requesterRole = resolveTrustedUserRole(user);
 
   if (
     !user ||
-    (requesterRole !== ROLE.SUPER_ADMIN && requesterRole !== ROLE.ADMIN)
+    (!isOriginalAdmin(user.email) && !isAdminRoleToken(requesterRole))
   ) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
+  const mfaCheck = await verifyMfaAal2IfEnrolled(sessionClient);
+  if (!mfaCheck.ok) {
+    return NextResponse.json(
+      { error: "Two-factor authentication verification required." },
+      { status: 403 },
+    );
   }
 
   try {
@@ -225,11 +243,24 @@ export async function PATCH(request: NextRequest) {
     }
 
     const profileId = profile.id;
-    const previousEmail = profile.email ?? user.email ?? "";
+    const previousEmail = (profile.email ?? user.email ?? "").trim().toLowerCase();
     const previousFullName =
       profile.full_name ??
       (user.user_metadata?.full_name as string | undefined) ??
       "";
+
+    if (
+      (isOriginalAdmin(previousEmail) || isOriginalAdmin(user.email)) &&
+      email !== previousEmail
+    ) {
+      return NextResponse.json(
+        {
+          error:
+            "The primary administrator email address is locked and cannot be changed.",
+        },
+        { status: 403 },
+      );
+    }
 
     if (wantsPasswordUpdate) {
       const { error: oldPasswordError } =

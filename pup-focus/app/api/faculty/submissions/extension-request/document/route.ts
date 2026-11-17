@@ -4,7 +4,7 @@ export const revalidate = 0;
 import { NextResponse, type NextRequest } from "next/server";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { getServiceRoleClient } from "@/lib/supabase/service-role";
-import { ROLE } from "@/config/roles";
+import { ROLE, resolveTrustedUserRole } from "@/config/roles";
 
 function isApproverOrAdmin(role?: string): boolean {
   const r = (role || "").toLowerCase().trim();
@@ -89,8 +89,7 @@ export async function GET(request: NextRequest) {
 
     // Verify authorization: must be the owner faculty or an approver/admin
     const userRole =
-      (user.user_metadata?.role as string | undefined) ??
-      (user.app_metadata?.role as string | undefined);
+      resolveTrustedUserRole(user);
 
     const isOwner = user.id === ownerId;
     const isApprover = isApproverOrAdmin(userRole);

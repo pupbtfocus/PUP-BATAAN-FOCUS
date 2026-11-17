@@ -4,7 +4,7 @@ export const revalidate = 0;
 import { NextRequest, NextResponse } from "next/server";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { getServiceRoleClient } from "@/lib/supabase/service-role";
-import { ROLE } from "@/config/roles";
+import { ROLE, resolveTrustedUserRole } from "@/config/roles";
 import { sendInviteEmail, sendTempPasswordEmail } from "@/lib/email/send-invite";
 import { generateTempPassword } from "@/lib/auth/temp-password";
 import { logAuditEvent } from "@/features/audit-logs/services/audit-log.service";
@@ -35,8 +35,7 @@ export async function GET(request: NextRequest) {
     } = await sessionClient.auth.getUser();
 
     const requesterRole =
-      (currentUser?.user_metadata?.role as string | undefined) ??
-      (currentUser?.app_metadata?.role as string | undefined);
+      resolveTrustedUserRole(currentUser);
 
     if (
       !currentUser ||
@@ -299,8 +298,7 @@ export async function GET(request: NextRequest) {
           : "");
 
       const rawRole = (
-        u.user_metadata?.role ||
-        u.app_metadata?.role ||
+        u.app_metadata?.role || u.user_metadata?.role ||
         (isStaffMember ? ROLE.STAFF : "") ||
         dbRole ||
         profile?.role ||
@@ -591,8 +589,7 @@ export async function POST(request: NextRequest) {
     } = await sessionClient.auth.getUser();
 
     const requesterRole =
-      (currentUser?.user_metadata?.role as string | undefined) ??
-      (currentUser?.app_metadata?.role as string | undefined);
+      resolveTrustedUserRole(currentUser);
 
     if (
       !currentUser ||
@@ -752,8 +749,7 @@ export async function DELETE(request: NextRequest) {
     } = await sessionClient.auth.getUser();
 
     const requesterRole =
-      (currentUser?.user_metadata?.role as string | undefined) ??
-      (currentUser?.app_metadata?.role as string | undefined);
+      resolveTrustedUserRole(currentUser);
 
     if (
       !currentUser ||
@@ -888,8 +884,7 @@ export async function PATCH(request: NextRequest) {
     } = await sessionClient.auth.getUser();
 
     const requesterRole =
-      (currentUser?.user_metadata?.role as string | undefined) ??
-      (currentUser?.app_metadata?.role as string | undefined);
+      resolveTrustedUserRole(currentUser);
 
     if (
       !currentUser ||

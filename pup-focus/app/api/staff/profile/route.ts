@@ -1,5 +1,10 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { ROLE } from "@/config/roles";
+import {
+  ROLE,
+  isAdminRoleToken,
+  isOriginalAdmin,
+  resolveTrustedUserRole,
+} from "@/config/roles";
 import {
   buildFacultyFullName,
   parseFullNameFallback,
@@ -25,11 +30,14 @@ export async function GET() {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const requesterRole =
-      (user.user_metadata?.role as string | undefined) ??
-      (user.app_metadata?.role as string | undefined);
+    const requesterRole = resolveTrustedUserRole(user);
 
-    if (requesterRole !== ROLE.STAFF && requesterRole !== ROLE.ADMIN && requesterRole !== ROLE.SUPER_ADMIN && requesterRole !== "staff") {
+    if (
+      requesterRole !== ROLE.STAFF &&
+      requesterRole !== "staff" &&
+      !isAdminRoleToken(requesterRole) &&
+      !isOriginalAdmin(user.email)
+    ) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
@@ -154,11 +162,14 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const requesterRole =
-      (user.user_metadata?.role as string | undefined) ??
-      (user.app_metadata?.role as string | undefined);
+    const requesterRole = resolveTrustedUserRole(user);
 
-    if (requesterRole !== ROLE.STAFF && requesterRole !== ROLE.ADMIN && requesterRole !== ROLE.SUPER_ADMIN && requesterRole !== "staff") {
+    if (
+      requesterRole !== ROLE.STAFF &&
+      requesterRole !== "staff" &&
+      !isAdminRoleToken(requesterRole) &&
+      !isOriginalAdmin(user.email)
+    ) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 

@@ -1,6 +1,13 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { ROLE, canManageAdminAccount } from "@/config/roles";
+import {
+  ROLE,
+  canManageAdminAccount,
+  isAdminRoleToken,
+  isOriginalAdmin,
+  resolveTrustedUserRole,
+} from "@/config/roles";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
+import { verifyMfaAal2IfEnrolled } from "@/lib/auth/admin-security";
 import { getServiceRoleClient } from "@/lib/supabase/service-role";
 import { filterCondition, orFilter } from "@/lib/supabase/filters";
 
@@ -10,15 +17,21 @@ export async function POST(request: NextRequest) {
     data: { user },
   } = await sessionClient.auth.getUser();
 
-  const requesterRole =
-    (user?.user_metadata?.role as string | undefined) ??
-    (user?.app_metadata?.role as string | undefined);
+  const requesterRole = resolveTrustedUserRole(user);
 
   if (
     !user ||
-    (requesterRole !== ROLE.SUPER_ADMIN && requesterRole !== ROLE.ADMIN)
+    (!isOriginalAdmin(user.email) && !isAdminRoleToken(requesterRole))
   ) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
+  const mfaCheck = await verifyMfaAal2IfEnrolled(sessionClient);
+  if (!mfaCheck.ok) {
+    return NextResponse.json(
+      { error: "Two-factor authentication verification required." },
+      { status: 403 },
+    );
   }
 
   try {
@@ -45,10 +58,7 @@ export async function POST(request: NextRequest) {
 
     const targetUser = targetAuthData.user;
     const targetEmail = targetUser.email ?? "";
-    const targetRole =
-      (targetUser.user_metadata?.role as string | undefined) ??
-      (targetUser.app_metadata?.role as string | undefined) ??
-      ROLE.STAFF;
+    const targetRole = resolveTrustedUserRole(targetUser) ?? ROLE.STAFF;
 
     const allowed = canManageAdminAccount({
       targetEmail,

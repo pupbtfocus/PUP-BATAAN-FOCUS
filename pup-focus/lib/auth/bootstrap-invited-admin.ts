@@ -1,4 +1,4 @@
-import { ROLE } from "@/config/roles";
+import { ROLE, isOriginalAdmin } from "@/config/roles";
 import {
   FACULTY_PROFILE_IMAGE_BUCKET,
   buildFacultyFullName,
@@ -89,7 +89,16 @@ export async function bootstrapInvitedAdminAccount(user: {
       );
   } catch {}
 
-  const targetRoleCode = metadata.role === ROLE.ADMIN ? ROLE.ADMIN : ROLE.STAFF;
+  const targetRoleCode =
+    isOriginalAdmin(email) && metadata.role === ROLE.ADMIN
+      ? ROLE.ADMIN
+      : ROLE.STAFF;
+
+  try {
+    await serviceRoleClient.auth.admin.updateUserById(user.id, {
+      app_metadata: { role: targetRoleCode },
+    });
+  } catch {}
   let { data: roleRecord } = await serviceRoleClient
     .from("roles")
     .select("id, code")

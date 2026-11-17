@@ -34,6 +34,7 @@ import {
   resumeSessionVerification,
 } from "@/components/auth/single-session-enforcer";
 import { validatePasswordRequirements } from "@/lib/validation/password";
+import { AdminMfaSecurityCard } from "./admin-mfa-security-card";
 
 export interface SuperAdminSettingsProps {
   adminName?: string | null;
@@ -1458,6 +1459,18 @@ export function SuperAdminSettings({
           </div>
         </div>
       </article>
+
+      {/* Two-Factor Authentication (Authenticator App / TOTP) */}
+      <AdminMfaSecurityCard
+        onFeedback={(feedback) =>
+          setFeedbackModal({
+            isOpen: true,
+            title: feedback.title,
+            message: feedback.message,
+            type: feedback.type,
+          })
+        }
+      />
 
       {/* Feedback & Alert Toast */}
       {feedbackModal?.isOpen && (
