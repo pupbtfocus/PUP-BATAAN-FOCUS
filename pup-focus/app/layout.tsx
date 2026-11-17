@@ -38,7 +38,7 @@ export default function RootLayout({
     <html
       lang="en"
       suppressHydrationWarning
-      className={`${geistSans.variable} ${geistMono.variable} h-full`}
+      className={`${geistSans.variable} ${geistMono.variable} min-h-full`}
     >
       <head>
         <link rel="icon" href="/icons/pup-seal.png?v=2" type="image/png" />

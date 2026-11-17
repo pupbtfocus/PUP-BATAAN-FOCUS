@@ -40,15 +40,16 @@
 }
 
 html {
-  height: 100%;
+  min-height: 100%;
   width: 100%;
+  overflow-x: clip;
 }
 
 body {
-  min-height: 100vh;
+  min-height: 100dvh;
   font-family: var(--font-geist-sans), sans-serif;
   position: relative;
-  overflow-x: hidden;
+  overflow-x: clip;
 }
 
 /* Campus photo backgrounds — scoped to public/auth routes via .campus-bg class */

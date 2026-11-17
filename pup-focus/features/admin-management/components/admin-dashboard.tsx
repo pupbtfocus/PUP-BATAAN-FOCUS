@@ -2003,7 +2003,7 @@ export function SuperAdminDashboard({
   }
 
   return (
-    <div className="relative flex min-h-full w-full items-stretch gap-0 bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 transition-colors duration-200">
+    <div className="relative flex min-h-full md:h-full w-full items-stretch gap-0 bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 transition-colors duration-200">
       {/* Mobile Menu Button (visible only on small screens when drawer is closed) */}
       {!isMobileMenuOpen && (
         <button
@@ -2070,9 +2070,9 @@ export function SuperAdminDashboard({
         </div>
       )}
 
-      <div className="md:ml-72 flex min-h-full min-w-0 w-full md:w-[calc(100%-18rem)] flex-col">
-        <div className="flex min-h-0 flex-1 flex-col overflow-hidden border-l-0 bg-white dark:bg-slate-900 shadow-sm transition-colors duration-200">
-          <div className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden p-3.5 sm:p-6 bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 transition-colors duration-200">
+      <div className="md:ml-72 flex min-h-full md:h-full min-w-0 w-full md:w-[calc(100%-18rem)] flex-col">
+        <div className="flex md:min-h-0 flex-1 flex-col md:overflow-hidden border-l-0 bg-slate-50 dark:bg-slate-950 shadow-sm transition-colors duration-200">
+          <div className="md:min-h-0 flex-1 md:overflow-y-auto overflow-x-clip p-3.5 sm:p-6 pb-8 sm:pb-6 bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 transition-colors duration-200">
             <DatabaseCapacityAlert
               onManageStorage={() => handleSetActiveSection("backups")}
             />

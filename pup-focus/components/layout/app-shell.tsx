@@ -42,11 +42,11 @@ export function AppShell({
         pathname.startsWith("/staff") ||
         pathname.startsWith("/super-admin")));
   const mainClassName = fullBleed
-    ? "mx-auto flex h-dvh w-full max-w-none overflow-hidden px-0 pt-14"
-    : "mx-auto w-full max-w-7xl px-4 sm:px-6 py-6 sm:py-8 pt-24 min-h-dvh overflow-x-hidden";
+    ? "mx-auto flex min-h-dvh md:h-dvh w-full max-w-none md:overflow-hidden px-0 pt-14"
+    : "mx-auto w-full max-w-7xl px-4 sm:px-6 py-6 sm:py-8 pt-24 min-h-dvh overflow-x-clip";
 
   return (
-    <div className="min-h-dvh bg-slate-50 text-slate-900 transition-colors duration-200 overflow-x-hidden">
+    <div className="min-h-dvh bg-slate-50 text-slate-900 transition-colors duration-200 overflow-x-clip">
       <header className="fixed inset-x-0 top-0 h-14 z-40 bg-[#800000] text-white shadow-md flex items-center transition-colors duration-200">
         {/* Continuous bottom amber border (starts at the sidebar's outer edge calc(18rem-4px) to form a seamless 90-degree corner) */}
         <div className={`absolute ${fullBleed ? "left-0 md:left-[calc(18rem-4px)]" : "left-0"} right-0 bottom-0 h-1 bg-amber-500 pointer-events-none`} />
