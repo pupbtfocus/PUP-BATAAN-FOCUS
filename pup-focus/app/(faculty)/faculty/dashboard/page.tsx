@@ -5,6 +5,7 @@ import {
   type PanelView,
 } from "@/features/faculty-management/components/faculty-submission-panel";
 import { getCurrentUser } from "@/lib/auth/session";
+import { enforceServerMfaIfEnrolled } from "@/lib/auth/mfa-guard";
 import { getFacultyInitialData } from "@/features/submissions/services/faculty-data.service";
 import {
   DashboardMetricsSkeleton,
@@ -51,6 +52,7 @@ async function FacultyDashboardStream({
 }
 
 export default async function FacultyDashboardPage(props: PageProps) {
+  await enforceServerMfaIfEnrolled();
   const [user, searchParams] = await Promise.all([
     getCurrentUser(),
     props.searchParams ? props.searchParams : Promise.resolve({} as Record<string, string | string[] | undefined>),

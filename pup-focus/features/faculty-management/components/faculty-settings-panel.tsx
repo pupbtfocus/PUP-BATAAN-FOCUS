@@ -19,6 +19,7 @@ import {
   resumeSessionVerification,
 } from "@/components/auth/single-session-enforcer";
 import { validatePasswordRequirements } from "@/lib/validation/password";
+import { MfaSecurityCard } from "@/components/auth/mfa-security-card";
 
 type FacultyAccountResponse = {
   profileId: string;
@@ -1272,6 +1273,19 @@ export function FacultySettingsPanel({
           </form>
         </article>
       </section>
+
+      {/* Two-Factor Authentication (Authenticator App / TOTP) */}
+      <MfaSecurityCard
+        accountLabel="Faculty"
+        onFeedback={(feedback) =>
+          setFeedbackModal({
+            isOpen: true,
+            title: feedback.title,
+            message: feedback.message,
+            type: feedback.type,
+          })
+        }
+      />
 
       {/* Feedback & Alert Toast */}
       {feedbackModal?.isOpen && (

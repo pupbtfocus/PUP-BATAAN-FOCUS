@@ -18,6 +18,7 @@ import {
   resumeSessionVerification,
 } from "@/components/auth/single-session-enforcer";
 import { validatePasswordRequirements } from "@/lib/validation/password";
+import { MfaSecurityCard } from "@/components/auth/mfa-security-card";
 
 export interface AdminAccountResponse {
   id?: string;
@@ -1547,6 +1548,19 @@ export function AdminSettings({
           </div>
         </div>
       </article>
+
+      {/* Two-Factor Authentication (Authenticator App / TOTP) */}
+      <MfaSecurityCard
+        accountLabel="Staff"
+        onFeedback={(feedback) =>
+          setFeedbackModal({
+            isOpen: true,
+            title: feedback.title,
+            message: feedback.message,
+            type: feedback.type,
+          })
+        }
+      />
 
       {/* Feedback & Alert Toast */}
       {feedbackModal?.isOpen && (

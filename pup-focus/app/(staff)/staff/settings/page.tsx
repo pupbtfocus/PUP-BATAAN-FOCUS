@@ -6,8 +6,10 @@ import {
 import { resolveAdminAvatarUrl } from "@/lib/admin-profile";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { getServiceRoleClient } from "@/lib/supabase/service-role";
+import { enforceServerMfaIfEnrolled } from "@/lib/auth/mfa-guard";
 
 export default async function AdminSettingsPage() {
+  await enforceServerMfaIfEnrolled();
   const sessionClient = await createServerSupabaseClient();
   const {
     data: { user },

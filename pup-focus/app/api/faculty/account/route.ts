@@ -6,6 +6,7 @@ import {
   parseFullNameFallback,
 } from "@/lib/faculty-profile";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
+import { verifyMfaAal2IfEnrolled } from "@/lib/auth/admin-security";
 import { getServiceRoleClient } from "@/lib/supabase/service-role";
 import { filterCondition, orFilter } from "@/lib/supabase/filters";
 
@@ -200,6 +201,14 @@ export async function GET() {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
+    const mfaCheck = await verifyMfaAal2IfEnrolled(sessionClient);
+    if (!mfaCheck.ok) {
+      return NextResponse.json(
+        { error: "Two-factor authentication verification required." },
+        { status: 403 },
+      );
+    }
+
     const account = await loadFacultyAccount(user.id);
     return NextResponse.json(account);
   } catch (error) {
@@ -227,6 +236,14 @@ export async function PATCH(request: NextRequest) {
 
     if (!user || requesterRole !== ROLE.FACULTY) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+
+    const mfaCheck = await verifyMfaAal2IfEnrolled(sessionClient);
+    if (!mfaCheck.ok) {
+      return NextResponse.json(
+        { error: "Two-factor authentication verification required." },
+        { status: 403 },
+      );
     }
 
     const contentType = request.headers.get("content-type") ?? "";

@@ -2,6 +2,7 @@ import { Suspense } from "react";
 import { AppShell } from "@/components/layout/app-shell";
 import { FacultySubmissionPanel } from "@/features/faculty-management/components/faculty-submission-panel";
 import { getCurrentUser } from "@/lib/auth/session";
+import { enforceServerMfaIfEnrolled } from "@/lib/auth/mfa-guard";
 import { getFacultyInitialData } from "@/features/submissions/services/faculty-data.service";
 import { SubmissionHistorySkeleton } from "@/features/submissions/components/submission-skeletons";
 import type { AuthUser } from "@/types/global";
@@ -24,6 +25,7 @@ async function FacultyHistoryStream({ user }: { user: AuthUser | null }) {
 }
 
 export default async function FacultyHistoryPage() {
+  await enforceServerMfaIfEnrolled();
   const user = await getCurrentUser();
 
   return (

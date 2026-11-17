@@ -2,8 +2,7 @@ import { redirect } from "next/navigation";
 import { AppShell } from "@/components/layout/app-shell";
 import { ROLE } from "@/config/roles";
 import { getCurrentUser } from "@/lib/auth/session";
-import { createServerSupabaseClient } from "@/lib/supabase/server";
-import { verifyMfaAal2IfEnrolled } from "@/lib/auth/admin-security";
+import { enforceServerMfaIfEnrolled } from "@/lib/auth/mfa-guard";
 import { AdminDashboard } from "@/features/admin-management/components/admin-dashboard";
 
 export default async function AdminDashboardPage(props: {
@@ -15,11 +14,7 @@ export default async function AdminDashboardPage(props: {
     redirect("/");
   }
 
-  const supabase = await createServerSupabaseClient();
-  const mfaStatus = await verifyMfaAal2IfEnrolled(supabase);
-  if (!mfaStatus.ok) {
-    redirect("/?reason=mfa_required");
-  }
+  await enforceServerMfaIfEnrolled();
 
   const searchParams = props.searchParams ? await props.searchParams : undefined;
   const initialTab = searchParams?.tab || searchParams?.section || null;

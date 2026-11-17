@@ -11,6 +11,7 @@ import {
 } from "@/lib/faculty-profile";
 import { resolveAdminAvatarUrl } from "@/lib/admin-profile";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
+import { verifyMfaAal2IfEnrolled } from "@/lib/auth/admin-security";
 import { getServiceRoleClient } from "@/lib/supabase/service-role";
 import { filterCondition, orFilter } from "@/lib/supabase/filters";
 
@@ -39,6 +40,14 @@ export async function GET() {
       !isOriginalAdmin(user.email)
     ) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+
+    const mfaCheck = await verifyMfaAal2IfEnrolled(sessionClient);
+    if (!mfaCheck.ok) {
+      return NextResponse.json(
+        { error: "Two-factor authentication verification required." },
+        { status: 403 },
+      );
     }
 
     const supabaseAdmin = getServiceRoleClient();
@@ -171,6 +180,14 @@ export async function PATCH(request: NextRequest) {
       !isOriginalAdmin(user.email)
     ) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+
+    const mfaCheck = await verifyMfaAal2IfEnrolled(sessionClient);
+    if (!mfaCheck.ok) {
+      return NextResponse.json(
+        { error: "Two-factor authentication verification required." },
+        { status: 403 },
+      );
     }
 
     const supabaseAdmin = getServiceRoleClient();

@@ -10,6 +10,7 @@ import {
 } from "iconoir-react";
 import { AppIcon } from "@/components/ui/app-icon";
 import { ModalHeader } from "@/components/ui/modal-header";
+import { UserMfaResetRow } from "@/components/auth/user-mfa-reset-row";
 import { buildFacultyInitials } from "@/lib/faculty-profile";
 import type { FacultyAccount } from "@/features/faculty-management/types/faculty-dashboard.types";
 
@@ -248,6 +249,11 @@ export function FacultyDetailsModal({
                       {formattedLastLogin}
                     </span>
                   </div>
+                  <UserMfaResetRow
+                    userId={faculty.id}
+                    userName={faculty.fullName}
+                    allowReset={true}
+                  />
                 </div>
               </div>
             </div>

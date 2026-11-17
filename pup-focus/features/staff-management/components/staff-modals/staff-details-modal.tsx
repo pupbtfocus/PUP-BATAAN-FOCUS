@@ -10,6 +10,7 @@ import {
 } from "iconoir-react";
 import { AppIcon } from "@/components/ui/app-icon";
 import { ModalHeader } from "@/components/ui/modal-header";
+import { UserMfaResetRow } from "@/components/auth/user-mfa-reset-row";
 import { ROLE, type AppRole, canManageAdminAccount } from "@/config/roles";
 import type { AdminAccount } from "@/features/staff-management/components/staff-accounts-directory";
 import { parseFullNameFallback } from "@/lib/faculty-profile";
@@ -275,6 +276,11 @@ export function StaffDetailsModal({
                       {formattedLastLogin}
                     </span>
                   </div>
+                  <UserMfaResetRow
+                    userId={staff.id || staff.profile_id}
+                    userName={displayName}
+                    allowReset={canEdit}
+                  />
                 </div>
               </div>
             </div>

@@ -1,9 +1,11 @@
 import { AppShell } from "@/components/layout/app-shell";
 import { FacultyRequirementsModule } from "@/features/faculty-management/components/faculty-requirements-module";
 import { getCurrentUser } from "@/lib/auth/session";
+import { enforceServerMfaIfEnrolled } from "@/lib/auth/mfa-guard";
 import { getFacultyInitialData } from "@/features/submissions/services/faculty-data.service";
 
 export default async function FacultyCompliancePage() {
+  await enforceServerMfaIfEnrolled();
   const user = await getCurrentUser();
   const initialData = user ? await getFacultyInitialData(user.id) : null;
 

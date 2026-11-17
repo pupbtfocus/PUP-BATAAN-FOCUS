@@ -150,6 +150,7 @@ export default function Home() {
     loginTime: string;
   } | null>(null);
   const [mfaCode, setMfaCode] = useState("");
+  const [useBackupCode, setUseBackupCode] = useState(false);
   const [mfaError, setMfaError] = useState<string | null>(null);
   const [isVerifyingMfa, setIsVerifyingMfa] = useState(false);
   const [captchaToken, setCaptchaToken] = useState<string | null>(null);
@@ -275,7 +276,7 @@ export default function Home() {
         } else if (reason === "mfa_required") {
           setNotice({
             type: "error",
-            message: "Two-factor authentication is required to access the Admin Dashboard.",
+            message: "Two-factor authentication is required to finish signing in to your account.",
           });
         } else if (urlError) {
           setNotice({
@@ -439,6 +440,7 @@ export default function Home() {
           );
           if (verifiedTotp?.id) {
             setMfaCode("");
+            setUseBackupCode(false);
             setMfaError(null);
             setMfaChallenge({
               factorId: verifiedTotp.id,
@@ -808,6 +810,7 @@ export default function Home() {
             setIsSubmitting(false);
             setAuthModal(null);
             setMfaCode("");
+            setUseBackupCode(false);
             setMfaError(null);
             setMfaChallenge({
               factorId: verifiedTotp.id,
@@ -1118,13 +1121,24 @@ export default function Home() {
                   <AppIcon icon={Lock} size="md" color="inherit" />
                 </div>
                 <h2 className="text-xl sm:text-2xl font-black tracking-wider text-amber-300 uppercase mb-1">
-                  Two-Factor Auth
+                  {useBackupCode ? "Backup Recovery" : "Two-Factor Auth"}
                 </h2>
                 <p className="text-amber-100/90 text-xs sm:text-sm font-medium leading-relaxed max-w-[320px] mx-auto mt-2">
-                  Enter the 6-digit code from your Authenticator App for{" "}
-                  <span className="font-bold text-amber-300 break-all">
-                    {mfaChallenge.email}
-                  </span>
+                  {useBackupCode ? (
+                    <>
+                      Enter one of your single-use backup codes for{" "}
+                      <span className="font-bold text-amber-300 break-all">
+                        {mfaChallenge.email}
+                      </span>
+                    </>
+                  ) : (
+                    <>
+                      Enter the 6-digit code from your Authenticator App for{" "}
+                      <span className="font-bold text-amber-300 break-all">
+                        {mfaChallenge.email}
+                      </span>
+                    </>
+                  )}
                 </p>
               </div>
 
@@ -1132,24 +1146,51 @@ export default function Home() {
                 onSubmit={async (e) => {
                   e.preventDefault();
                   if (!mfaChallenge) return;
-                  const cleanCode = mfaCode.replace(/\s+/g, "");
-                  if (!/^\d{6}$/.test(cleanCode)) {
-                    setMfaError("Enter the 6-digit code from your Authenticator app.");
-                    return;
-                  }
                   setIsVerifyingMfa(true);
                   setMfaError(null);
                   try {
                     const supabase = createClient();
-                    const { error: verifyErr } =
-                      await supabase.auth.mfa.challengeAndVerify({
-                        factorId: mfaChallenge.factorId,
-                        code: cleanCode,
+                    let nextLoginTime = mfaChallenge.loginTime;
+                    let successMsg = `Two-factor authentication verified. Signing in as ${mfaChallenge.roleLabel}.`;
+
+                    if (useBackupCode) {
+                      const cleanRecovery = mfaCode.trim().toUpperCase();
+                      if (cleanRecovery.replace(/[^A-Z0-9]/g, "").length < 6) {
+                        throw new Error("Enter your 8-character backup recovery code.");
+                      }
+                      const recoverRes = await fetch("/api/auth/mfa/recover", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ code: cleanRecovery }),
                       });
-                    if (verifyErr) {
-                      throw new Error(
-                        verifyErr.message || "Invalid authentication code.",
-                      );
+                      const recoverJson = await recoverRes.json().catch(() => ({}));
+                      if (!recoverRes.ok) {
+                        throw new Error(
+                          recoverJson.error || "Invalid or already used backup recovery code.",
+                        );
+                      }
+                      if (recoverJson.session) {
+                        await supabase.auth.setSession(recoverJson.session).catch(() => null);
+                      }
+                      if (typeof recoverJson.user?.last_sign_in_at === "string") {
+                        nextLoginTime = recoverJson.user.last_sign_in_at;
+                      }
+                      successMsg = `Recovered via backup code (${recoverJson.remainingCount ?? 0} remaining). Lost 2FA cleared — re-enroll in Settings.`;
+                    } else {
+                      const cleanCode = mfaCode.replace(/\s+/g, "");
+                      if (!/^\d{6}$/.test(cleanCode)) {
+                        throw new Error("Enter the 6-digit code from your Authenticator app.");
+                      }
+                      const { error: verifyErr } =
+                        await supabase.auth.mfa.challengeAndVerify({
+                          factorId: mfaChallenge.factorId,
+                          code: cleanCode,
+                        });
+                      if (verifyErr) {
+                        throw new Error(
+                          verifyErr.message || "Invalid authentication code.",
+                        );
+                      }
                     }
 
                     try {
@@ -1167,17 +1208,14 @@ export default function Home() {
 
                     resetDashboardNavigationState();
                     markLoginPersistence(mfaChallenge.rememberMe);
-                    recordActiveSessionLogin(
-                      mfaChallenge.loginTime,
-                      mfaChallenge.userId,
-                    );
+                    recordActiveSessionLogin(nextLoginTime, mfaChallenge.userId);
 
                     const target = mfaChallenge.nextTarget;
-                    const label = mfaChallenge.roleLabel;
                     setMfaChallenge(null);
+                    setUseBackupCode(false);
                     setAuthModal({
                       title: "Login Successful",
-                      message: `Two-factor authentication verified. Signing in as ${label}.`,
+                      message: successMsg,
                       variant: "success",
                       redirectTo: target,
                     });
@@ -1204,22 +1242,59 @@ export default function Home() {
                     htmlFor="loginMfaCode"
                     className="block text-[11px] uppercase font-bold tracking-wider text-amber-300"
                   >
-                    6-Digit Authenticator Code
+                    {useBackupCode
+                      ? "Single-Use Backup Recovery Code"
+                      : "6-Digit Authenticator Code"}
                   </label>
-                  <input
-                    id="loginMfaCode"
-                    type="text"
-                    inputMode="numeric"
-                    autoComplete="one-time-code"
-                    autoFocus
-                    maxLength={6}
-                    value={mfaCode}
-                    onChange={(e) =>
-                      setMfaCode(e.target.value.replace(/\D/g, ""))
-                    }
-                    placeholder="000000"
-                    className="pup-login-input w-full rounded-xl border border-amber-400/50 bg-[#630000] px-4 py-3 text-center font-mono text-2xl font-bold tracking-[0.45em] text-amber-50 outline-none transition placeholder:text-amber-200/40 focus:border-amber-400 focus:ring-1 focus:ring-amber-400/50"
-                  />
+                  {useBackupCode ? (
+                    <input
+                      id="loginMfaCode"
+                      type="text"
+                      autoComplete="off"
+                      autoFocus
+                      maxLength={12}
+                      value={mfaCode}
+                      onChange={(e) =>
+                        setMfaCode(
+                          e.target.value.toUpperCase().replace(/[^A-Z0-9-]/g, ""),
+                        )
+                      }
+                      placeholder="XXXX-XXXX"
+                      className="pup-login-input w-full rounded-xl border border-amber-400/50 bg-[#630000] px-4 py-3 text-center font-mono text-xl font-bold tracking-[0.25em] text-amber-50 uppercase outline-none transition placeholder:text-amber-200/40 focus:border-amber-400 focus:ring-1 focus:ring-amber-400/50"
+                    />
+                  ) : (
+                    <input
+                      id="loginMfaCode"
+                      type="text"
+                      inputMode="numeric"
+                      autoComplete="one-time-code"
+                      autoFocus
+                      maxLength={6}
+                      value={mfaCode}
+                      onChange={(e) =>
+                        setMfaCode(e.target.value.replace(/\D/g, ""))
+                      }
+                      placeholder="000000"
+                      className="pup-login-input w-full rounded-xl border border-amber-400/50 bg-[#630000] px-4 py-3 text-center font-mono text-2xl font-bold tracking-[0.45em] text-amber-50 outline-none transition placeholder:text-amber-200/40 focus:border-amber-400 focus:ring-1 focus:ring-amber-400/50"
+                    />
+                  )}
+                </div>
+
+                <div className="text-center">
+                  <button
+                    type="button"
+                    disabled={isVerifyingMfa}
+                    onClick={() => {
+                      setUseBackupCode((prev) => !prev);
+                      setMfaCode("");
+                      setMfaError(null);
+                    }}
+                    className="text-xs font-semibold text-amber-300 hover:text-amber-200 underline underline-offset-4 cursor-pointer disabled:opacity-50"
+                  >
+                    {useBackupCode
+                      ? "Back to 6-digit Authenticator code"
+                      : "Lost Authenticator? Use a backup code"}
+                  </button>
                 </div>
 
                 <div className="flex gap-2.5 pt-1">
@@ -1234,6 +1309,7 @@ export default function Home() {
                         setIsSubmitting(false);
                         setIsVerifyingMfa(false);
                         setMfaChallenge(null);
+                        setUseBackupCode(false);
                         setMfaCode("");
                         setMfaError(null);
                         turnstileRef.current?.reset();
@@ -1247,7 +1323,12 @@ export default function Home() {
                   </button>
                   <button
                     type="submit"
-                    disabled={isVerifyingMfa || mfaCode.length !== 6}
+                    disabled={
+                      isVerifyingMfa ||
+                      (useBackupCode
+                        ? mfaCode.replace(/[^A-Z0-9]/gi, "").length < 6
+                        : mfaCode.length !== 6)
+                    }
                     className="h-11 flex-1 rounded-xl bg-amber-400 hover:bg-amber-300 font-extrabold text-[#3d0000] tracking-wider uppercase text-xs transition-all active:scale-95 cursor-pointer shadow-sm flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {isVerifyingMfa ? (
@@ -1261,7 +1342,7 @@ export default function Home() {
                         <span>Verifying...</span>
                       </>
                     ) : (
-                      <span>Verify Code</span>
+                      <span>{useBackupCode ? "Recover Account" : "Verify Code"}</span>
                     )}
                   </button>
                 </div>

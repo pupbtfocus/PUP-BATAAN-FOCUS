@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { StaffDashboard } from "@/features/faculty-management/components/staff-dashboard";
 import { ROLE } from "@/config/roles";
 import { getCurrentUser } from "@/lib/auth/session";
+import { enforceServerMfaIfEnrolled } from "@/lib/auth/mfa-guard";
 
 export default async function StaffDashboardPage(props: {
   searchParams?: Promise<{ tab?: string; section?: string }>;
@@ -11,6 +12,8 @@ export default async function StaffDashboardPage(props: {
   if (!user || (user.role !== ROLE.STAFF && user.role !== ROLE.ADMIN && user.role !== "super_admin")) {
     redirect("/");
   }
+
+  await enforceServerMfaIfEnrolled();
 
   const searchParams = props.searchParams ? await props.searchParams : undefined;
   const initialTab = searchParams?.tab || searchParams?.section || null;
