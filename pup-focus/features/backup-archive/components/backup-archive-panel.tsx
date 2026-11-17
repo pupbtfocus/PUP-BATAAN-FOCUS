@@ -152,6 +152,7 @@ export function BackupArchivePanel() {
     transactionLogsCount?: number;
     notificationsCount?: number;
     extensionRequestsCount?: number;
+    keepaliveLogsCount?: number;
     isBackedUp: boolean;
   } | null>(null);
   const [isLoadingCleanPreview, setIsLoadingCleanPreview] = useState(false);
@@ -2148,7 +2149,7 @@ export function BackupArchivePanel() {
                     <span>Checking sem data...</span>
                   </div>
                 ) : cleanPreview ? (
-                  <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+                  <div className="grid grid-cols-3 sm:grid-cols-6 gap-2.5">
                     <div>
                       <span className="text-[10px] uppercase tracking-wider text-slate-500 block whitespace-nowrap">
                         Files
@@ -2191,6 +2192,14 @@ export function BackupArchivePanel() {
                       </span>
                       <span className="font-bold text-sm text-slate-900 dark:text-slate-100">
                         {cleanPreview.extensionRequestsCount ?? 0}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-[10px] uppercase tracking-wider text-slate-500 block whitespace-nowrap">
+                        Keep-Alive
+                      </span>
+                      <span className="font-bold text-sm text-slate-900 dark:text-slate-100">
+                        {cleanPreview.keepaliveLogsCount ?? 0}
                       </span>
                     </div>
                   </div>
@@ -2236,6 +2245,7 @@ export function BackupArchivePanel() {
                   <li>Notifications for this sem</li>
                   <li>Transaction logs for this sem</li>
                   <li>Extension requests for this sem</li>
+                  <li>Database keep-alive logs for this sem</li>
                 </ul>
                 <p className="text-[11px] font-bold text-[#780000] pt-1 border-t border-amber-600/40">
                   Cannot be restored once deleted: all files and records above are permanently erased.

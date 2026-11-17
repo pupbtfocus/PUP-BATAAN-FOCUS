@@ -456,6 +456,21 @@ async function resolveTermScope(
     // extension_requests table optional
   }
 
+  let matchedKeepaliveIds: string[] = [];
+  try {
+    const { data: kaRows, error: kaErr } = await supabase
+      .from("cron_keepalive_logs")
+      .select("id, executed_at");
+
+    if (!kaErr && Array.isArray(kaRows)) {
+      matchedKeepaliveIds = kaRows
+        .filter((k) => isSingleTermSystem || isInTermDateWindow(k.executed_at))
+        .map((k) => k.id);
+    }
+  } catch {
+    // cron_keepalive_logs table optional
+  }
+
   const termBytes = termStorageFiles.reduce((acc, f) => acc + f.sizeBytes, 0);
   const orphanBytes = orphanedStorageFiles.reduce((acc, f) => acc + f.sizeBytes, 0);
 
@@ -494,6 +509,7 @@ async function resolveTermScope(
     matchedTxIds,
     matchedNotifIds,
     matchedExtensionIds,
+    matchedKeepaliveIds,
     isBackedUp,
   };
 }
@@ -535,6 +551,7 @@ export async function GET(request: NextRequest) {
       transactionLogsCount: scope.matchedTxIds.length,
       notificationsCount: scope.matchedNotifIds.length,
       extensionRequestsCount: scope.matchedExtensionIds.length,
+      keepaliveLogsCount: scope.matchedKeepaliveIds.length,
       isBackedUp: scope.isBackedUp,
     });
   } catch (error) {
@@ -643,6 +660,7 @@ export async function POST(request: NextRequest) {
     let txLogsRemoved = 0;
     let notificationsRemoved = 0;
     let extensionsRemoved = 0;
+    let keepaliveLogsRemoved = 0;
     const subIds = scope.submissionIds;
 
     if (mode === "files_only") {
@@ -741,6 +759,15 @@ export async function POST(request: NextRequest) {
           .in("id", chunk);
         if (!extDelErr) extensionsRemoved += chunk.length;
       }
+
+      for (let i = 0; i < scope.matchedKeepaliveIds.length; i += 200) {
+        const chunk = scope.matchedKeepaliveIds.slice(i, i + 200);
+        const { error: kaDelErr } = await supabase
+          .from("cron_keepalive_logs")
+          .delete()
+          .in("id", chunk);
+        if (!kaDelErr) keepaliveLogsRemoved += chunk.length;
+      }
     }
 
     const freedBytes = filesToDelete.reduce((acc, f) => acc + f.sizeBytes, 0);
@@ -760,12 +787,13 @@ export async function POST(request: NextRequest) {
         transaction_logs_removed: txLogsRemoved,
         notifications_removed: notificationsRemoved,
         extension_requests_removed: extensionsRemoved,
+        keepalive_logs_removed: keepaliveLogsRemoved,
         freed_bytes: freedBytes,
       },
     });
 
     const extraSummary = cleanLogsAndNotifications
-      ? ` Cleared ${txLogsRemoved} log(s), ${notificationsRemoved} notification(s), and ${extensionsRemoved} extension request(s).`
+      ? ` Cleared ${txLogsRemoved} log(s), ${notificationsRemoved} notification(s), ${extensionsRemoved} extension request(s), and ${keepaliveLogsRemoved} keep-alive log(s).`
       : "";
 
     const summaryText =
@@ -782,6 +810,7 @@ export async function POST(request: NextRequest) {
       transactionLogsRemoved: txLogsRemoved,
       notificationsRemoved,
       extensionRequestsRemoved: extensionsRemoved,
+      keepaliveLogsRemoved,
       freedBytes,
       message: summaryText,
     });

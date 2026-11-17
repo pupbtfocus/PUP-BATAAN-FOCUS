@@ -3089,13 +3089,13 @@ export function FacultyVerificationDrawer({
                       <table className="w-full table-fixed text-left text-xs text-slate-600 dark:text-slate-300 min-w-[880px]">
                         <thead className="bg-slate-50/60 dark:bg-slate-950/50 border-b border-slate-200/80 dark:border-slate-800/80 text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
                           <tr>
-                            <th className="px-4 py-3 w-[25%]">
+                            <th className="px-4 py-3 w-[25%] text-center">
                               Requirement
                             </th>
                             <th className="px-3 py-3 w-[10%] text-center">
                               Type
                             </th>
-                            <th className="px-4 py-3 w-[25%]">
+                            <th className="px-4 py-3 w-[25%] text-center">
                               Attached File
                             </th>
                             <th className="px-4 py-3 w-[24%]">
@@ -3213,8 +3213,8 @@ export function FacultyVerificationDrawer({
                                 className="hover:bg-slate-50/70 dark:hover:bg-slate-800/40 transition-colors"
                               >
                                 {/* Column 1: Requirement */}
-                                <td className="px-4 py-3.5 align-top">
-                                  <div className="space-y-1 min-w-0">
+                                <td className="px-4 py-3.5 align-middle text-center">
+                                  <div className="space-y-1 min-w-0 text-center">
                                     <span className="font-semibold text-slate-900 dark:text-slate-100 text-xs block leading-snug">
                                       {reqLabel}
                                     </span>
@@ -3246,9 +3246,9 @@ export function FacultyVerificationDrawer({
                                 </td>
 
                                 {/* Column 3: Attached File */}
-                                <td className="px-4 py-3.5 align-top">
+                                <td className="px-4 py-3.5 align-middle text-center">
                                   {hasFile && fileDownloadUrl ? (
-                                    <div className="space-y-1.5 min-w-0">
+                                    <div className="space-y-1.5 min-w-0 text-center">
                                       <div className="min-w-0">
                                         <span
                                           className="font-medium text-slate-900 dark:text-slate-100 truncate block text-xs leading-snug"
@@ -3256,7 +3256,7 @@ export function FacultyVerificationDrawer({
                                         >
                                           {fileName}
                                         </span>
-                                        <div className="flex items-center gap-1.5 text-[10px] text-slate-500 dark:text-slate-400 font-mono">
+                                        <div className="flex items-center justify-center gap-1.5 text-[10px] text-slate-500 dark:text-slate-400 font-mono">
                                           {fileSize ? (
                                             <span>{fileSize}</span>
                                           ) : null}
@@ -3268,7 +3268,7 @@ export function FacultyVerificationDrawer({
                                         </div>
                                       </div>
 
-                                      <div className="flex items-center gap-1.5 pt-0.5">
+                                      <div className="flex items-center justify-center gap-1.5 pt-0.5">
                                         <button
                                           type="button"
                                           onClick={() => {
@@ -3352,7 +3352,7 @@ export function FacultyVerificationDrawer({
                                       </div>
                                     </div>
                                   ) : isCleanedFile ? (
-                                    <div className="flex flex-col items-start gap-1.5 min-w-0">
+                                    <div className="flex flex-col items-center justify-center text-center gap-1.5 min-w-0">
                                       <span
                                         className="font-medium text-slate-700 dark:text-slate-300 break-words text-xs leading-snug"
                                         title={rawFileName}
@@ -3364,7 +3364,7 @@ export function FacultyVerificationDrawer({
                                       </span>
                                     </div>
                                   ) : (
-                                    <div className="pt-0.5">
+                                    <div className="pt-0.5 text-center">
                                       <span className="text-xs text-slate-400 dark:text-slate-500 italic block">
                                         No file attached
                                       </span>
