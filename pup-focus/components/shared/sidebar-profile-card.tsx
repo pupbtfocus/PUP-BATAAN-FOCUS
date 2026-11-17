@@ -11,6 +11,7 @@ export interface SidebarProfileCardProps {
   initials: string;
   onClick: () => void;
   className?: string;
+  collapsed?: boolean;
 }
 
 export function SidebarProfileCard({
@@ -21,6 +22,7 @@ export function SidebarProfileCard({
   initials,
   onClick,
   className = "",
+  collapsed = false,
 }: SidebarProfileCardProps) {
   const [hasAvatarError, setHasAvatarError] = useState(false);
 
@@ -35,6 +37,40 @@ export function SidebarProfileCard({
       : displayName.length > 18
         ? "text-sm sm:text-[15px] leading-snug"
         : "text-base sm:text-lg leading-snug";
+
+  if (collapsed) {
+    const compactAvatarSrc = avatarUrl || fallbackAvatarSrc;
+    return (
+      <button
+        type="button"
+        onClick={onClick}
+        title={`${name?.trim() || roleTitle} (${roleTitle}) — Manage Profile & Settings`}
+        aria-label="Manage Profile & Settings"
+        className={`group relative mx-auto flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-b from-[#660000]/95 to-[#480000]/95 hover:from-[#6d0000] hover:to-[#520000] border border-amber-400/30 hover:border-amber-400/60 shadow-md transition-all duration-200 cursor-pointer overflow-hidden focus:outline-hidden ${className}`}
+      >
+        {compactAvatarSrc ? (
+          <span className="relative flex h-full w-full items-center justify-center">
+            <span className="text-xs font-bold tracking-wide text-amber-300">
+              {initials}
+            </span>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={compactAvatarSrc}
+              alt={name?.trim() || roleTitle}
+              onError={(e) => {
+                e.currentTarget.style.display = "none";
+              }}
+              className="absolute inset-0 h-full w-full object-cover"
+            />
+          </span>
+        ) : (
+          <span className="text-xs font-bold tracking-wide text-amber-300">
+            {initials}
+          </span>
+        )}
+      </button>
+    );
+  }
 
   return (
     <button

@@ -78,6 +78,8 @@ import {
   Reports,
   Search,
   Settings,
+  SidebarCollapse,
+  SidebarExpand,
   SystemRestart,
   TaskList,
   Trash,
@@ -91,6 +93,7 @@ import { AppIcon } from "@/components/ui/app-icon";
 import { ModalHeader } from "@/components/ui/modal-header";
 import { LogoutButton } from "@/components/shared/logout-button";
 import { SidebarProfileCard } from "@/components/shared/sidebar-profile-card";
+import { useSidebarCollapsed } from "@/components/sidebar";
 import { NotificationDrawer } from "@/features/notifications/components/notification-drawer";
 import { OnlineDocumentPreview } from "@/features/submissions/components/online-document-preview";
 import {
@@ -564,6 +567,10 @@ function FacultySubmissionPanelContent({
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const {
+    collapsed: isSidebarCollapsed,
+    toggle: toggleSidebarCollapsed,
+  } = useSidebarCollapsed();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const handledHighlightRef = useRef<string | null>(null);
   const academicYears = useMemo(() => buildAcademicYearOptions(), []);
@@ -4387,19 +4394,50 @@ function FacultySubmissionPanelContent({
         </button>
       )}
       {/* Desktop Sidebar (hidden on mobile) */}
-      <aside className="hidden md:flex md:flex-col fixed left-0 top-0 h-screen w-72 rounded-none bg-[#800000] text-amber-50 shadow-md z-50 transition-colors duration-200">
-        <div className="flex-1 overflow-y-auto p-3.5 flex flex-col">
+      <aside
+        className={`hidden md:flex md:flex-col fixed left-0 top-0 h-screen ${
+          isSidebarCollapsed ? "w-20" : "w-72"
+        } rounded-none bg-[#800000] text-amber-50 shadow-md z-50 transition-all duration-200`}
+      >
+        <div className="flex-1 overflow-y-auto overflow-x-hidden p-3.5 flex flex-col">
           {/* Brand Header */}
-          <div className="flex items-center gap-2.5 px-1 py-1 pb-3 mb-1 border-b border-white/10 shrink-0">
-            <BrandMark size={38} className="shrink-0" />
-            <div className="flex flex-col min-w-0">
-              <span className="font-extrabold text-white text-lg tracking-tight whitespace-nowrap leading-tight">
-                <span className="text-amber-400">PUP</span> FOCUS
-              </span>
-              <span className="text-[10px] text-amber-200/80 font-medium tracking-wide truncate">
-                Bataan Campus
-              </span>
+          <div
+            className={`flex ${
+              isSidebarCollapsed
+                ? "flex-col items-center gap-2 px-0 py-1 pb-3"
+                : "items-center justify-between gap-2 px-1 py-1 pb-3"
+            } mb-1 border-b border-white/10 shrink-0`}
+          >
+            <div
+              className={`flex items-center ${
+                isSidebarCollapsed ? "justify-center" : "gap-2.5 min-w-0"
+              }`}
+            >
+              <BrandMark size={isSidebarCollapsed ? 32 : 38} className="shrink-0" />
+              {!isSidebarCollapsed && (
+                <div className="flex flex-col min-w-0">
+                  <span className="font-extrabold text-white text-lg tracking-tight whitespace-nowrap leading-tight">
+                    <span className="text-amber-400">PUP</span> FOCUS
+                  </span>
+                  <span className="text-[10px] text-amber-200/80 font-medium tracking-wide truncate">
+                    Bataan Campus
+                  </span>
+                </div>
+              )}
             </div>
+            <button
+              type="button"
+              onClick={toggleSidebarCollapsed}
+              title={isSidebarCollapsed ? "Expand side panel" : "Minimize side panel"}
+              aria-label={isSidebarCollapsed ? "Expand side panel" : "Minimize side panel"}
+              className="group inline-flex h-8 w-8 items-center justify-center rounded-lg border border-amber-300/50 bg-[#660000]/90 hover:bg-white/15 text-amber-300 hover:text-white transition-colors cursor-pointer shadow-2xs shrink-0"
+            >
+              {isSidebarCollapsed ? (
+                <SidebarExpand strokeWidth={2.2} className="h-4 w-4 text-amber-300 group-hover:text-white transition-colors" />
+              ) : (
+                <SidebarCollapse strokeWidth={2.2} className="h-4 w-4 text-amber-300 group-hover:text-white transition-colors" />
+              )}
+            </button>
           </div>
 
           <div className="my-1.5">
@@ -4409,6 +4447,7 @@ function FacultySubmissionPanelContent({
               avatarUrl={currentAvatarUrl}
               initials={facultyInitials}
               onClick={() => navigateToView("settings")}
+              collapsed={isSidebarCollapsed}
             />
           </div>
           <div className="my-2.5 h-px w-full bg-white/10" />
@@ -4418,6 +4457,7 @@ function FacultySubmissionPanelContent({
               isLoading={isLoadingSubmissionWindow}
               onExpired={handleWindowExpired}
               isAllValidated={isAllClassesValidated}
+              collapsed={isSidebarCollapsed}
             />
           </div>
           <div className="my-2.5 h-px w-full bg-white/10" />
@@ -4437,7 +4477,13 @@ function FacultySubmissionPanelContent({
                   key={key}
                   type="button"
                   onClick={() => navigateToView(key as PanelView)}
-                  className={`flex w-full items-center gap-3 px-4 py-3 text-left text-sm font-medium transition-colors cursor-pointer rounded-lg ${
+                  title={isSidebarCollapsed ? label : undefined}
+                  aria-label={isSidebarCollapsed ? label : undefined}
+                  className={`relative flex w-full items-center ${
+                    isSidebarCollapsed
+                      ? "justify-center px-0 py-3"
+                      : "gap-3 px-4 py-3 text-left"
+                  } text-sm font-medium transition-colors cursor-pointer rounded-lg ${
                     isActive
                       ? "bg-amber-500 text-slate-900 font-bold shadow-sm"
                       : "text-amber-100/80 hover:bg-white/10 hover:text-white"
@@ -4449,12 +4495,24 @@ function FacultySubmissionPanelContent({
                       isActive ? "text-slate-900" : "text-amber-200/70"
                     }`}
                   />
-                  <span className="truncate">{label}</span>
-                  {key === "status" && isAllClassesValidated && (
-                    <span className="ml-auto inline-flex items-center px-2 py-0.5 rounded-full bg-[#0b5336] text-[10px] font-bold text-white shadow-2xs">
-                      Done
-                    </span>
+                  {!isSidebarCollapsed && (
+                    <span className="truncate">{label}</span>
                   )}
+                  {!isSidebarCollapsed &&
+                    key === "status" &&
+                    isAllClassesValidated && (
+                      <span className="ml-auto inline-flex items-center px-2 py-0.5 rounded-full bg-[#0b5336] text-[10px] font-bold text-white shadow-2xs">
+                        Done
+                      </span>
+                    )}
+                  {isSidebarCollapsed &&
+                    key === "status" &&
+                    isAllClassesValidated && (
+                      <span
+                        title="Done"
+                        className="absolute top-1.5 right-2 h-2 w-2 rounded-full bg-emerald-400"
+                      />
+                    )}
                 </button>
               );
             })}
@@ -4559,7 +4617,13 @@ function FacultySubmissionPanelContent({
           </aside>
         </div>
       )}
-      <div className="md:ml-72 flex min-h-full md:h-full w-full md:w-[calc(100%-18rem)] flex-col">
+      <div
+        className={`${
+          isSidebarCollapsed
+            ? "md:ml-20 md:w-[calc(100%-5rem)]"
+            : "md:ml-72 md:w-[calc(100%-18rem)]"
+        } flex min-h-full md:h-full w-full flex-col transition-all duration-200`}
+      >
         <div className="flex flex-1 flex-col md:min-h-0 md:overflow-hidden border-l-0 bg-slate-100 dark:bg-[#0b0f19] shadow-sm transition-colors duration-200">
           <div className="flex-1 md:min-h-0 md:overflow-y-auto overflow-x-clip p-4 pb-8 sm:p-6 lg:p-8 bg-slate-100 dark:bg-[#0b0f19] text-slate-900 dark:text-slate-100 transition-colors duration-200">
             {activeView === "submit" ? (

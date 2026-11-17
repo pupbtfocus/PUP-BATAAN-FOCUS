@@ -16,7 +16,7 @@ import { ModalHeader } from "@/components/ui/modal-header";
 import { AlertPopup } from "@/components/ui/alert-popup";
 import { SystemLoadingScreen } from "@/components/shared/system-loading-screen";
 import { extractFirstName } from "@/lib/faculty-profile";
-import { Sidebar, SidebarContent } from "@/components/sidebar";
+import { Sidebar, SidebarContent, useSidebarCollapsed } from "@/components/sidebar";
 import { AdminAccountsTable } from "@/features/staff-management/components/staff-accounts-directory";
 import { FacultyTable } from "@/features/faculty-management/components/faculty-table";
 import { RequirementsPanel } from "@/features/faculty-management/components/requirements-verification-panel";
@@ -608,6 +608,12 @@ export function SuperAdminDashboard({
   // User Registration Logs Modal State
   const [registrationLogsModalOpen, setRegistrationLogsModalOpen] = useState(false);
   const [registrationLogsInitialRole, setRegistrationLogsInitialRole] = useState<"all" | "faculty" | "admin">("all");
+
+  const {
+    collapsed: isSidebarCollapsed,
+    toggle: toggleSidebarCollapsed,
+    setCollapsed: setSidebarCollapsed,
+  } = useSidebarCollapsed();
 
   const facultyForm = useForm<FacultyAccountFormInput>({
     resolver: zodResolver(facultyAccountSchema),
@@ -2050,6 +2056,9 @@ export function SuperAdminDashboard({
         roleTitle="Admin"
         isSuperAdmin={true}
         profileImageUrl={superAdminAvatarUrl}
+        collapsed={isSidebarCollapsed}
+        onToggleCollapse={toggleSidebarCollapsed}
+        onRequestExpand={() => setSidebarCollapsed(false)}
       />
 
       {/* Mobile Navigation Drawer */}
@@ -2096,7 +2105,13 @@ export function SuperAdminDashboard({
         </div>
       )}
 
-      <div className="md:ml-72 flex min-h-full md:h-full min-w-0 w-full md:w-[calc(100%-18rem)] flex-col">
+      <div
+        className={`${
+          isSidebarCollapsed
+            ? "md:ml-20 md:w-[calc(100%-5rem)]"
+            : "md:ml-72 md:w-[calc(100%-18rem)]"
+        } flex min-h-full md:h-full min-w-0 w-full flex-col transition-all duration-200`}
+      >
         <div className="flex md:min-h-0 flex-1 flex-col md:overflow-hidden border-l-0 bg-slate-50 dark:bg-slate-950 shadow-sm transition-colors duration-200">
           <div className="md:min-h-0 flex-1 md:overflow-y-auto overflow-x-clip p-3.5 sm:p-6 pb-8 sm:pb-6 bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 transition-colors duration-200">
             <DatabaseCapacityAlert

@@ -7,7 +7,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import Image from "next/image";
 import { BrandMark } from "@/components/shared/brand-mark";
 import { Button } from "@/components/ui/button";
-import { Sidebar, SidebarContent } from "@/components/sidebar";
+import { Sidebar, SidebarContent, useSidebarCollapsed } from "@/components/sidebar";
 import { Calendar, Check, CheckCircle, ClockRotateRight, Group, Hourglass, Menu, Minus, NavArrowRight, Page, Refresh, TaskList, Xmark } from "iconoir-react";
 import { AppIcon } from "@/components/ui/app-icon";
 import { SubmissionStatusBadge } from "@/features/submissions/components/submission-status-badge";
@@ -260,6 +260,11 @@ export function AdminFacultyDashboard({
   const [adminAvatarUrl, setAdminAvatarUrl] = useState<string | null>(null);
   const [initialReviewFacultyId, setInitialReviewFacultyId] = useState<string | null>(null);
   const [initialHighlightRequirementCode, setInitialHighlightRequirementCode] = useState<string | null>(null);
+  const {
+    collapsed: isSidebarCollapsed,
+    toggle: toggleSidebarCollapsed,
+    setCollapsed: setSidebarCollapsed,
+  } = useSidebarCollapsed();
 
   const handleNotificationNavigate = (notification: AdminNotificationItem) => {
     const reqCode = notification.requirementCode;
@@ -785,7 +790,11 @@ export function AdminFacultyDashboard({
 
   return (
     <div className="flex flex-col h-screen w-full bg-slate-50 text-slate-900 overflow-hidden font-sans transition-colors duration-200">
-      <header className="fixed inset-x-0 md:left-[calc(18rem-4px)] top-0 h-14 z-40 border-b-4 border-amber-500 bg-[#800000] text-white shadow-md flex items-center transition-colors duration-200">
+      <header
+        className={`fixed inset-x-0 ${
+          isSidebarCollapsed ? "md:left-[calc(5rem-4px)]" : "md:left-[calc(18rem-4px)]"
+        } top-0 h-14 z-40 border-b-4 border-amber-500 bg-[#800000] text-white shadow-md flex items-center transition-all duration-200`}
+      >
         <div className="relative flex w-full h-full items-center justify-between pl-4 pr-3 sm:pr-6">
           {/* Left: Mobile Menu Trigger & Title (Mobile only) */}
           <div className="flex md:hidden items-center gap-2 sm:gap-3 z-10">
@@ -820,16 +829,27 @@ export function AdminFacultyDashboard({
       </header>
 
       {/* Body Wrapper */}
-      <div className="flex flex-1 h-screen pt-14 overflow-hidden relative md:pl-72">
+      <div
+        className={`flex flex-1 h-screen pt-14 overflow-hidden relative ${
+          isSidebarCollapsed ? "md:pl-20" : "md:pl-72"
+        } transition-all duration-200`}
+      >
         {/* Desktop Fixed Sidebar */}
-        <aside className="hidden md:flex md:flex-col fixed left-0 top-0 h-screen w-72 rounded-none bg-[#800000] text-amber-50 shadow-md z-50 transition-colors duration-200">
-          <div className="flex-1 overflow-y-auto p-3.5 flex flex-col">
+        <aside
+          className={`hidden md:flex md:flex-col fixed left-0 top-0 h-screen ${
+            isSidebarCollapsed ? "w-20" : "w-72"
+          } rounded-none bg-[#800000] text-amber-50 shadow-md z-50 transition-all duration-200`}
+        >
+          <div className="flex-1 overflow-y-auto overflow-x-hidden p-3.5 flex flex-col">
             <SidebarContent
               activeSection={activeSection}
               setActiveSection={handleSetActiveSection}
               adminName={currentAdminName || adminName}
               roleTitle="Staff"
               profileImageUrl={adminAvatarUrl}
+              collapsed={isSidebarCollapsed}
+              onToggleCollapse={toggleSidebarCollapsed}
+              onRequestExpand={() => setSidebarCollapsed(false)}
             />
           </div>
           {/* Amber vertical border that starts at the top edge of the header's bottom border (y=52px) to form a seamless 90-degree corner */}

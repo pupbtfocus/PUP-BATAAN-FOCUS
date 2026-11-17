@@ -31,6 +31,7 @@ type SubmissionWindowCountdownProps = {
   isLoading: boolean;
   onExpired?: () => void;
   isAllValidated?: boolean;
+  collapsed?: boolean;
 };
 
 function getManilaTimestamp(date: string, time: string): number {
@@ -77,6 +78,7 @@ export function SubmissionWindowCountdown({
   isLoading,
   onExpired,
   isAllValidated,
+  collapsed = false,
 }: SubmissionWindowCountdownProps) {
   const [hasExpired, setHasExpired] = useState(false);
 
@@ -120,6 +122,93 @@ export function SubmissionWindowCountdown({
       setHasExpired(false);
     }
   }, [windowState?.status]);
+
+  if (collapsed) {
+    if (isLoading) {
+      return (
+        <div
+          title="Loading submission schedule..."
+          className="mx-auto flex h-11 w-11 items-center justify-center rounded-xl border border-amber-400/25 bg-[#6b0000]/80 animate-pulse"
+        >
+          <div className="h-4 w-4 rounded-full bg-amber-400/30" />
+        </div>
+      );
+    }
+
+    if (isAllValidated) {
+      return (
+        <div
+          title="All Set! Done for This Semester"
+          className="mx-auto flex h-11 w-11 items-center justify-center rounded-xl border border-emerald-400/50 bg-[#0b5336]/90 text-emerald-300 shadow-xs"
+        >
+          <AppIcon icon={CheckCircle} size="md" color="inherit" />
+        </div>
+      );
+    }
+
+    const isPersonalActiveCompact = Boolean(
+      windowState?.isPersonalDeadline || windowState?.isGracePeriod,
+    );
+    if (isPersonalActiveCompact) {
+      const tip = windowState?.formattedDueAt
+        ? `Schedule Extension Active — Due: ${windowState.formattedDueAt}`
+        : "Schedule Extension Active — Uploads unlocked";
+      return (
+        <div
+          title={tip}
+          className="relative mx-auto flex h-11 w-11 items-center justify-center rounded-xl border border-emerald-400/50 bg-[#08412a]/90 text-emerald-300 shadow-xs"
+        >
+          <AppIcon icon={Calendar} size="md" color="inherit" />
+          <span className="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-emerald-400 pulse-dot" />
+        </div>
+      );
+    }
+
+    if (!windowState || !windowState.isConfigured) {
+      return (
+        <div
+          title="Submission Not Configured"
+          className="mx-auto flex h-11 w-11 items-center justify-center rounded-xl border border-amber-400/30 bg-[#6b0000]/80 text-amber-300 shadow-xs"
+        >
+          <AppIcon icon={WarningTriangle} size="md" color="inherit" />
+        </div>
+      );
+    }
+
+    const status = windowState.status;
+    const statusStyle =
+      status === "Open"
+        ? {
+            box: "border-emerald-400/50 bg-[#08412a]/90 text-emerald-300",
+            dot: "bg-emerald-400 pulse-dot",
+          }
+        : status === "Upcoming"
+          ? {
+              box: "border-amber-400/50 bg-[#6b0000]/90 text-amber-300",
+              dot: "bg-amber-400",
+            }
+          : {
+              box: "border-rose-400/40 bg-black/30 text-rose-300",
+              dot: "bg-rose-400",
+            };
+    const tipParts = [
+      `Submission ${status}`,
+      windowState.academicYear && windowState.semester
+        ? `A.Y. ${windowState.academicYear} • ${windowState.semester}`
+        : null,
+      windowState.endDate ? `Ends ${windowState.endDate}` : null,
+    ].filter(Boolean);
+
+    return (
+      <div
+        title={tipParts.join(" — ")}
+        className={`relative mx-auto flex h-11 w-11 items-center justify-center rounded-xl border shadow-xs ${statusStyle.box}`}
+      >
+        <AppIcon icon={Calendar} size="md" color="inherit" />
+        <span className={`absolute top-1.5 right-1.5 h-2 w-2 rounded-full ${statusStyle.dot}`} />
+      </div>
+    );
+  }
 
   // Loading skeleton
   if (isLoading) {
