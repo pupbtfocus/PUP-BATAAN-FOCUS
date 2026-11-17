@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { CheckCircle, EditPencil, Key, Mail, SendMail, ShieldCheck, User, Xmark } from "iconoir-react";
+import { CheckCircle, EditPencil, Key, Lock, LockSlash, Mail, SendMail, ShieldCheck, User, Xmark } from "iconoir-react";
 import { AppIcon } from "@/components/ui/app-icon";
 import { ModalHeader } from "@/components/ui/modal-header";
 import { AlertPopup } from "@/components/ui/alert-popup";
@@ -40,9 +40,12 @@ export function EditFacultyModal({
   const [isSaving, setIsSaving] = useState(false);
   const [isResendingVerification, setIsResendingVerification] = useState(false);
   const [isSendingPasswordReset, setIsSendingPasswordReset] = useState(false);
+  const [isUnlockingAccount, setIsUnlockingAccount] = useState(false);
+  const [isUnlockedLocally, setIsUnlockedLocally] = useState(false);
   const [hasReverifiedPendingSave, setHasReverifiedPendingSave] = useState(false);
   const [reverifySuccessMessage, setReverifySuccessMessage] = useState<string | null>(null);
   const [passwordResetSuccessMessage, setPasswordResetSuccessMessage] = useState<string | null>(null);
+  const [unlockSuccessMessage, setUnlockSuccessMessage] = useState<string | null>(null);
   const [nameAlert, setNameAlert] = useState<string | null>(null);
   const [closeReminder, setCloseReminder] = useState<string | null>(null);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
@@ -120,6 +123,8 @@ export function EditFacultyModal({
 
     if (initializedFacultyIdRef.current !== selectedFaculty.id) {
       initializedFacultyIdRef.current = selectedFaculty.id;
+      setIsUnlockedLocally(false);
+      setUnlockSuccessMessage(null);
 
       const parsedFallback = parseFullNameFallback(selectedFaculty.fullName || "");
       const directFirstName =
@@ -359,6 +364,49 @@ export function EditFacultyModal({
     }
   }
 
+  const isAccountLocked = Boolean(selectedFaculty?.isLocked) && !isUnlockedLocally;
+
+  async function handleUnlockAccount() {
+    if (!selectedFaculty || !isAccountLocked || isUnlockingAccount) return;
+
+    setIsUnlockingAccount(true);
+    setSaveError(null);
+    setUnlockSuccessMessage(null);
+    setCloseReminder(null);
+
+    try {
+      const response = await fetch("/api/admin/faculty/unlock", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ facultyProfileId: selectedFaculty.id }),
+      });
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        throw new Error(payload.error || "Failed to unlock faculty account");
+      }
+
+      setIsUnlockedLocally(true);
+      setUnlockSuccessMessage(
+        payload.message ||
+          "Faculty account unlocked. They can now sign in immediately.",
+      );
+      emitRealtimeSync({ source: "faculty-unlocked", timestamp: Date.now() });
+      await onSave?.({
+        id: selectedFaculty.id,
+        isLocked: false,
+        lockedUntil: null,
+      });
+    } catch (error) {
+      setSaveError(
+        error instanceof Error
+          ? error.message
+          : "Failed to unlock faculty account",
+      );
+    } finally {
+      setIsUnlockingAccount(false);
+    }
+  }
+
   async function handleConfirmSave() {
     setIsSaving(true);
     setSaveError(null);
@@ -544,6 +592,15 @@ export function EditFacultyModal({
               />
             ) : null}
 
+            {unlockSuccessMessage ? (
+              <AlertPopup
+                type="success"
+                message={unlockSuccessMessage}
+                position="inline"
+                onClose={() => setUnlockSuccessMessage(null)}
+              />
+            ) : null}
+
             {nameAlert ? (
               <AlertPopup
                 type="warning"
@@ -612,15 +669,23 @@ export function EditFacultyModal({
                     <p className="text-[10px] uppercase tracking-[0.15em] text-slate-500 dark:text-slate-400 font-semibold">
                       Account Status
                     </p>
-                    <p
-                      className={`text-xs font-semibold inline-flex items-center px-2 py-0.5 rounded-md border shadow-2xs ${
-                        selectedFaculty.is_active
-                          ? "bg-[#0b5336] text-white border-[#08412a]"
-                          : "bg-[#780000] text-white border-[#5e0000]"
-                      }`}
-                    >
-                      {selectedFaculty.is_active ? "Active" : "Inactive"}
-                    </p>
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      <span
+                        className={`text-xs font-semibold inline-flex items-center px-2 py-0.5 rounded-md border shadow-2xs ${
+                          selectedFaculty.is_active
+                            ? "bg-[#0b5336] text-white border-[#08412a]"
+                            : "bg-[#780000] text-white border-[#5e0000]"
+                        }`}
+                      >
+                        {selectedFaculty.is_active ? "Active" : "Inactive"}
+                      </span>
+                      {isAccountLocked ? (
+                        <span className="text-[11px] font-bold inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-amber-500 text-slate-950 border border-amber-600 shadow-2xs">
+                          <AppIcon icon={Lock} size="xs" color="inherit" />
+                          <span>Locked</span>
+                        </span>
+                      ) : null}
+                    </div>
                   </div>
 
                   <div className="space-y-0.5 text-right">
@@ -854,7 +919,27 @@ export function EditFacultyModal({
                   >
                     Email Address (Account Recovery / Change Email)
                   </label>
-                  <div className="flex items-center gap-1.5 shrink-0">
+                  <div className="flex flex-wrap items-center gap-1.5 shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => void handleUnlockAccount()}
+                      disabled={!isAccountLocked || isUnlockingAccount || isSaving}
+                      title={
+                        isAccountLocked
+                          ? "Clear failed-login lockout so faculty can sign in immediately"
+                          : "Account is unlocked"
+                      }
+                      className="inline-flex items-center gap-1.5 rounded-lg bg-[#0b5336] hover:bg-[#08412a] text-white border border-[#08412a] px-2.5 py-1 text-xs font-semibold transition-colors cursor-pointer shadow-2xs shrink-0 whitespace-nowrap disabled:bg-slate-200 disabled:text-slate-400 disabled:border-slate-300 dark:disabled:bg-slate-800 dark:disabled:text-slate-500 dark:disabled:border-slate-700 disabled:shadow-none disabled:hover:bg-slate-200 dark:disabled:hover:bg-slate-800 disabled:cursor-not-allowed"
+                    >
+                      <AppIcon icon={LockSlash} size="xs" color="inherit" />
+                      <span>
+                        {isUnlockingAccount
+                          ? "Unlocking..."
+                          : isAccountLocked
+                            ? "Unlock Account"
+                            : "Unlocked"}
+                      </span>
+                    </button>
                     <button
                       type="button"
                       onClick={() => void handleSendPasswordReset()}

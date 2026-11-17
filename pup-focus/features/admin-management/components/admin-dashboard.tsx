@@ -882,6 +882,59 @@ export function SuperAdminDashboard({
     }
   }
 
+  function onUnlockFaculty(facultyId: string) {
+    setPendingFacultyAction({ kind: "unlock", facultyId });
+  }
+
+  async function performUnlockFaculty(facultyId: string) {
+    setLoadingFacultyIds((prev) => new Set(prev).add(facultyId));
+    setFacultyActionError(null);
+    setDeleteFacultySuccess(null);
+
+    try {
+      const response = await fetch("/api/admin/faculty/unlock", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ facultyProfileId: facultyId }),
+      });
+
+      if (!response.ok) {
+        let message = `Failed to unlock faculty account (HTTP ${response.status})`;
+        try {
+          const errorData = await response.json();
+          message = errorData.error || message;
+        } catch {
+          // Keep default message
+        }
+        setFacultyActionError(message);
+        return;
+      }
+
+      setFacultyAccounts((prev) =>
+        prev.map((faculty) =>
+          faculty.id === facultyId
+            ? { ...faculty, isLocked: false, lockedUntil: null }
+            : faculty,
+        ),
+      );
+      setDeleteFacultySuccess("Faculty account unlocked. They can now sign in.");
+      await loadFacultyFromDatabase(true);
+      emitRealtimeSync({ source: "faculty-unlocked", timestamp: Date.now() });
+    } catch (error) {
+      setFacultyActionError(
+        error instanceof Error
+          ? error.message
+          : "An error occurred while unlocking the faculty account",
+      );
+    } finally {
+      setLoadingFacultyIds((prev) => {
+        const next = new Set(prev);
+        next.delete(facultyId);
+        return next;
+      });
+    }
+  }
+
   async function confirmPendingFacultyAction() {
     if (!pendingFacultyAction) {
       return;
@@ -897,6 +950,11 @@ export function SuperAdminDashboard({
 
     if (kind === "activate") {
       await performActivateFaculty(facultyId);
+      return;
+    }
+
+    if (kind === "unlock") {
+      await performUnlockFaculty(facultyId);
       return;
     }
 
@@ -2313,6 +2371,7 @@ export function SuperAdminDashboard({
                   }}
                   onActivate={onActivateFaculty}
                   onDeactivate={onDeactivateFaculty}
+                  onUnlock={onUnlockFaculty}
                   loadingFacultyIds={loadingFacultyIds}
                   deletingFacultyIds={deletingFacultyIds}
                   deleteError={deleteFacultyError}

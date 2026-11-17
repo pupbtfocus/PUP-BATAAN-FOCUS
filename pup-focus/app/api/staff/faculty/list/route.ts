@@ -17,6 +17,7 @@ import {
   FACULTY_PROFILE_IMAGE_BUCKET,
   buildFacultyFullName,
 } from "@/lib/faculty-profile";
+import { getLoginAttemptRecord } from "@/lib/auth/login-attempts";
 
 type RequirementStatus = "not_submitted" | "uploaded" | "validated";
 
@@ -751,6 +752,22 @@ export async function GET(request: NextRequest) {
         ? signedUrlMap.get(`${profileImageBucket}:${profileImagePath}`) ?? null
         : null;
 
+      const nowMs = Date.now();
+      const metaLockedUntil = Number(metadata.locked_until || 0);
+      const memLock = getLoginAttemptRecord(profile.email || authUser?.email);
+      const activeLockedUntilMs = Math.max(
+        Number.isFinite(metaLockedUntil) && metaLockedUntil > nowMs
+          ? metaLockedUntil
+          : 0,
+        memLock?.lockedUntil && memLock.lockedUntil > nowMs
+          ? memLock.lockedUntil
+          : 0,
+      );
+      const isLocked = activeLockedUntilMs > nowMs;
+      const lockedUntil = isLocked
+        ? new Date(activeLockedUntilMs).toISOString()
+        : null;
+
       return {
         id: profile.id,
         user_id: profile.user_id ?? null,
@@ -765,6 +782,8 @@ export async function GET(request: NextRequest) {
         profileImageUrl,
         program: resolvedProgram,
         is_active: (metadata.is_active as boolean | undefined) ?? true,
+        isLocked,
+        lockedUntil,
         created_at: profile.created_at || new Date().toISOString(),
         last_sign_in_at: lastSignInAt,
         lastLoginAt: lastSignInAt,

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { EditPencil, Eye, Trash, UserBadgeCheck, UserXmark, Xmark } from "iconoir-react";
+import { EditPencil, Eye, Lock, LockSlash, Trash, UserBadgeCheck, UserXmark, Xmark } from "iconoir-react";
 import { AppIcon } from "@/components/ui/app-icon";
 import { AlertPopup } from "@/components/ui/alert-popup";
 import { buildFacultyInitials } from "@/lib/faculty-profile";
@@ -19,6 +19,7 @@ export interface FacultyTableProps {
   onEditFaculty?: (facultyId: string) => void;
   onActivate?: (facultyId: string) => void;
   onDeactivate?: (facultyId: string) => void;
+  onUnlock?: (facultyId: string) => void;
   loadingFacultyIds?: Set<string>;
   deletingFacultyIds?: Set<string>;
   deleteError?: string | null;
@@ -51,6 +52,7 @@ export function FacultyTable({
   onEditFaculty,
   onActivate,
   onDeactivate,
+  onUnlock,
   loadingFacultyIds,
   deletingFacultyIds,
   deleteError,
@@ -280,15 +282,30 @@ export function FacultyTable({
                         </span>
                       </td>
                       <td className="px-4 py-2.5 font-medium">
-                        {faculty.is_active ? (
-                          <span className="bg-[#0b5336] text-white border border-[#08412a] px-2 py-0.5 text-xs font-semibold rounded-md inline-flex items-center shadow-2xs">
-                            Active
-                          </span>
-                        ) : (
-                          <span className="bg-[#780000] text-white border border-[#5e0000] px-2 py-0.5 text-xs font-semibold rounded-md inline-flex items-center shadow-2xs">
-                            Inactive
-                          </span>
-                        )}
+                        <div className="flex flex-wrap items-center gap-1.5">
+                          {faculty.is_active ? (
+                            <span className="bg-[#0b5336] text-white border border-[#08412a] px-2 py-0.5 text-xs font-semibold rounded-md inline-flex items-center shadow-2xs">
+                              Active
+                            </span>
+                          ) : (
+                            <span className="bg-[#780000] text-white border border-[#5e0000] px-2 py-0.5 text-xs font-semibold rounded-md inline-flex items-center shadow-2xs">
+                              Inactive
+                            </span>
+                          )}
+                          {faculty.isLocked ? (
+                            <span
+                              className="bg-amber-500 text-slate-950 border border-amber-600 px-2 py-0.5 text-[11px] font-bold rounded-md inline-flex items-center gap-1 shadow-2xs"
+                              title={
+                                faculty.lockedUntil
+                                  ? `Login locked until ${formatLastLogin(faculty.lockedUntil)}`
+                                  : "Login locked due to consecutive failed attempts"
+                              }
+                            >
+                              <AppIcon icon={Lock} size="xs" color="inherit" />
+                              <span>Locked</span>
+                            </span>
+                          ) : null}
+                        </div>
                       </td>
                       <td className="px-4 py-2.5 font-medium text-xs whitespace-nowrap text-slate-700 dark:text-slate-300">
                         {faculty.last_sign_in_at || faculty.lastLoginAt ? (
@@ -323,6 +340,22 @@ export function FacultyTable({
                             >
                               <AppIcon icon={EditPencil} size="sm" color="inherit" className="text-slate-950" />
                               <span>Edit</span>
+                            </button>
+                          ) : null}
+                          {onUnlock && faculty.isLocked ? (
+                            <button
+                              type="button"
+                              onClick={() => onUnlock(faculty.id)}
+                              disabled={loadingFacultyIds?.has(faculty.id)}
+                              title="Unlock Faculty Login"
+                              className="bg-[#0b5336] hover:bg-[#08412a] text-white font-semibold border border-[#08412a] text-xs rounded-md px-2.5 py-1 transition-colors cursor-pointer inline-flex items-center gap-1.5 disabled:opacity-50 shadow-2xs shrink-0 whitespace-nowrap"
+                            >
+                              <AppIcon icon={LockSlash} size="sm" color="white" />
+                              <span>
+                                {loadingFacultyIds?.has(faculty.id)
+                                  ? "Unlocking..."
+                                  : "Unlock"}
+                              </span>
                             </button>
                           ) : null}
                           {onActivate && onDeactivate ? (

@@ -6,15 +6,74 @@ import {
   verifyTurnstileToken,
 } from "@/lib/turnstile/verify";
 import { filterCondition, orFilter } from "@/lib/supabase/filters";
+import {
+  LOCKOUT_DURATION_MS,
+  MAX_FAILED_ATTEMPTS,
+  clearLoginLockout,
+  getLoginAttemptRecord,
+  setLoginAttemptRecord,
+} from "@/lib/auth/login-attempts";
 
-// In-memory lockout cache: 5 failed attempts -> 15-minute timeout
-interface AttemptRecord {
-  count: number;
-  lockedUntil?: number;
+export async function GET(request: NextRequest) {
+  try {
+    const email = new URL(request.url).searchParams
+      .get("email")
+      ?.trim()
+      .toLowerCase();
+    if (!email) {
+      return NextResponse.json(
+        { isLocked: false, remainingSeconds: 0 },
+        { headers: { "Cache-Control": "no-store" } },
+      );
+    }
+
+    const now = Date.now();
+    const memoryRecord = getLoginAttemptRecord(email);
+    let lockedUntil =
+      memoryRecord?.lockedUntil && memoryRecord.lockedUntil > now
+        ? memoryRecord.lockedUntil
+        : 0;
+
+    if (!lockedUntil) {
+      try {
+        const serviceClient = getServiceRoleClient();
+        const { data: usersData } = await serviceClient.auth.admin.listUsers({
+          perPage: 1000,
+        });
+        const targetUser = (usersData?.users ?? []).find(
+          (u) => (u.email || "").toLowerCase().trim() === email,
+        );
+        const metaLockedUntil = Number(
+          targetUser?.user_metadata?.locked_until || 0,
+        );
+        if (metaLockedUntil > now) {
+          lockedUntil = metaLockedUntil;
+          setLoginAttemptRecord(email, {
+            count: MAX_FAILED_ATTEMPTS,
+            lockedUntil: metaLockedUntil,
+          });
+        }
+      } catch {
+        // Ignore lookup error
+      }
+    }
+
+    const isLocked = lockedUntil > now;
+    const remainingSeconds = isLocked
+      ? Math.ceil((lockedUntil - now) / 1000)
+      : 0;
+
+    return NextResponse.json(
+      { isLocked, remainingSeconds },
+      { headers: { "Cache-Control": "no-store" } },
+    );
+  } catch {
+    return NextResponse.json(
+      { isLocked: false, remainingSeconds: 0 },
+      { headers: { "Cache-Control": "no-store" } },
+    );
+  }
 }
-const loginAttempts = new Map<string, AttemptRecord>();
-const MAX_FAILED_ATTEMPTS = 5;
-const LOCKOUT_DURATION_MS = 15 * 60 * 1000;
 
 export async function POST(request: NextRequest) {
   try {
@@ -72,7 +131,7 @@ export async function POST(request: NextRequest) {
     const now = Date.now();
 
     // 1. Check in-memory lock first
-    const memoryRecord = loginAttempts.get(email);
+    const memoryRecord = getLoginAttemptRecord(email);
     if (memoryRecord?.lockedUntil && memoryRecord.lockedUntil > now) {
       const remainingMins = Math.ceil((memoryRecord.lockedUntil - now) / 60000);
       return NextResponse.json(
@@ -93,7 +152,7 @@ export async function POST(request: NextRequest) {
       if (targetUser?.user_metadata?.locked_until) {
         const persistentLockedUntil = Number(targetUser.user_metadata.locked_until);
         if (persistentLockedUntil > now) {
-          loginAttempts.set(email, {
+          setLoginAttemptRecord(email, {
             count: MAX_FAILED_ATTEMPTS,
             lockedUntil: persistentLockedUntil,
           });
@@ -202,7 +261,7 @@ export async function POST(request: NextRequest) {
 
       if (currentCount >= MAX_FAILED_ATTEMPTS) {
         const lockedUntil = now + LOCKOUT_DURATION_MS;
-        loginAttempts.set(email, {
+        setLoginAttemptRecord(email, {
           count: currentCount,
           lockedUntil,
         });
@@ -227,7 +286,7 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      loginAttempts.set(email, { count: currentCount });
+      setLoginAttemptRecord(email, { count: currentCount });
       if (targetUser?.id) {
         try {
           await serviceClient.auth.admin.updateUserById(targetUser.id, {
@@ -267,7 +326,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Reset failed attempts upon successful login in memory and database
-    loginAttempts.delete(email);
+    clearLoginLockout(email);
     const authedUserId = signInData.user?.id || targetUser?.id;
     if (authedUserId) {
       try {

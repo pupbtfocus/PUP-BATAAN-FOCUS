@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Trash, UserBadgeCheck, UserXmark } from "iconoir-react";
+import { LockSlash, Trash, UserBadgeCheck, UserXmark } from "iconoir-react";
 import { Button } from "@/components/ui/button";
 import { ModalHeader } from "@/components/ui/modal-header";
 import type { FacultyAccount, PendingFacultyAction } from "@/features/faculty-management/types/faculty-dashboard.types";
@@ -52,6 +52,8 @@ export function DeleteFacultyModal({
               ? Trash
               : pendingFacultyAction.kind === "activate"
               ? UserBadgeCheck
+              : pendingFacultyAction.kind === "unlock"
+              ? LockSlash
               : UserXmark
           }
           title={
@@ -59,6 +61,8 @@ export function DeleteFacultyModal({
               ? "Delete Faculty Account?"
               : pendingFacultyAction.kind === "activate"
               ? "Activate Faculty Account?"
+              : pendingFacultyAction.kind === "unlock"
+              ? "Unlock Faculty Login?"
               : "Deactivate Faculty Account?"
           }
           subtitle={
@@ -66,6 +70,8 @@ export function DeleteFacultyModal({
               ? "Confirm Account Deletion"
               : pendingFacultyAction.kind === "activate"
               ? "Confirm Account Activation"
+              : pendingFacultyAction.kind === "unlock"
+              ? "Clear Failed-Login Lockout"
               : "Confirm Account Deactivation"
           }
           className="-mx-6 -mt-6 mb-5 rounded-t-2xl"
@@ -94,6 +100,8 @@ export function DeleteFacultyModal({
             <p className="text-sm leading-6 text-slate-500 dark:text-slate-400">
               {pendingFacultyAction.kind === "activate"
                 ? "The selected faculty member will be able to sign in again."
+                : pendingFacultyAction.kind === "unlock"
+                ? "Reset failed login attempts and remove the temporary lockout so this faculty member can sign in right away."
                 : "The selected faculty member will no longer be able to sign in."}
             </p>
           )}
@@ -146,7 +154,9 @@ export function DeleteFacultyModal({
                 ? "bg-[#780000] hover:bg-[#5e0000] text-white font-semibold cursor-pointer border-transparent shadow-xs disabled:opacity-50 disabled:cursor-not-allowed"
                 : pendingFacultyAction.kind === "activate"
                   ? "bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold cursor-pointer border-transparent shadow-xs disabled:opacity-50 disabled:cursor-not-allowed"
-                  : "bg-[#780000] hover:bg-[#5e0000] text-white font-semibold cursor-pointer border-transparent shadow-xs disabled:opacity-50 disabled:cursor-not-allowed"
+                  : pendingFacultyAction.kind === "unlock"
+                    ? "bg-[#0b5336] hover:bg-[#08412a] text-white font-semibold cursor-pointer border-transparent shadow-xs disabled:opacity-50 disabled:cursor-not-allowed"
+                    : "bg-[#780000] hover:bg-[#5e0000] text-white font-semibold cursor-pointer border-transparent shadow-xs disabled:opacity-50 disabled:cursor-not-allowed"
             }
           >
             {isLoading
@@ -155,7 +165,9 @@ export function DeleteFacultyModal({
                 ? "Delete"
                 : pendingFacultyAction.kind === "activate"
                   ? "Activate"
-                  : "Deactivate"}
+                  : pendingFacultyAction.kind === "unlock"
+                    ? "Unlock"
+                    : "Deactivate"}
           </Button>
         </div>
       </div>

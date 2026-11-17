@@ -41,6 +41,8 @@ export type FacultyAccount = {
   email: string;
   profileImageUrl: string | null;
   is_active: boolean;
+  isLocked?: boolean;
+  lockedUntil?: string | null;
   created_at: string;
   last_sign_in_at?: string | null;
   lastLoginAt?: string | null;
@@ -49,7 +51,7 @@ export type FacultyAccount = {
 };
 
 export type PendingFacultyAction = {
-  kind: "delete" | "deactivate" | "activate";
+  kind: "delete" | "deactivate" | "activate" | "unlock";
   facultyId: string;
 };
 

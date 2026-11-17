@@ -85,6 +85,36 @@ function resetLoginAttempts(email: string) {
   }
 }
 
+async function resolveEffectiveLockout(
+  email: string,
+): Promise<{ isLocked: boolean; remainingSeconds: number }> {
+  const local = checkLoginLockout(email);
+  if (!local.isLocked) {
+    return local;
+  }
+
+  try {
+    const res = await fetch(
+      `/api/auth/login?email=${encodeURIComponent(email)}`,
+      { cache: "no-store" },
+    );
+    if (res.ok) {
+      const data = await res.json().catch(() => null);
+      if (data && data.isLocked === false) {
+        resetLoginAttempts(email);
+        return { isLocked: false, remainingSeconds: 0 };
+      }
+      if (typeof data?.remainingSeconds === "number" && data.remainingSeconds > 0) {
+        return { isLocked: true, remainingSeconds: data.remainingSeconds };
+      }
+    }
+  } catch {
+    // Fallback to local lockout if offline
+  }
+
+  return local;
+}
+
 export default function Home() {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
@@ -400,7 +430,7 @@ export default function Home() {
 
     const normalizedEmail = email.trim().toLowerCase();
 
-    const lockout = checkLoginLockout(normalizedEmail);
+    const lockout = await resolveEffectiveLockout(normalizedEmail);
     if (lockout.isLocked) {
       const mins = Math.ceil(lockout.remainingSeconds / 60);
       const lockMsg = `Account temporarily locked due to consecutive failed attempts. Please try again in ${mins} minute${mins > 1 ? "s" : ""}.`;
@@ -498,7 +528,7 @@ export default function Home() {
     const currentPassword = creds.password;
     const activeRememberMe = creds.rememberMe;
 
-    const lockout = checkLoginLockout(normalizedEmail);
+    const lockout = await resolveEffectiveLockout(normalizedEmail);
     if (lockout.isLocked) {
       const mins = Math.ceil(lockout.remainingSeconds / 60);
       const lockMsg = `Account temporarily locked due to consecutive failed attempts. Please try again in ${mins} minute${mins > 1 ? "s" : ""}.`;
