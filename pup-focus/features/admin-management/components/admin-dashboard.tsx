@@ -2528,25 +2528,25 @@ export function SuperAdminDashboard({
             ) : null}
 
             {activeSection === "audit" ? (
-              <article className="space-y-6 p-2 sm:p-4 md:p-5">
+              <article className="space-y-4 sm:space-y-5">
                 {/* Solid Amber Card Header */}
-                <div className="relative overflow-hidden rounded-2xl border-2 border-amber-500 bg-amber-400 p-5 sm:p-6 shadow-md shadow-amber-500/10 flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+                <div className="relative overflow-hidden rounded-2xl border-2 border-amber-500 bg-amber-400 p-4 sm:p-6 shadow-md shadow-amber-500/10 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                   <div>
-                    <h1 className="text-2xl sm:text-3xl font-black text-slate-950 tracking-tight">
+                    <h1 className="text-xl sm:text-3xl font-black text-slate-950 tracking-tight">
                       Transaction Log
                     </h1>
-                    <p className="mt-1.5 text-sm sm:text-base text-amber-950/90 font-medium leading-relaxed">
+                    <p className="mt-1.5 text-xs sm:text-base text-amber-950/90 font-medium leading-relaxed">
                       Track and inspect real-time security events, administrator actions, and user session activity.
                     </p>
                   </div>
                 </div>
 
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
-                  <div className="flex flex-wrap items-center gap-2 p-1.5 bg-slate-100 dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <div className="grid grid-cols-1 sm:inline-flex sm:flex-wrap items-center gap-2 p-1.5 bg-slate-100 dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 w-full sm:w-auto">
                     <button
                       type="button"
                       onClick={() => setAuditLogTab("transactions")}
-                      className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer ${
+                      className={`inline-flex items-center justify-center sm:justify-start gap-2 w-full sm:w-auto px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer ${
                         auditLogTab === "transactions"
                           ? "bg-[#780000] text-white border border-[#5e0000] shadow-xs"
                           : "bg-white dark:bg-slate-800/80 text-slate-700 dark:text-slate-300 border border-slate-300 dark:border-slate-700 hover:border-slate-400 dark:hover:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-750 shadow-2xs"
@@ -2558,7 +2558,7 @@ export function SuperAdminDashboard({
                     <button
                       type="button"
                       onClick={() => setAuditLogTab("keepalive")}
-                      className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer ${
+                      className={`inline-flex items-center justify-center sm:justify-start gap-2 w-full sm:w-auto px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer ${
                         auditLogTab === "keepalive"
                           ? "bg-[#780000] text-white border border-[#5e0000] shadow-xs"
                           : "bg-white dark:bg-slate-800/80 text-slate-700 dark:text-slate-300 border border-slate-300 dark:border-slate-700 hover:border-slate-400 dark:hover:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-750 shadow-2xs"
