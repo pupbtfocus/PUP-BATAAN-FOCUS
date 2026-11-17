@@ -299,11 +299,11 @@ export function SuperAdminComplianceAnalytics({
   }, [categories, total, donutCircumference]);
 
   return (
-    <section className="mb-6">
+    <section>
       <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 sm:p-5 shadow-xs space-y-4 transition-colors">
         {/* Header with casual title & chart toggle */}
-        <div className="flex flex-wrap items-start justify-between gap-3">
-          <div>
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+          <div className="min-w-0">
             <h2 className="text-base sm:text-lg font-extrabold text-slate-900 dark:text-slate-100">
               Faculty Progress Overview
             </h2>
@@ -312,20 +312,20 @@ export function SuperAdminComplianceAnalytics({
             </p>
           </div>
 
-          <div className="flex items-center gap-2 flex-wrap">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full lg:w-auto shrink-0">
             {/* View Mode Toggle: Pie vs Bar */}
-            <div className="inline-flex items-center rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 p-1">
+            <div className="grid grid-cols-2 sm:inline-flex items-center rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 p-1 w-full sm:w-auto">
               <button
                 type="button"
                 onClick={() => setChartView("pie")}
-                className={`inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-bold transition cursor-pointer ${
+                className={`inline-flex items-center justify-center gap-1.5 rounded-lg px-2.5 py-1.5 sm:py-1 text-xs font-bold transition cursor-pointer ${
                   chartView === "pie"
                     ? "bg-[#780000] text-white shadow-xs"
                     : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100"
                 }`}
                 title="View as Pie Chart"
               >
-                <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <svg className="h-3.5 w-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M21.21 15.89A10 10 0 1 1 8 2.83" />
                   <path d="M22 12A10 10 0 0 0 12 2v10z" />
                 </svg>
@@ -334,14 +334,14 @@ export function SuperAdminComplianceAnalytics({
               <button
                 type="button"
                 onClick={() => setChartView("bar")}
-                className={`inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-bold transition cursor-pointer ${
+                className={`inline-flex items-center justify-center gap-1.5 rounded-lg px-2.5 py-1.5 sm:py-1 text-xs font-bold transition cursor-pointer ${
                   chartView === "bar"
                     ? "bg-[#780000] text-white shadow-xs"
                     : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100"
                 }`}
                 title="View as Bar Graph"
               >
-                <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <svg className="h-3.5 w-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <line x1="18" y1="20" x2="18" y2="10" />
                   <line x1="12" y1="20" x2="12" y2="4" />
                   <line x1="6" y1="20" x2="6" y2="14" />
@@ -354,7 +354,7 @@ export function SuperAdminComplianceAnalytics({
               <button
                 type="button"
                 onClick={() => onNavigateSection("verification")}
-                className="inline-flex items-center gap-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 border border-amber-600 px-3 py-1.5 text-xs font-bold transition cursor-pointer shadow-xs active:scale-[0.98]"
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 border border-amber-600 px-3.5 py-2 sm:py-1.5 text-xs font-bold transition cursor-pointer shadow-xs active:scale-[0.98]"
               >
                 <span>Check Submissions</span>
                 <NavArrowRight className="h-3.5 w-3.5" />
@@ -365,10 +365,10 @@ export function SuperAdminComplianceAnalytics({
 
         {/* Visual Analytics: Pie/Donut Chart or Bar Graph */}
         {chartView === "pie" ? (
-          <div className="flex flex-col lg:flex-row items-center gap-6 pt-1">
+          <div className="flex flex-col xl:flex-row items-center gap-5 sm:gap-6 pt-1">
             {/* Left: Donut Chart with overall submission rate in center */}
             <div className="relative flex items-center justify-center shrink-0">
-              <svg className="w-48 h-48 sm:w-56 sm:h-56 -rotate-90 drop-shadow-sm" viewBox="0 0 180 180">
+              <svg className="w-44 h-44 sm:w-52 sm:h-52 -rotate-90 drop-shadow-sm" viewBox="0 0 180 180">
                 <circle
                   cx="90"
                   cy="90"
@@ -476,7 +476,7 @@ export function SuperAdminComplianceAnalytics({
           /* Bar Graph View */
           <div className="space-y-4 pt-1">
             {/* Sub-header with orientation switch */}
-            <div className="flex items-center justify-between pb-1 text-xs">
+            <div className="flex flex-wrap items-center justify-between gap-2 pb-1 text-xs">
               <span className="font-bold text-slate-600 dark:text-slate-400">
                 Where Everyone Stands ({summary.totalActive} Total Faculty)
               </span>
@@ -563,7 +563,7 @@ export function SuperAdminComplianceAnalytics({
                             </div>
 
                             {/* Column Track & Bar */}
-                            <div className="w-10 sm:w-16 h-full flex flex-col justify-end items-center bg-slate-200/50 dark:bg-slate-800/50 rounded-t-xl overflow-hidden p-1">
+                            <div className="w-full max-w-[2.75rem] sm:max-w-[4rem] h-full flex flex-col justify-end items-center bg-slate-200/50 dark:bg-slate-800/50 rounded-t-xl overflow-hidden p-1">
                               <div
                                 className={`w-full rounded-t-lg ${cat.solidBg} transition-all duration-700 ease-out shadow-xs`}
                                 style={{ height: `${heightPct}%` }}
@@ -580,7 +580,7 @@ export function SuperAdminComplianceAnalytics({
                 <div className="grid grid-cols-4 gap-2 sm:gap-6 pl-9 sm:pl-12 pr-2 sm:pr-6 pt-3">
                   {categories.map((cat) => (
                     <div key={cat.id} className="flex flex-col items-center text-center">
-                      <span className="font-extrabold text-[11px] sm:text-xs text-slate-800 dark:text-slate-100 truncate">
+                      <span className="font-extrabold text-[11px] sm:text-xs text-slate-800 dark:text-slate-100 truncate max-w-full">
                         <span className="sm:hidden">{cat.shortLabel}</span>
                         <span className="hidden sm:inline">{cat.label}</span>
                       </span>
@@ -598,7 +598,7 @@ export function SuperAdminComplianceAnalytics({
               /* Sleek Horizontal Bar Graph - Matching Columns View */
               <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-950/40 p-4 sm:p-5 space-y-4">
                 {/* Horizontal scale indicators */}
-                <div className="flex items-center justify-between text-[10px] font-bold text-slate-400 dark:text-slate-500 sm:pl-52 pr-16 border-b border-dashed border-slate-200 dark:border-slate-800 pb-2">
+                <div className="flex items-center justify-between text-[10px] font-bold text-slate-400 dark:text-slate-500 sm:pl-52 pr-12 sm:pr-16 border-b border-dashed border-slate-200 dark:border-slate-800 pb-2">
                   <span>0%</span>
                   <span>25%</span>
                   <span>50%</span>

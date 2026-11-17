@@ -2009,7 +2009,7 @@ export function SuperAdminDashboard({
         <button
           type="button"
           onClick={() => setIsMobileMenuOpen(true)}
-          className="fixed left-2 sm:left-3 top-2.5 z-[55] md:hidden inline-flex items-center justify-center p-1.5 rounded-xl border border-slate-200 bg-slate-100 hover:bg-slate-200 text-slate-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 transition-all focus:outline-none focus:ring-2 focus:ring-amber-500/40 cursor-pointer shadow-2xs"
+          className="fixed left-3 top-2 z-[55] md:hidden inline-flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 bg-slate-100 hover:bg-slate-200 text-slate-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 transition-all focus:outline-none focus:ring-2 focus:ring-amber-500/40 cursor-pointer shadow-2xs"
           aria-label="Open Navigation Menu"
         >
           <AppIcon icon={Menu} size="lg" color="inherit" />
@@ -2034,12 +2034,17 @@ export function SuperAdminDashboard({
             onClick={() => setIsMobileMenuOpen(false)}
           />
           <aside className="relative w-72 max-w-[85%] bg-[#800000] text-amber-50 h-full p-4 border-r-4 border-amber-500 flex flex-col z-10 shadow-2xl overflow-y-auto sidebar-scrollbar transition-colors">
-            <div className="flex items-center justify-between pb-3 border-b border-white/10 mb-2">
+            <div className="flex items-center justify-between pb-3 border-b border-white/10 mb-3">
               <div className="flex items-center gap-2.5 min-w-0 pr-2">
                 <BrandMark size={38} className="shrink-0" />
-                <span className="text-lg font-black tracking-tight text-white leading-tight">
-                  <span className="text-amber-400">PUP</span> FOCUS
-                </span>
+                <div className="flex flex-col min-w-0">
+                  <span className="text-lg font-extrabold tracking-tight text-white leading-tight whitespace-nowrap">
+                    <span className="text-amber-400">PUP</span> FOCUS
+                  </span>
+                  <span className="text-[10px] text-amber-200/80 font-medium tracking-wide truncate">
+                    Bataan Campus
+                  </span>
+                </div>
               </div>
               <button
                 type="button"
@@ -2065,21 +2070,21 @@ export function SuperAdminDashboard({
         </div>
       )}
 
-      <div className="md:ml-72 flex min-h-full w-full md:w-[calc(100%-18rem)] flex-col">
+      <div className="md:ml-72 flex min-h-full min-w-0 w-full md:w-[calc(100%-18rem)] flex-col">
         <div className="flex min-h-0 flex-1 flex-col overflow-hidden border-l-0 bg-white dark:bg-slate-900 shadow-sm transition-colors duration-200">
-          <div className="min-h-0 flex-1 overflow-y-auto p-3 sm:p-6 bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 transition-colors duration-200">
+          <div className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden p-3.5 sm:p-6 bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 transition-colors duration-200">
             <DatabaseCapacityAlert
               onManageStorage={() => handleSetActiveSection("backups")}
             />
             {activeSection === "dashboard" ? (
-              <article className="space-y-6">
+              <article className="space-y-4 sm:space-y-6">
                 {/* Solid Amber Card Header */}
-                <div className="relative overflow-hidden rounded-2xl border-2 border-amber-500 bg-amber-400 p-5 sm:p-6 shadow-md shadow-amber-500/10 flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
-                  <div>
-                    <h1 className="text-2xl sm:text-3xl font-black text-slate-950 tracking-tight">
+                <div className="relative overflow-hidden rounded-2xl border-2 border-amber-500 bg-amber-400 p-4 sm:p-6 shadow-md shadow-amber-500/10 flex flex-col sm:flex-row sm:items-center justify-between gap-3.5 sm:gap-4">
+                  <div className="min-w-0">
+                    <h1 className="text-xl sm:text-3xl font-black text-slate-950 tracking-tight">
                       Dashboard
                     </h1>
-                    <p className="mt-1.5 text-sm sm:text-base text-amber-950/90 font-medium leading-relaxed">
+                    <p className="mt-1 sm:mt-1.5 text-xs sm:text-base text-amber-950/90 font-medium leading-relaxed">
                       Here&apos;s a quick look at your campus: manage staff and faculty accounts, track submissions, and keep everything running smoothly.
                     </p>
                   </div>
@@ -2097,33 +2102,33 @@ export function SuperAdminDashboard({
                 </div>
 
                 {/* TIER 2: Stat Grid */}
-                <section className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                <section className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
                   {/* Card 1: Active Admin & Staff Accounts */}
-                  <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-xs space-y-3 transition-colors">
-                    <div className="flex items-center justify-between">
-                      <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">
-                        Admin &amp; Staff
-                      </span>
-                      <Shield className="h-5 w-5 text-slate-400" strokeWidth={2} />
-                    </div>
-
+                  <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 sm:p-5 shadow-xs h-full flex flex-col justify-between space-y-3 transition-colors">
                     <div className="space-y-2.5">
-                      <div className="flex items-baseline justify-between gap-2">
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+                          Admin &amp; Staff
+                        </span>
+                        <Shield className="h-5 w-5 text-slate-400 shrink-0" strokeWidth={2} />
+                      </div>
+
+                      <div className="flex items-center justify-between gap-2">
                         <h3 className="text-xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">
                           {adminStats.active} Active
                         </h3>
-                        <span className="inline-flex items-center rounded-full bg-[#0b5336] text-white border border-[#08412a] px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider">
+                        <span className="inline-flex items-center rounded-full bg-[#0b5336] text-white border border-[#08412a] px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider whitespace-nowrap shrink-0">
                           {adminStats.activePct}% Active
                         </span>
                       </div>
 
                       {/* Staff accounts row */}
                       <div className="space-y-1">
-                        <div className="flex items-center justify-between text-[11px]">
-                          <span className="text-slate-600 dark:text-slate-400">
+                        <div className="flex items-center justify-between gap-2 text-[11px]">
+                          <span className="text-slate-600 dark:text-slate-400 truncate min-w-0">
                             Staff Members ({adminStats.staff} staff)
                           </span>
-                          <span className="font-semibold text-slate-700 dark:text-slate-300">
+                          <span className="font-semibold text-slate-700 dark:text-slate-300 whitespace-nowrap shrink-0">
                             {adminStats.staff} / {adminStats.total} ({adminStats.total > 0 ? Math.round((adminStats.staff / adminStats.total) * 100) : 0}%)
                           </span>
                         </div>
@@ -2139,11 +2144,11 @@ export function SuperAdminDashboard({
 
                       {/* Admin accounts row */}
                       <div className="space-y-1">
-                        <div className="flex items-center justify-between text-[11px]">
-                          <span className="text-slate-600 dark:text-slate-400">
+                        <div className="flex items-center justify-between gap-2 text-[11px]">
+                          <span className="text-slate-600 dark:text-slate-400 truncate min-w-0">
                             Admins ({adminStats.superAdmins} admin)
                           </span>
-                          <span className="font-semibold text-slate-700 dark:text-slate-300">
+                          <span className="font-semibold text-slate-700 dark:text-slate-300 whitespace-nowrap shrink-0">
                             {adminStats.superAdmins} / {adminStats.total} ({adminStats.total > 0 ? Math.round((adminStats.superAdmins / adminStats.total) * 100) : 0}%)
                           </span>
                         </div>
@@ -2156,38 +2161,38 @@ export function SuperAdminDashboard({
                           />
                         </div>
                       </div>
+                    </div>
 
-                      <div className="pt-1.5 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between gap-2">
-                        <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate">
-                          {adminStats.superAdmins} admin + {adminStats.staff} staff accounts
-                        </p>
-                        <button
-                          type="button"
-                          onClick={() => handleSetActiveSection("accounts")}
-                          className="inline-flex items-center gap-1 text-xs font-bold text-[#800000] dark:text-amber-400 hover:underline cursor-pointer shrink-0"
-                        >
-                          <span>View staff</span>
-                          <NavArrowRight className="h-3.5 w-3.5" />
-                        </button>
-                      </div>
+                    <div className="pt-2 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between gap-2 mt-auto">
+                      <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate min-w-0">
+                        {adminStats.superAdmins} admin + {adminStats.staff} staff accounts
+                      </p>
+                      <button
+                        type="button"
+                        onClick={() => handleSetActiveSection("accounts")}
+                        className="inline-flex items-center gap-1 text-xs font-bold text-[#800000] dark:text-amber-400 hover:underline cursor-pointer shrink-0"
+                      >
+                        <span>View staff</span>
+                        <NavArrowRight className="h-3.5 w-3.5" />
+                      </button>
                     </div>
                   </div>
 
                   {/* Card 2: Faculty Members */}
-                  <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-xs flex flex-col justify-between space-y-3 transition-colors">
+                  <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 sm:p-5 shadow-xs h-full flex flex-col justify-between space-y-3 transition-colors">
                     <div className="space-y-2.5">
-                      <div className="flex items-center justify-between">
+                      <div className="flex items-center justify-between gap-2">
                         <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">
                           Faculty Members
                         </span>
-                        <Group className="h-5 w-5 text-slate-400" strokeWidth={2} />
+                        <Group className="h-5 w-5 text-slate-400 shrink-0" strokeWidth={2} />
                       </div>
 
-                      <div className="flex items-baseline justify-between gap-2">
+                      <div className="flex items-center justify-between gap-2">
                         <h3 className="text-xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">
                           {facultyStats.active} Active
                         </h3>
-                        <span className="inline-flex items-center rounded-full bg-[#0b5336] text-white border border-[#08412a] px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider">
+                        <span className="inline-flex items-center rounded-full bg-[#0b5336] text-white border border-[#08412a] px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider whitespace-nowrap shrink-0">
                           {facultyStats.activePct}% Active
                         </span>
                       </div>
@@ -2202,8 +2207,8 @@ export function SuperAdminDashboard({
                       </div>
                     </div>
 
-                    <div className="pt-1.5 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between gap-2 mt-auto">
-                      <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate">
+                    <div className="pt-2 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between gap-2 mt-auto">
+                      <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate min-w-0">
                         {facultyStats.completed} finished • {facultyStats.inProgress} in progress
                       </p>
                       <button

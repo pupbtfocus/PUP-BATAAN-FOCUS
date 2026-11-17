@@ -149,7 +149,7 @@ export function DatabaseCapacityAlert({
   if (showCard) {
     return (
       <div
-        className={`rounded-2xl p-5 shadow-xs space-y-3 transition-colors ${
+        className={`rounded-2xl p-4 sm:p-5 shadow-xs h-full flex flex-col justify-between space-y-3 md:col-span-2 xl:col-span-1 transition-colors ${
           isCritical
             ? "border-2 border-red-500 bg-red-50/70 dark:bg-red-950/30"
             : isWarning
@@ -157,29 +157,29 @@ export function DatabaseCapacityAlert({
             : "border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900"
         }`}
       >
-        <div className="flex items-center justify-between">
-          <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">
-            Storage Space
-          </span>
-          <HardDrive
-            className={`h-5 w-5 ${
-              isCritical
-                ? "text-red-600 dark:text-red-400"
-                : isWarning
-                ? "text-amber-600 dark:text-amber-400"
-                : "text-slate-400"
-            }`}
-            strokeWidth={2}
-          />
-        </div>
-
         <div className="space-y-2.5">
-          <div className="flex items-baseline justify-between gap-2">
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+              Storage Space
+            </span>
+            <HardDrive
+              className={`h-5 w-5 shrink-0 ${
+                isCritical
+                  ? "text-red-600 dark:text-red-400"
+                  : isWarning
+                  ? "text-amber-600 dark:text-amber-400"
+                  : "text-slate-400"
+              }`}
+              strokeWidth={2}
+            />
+          </div>
+
+          <div className="flex items-center justify-between gap-2">
             <h3 className="text-xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">
               {dbStatus.usagePercent}% Used
             </h3>
             <span
-              className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider border ${
+              className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider border whitespace-nowrap shrink-0 ${
                 isCritical
                   ? "bg-[#780000] text-white border-[#5e0000]"
                   : isWarning
@@ -193,11 +193,11 @@ export function DatabaseCapacityAlert({
 
           {/* Database tables breakdown */}
           <div className="space-y-1">
-            <div className="flex items-center justify-between text-[11px]">
-              <span className="text-slate-600 dark:text-slate-400">
+            <div className="flex items-center justify-between gap-2 text-[11px]">
+              <span className="text-slate-600 dark:text-slate-400 truncate min-w-0">
                 Database ({tableCount} tables)
               </span>
-              <span className="font-semibold text-slate-700 dark:text-slate-300">
+              <span className="font-semibold text-slate-700 dark:text-slate-300 whitespace-nowrap shrink-0">
                 {formatCapacityMb(dbMb)} / {formatCapacityMb(maxDbMb)} ({dbUsagePercent}%)
               </span>
             </div>
@@ -217,11 +217,11 @@ export function DatabaseCapacityAlert({
 
           {/* File Storage breakdown */}
           <div className="space-y-1">
-            <div className="flex items-center justify-between text-[11px]">
-              <span className="text-slate-600 dark:text-slate-400">
+            <div className="flex items-center justify-between gap-2 text-[11px]">
+              <span className="text-slate-600 dark:text-slate-400 truncate min-w-0">
                 File Storage ({bucketCount} folders)
               </span>
-              <span className="font-semibold text-slate-700 dark:text-slate-300">
+              <span className="font-semibold text-slate-700 dark:text-slate-300 whitespace-nowrap shrink-0">
                 {formatCapacityMb(bucketMb)} / {formatCapacityMb(maxBucketMb)} ({bucketUsagePercent}%)
               </span>
             </div>
@@ -238,22 +238,22 @@ export function DatabaseCapacityAlert({
               />
             </div>
           </div>
+        </div>
 
-          <div className="pt-1.5 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between gap-2">
-            <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate">
-              {formatCapacityMb(maxDbMb)} database + {formatCapacityMb(maxBucketMb)} files (max {maxUploadFileMb} MB per file)
-            </p>
-            {onManageStorage && (
-              <button
-                type="button"
-                onClick={onManageStorage}
-                className="inline-flex items-center gap-1 text-xs font-bold text-[#800000] dark:text-amber-400 hover:underline cursor-pointer shrink-0"
-              >
-                <span>Manage</span>
-                <NavArrowRight className="h-3.5 w-3.5" />
-              </button>
-            )}
-          </div>
+        <div className="pt-2 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between gap-2 mt-auto">
+          <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate min-w-0">
+            {formatCapacityMb(maxDbMb)} database + {formatCapacityMb(maxBucketMb)} files (max {maxUploadFileMb} MB per file)
+          </p>
+          {onManageStorage && (
+            <button
+              type="button"
+              onClick={onManageStorage}
+              className="inline-flex items-center gap-1 text-xs font-bold text-[#800000] dark:text-amber-400 hover:underline cursor-pointer shrink-0"
+            >
+              <span>Manage</span>
+              <NavArrowRight className="h-3.5 w-3.5" />
+            </button>
+          )}
         </div>
       </div>
     );
