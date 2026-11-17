@@ -6,6 +6,12 @@ import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { getServiceRoleClient } from "@/lib/supabase/service-role";
 import { logTransactionEvent } from "@/features/transaction-logs/services/transaction-log.service";
 import { filterCondition, orFilter } from "@/lib/supabase/filters";
+import {
+  formatSectionCodeInput,
+  formatSubjectTitleInput,
+  isValidSectionCode,
+  normalizeSubjectCodeInput,
+} from "@/lib/faculty-profile";
 
 export async function GET(request: NextRequest) {
   try {
@@ -178,13 +184,20 @@ export async function PATCH(request: NextRequest) {
 
     const updatePayload: Record<string, any> = {};
     if (typeof subject_code === "string" && subject_code.trim()) {
-      updatePayload.subject_code = subject_code.trim();
+      updatePayload.subject_code = normalizeSubjectCodeInput(subject_code).trim();
     }
     if (typeof description === "string" && description.trim()) {
-      updatePayload.description = description.trim();
+      updatePayload.description = formatSubjectTitleInput(description).trim();
     }
     if (typeof section_code === "string" && section_code.trim()) {
-      updatePayload.section_code = section_code.trim();
+      const normalizedSection = formatSectionCodeInput(section_code).trim();
+      if (!isValidSectionCode(normalizedSection)) {
+        return NextResponse.json(
+          { error: "Section Code must include program letters and 2 numbers (e.g. BSIT 4-1)." },
+          { status: 400 }
+        );
+      }
+      updatePayload.section_code = normalizedSection;
     }
     if (units !== undefined) {
       const parsedUnits = Number(units);

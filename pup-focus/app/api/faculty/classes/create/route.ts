@@ -3,6 +3,12 @@ import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { getServiceRoleClient } from "@/lib/supabase/service-role";
 import { logTransactionEvent } from "@/features/transaction-logs/services/transaction-log.service";
 import { filterCondition, orFilter } from "@/lib/supabase/filters";
+import {
+  formatSectionCodeInput,
+  formatSubjectTitleInput,
+  isValidSectionCode,
+  normalizeSubjectCodeInput,
+} from "@/lib/faculty-profile";
 
 export async function POST(request: NextRequest) {
   try {
@@ -21,24 +27,44 @@ export async function POST(request: NextRequest) {
     const body = await request.json().catch(() => ({}));
     const { subject_code, description, units, section_code, academic_term_id, academic_year, semester } = body;
 
+    const normalizedSubjectCode =
+      typeof subject_code === "string"
+        ? normalizeSubjectCodeInput(subject_code).trim()
+        : "";
+    const normalizedDescription =
+      typeof description === "string"
+        ? formatSubjectTitleInput(description).trim()
+        : "";
+    const normalizedSectionCode =
+      typeof section_code === "string"
+        ? formatSectionCodeInput(section_code).trim()
+        : "";
+
     // Validation
-    if (!subject_code || typeof subject_code !== "string" || !subject_code.trim()) {
+    if (!normalizedSubjectCode) {
       return NextResponse.json(
         { error: "Subject Code is required (e.g. COMP 023)." },
         { status: 400 }
       );
     }
 
-    if (!description || typeof description !== "string" || !description.trim()) {
+    if (!normalizedDescription) {
       return NextResponse.json(
         { error: "Description is required (e.g. Social and Professional Issues in Computing)." },
         { status: 400 }
       );
     }
 
-    if (!section_code || typeof section_code !== "string" || !section_code.trim()) {
+    if (!normalizedSectionCode) {
       return NextResponse.json(
         { error: "Section Code is required (e.g. BSIT 4-1)." },
+        { status: 400 }
+      );
+    }
+
+    if (!isValidSectionCode(normalizedSectionCode)) {
+      return NextResponse.json(
+        { error: "Section Code must include program letters and 2 numbers (e.g. BSIT 4-1)." },
         { status: 400 }
       );
     }
@@ -92,10 +118,10 @@ export async function POST(request: NextRequest) {
     // 3. Insert class record into faculty_classes
     const insertPayload: Record<string, any> = {
       faculty_profile_id: profileId,
-      subject_code: subject_code.trim(),
-      description: description.trim(),
+      subject_code: normalizedSubjectCode,
+      description: normalizedDescription,
       units: parsedUnits,
-      section_code: section_code.trim(),
+      section_code: normalizedSectionCode,
     };
 
     if (termId) insertPayload.academic_term_id = termId;
@@ -121,10 +147,10 @@ export async function POST(request: NextRequest) {
       if (isRecoverableError) {
         const fallbackPayload = {
           faculty_profile_id: profileId,
-          subject_code: subject_code.trim(),
-          description: description.trim(),
+          subject_code: normalizedSubjectCode,
+          description: normalizedDescription,
           units: parsedUnits,
-          section_code: section_code.trim(),
+          section_code: normalizedSectionCode,
         };
         const { data: fallbackData, error: fallbackError } = await supabaseAdmin
           .from("faculty_classes")

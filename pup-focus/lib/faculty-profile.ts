@@ -128,3 +128,95 @@ export function extractFirstName(fullName?: string | null, fallback: string = "F
   return parsed.firstName || fullName.trim().split(/\s+/)[0] || fallback;
 }
 
+export function normalizeSubjectCodeInput(raw: string): string {
+  return raw.toUpperCase();
+}
+
+export function formatSubjectTitleInput(raw: string): string {
+  return raw.replace(
+    /(^|\s)([a-z])/g,
+    (_, sep: string, ch: string) => `${sep}${ch.toUpperCase()}`,
+  );
+}
+
+export function formatSectionCodeInput(raw: string): string {
+  const firstDigitIdx = raw.search(/\d/);
+  if (firstDigitIdx === -1) {
+    return raw
+      .toUpperCase()
+      .replace(/[^A-Z\s-]/g, "")
+      .replace(/\s+/g, " ")
+      .replace(/^\s+/, "");
+  }
+
+  const programPart = raw
+    .slice(0, firstDigitIdx)
+    .toUpperCase()
+    .replace(/[^A-Z\s-]/g, "")
+    .replace(/\s+/g, " ")
+    .replace(/[\s-]+$/, "")
+    .trim();
+  const rest = raw.slice(firstDigitIdx);
+  const digits = rest.replace(/\D/g, "").slice(0, 2);
+
+  if (!digits) {
+    return programPart;
+  }
+
+  if (digits.length === 1) {
+    const suffix = rest.trimEnd().endsWith("-") ? "-" : "";
+    return programPart ? `${programPart} ${digits}${suffix}` : `${digits}${suffix}`;
+  }
+
+  return programPart
+    ? `${programPart} ${digits[0]}-${digits[1]}`
+    : `${digits[0]}-${digits[1]}`;
+}
+
+export function isValidSectionCode(value: string): boolean {
+  return /^[A-Z]+(?:[ -][A-Z]+)*\s+\d-\d$/.test(value.trim());
+}
+
+export function formatYearSectionInput(raw: string): string {
+  const digits = raw.replace(/\D/g, "").slice(0, 2);
+  if (!digits) return "";
+  if (digits.length === 1) {
+    return raw.trimEnd().endsWith("-") ? `${digits}-` : digits;
+  }
+  return `${digits[0]}-${digits[1]}`;
+}
+
+export function isValidYearSection(value: string): boolean {
+  return /^\d-\d$/.test(value.trim());
+}
+
+export function combineSectionCode(program: string, yearSection: string): string {
+  const p = program.toUpperCase().replace(/[^A-Z0-9\s-]/g, "").trim();
+  const ys = formatYearSectionInput(yearSection).trim();
+  if (!p) return ys;
+  if (!ys) return p;
+  return `${p} ${ys}`;
+}
+
+export function splitSectionCode(sectionCode: string): {
+  program: string;
+  yearSection: string;
+} {
+  const formatted = formatSectionCodeInput(sectionCode).trim();
+  const match = formatted.match(/^([A-Z]+(?:[ -][A-Z]+)*)\s+(\d-\d|\d-?)$/);
+  if (match) {
+    return {
+      program: match[1].trim(),
+      yearSection: formatYearSectionInput(match[2]),
+    };
+  }
+  const digitIdx = formatted.search(/\d/);
+  if (digitIdx === -1) {
+    return { program: formatted, yearSection: "" };
+  }
+  return {
+    program: formatted.slice(0, digitIdx).trim(),
+    yearSection: formatYearSectionInput(formatted.slice(digitIdx)),
+  };
+}
+

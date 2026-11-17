@@ -17,7 +17,17 @@ import { SubmissionWindowCountdown } from "@/features/submissions/components/sub
 import { SubmissionLockBanner } from "@/features/submissions/components/submission-lock-banner";
 import { FacultyExtensionRequestModal } from "@/features/submissions/components/faculty-extension-request-modal";
 import { TermCompletionResetModal } from "@/features/submissions/components/term-completion-reset-modal";
-import { extractFirstName, buildFacultyInitials } from "@/lib/faculty-profile";
+import {
+  extractFirstName,
+  buildFacultyInitials,
+  normalizeSubjectCodeInput,
+  formatSubjectTitleInput,
+  formatYearSectionInput,
+  combineSectionCode,
+  splitSectionCode,
+  isValidYearSection,
+  isValidSectionCode,
+} from "@/lib/faculty-profile";
 import { createClient } from "@/lib/supabase/client";
 import { emitRealtimeSync, useRealtimeSync } from "@/lib/realtime";
 import {
@@ -1002,13 +1012,49 @@ function FacultySubmissionPanelContent({
   const facultyClassesRef = useRef<FacultyClass[]>([]);
   facultyClassesRef.current = facultyClasses;
   const classStatusesCacheRef = useRef<Record<string, RequirementStatus[]>>({});
+  const [programCodeOptions, setProgramCodeOptions] = useState<string[]>(() => {
+    const defaults = [
+      "BEED",
+      "BSA",
+      "BSBAHRM",
+      "BSENT",
+      "BSIE",
+      "BSIT",
+      "BSMA",
+      "DIT",
+      "DOMT-LOM",
+    ];
+    const initialCode = initialData?.program?.code?.trim().toUpperCase();
+    if (initialCode && !defaults.includes(initialCode)) {
+      defaults.push(initialCode);
+    }
+    return defaults.sort((a, b) => a.localeCompare(b));
+  });
+  const [defaultProgramCode, setDefaultProgramCode] = useState<string>(() => {
+    const code = initialData?.program?.code?.trim().toUpperCase();
+    if (code) return code;
+    const raw = initialData?.department || "";
+    if (raw.includes("—")) {
+      return raw.split("—")[0]?.trim().toUpperCase() || "";
+    }
+    return "";
+  });
   const [isAddClassModalOpen, setIsAddClassModalOpen] = useState(false);
   const [isSubmittingClass, setIsSubmittingClass] = useState(false);
-  const [classForm, setClassForm] = useState({
-    subject_code: "",
-    description: "",
-    units: 3.0,
-    section_code: "",
+  const [classForm, setClassForm] = useState(() => {
+    const code =
+      initialData?.program?.code?.trim().toUpperCase() ||
+      (initialData?.department?.includes("—")
+        ? initialData.department.split("—")[0]?.trim().toUpperCase() || ""
+        : "");
+    return {
+      subject_code: "",
+      description: "",
+      units: 3.0,
+      program: code,
+      year_section: "",
+      section_code: code,
+    };
   });
   const [classFormError, setClassFormError] = useState<string | null>(null);
   const [isConfirmCreateClassModalOpen, setIsConfirmCreateClassModalOpen] =
@@ -1038,6 +1084,8 @@ function FacultySubmissionPanelContent({
     subject_code: "",
     description: "",
     units: 3.0,
+    program: "",
+    year_section: "",
     section_code: "",
   });
   const [editClassError, setEditClassError] = useState<string | null>(null);
@@ -2110,10 +2158,43 @@ function FacultySubmissionPanelContent({
   );
 
   useEffect(() => {
-    if (isMounted) {
-      void fetchFacultyClasses();
-    }
+    if (!isMounted) return;
+    void fetchFacultyClasses();
+    let active = true;
+    fetch(`/api/programs?_t=${Date.now()}`, { cache: "no-store" })
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (!active || !Array.isArray(data?.programs)) return;
+        const codes = (data.programs as Array<{ code?: string }>)
+          .map((p) => (p.code || "").trim().toUpperCase())
+          .filter(Boolean);
+        if (codes.length > 0) {
+          setProgramCodeOptions((prev) =>
+            Array.from(new Set([...prev, ...codes])).sort((a, b) =>
+              a.localeCompare(b),
+            ),
+          );
+        }
+      })
+      .catch(() => null);
+    return () => {
+      active = false;
+    };
   }, [isMounted, fetchFacultyClasses]);
+
+  const addModalProgramOptions = useMemo(() => {
+    const p = classForm.program.trim().toUpperCase();
+    return p && !programCodeOptions.includes(p)
+      ? [...programCodeOptions, p].sort((a, b) => a.localeCompare(b))
+      : programCodeOptions;
+  }, [programCodeOptions, classForm.program]);
+
+  const editModalProgramOptions = useMemo(() => {
+    const p = editClassForm.program.trim().toUpperCase();
+    return p && !programCodeOptions.includes(p)
+      ? [...programCodeOptions, p].sort((a, b) => a.localeCompare(b))
+      : programCodeOptions;
+  }, [programCodeOptions, editClassForm.program]);
 
   useEffect(() => {
     if (!isMounted || facultyClasses.length === 0 || !activeAY || !activeSem) return;
@@ -2183,18 +2264,53 @@ function FacultySubmissionPanelContent({
       );
       return;
     }
-    if (!classForm.subject_code.trim()) {
+    const normalizedSubject = normalizeSubjectCodeInput(
+      classForm.subject_code,
+    ).trim();
+    const normalizedDescription = formatSubjectTitleInput(
+      classForm.description,
+    ).trim();
+    const normalizedProgram = classForm.program.trim().toUpperCase();
+    const normalizedYearSection = formatYearSectionInput(
+      classForm.year_section,
+    ).trim();
+    const normalizedSection = combineSectionCode(
+      normalizedProgram,
+      normalizedYearSection,
+    );
+
+    if (!normalizedSubject) {
       setClassFormError("Subject Code is required.");
       return;
     }
-    if (!classForm.description.trim()) {
+    if (!normalizedDescription) {
       setClassFormError("Description is required.");
       return;
     }
-    if (!classForm.section_code.trim()) {
-      setClassFormError("Section Code is required.");
+    if (!normalizedProgram) {
+      setClassFormError("Program is required.");
       return;
     }
+    if (!normalizedYearSection || !isValidYearSection(normalizedYearSection)) {
+      setClassFormError(
+        "Year & Section must be 2 numbers with a hyphen (e.g. 4-1).",
+      );
+      return;
+    }
+    if (!isValidSectionCode(normalizedSection)) {
+      setClassFormError(
+        "Program, Year & Section must follow the format BSIT 4-1.",
+      );
+      return;
+    }
+    setClassForm((prev) => ({
+      ...prev,
+      subject_code: normalizedSubject,
+      description: normalizedDescription,
+      program: normalizedProgram,
+      year_section: normalizedYearSection,
+      section_code: normalizedSection,
+    }));
     setClassFormError(null);
     setIsSubmittingClass(false);
     setIsConfirmCreateClassModalOpen(true);
@@ -2211,14 +2327,20 @@ function FacultySubmissionPanelContent({
     setIsSubmittingClass(true);
     setClassFormError(null);
     try {
+      const normalizedSection = combineSectionCode(
+        classForm.program,
+        classForm.year_section,
+      );
       const res = await fetch("/api/faculty/classes/create", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          subject_code: classForm.subject_code.trim(),
-          description: classForm.description.trim(),
+          subject_code: normalizeSubjectCodeInput(
+            classForm.subject_code,
+          ).trim(),
+          description: formatSubjectTitleInput(classForm.description).trim(),
           units: Number(classForm.units) || 3.0,
-          section_code: classForm.section_code.trim(),
+          section_code: normalizedSection,
           academic_year: activeAY,
           semester: activeSem,
         }),
@@ -2264,7 +2386,9 @@ function FacultySubmissionPanelContent({
         subject_code: "",
         description: "",
         units: 3.0,
-        section_code: "",
+        program: defaultProgramCode,
+        year_section: "",
+        section_code: defaultProgramCode,
       });
       setSubmissionMessage(
         `Class ${newClass.subject_code} (${newClass.section_code}) created successfully.`,
@@ -2288,11 +2412,16 @@ function FacultySubmissionPanelContent({
   const handleOpenEditClass = (cls: FacultyClass, e?: React.MouseEvent) => {
     if (e) e.stopPropagation();
     setClassToEdit(cls);
+    const parsedSection = splitSectionCode(cls.section_code || "");
+    const resolvedProgram = parsedSection.program || defaultProgramCode;
+    const resolvedYearSection = parsedSection.yearSection;
     setEditClassForm({
       subject_code: cls.subject_code,
       description: cls.description,
       units: cls.units || 3.0,
-      section_code: cls.section_code,
+      program: resolvedProgram,
+      year_section: resolvedYearSection,
+      section_code: combineSectionCode(resolvedProgram, resolvedYearSection),
     });
     setEditClassError(null);
     setIsEditClassModalOpen(true);
@@ -2301,16 +2430,43 @@ function FacultySubmissionPanelContent({
   const handleEditClassSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!classToEdit) return;
-    if (!editClassForm.subject_code.trim()) {
+    const normalizedSubject = normalizeSubjectCodeInput(
+      editClassForm.subject_code,
+    ).trim();
+    const normalizedDescription = formatSubjectTitleInput(
+      editClassForm.description,
+    ).trim();
+    const normalizedProgram = editClassForm.program.trim().toUpperCase();
+    const normalizedYearSection = formatYearSectionInput(
+      editClassForm.year_section,
+    ).trim();
+    const normalizedSection = combineSectionCode(
+      normalizedProgram,
+      normalizedYearSection,
+    );
+
+    if (!normalizedSubject) {
       setEditClassError("Subject Code is required.");
       return;
     }
-    if (!editClassForm.description.trim()) {
+    if (!normalizedDescription) {
       setEditClassError("Description is required.");
       return;
     }
-    if (!editClassForm.section_code.trim()) {
-      setEditClassError("Section Code is required.");
+    if (!normalizedProgram) {
+      setEditClassError("Program is required.");
+      return;
+    }
+    if (!normalizedYearSection || !isValidYearSection(normalizedYearSection)) {
+      setEditClassError(
+        "Year & Section must be 2 numbers with a hyphen (e.g. 4-1).",
+      );
+      return;
+    }
+    if (!isValidSectionCode(normalizedSection)) {
+      setEditClassError(
+        "Program, Year & Section must follow the format BSIT 4-1.",
+      );
       return;
     }
     setIsUpdatingClass(true);
@@ -2321,10 +2477,10 @@ function FacultySubmissionPanelContent({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           id: classToEdit.id,
-          subject_code: editClassForm.subject_code.trim(),
-          description: editClassForm.description.trim(),
+          subject_code: normalizedSubject,
+          description: normalizedDescription,
           units: Number(editClassForm.units) || 3.0,
-          section_code: editClassForm.section_code.trim(),
+          section_code: normalizedSection,
         }),
       });
 
@@ -2345,7 +2501,7 @@ function FacultySubmissionPanelContent({
       setIsEditClassModalOpen(false);
       setClassToEdit(null);
       setSubmissionMessage(
-        `Class ${editClassForm.subject_code.trim()} updated successfully.`,
+        `Class ${normalizedSubject} updated successfully.`,
       );
     } catch (err) {
       setEditClassError(
@@ -5751,7 +5907,7 @@ function FacultySubmissionPanelContent({
                                               onClick={(e) =>
                                                 handleOpenViewClass(cls, e)
                                               }
-                                              className="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] font-bold text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 transition cursor-pointer shadow-2xs active:scale-95"
+                                              className="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] font-bold text-white bg-[#0b5336] hover:bg-[#08412a] border border-[#08412a] transition cursor-pointer shadow-2xs active:scale-95"
                                               title="View subject details"
                                             >
                                               <AppIcon
@@ -5767,7 +5923,7 @@ function FacultySubmissionPanelContent({
                                               onClick={(e) =>
                                                 handleOpenEditClass(cls, e)
                                               }
-                                              className="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] font-bold text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 transition cursor-pointer shadow-2xs active:scale-95"
+                                              className="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] font-bold text-slate-950 bg-amber-500 hover:bg-amber-400 border border-amber-600 transition cursor-pointer shadow-2xs active:scale-95"
                                               title="Edit class load"
                                             >
                                               <AppIcon
@@ -5799,7 +5955,7 @@ function FacultySubmissionPanelContent({
                                               className={`inline-flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] font-bold transition cursor-pointer shadow-2xs active:scale-95 border ${
                                                 isArchived
                                                   ? "bg-amber-500 hover:bg-amber-400 text-slate-950 border-amber-600/50 shadow-xs"
-                                                  : "bg-slate-100 hover:bg-slate-200 text-slate-700 border-slate-200 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700 dark:border-slate-700"
+                                                  : "bg-slate-800 hover:bg-slate-700 text-white border-slate-900 dark:bg-slate-700 dark:hover:bg-slate-600 dark:border-slate-600"
                                               }`}
                                               title={
                                                 isArchived
@@ -6050,7 +6206,7 @@ function FacultySubmissionPanelContent({
                                 onClick={(e) =>
                                   handleOpenViewClass(selectedClass, e)
                                 }
-                                className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-xs font-extrabold text-slate-700 dark:text-slate-200 transition cursor-pointer shadow-2xs active:scale-95"
+                                className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-[#08412a] bg-[#0b5336] hover:bg-[#08412a] text-xs font-extrabold text-white transition cursor-pointer shadow-2xs active:scale-95"
                                 title="View subject details"
                               >
                                 <AppIcon icon={Eye} size="xs" color="inherit" />
@@ -6086,7 +6242,7 @@ function FacultySubmissionPanelContent({
                                 className={`inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg border text-xs font-extrabold transition cursor-pointer shadow-2xs active:scale-95 ${
                                   selectedClass.is_archived
                                     ? "bg-amber-500 hover:bg-amber-400 text-amber-950 border-amber-600"
-                                    : "border-slate-200 bg-slate-100 hover:bg-slate-200 text-slate-700"
+                                    : "border-[#5e0000] bg-[#780000] hover:bg-[#5e0000] text-white"
                                 }`}
                                 title={
                                   selectedClass.is_archived
@@ -6137,7 +6293,7 @@ function FacultySubmissionPanelContent({
                                   onClick={(e) =>
                                     handleOpenViewClass(selectedClass, e)
                                   }
-                                  className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-[11px] font-extrabold text-slate-700 dark:text-slate-200 transition cursor-pointer shadow-2xs active:scale-95"
+                                  className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg border border-[#08412a] bg-[#0b5336] hover:bg-[#08412a] text-[11px] font-extrabold text-white transition cursor-pointer shadow-2xs active:scale-95"
                                   title="View subject details"
                                 >
                                   <AppIcon
@@ -6180,7 +6336,7 @@ function FacultySubmissionPanelContent({
                                   className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg border text-[11px] font-extrabold transition cursor-pointer shadow-2xs active:scale-95 ${
                                     selectedClass.is_archived
                                       ? "bg-amber-500 hover:bg-amber-400 text-amber-950 border-amber-600"
-                                      : "border-slate-200 bg-slate-100 hover:bg-slate-200 text-slate-700"
+                                      : "border-[#5e0000] bg-[#780000] hover:bg-[#5e0000] text-white"
                                   }`}
                                   title={
                                     selectedClass.is_archived
@@ -8518,11 +8674,14 @@ function FacultySubmissionPanelContent({
                         onChange={(e) =>
                           setClassForm((prev) => ({
                             ...prev,
-                            subject_code: e.target.value,
+                            subject_code: normalizeSubjectCodeInput(
+                              e.target.value,
+                            ),
                           }))
                         }
                         placeholder="Enter subject code"
-                        className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-3.5 py-2 text-xs sm:text-sm text-slate-900 dark:text-slate-100 outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 transition"
+                        autoCapitalize="characters"
+                        className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-3.5 py-2 text-xs sm:text-sm text-slate-900 dark:text-slate-100 uppercase outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 transition"
                       />
                     </div>
 
@@ -8538,32 +8697,73 @@ function FacultySubmissionPanelContent({
                         onChange={(e) =>
                           setClassForm((prev) => ({
                             ...prev,
-                            description: e.target.value,
+                            description: formatSubjectTitleInput(
+                              e.target.value,
+                            ),
                           }))
                         }
                         placeholder="Enter description / subject title"
+                        autoCapitalize="words"
                         className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-3.5 py-2 text-xs sm:text-sm text-slate-900 dark:text-slate-100 outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 transition"
                       />
                     </div>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      <div>
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                      <div className="sm:col-span-2">
                         <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
-                          Section Code <span className="text-rose-500">*</span>
+                          Program, Year &amp; Section <span className="text-rose-500">*</span>
                         </label>
-                        <input
-                          type="text"
-                          required
-                          value={classForm.section_code}
-                          onChange={(e) =>
-                            setClassForm((prev) => ({
-                              ...prev,
-                              section_code: e.target.value,
-                            }))
-                          }
-                          placeholder="e.g. BSIT 4-1"
-                          className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-3.5 py-2 text-xs sm:text-sm text-slate-900 dark:text-slate-100 outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 transition font-mono"
-                        />
+                        <div className="grid grid-cols-[minmax(0,1fr)_6.5rem] gap-2">
+                          <select
+                            required
+                            value={classForm.program}
+                            onChange={(e) => {
+                              const program = e.target.value.toUpperCase();
+                              setClassForm((prev) => ({
+                                ...prev,
+                                program,
+                                section_code: combineSectionCode(
+                                  program,
+                                  prev.year_section,
+                                ),
+                              }));
+                            }}
+                            className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-3 py-2 text-xs sm:text-sm font-semibold uppercase text-slate-900 dark:text-slate-100 outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 transition cursor-pointer"
+                          >
+                            <option value="">Program</option>
+                            {addModalProgramOptions.map((code) => (
+                              <option
+                                key={code}
+                                value={code}
+                                className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100"
+                              >
+                                {code}
+                              </option>
+                            ))}
+                          </select>
+                          <input
+                            type="text"
+                            inputMode="numeric"
+                            required
+                            value={classForm.year_section}
+                            onChange={(e) => {
+                              const year_section = formatYearSectionInput(
+                                e.target.value,
+                              );
+                              setClassForm((prev) => ({
+                                ...prev,
+                                year_section,
+                                section_code: combineSectionCode(
+                                  prev.program,
+                                  year_section,
+                                ),
+                              }));
+                            }}
+                            placeholder="4-1"
+                            maxLength={3}
+                            className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-3 py-2 text-center text-xs sm:text-sm text-slate-900 dark:text-slate-100 outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 transition font-mono"
+                          />
+                        </div>
                       </div>
 
                       <div>
@@ -8672,9 +8872,14 @@ function FacultySubmissionPanelContent({
                       </span>
                     </div>
                     <div className="flex items-center justify-between gap-2 border-b border-amber-500/50 pb-2">
-                      <span className="text-amber-950 font-bold">Section:</span>
+                      <span className="text-amber-950 font-bold">
+                        Program, Year &amp; Section:
+                      </span>
                       <span className="font-mono font-black text-slate-950">
-                        {classForm.section_code.trim().toUpperCase()}
+                        {combineSectionCode(
+                          classForm.program,
+                          classForm.year_section,
+                        ) || classForm.section_code.trim().toUpperCase()}
                       </span>
                     </div>
                     <div className="flex items-center justify-between gap-2 border-b border-amber-500/50 pb-2">
@@ -8830,8 +9035,8 @@ function FacultySubmissionPanelContent({
                   {/* Header */}
                   <div className="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-slate-800">
                     <div className="flex items-center gap-3 min-w-0">
-                      <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-amber-500 text-slate-950 shadow-md border-2 border-amber-600">
-                        <AppIcon icon={Eye} size="md" color="inherit" />
+                      <div className="p-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700/60 shadow-2xs shrink-0 flex items-center justify-center">
+                        <AppIcon icon={Eye} size="lg" color="default" />
                       </div>
                       <div className="min-w-0">
                         <h3
@@ -8926,7 +9131,7 @@ function FacultySubmissionPanelContent({
                         setClassToView(null);
                         handleOpenEditClass(target);
                       }}
-                      className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 shadow-2xs transition cursor-pointer active:scale-95"
+                      className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold text-white bg-[#0b5336] hover:bg-[#08412a] border border-[#08412a] shadow-sm transition cursor-pointer active:scale-95"
                     >
                       <AppIcon icon={EditPencil} size="xs" color="inherit" />
                       <span>Edit</span>
@@ -8970,19 +9175,14 @@ function FacultySubmissionPanelContent({
                 />
                 <div className="relative z-10 w-full max-w-lg max-h-[90dvh] overflow-y-auto overflow-x-hidden overscroll-contain rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xl p-4 sm:p-6 space-y-5">
                   <div className="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-slate-800">
-                    <div className="flex items-center gap-3 min-w-0">
-                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-500/15 text-amber-700 dark:text-amber-400 border border-amber-500/30">
-                        <AppIcon icon={EditPencil} size="md" color="inherit" />
-                      </div>
-                      <div className="min-w-0">
-                        <h3 className="text-base sm:text-lg font-black text-slate-900 dark:text-slate-100">
-                          Edit Class / Subject Load
-                        </h3>
-                        <p className="text-xs text-slate-500 dark:text-slate-400">
-                          Update the subject code, title, section, or unit
-                          weighting.
-                        </p>
-                      </div>
+                    <div className="min-w-0">
+                      <h3 className="text-base sm:text-lg font-black text-slate-900 dark:text-slate-100">
+                        Edit Class / Subject Load
+                      </h3>
+                      <p className="text-xs text-slate-500 dark:text-slate-400">
+                        Update the subject code, title, section, or unit
+                        weighting.
+                      </p>
                     </div>
                   </div>
 
@@ -9012,11 +9212,14 @@ function FacultySubmissionPanelContent({
                         onChange={(e) =>
                           setEditClassForm((prev) => ({
                             ...prev,
-                            subject_code: e.target.value,
+                            subject_code: normalizeSubjectCodeInput(
+                              e.target.value,
+                            ),
                           }))
                         }
                         placeholder="Enter subject code"
-                        className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-3.5 py-2 text-xs sm:text-sm text-slate-900 dark:text-slate-100 outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 transition font-mono font-bold"
+                        autoCapitalize="characters"
+                        className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-3.5 py-2 text-xs sm:text-sm text-slate-900 dark:text-slate-100 uppercase outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 transition font-mono font-bold"
                       />
                     </div>
 
@@ -9032,32 +9235,73 @@ function FacultySubmissionPanelContent({
                         onChange={(e) =>
                           setEditClassForm((prev) => ({
                             ...prev,
-                            description: e.target.value,
+                            description: formatSubjectTitleInput(
+                              e.target.value,
+                            ),
                           }))
                         }
                         placeholder="Enter description / subject title"
+                        autoCapitalize="words"
                         className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-3.5 py-2 text-xs sm:text-sm text-slate-900 dark:text-slate-100 outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 transition"
                       />
                     </div>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      <div>
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                      <div className="sm:col-span-2">
                         <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
-                          Section Code <span className="text-rose-500">*</span>
+                          Program, Year &amp; Section <span className="text-rose-500">*</span>
                         </label>
-                        <input
-                          type="text"
-                          required
-                          value={editClassForm.section_code}
-                          onChange={(e) =>
-                            setEditClassForm((prev) => ({
-                              ...prev,
-                              section_code: e.target.value,
-                            }))
-                          }
-                          placeholder="e.g. BSIT 4-1"
-                          className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-3.5 py-2 text-xs sm:text-sm text-slate-900 dark:text-slate-100 outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 transition font-mono"
-                        />
+                        <div className="grid grid-cols-[minmax(0,1fr)_6.5rem] gap-2">
+                          <select
+                            required
+                            value={editClassForm.program}
+                            onChange={(e) => {
+                              const program = e.target.value.toUpperCase();
+                              setEditClassForm((prev) => ({
+                                ...prev,
+                                program,
+                                section_code: combineSectionCode(
+                                  program,
+                                  prev.year_section,
+                                ),
+                              }));
+                            }}
+                            className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-3 py-2 text-xs sm:text-sm font-semibold uppercase text-slate-900 dark:text-slate-100 outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 transition cursor-pointer"
+                          >
+                            <option value="">Program</option>
+                            {editModalProgramOptions.map((code) => (
+                              <option
+                                key={code}
+                                value={code}
+                                className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100"
+                              >
+                                {code}
+                              </option>
+                            ))}
+                          </select>
+                          <input
+                            type="text"
+                            inputMode="numeric"
+                            required
+                            value={editClassForm.year_section}
+                            onChange={(e) => {
+                              const year_section = formatYearSectionInput(
+                                e.target.value,
+                              );
+                              setEditClassForm((prev) => ({
+                                ...prev,
+                                year_section,
+                                section_code: combineSectionCode(
+                                  prev.program,
+                                  year_section,
+                                ),
+                              }));
+                            }}
+                            placeholder="4-1"
+                            maxLength={3}
+                            className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-3 py-2 text-center text-xs sm:text-sm text-slate-900 dark:text-slate-100 outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 transition font-mono"
+                          />
+                        </div>
                       </div>
 
                       <div>
