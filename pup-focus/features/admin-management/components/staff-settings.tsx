@@ -13,6 +13,10 @@ import { AppIcon } from "@/components/ui/app-icon";
 import { ModalHeader } from "@/components/ui/modal-header";
 import { AlertPopup } from "@/components/ui/alert-popup";
 import {
+  ProfilePhotoCropModal,
+  type CropTransform,
+} from "@/components/shared/profile-photo-crop-modal";
+import {
   recordActiveSessionLogin,
   pauseSessionVerification,
   resumeSessionVerification,
@@ -122,6 +126,10 @@ export function AdminSettings({
       lastName: account.lastName,
     });
     setProfileImageFile(null);
+    setOriginalProfileImageFile(null);
+    setCropSourceFile(null);
+    setCropInitialTransform(null);
+    setLastCropTransform(null);
     setIsAvatarMarkedForRemoval(false);
     if (profileImageInputRef.current) {
       profileImageInputRef.current.value = "";
@@ -172,6 +180,10 @@ export function AdminSettings({
   });
 
   const [profileImageFile, setProfileImageFile] = useState<File | null>(null);
+  const [originalProfileImageFile, setOriginalProfileImageFile] = useState<File | null>(null);
+  const [cropSourceFile, setCropSourceFile] = useState<File | null>(null);
+  const [cropInitialTransform, setCropInitialTransform] = useState<CropTransform | null>(null);
+  const [lastCropTransform, setLastCropTransform] = useState<CropTransform | null>(null);
   const [profileImagePreviewUrl, setProfileImagePreviewUrl] = useState<
     string | null
   >(null);
@@ -534,6 +546,10 @@ export function AdminSettings({
       }));
 
       setProfileImageFile(null);
+      setOriginalProfileImageFile(null);
+      setCropSourceFile(null);
+      setCropInitialTransform(null);
+      setLastCropTransform(null);
       setIsAvatarMarkedForRemoval(false);
       isUserDirty.current = false;
 
@@ -905,34 +921,48 @@ export function AdminSettings({
                 className="hidden"
                 onChange={(event) => {
                   const file = event.target.files?.[0] ?? null;
-                  setProfileImageFile(file);
-                  setIsAvatarMarkedForRemoval(false);
-                  setIsProfileImageMenuOpen(false);
-                  if (onProfileImageChange) {
-                    onProfileImageChange(file);
+                  event.target.value = "";
+                  if (file) {
+                    setCropInitialTransform(null);
+                    setCropSourceFile(file);
+                    setIsProfileImageMenuOpen(false);
                   }
                 }}
               />
             </div>
 
             {profileImageFile && (
-              <div className="flex items-center justify-between rounded-xl border border-amber-200 bg-amber-50 dark:border-amber-900/60 dark:bg-amber-950/40 px-3.5 py-2 text-xs text-amber-800 dark:text-amber-300 font-medium">
-                <span className="truncate">New image selected: {profileImageFile.name}</span>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setProfileImageFile(null);
-                    if (profileImageInputRef.current) {
-                      profileImageInputRef.current.value = "";
-                    }
-                    if (onProfileImageChange) {
-                      onProfileImageChange(null);
-                    }
-                  }}
-                  className="ml-2 text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 shrink-0 cursor-pointer"
-                >
-                  Remove
-                </button>
+              <div className="flex items-center justify-between gap-2 rounded-xl border-2 border-amber-500 bg-amber-400 px-3.5 py-2 text-xs text-slate-950 font-bold shadow-sm">
+                <span className="truncate min-w-0">New image selected: {profileImageFile.name}</span>
+                <div className="ml-2 flex items-center gap-1.5 shrink-0">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setCropInitialTransform(lastCropTransform);
+                      setCropSourceFile(originalProfileImageFile ?? profileImageFile);
+                    }}
+                    className="px-2.5 py-1 rounded-lg bg-[#0b5336] hover:bg-[#08412a] text-white border border-[#08412a] text-[11px] font-bold shadow-2xs transition cursor-pointer"
+                  >
+                    Crop
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setProfileImageFile(null);
+                      setOriginalProfileImageFile(null);
+                      setLastCropTransform(null);
+                      if (profileImageInputRef.current) {
+                        profileImageInputRef.current.value = "";
+                      }
+                      if (onProfileImageChange) {
+                        onProfileImageChange(null);
+                      }
+                    }}
+                    className="px-2.5 py-1 rounded-lg bg-[#780000] hover:bg-[#5e0000] text-white border border-[#5e0000] text-[11px] font-bold shadow-2xs transition cursor-pointer"
+                  >
+                    Remove
+                  </button>
+                </div>
               </div>
             )}
 
@@ -1672,6 +1702,28 @@ export function AdminSettings({
           </div>
         </div>
       )}
+
+      <ProfilePhotoCropModal
+        file={cropSourceFile}
+        initialTransform={cropInitialTransform}
+        onCancel={() => {
+          setCropSourceFile(null);
+          setCropInitialTransform(null);
+        }}
+        onApply={(croppedFile, transform) => {
+          if (cropSourceFile) {
+            setOriginalProfileImageFile(cropSourceFile);
+          }
+          setLastCropTransform(transform);
+          setProfileImageFile(croppedFile);
+          setIsAvatarMarkedForRemoval(false);
+          if (onProfileImageChange) {
+            onProfileImageChange(croppedFile);
+          }
+          setCropSourceFile(null);
+          setCropInitialTransform(null);
+        }}
+      />
     </div>
   );
 }

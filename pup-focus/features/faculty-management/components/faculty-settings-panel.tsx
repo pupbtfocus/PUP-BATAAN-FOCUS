@@ -20,6 +20,10 @@ import {
 } from "@/components/auth/single-session-enforcer";
 import { validatePasswordRequirements } from "@/lib/validation/password";
 import { MfaSecurityCard } from "@/components/auth/mfa-security-card";
+import {
+  ProfilePhotoCropModal,
+  type CropTransform,
+} from "@/components/shared/profile-photo-crop-modal";
 
 type FacultyAccountResponse = {
   profileId: string;
@@ -107,6 +111,10 @@ export function FacultySettingsPanel({
       lastName: account.lastName || "",
     });
     setProfileImageFile(null);
+    setOriginalProfileImageFile(null);
+    setCropSourceFile(null);
+    setCropInitialTransform(null);
+    setLastCropTransform(null);
     if (profileImageInputRef.current) {
       profileImageInputRef.current.value = "";
     }
@@ -181,6 +189,10 @@ export function FacultySettingsPanel({
   });
 
   const [profileImageFile, setProfileImageFile] = useState<File | null>(null);
+  const [originalProfileImageFile, setOriginalProfileImageFile] = useState<File | null>(null);
+  const [cropSourceFile, setCropSourceFile] = useState<File | null>(null);
+  const [cropInitialTransform, setCropInitialTransform] = useState<CropTransform | null>(null);
+  const [lastCropTransform, setLastCropTransform] = useState<CropTransform | null>(null);
   const [profileImagePreviewUrl, setProfileImagePreviewUrl] = useState<
     string | null
   >(null);
@@ -580,6 +592,10 @@ export function FacultySettingsPanel({
         lastName: updatedAccount.lastName,
       });
       setProfileImageFile(null);
+    setOriginalProfileImageFile(null);
+    setCropSourceFile(null);
+    setCropInitialTransform(null);
+    setLastCropTransform(null);
       setFeedbackModal({
         isOpen: true,
         title: "Profile Updated Successfully",
@@ -793,27 +809,48 @@ export function FacultySettingsPanel({
                 accept=".png,.jpg,.jpeg,.webp"
                 className="hidden"
                 onChange={(event) => {
-                  setProfileImageFile(event.target.files?.[0] ?? null);
-                  setIsProfileImageMenuOpen(false);
+                  const file = event.target.files?.[0] ?? null;
+                  event.target.value = "";
+                  if (file) {
+                    setCropInitialTransform(null);
+                    setCropSourceFile(file);
+                    setIsProfileImageMenuOpen(false);
+                  }
                 }}
               />
             </div>
 
             {profileImageFile && (
-              <div className="flex items-center justify-between gap-2 rounded-xl border border-amber-200 bg-amber-50 dark:border-amber-900/60 dark:bg-amber-950/40 px-3 sm:px-3.5 py-2.5 text-xs sm:text-sm text-amber-800 dark:text-amber-300 font-medium">
+              <div className="flex items-center justify-between gap-2 rounded-xl border-2 border-amber-500 bg-amber-400 px-3 sm:px-3.5 py-2 text-xs text-slate-950 font-bold shadow-sm">
                 <span className="truncate min-w-0">New image selected: {profileImageFile.name}</span>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setProfileImageFile(null);
-                    if (profileImageInputRef.current) {
-                      profileImageInputRef.current.value = "";
-                    }
-                  }}
-                  className="text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 shrink-0 cursor-pointer"
-                >
-                  Remove
-                </button>
+                <div className="flex items-center gap-1.5 shrink-0">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setCropInitialTransform(lastCropTransform);
+                      setCropSourceFile(originalProfileImageFile ?? profileImageFile);
+                    }}
+                    className="px-2.5 py-1 rounded-lg bg-[#0b5336] hover:bg-[#08412a] text-white border border-[#08412a] text-[11px] font-bold shadow-2xs transition cursor-pointer"
+                  >
+                    Crop
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setProfileImageFile(null);
+                      setOriginalProfileImageFile(null);
+                      setCropSourceFile(null);
+                      setCropInitialTransform(null);
+                      setLastCropTransform(null);
+                      if (profileImageInputRef.current) {
+                        profileImageInputRef.current.value = "";
+                      }
+                    }}
+                    className="px-2.5 py-1 rounded-lg bg-[#780000] hover:bg-[#5e0000] text-white border border-[#5e0000] text-[11px] font-bold shadow-2xs transition cursor-pointer"
+                  >
+                    Remove
+                  </button>
+                </div>
               </div>
             )}
 
@@ -1397,6 +1434,24 @@ export function FacultySettingsPanel({
           </div>
         </div>
       )}
+
+      <ProfilePhotoCropModal
+        file={cropSourceFile}
+        initialTransform={cropInitialTransform}
+        onCancel={() => {
+          setCropSourceFile(null);
+          setCropInitialTransform(null);
+        }}
+        onApply={(croppedFile, transform) => {
+          if (cropSourceFile) {
+            setOriginalProfileImageFile(cropSourceFile);
+          }
+          setLastCropTransform(transform);
+          setProfileImageFile(croppedFile);
+          setCropSourceFile(null);
+          setCropInitialTransform(null);
+        }}
+      />
     </div>
   );
 }

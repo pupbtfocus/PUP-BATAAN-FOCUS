@@ -5,6 +5,7 @@ import { CheckCircle, EditPencil, Key, Lock, LockSlash, Mail, SendMail, ShieldCh
 import { AppIcon } from "@/components/ui/app-icon";
 import { ModalHeader } from "@/components/ui/modal-header";
 import { AlertPopup } from "@/components/ui/alert-popup";
+import { ProfilePhotoCropModal } from "@/components/shared/profile-photo-crop-modal";
 import { Button } from "@/components/ui/button";
 import { buildFacultyInitials, parseFullNameFallback } from "@/lib/faculty-profile";
 import { emitRealtimeSync } from "@/lib/realtime";
@@ -34,6 +35,7 @@ export function EditFacultyModal({
   const [diplomaCourses, setDiplomaCourses] = useState<ProgramOption[]>([]);
   const [isLoadingPrograms, setIsLoadingPrograms] = useState(true);
   const [profileImageFile, setProfileImageFile] = useState<File | null>(null);
+  const [cropSourceFile, setCropSourceFile] = useState<File | null>(null);
   const [profileImagePreviewUrl, setProfileImagePreviewUrl] = useState<
     string | null
   >(null);
@@ -1059,8 +1061,11 @@ export function EditFacultyModal({
               accept="image/*"
               className="hidden"
               onChange={(event) => {
-                setProfileImageFile(event.target.files?.[0] ?? null);
-                setCloseReminder(null);
+                const file = event.target.files?.[0] ?? null;
+                event.target.value = "";
+                if (file) {
+                  setCropSourceFile(file);
+                }
               }}
             />
           </div>
@@ -1268,6 +1273,16 @@ export function EditFacultyModal({
           </div>
         </div>
       ) : null}
+
+      <ProfilePhotoCropModal
+        file={cropSourceFile}
+        onCancel={() => setCropSourceFile(null)}
+        onApply={(croppedFile) => {
+          setProfileImageFile(croppedFile);
+          setCloseReminder(null);
+          setCropSourceFile(null);
+        }}
+      />
     </>
   );
 }

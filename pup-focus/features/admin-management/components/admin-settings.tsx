@@ -29,6 +29,10 @@ import { AppIcon } from "@/components/ui/app-icon";
 import { ModalHeader } from "@/components/ui/modal-header";
 import { AlertPopup } from "@/components/ui/alert-popup";
 import {
+  ProfilePhotoCropModal,
+  type CropTransform,
+} from "@/components/shared/profile-photo-crop-modal";
+import {
   recordActiveSessionLogin,
   pauseSessionVerification,
   resumeSessionVerification,
@@ -94,6 +98,10 @@ export function SuperAdminSettings({
   // Avatar state
   const [avatarUrl, setAvatarUrl] = useState<string | null>(profileImageUrl ?? null);
   const [profileImageFile, setProfileImageFile] = useState<File | null>(null);
+  const [originalProfileImageFile, setOriginalProfileImageFile] = useState<File | null>(null);
+  const [cropSourceFile, setCropSourceFile] = useState<File | null>(null);
+  const [cropInitialTransform, setCropInitialTransform] = useState<CropTransform | null>(null);
+  const [lastCropTransform, setLastCropTransform] = useState<CropTransform | null>(null);
   const [profileImagePreviewUrl, setProfileImagePreviewUrl] = useState<string | null>(null);
   const [isProfileImageMenuOpen, setIsProfileImageMenuOpen] = useState(false);
   const [isFullImageOpen, setIsFullImageOpen] = useState(false);
@@ -277,6 +285,10 @@ export function SuperAdminSettings({
     });
     setEmail(savedEmail);
     setProfileImageFile(null);
+    setOriginalProfileImageFile(null);
+    setCropSourceFile(null);
+    setCropInitialTransform(null);
+    setLastCropTransform(null);
     setIsAvatarMarkedForRemoval(false);
     setActiveField(null);
     isUserDirty.current = false;
@@ -405,6 +417,10 @@ export function SuperAdminSettings({
       setSavedEmail(finalizedEmail);
       setAvatarUrl(updatedAvatar);
       setProfileImageFile(null);
+      setOriginalProfileImageFile(null);
+      setCropSourceFile(null);
+      setCropInitialTransform(null);
+      setLastCropTransform(null);
       setIsAvatarMarkedForRemoval(false);
       setActiveField(null);
       isUserDirty.current = false;
@@ -783,38 +799,55 @@ export function SuperAdminSettings({
                 className="hidden"
                 onChange={(event) => {
                   const file = event.target.files?.[0] ?? null;
-                  setProfileImageFile(file);
-                  setIsAvatarMarkedForRemoval(false);
-                  setIsProfileImageMenuOpen(false);
+                  event.target.value = "";
+                  if (file) {
+                    setCropInitialTransform(null);
+                    setCropSourceFile(file);
+                    setIsProfileImageMenuOpen(false);
+                  }
                 }}
               />
             </div>
 
             {profileImageFile && (
-              <div className="flex items-center justify-between gap-2 rounded-xl border border-amber-200 bg-amber-50 dark:border-amber-900/60 dark:bg-amber-950/40 px-3 sm:px-3.5 py-2 text-xs text-amber-800 dark:text-amber-300 font-medium">
+              <div className="flex items-center justify-between gap-2 rounded-xl border-2 border-amber-500 bg-amber-400 px-3 sm:px-3.5 py-2 text-xs text-slate-950 font-bold shadow-sm">
                 <span className="truncate min-w-0">New image selected: {profileImageFile.name}</span>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setProfileImageFile(null);
-                    if (profileImageInputRef.current) {
-                      profileImageInputRef.current.value = "";
-                    }
-                  }}
-                  className="text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 shrink-0 cursor-pointer"
-                >
-                  Remove
-                </button>
+                <div className="flex items-center gap-1.5 shrink-0">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setCropInitialTransform(lastCropTransform);
+                      setCropSourceFile(originalProfileImageFile ?? profileImageFile);
+                    }}
+                    className="px-2.5 py-1 rounded-lg bg-[#0b5336] hover:bg-[#08412a] text-white border border-[#08412a] text-[11px] font-bold shadow-2xs transition cursor-pointer"
+                  >
+                    Crop
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setProfileImageFile(null);
+                      setOriginalProfileImageFile(null);
+                      setLastCropTransform(null);
+                      if (profileImageInputRef.current) {
+                        profileImageInputRef.current.value = "";
+                      }
+                    }}
+                    className="px-2.5 py-1 rounded-lg bg-[#780000] hover:bg-[#5e0000] text-white border border-[#5e0000] text-[11px] font-bold shadow-2xs transition cursor-pointer"
+                  >
+                    Remove
+                  </button>
+                </div>
               </div>
             )}
 
             {isAvatarMarkedForRemoval && (
-              <div className="flex items-center justify-between gap-2 rounded-xl border border-rose-200 bg-rose-50 dark:border-rose-900/60 dark:bg-rose-950/30 px-3 sm:px-3.5 py-2 text-xs text-rose-800 dark:text-rose-300 font-medium">
+              <div className="flex items-center justify-between gap-2 rounded-xl border-2 border-[#5e0000] bg-[#780000] px-3 sm:px-3.5 py-2 text-xs text-white font-bold shadow-sm">
                 <span className="min-w-0 break-words">Avatar will reset to default PUP FOCUS emblem upon saving</span>
                 <button
                   type="button"
                   onClick={() => setIsAvatarMarkedForRemoval(false)}
-                  className="text-rose-600 hover:text-rose-800 dark:text-rose-400 dark:hover:text-rose-200 shrink-0 cursor-pointer"
+                  className="px-2.5 py-1 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 border border-amber-600 text-[11px] font-bold shadow-2xs shrink-0 transition cursor-pointer"
                 >
                   Undo
                 </button>
@@ -1614,6 +1647,25 @@ export function SuperAdminSettings({
           </div>
         </div>
       )}
+
+      <ProfilePhotoCropModal
+        file={cropSourceFile}
+        initialTransform={cropInitialTransform}
+        onCancel={() => {
+          setCropSourceFile(null);
+          setCropInitialTransform(null);
+        }}
+        onApply={(croppedFile, transform) => {
+          if (cropSourceFile) {
+            setOriginalProfileImageFile(cropSourceFile);
+          }
+          setLastCropTransform(transform);
+          setProfileImageFile(croppedFile);
+          setIsAvatarMarkedForRemoval(false);
+          setCropSourceFile(null);
+          setCropInitialTransform(null);
+        }}
+      />
     </div>
   );
 }

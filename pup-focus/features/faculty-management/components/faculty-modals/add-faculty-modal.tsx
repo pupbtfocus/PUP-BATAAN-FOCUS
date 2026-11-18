@@ -14,6 +14,10 @@ import {
 import { AppIcon } from "@/components/ui/app-icon";
 import { ModalHeader } from "@/components/ui/modal-header";
 import { AlertPopup } from "@/components/ui/alert-popup";
+import {
+  ProfilePhotoCropModal,
+  type CropTransform,
+} from "@/components/shared/profile-photo-crop-modal";
 import { createClient } from "@/lib/supabase/client";
 import { DEFAULT_REQUIREMENTS, REQUIREMENT_LABEL } from "@/config/compliance";
 import type { FacultyAccountFormInput } from "@/features/faculty-management/schemas/faculty-account.schema";
@@ -116,6 +120,10 @@ export function AddFacultyPanel({
   const [diplomaCourses, setDiplomaCourses] = useState<ProgramOption[]>([]);
   const [isLoadingPrograms, setIsLoadingPrograms] = useState(true);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [originalProfileImageFile, setOriginalProfileImageFile] = useState<File | null>(null);
+  const [cropSourceFile, setCropSourceFile] = useState<File | null>(null);
+  const [cropInitialTransform, setCropInitialTransform] = useState<CropTransform | null>(null);
+  const [lastCropTransform, setLastCropTransform] = useState<CropTransform | null>(null);
   const [dismissedError, setDismissedError] = useState<string | null>(null);
   const [dismissedSuccess, setDismissedSuccess] = useState<string | null>(null);
   const photoInputId = useId();
@@ -637,7 +645,11 @@ export function AddFacultyPanel({
                   accept="image/*"
                   onChange={(event) => {
                     const file = event.target.files?.[0] ?? null;
-                    handleImageChange(file);
+                    event.target.value = "";
+                    if (file) {
+                      setCropInitialTransform(null);
+                      setCropSourceFile(file);
+                    }
                   }}
                   className="hidden"
                 />
@@ -648,13 +660,29 @@ export function AddFacultyPanel({
                 ) : null}
               </div>
               {profileImageFile ? (
-                <button
-                  type="button"
-                  className="text-xs font-semibold text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-300 dark:border-slate-700 px-2.5 py-1.5 rounded-lg transition-all shrink-0 cursor-pointer"
-                  onClick={() => handleImageChange(null)}
-                >
-                  Remove
-                </button>
+                <div className="flex items-center gap-1.5 shrink-0">
+                  <button
+                    type="button"
+                    className="px-2.5 py-1.5 rounded-lg bg-[#0b5336] hover:bg-[#08412a] text-white border border-[#08412a] text-xs font-semibold transition-all cursor-pointer"
+                    onClick={() => {
+                      setCropInitialTransform(lastCropTransform);
+                      setCropSourceFile(originalProfileImageFile ?? profileImageFile);
+                    }}
+                  >
+                    Crop
+                  </button>
+                  <button
+                    type="button"
+                    className="px-2.5 py-1.5 rounded-lg bg-[#780000] hover:bg-[#5e0000] text-white border border-[#5e0000] text-xs font-semibold transition-all cursor-pointer"
+                    onClick={() => {
+                      setOriginalProfileImageFile(null);
+                      setLastCropTransform(null);
+                      handleImageChange(null);
+                    }}
+                  >
+                    Remove
+                  </button>
+                </div>
               ) : null}
             </div>
           </div>
@@ -696,6 +724,24 @@ export function AddFacultyPanel({
             </div>
           </div>
         </form>
+
+      <ProfilePhotoCropModal
+        file={cropSourceFile}
+        initialTransform={cropInitialTransform}
+        onCancel={() => {
+          setCropSourceFile(null);
+          setCropInitialTransform(null);
+        }}
+        onApply={(croppedFile, transform) => {
+          if (cropSourceFile) {
+            setOriginalProfileImageFile(cropSourceFile);
+          }
+          setLastCropTransform(transform);
+          handleImageChange(croppedFile);
+          setCropSourceFile(null);
+          setCropInitialTransform(null);
+        }}
+      />
     </div>
   );
 }

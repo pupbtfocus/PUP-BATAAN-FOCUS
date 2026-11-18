@@ -13,6 +13,7 @@ import {
 import { AppIcon } from "@/components/ui/app-icon";
 import { ModalHeader } from "@/components/ui/modal-header";
 import { AlertPopup } from "@/components/ui/alert-popup";
+import { ProfilePhotoCropModal } from "@/components/shared/profile-photo-crop-modal";
 import { ROLE, type AppRole, canManageAdminAccount, isOriginalAdmin } from "@/config/roles";
 import type { AdminAccount } from "@/features/staff-management/components/staff-accounts-directory";
 import { parseFullNameFallback } from "@/lib/faculty-profile";
@@ -52,6 +53,7 @@ export function EditStaffModal({
   const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
   const [profileImageFile, setProfileImageFile] = useState<File | null>(null);
+  const [cropSourceFile, setCropSourceFile] = useState<File | null>(null);
   const [profileImagePreviewUrl, setProfileImagePreviewUrl] = useState<
     string | null
   >(null);
@@ -891,8 +893,11 @@ export function EditStaffModal({
               accept="image/*"
               className="hidden"
               onChange={(event) => {
-                setProfileImageFile(event.target.files?.[0] ?? null);
-                setCloseReminder(null);
+                const file = event.target.files?.[0] ?? null;
+                event.target.value = "";
+                if (file) {
+                  setCropSourceFile(file);
+                }
               }}
             />
           </div>
@@ -1004,6 +1009,16 @@ export function EditStaffModal({
           </div>
         </div>
       ) : null}
+
+      <ProfilePhotoCropModal
+        file={cropSourceFile}
+        onCancel={() => setCropSourceFile(null)}
+        onApply={(croppedFile) => {
+          setProfileImageFile(croppedFile);
+          setCloseReminder(null);
+          setCropSourceFile(null);
+        }}
+      />
     </>
   );
 }

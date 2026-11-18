@@ -14,6 +14,10 @@ import { Activity, CheckCircle, ClockRotateRight, EditPencil, Eye, EyeClosed, Gr
 import { AppIcon } from "@/components/ui/app-icon";
 import { ModalHeader } from "@/components/ui/modal-header";
 import { AlertPopup } from "@/components/ui/alert-popup";
+import {
+  ProfilePhotoCropModal,
+  type CropTransform,
+} from "@/components/shared/profile-photo-crop-modal";
 import { SystemLoadingScreen } from "@/components/shared/system-loading-screen";
 import { extractFirstName } from "@/lib/faculty-profile";
 import { Sidebar, SidebarContent, useSidebarCollapsed } from "@/components/sidebar";
@@ -998,6 +1002,14 @@ export function SuperAdminDashboard({
   const [createAdminLastName, setCreateAdminLastName] = useState("");
   const [createAdminProfileImage, setCreateAdminProfileImage] =
     useState<File | null>(null);
+  const [createAdminOriginalImageFile, setCreateAdminOriginalImageFile] =
+    useState<File | null>(null);
+  const [createAdminCropSourceFile, setCreateAdminCropSourceFile] =
+    useState<File | null>(null);
+  const [createAdminCropInitialTransform, setCreateAdminCropInitialTransform] =
+    useState<CropTransform | null>(null);
+  const [createAdminLastCropTransform, setCreateAdminLastCropTransform] =
+    useState<CropTransform | null>(null);
   const [createAdminProfileImagePreview, setCreateAdminProfileImagePreview] =
     useState<string | null>(null);
   const [adminNameAlert, setAdminNameAlert] = useState<string | null>(null);
@@ -1034,6 +1046,10 @@ export function SuperAdminDashboard({
     setCreateAdminMiddleName("");
     setCreateAdminLastName("");
     setCreateAdminProfileImage(null);
+    setCreateAdminOriginalImageFile(null);
+    setCreateAdminCropSourceFile(null);
+    setCreateAdminCropInitialTransform(null);
+    setCreateAdminLastCropTransform(null);
     setCreateAdminProfileImagePreview(null);
     setEmail("");
     setCreateAdminModalOpen(true);
@@ -1049,6 +1065,10 @@ export function SuperAdminDashboard({
       URL.revokeObjectURL(createAdminProfileImagePreview);
     }
     setCreateAdminProfileImage(null);
+    setCreateAdminOriginalImageFile(null);
+    setCreateAdminCropSourceFile(null);
+    setCreateAdminCropInitialTransform(null);
+    setCreateAdminLastCropTransform(null);
     setCreateAdminProfileImagePreview(null);
   }
 
@@ -2753,13 +2773,11 @@ export function SuperAdminDashboard({
                           accept="image/*"
                           onChange={(event) => {
                             const file = event.target.files?.[0] ?? null;
-                            setCreateAdminProfileImage(file);
-                            if (createAdminProfileImagePreview) {
-                              URL.revokeObjectURL(createAdminProfileImagePreview);
+                            event.target.value = "";
+                            if (file) {
+                              setCreateAdminCropInitialTransform(null);
+                              setCreateAdminCropSourceFile(file);
                             }
-                            setCreateAdminProfileImagePreview(
-                              file ? URL.createObjectURL(file) : null,
-                            );
                           }}
                           className="hidden"
                         />
@@ -2770,19 +2788,38 @@ export function SuperAdminDashboard({
                         ) : null}
                       </div>
                       {createAdminProfileImage ? (
-                        <button
-                          type="button"
-                          className="text-xs font-semibold text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-300 dark:border-slate-700 px-2.5 py-1.5 rounded-lg transition-all shrink-0 cursor-pointer"
-                          onClick={() => {
-                            if (createAdminProfileImagePreview) {
-                              URL.revokeObjectURL(createAdminProfileImagePreview);
-                            }
-                            setCreateAdminProfileImage(null);
-                            setCreateAdminProfileImagePreview(null);
-                          }}
-                        >
-                          Remove
-                        </button>
+                        <div className="flex items-center gap-1.5 shrink-0">
+                          <button
+                            type="button"
+                            className="px-2.5 py-1.5 rounded-lg bg-[#0b5336] hover:bg-[#08412a] text-white border border-[#08412a] text-xs font-semibold transition-all cursor-pointer"
+                            onClick={() => {
+                              setCreateAdminCropInitialTransform(
+                                createAdminLastCropTransform,
+                              );
+                              setCreateAdminCropSourceFile(
+                                createAdminOriginalImageFile ??
+                                  createAdminProfileImage,
+                              );
+                            }}
+                          >
+                            Crop
+                          </button>
+                          <button
+                            type="button"
+                            className="px-2.5 py-1.5 rounded-lg bg-[#780000] hover:bg-[#5e0000] text-white border border-[#5e0000] text-xs font-semibold transition-all cursor-pointer"
+                            onClick={() => {
+                              if (createAdminProfileImagePreview) {
+                                URL.revokeObjectURL(createAdminProfileImagePreview);
+                              }
+                              setCreateAdminProfileImage(null);
+                              setCreateAdminOriginalImageFile(null);
+                              setCreateAdminLastCropTransform(null);
+                              setCreateAdminProfileImagePreview(null);
+                            }}
+                          >
+                            Remove
+                          </button>
+                        </div>
                       ) : null}
                     </div>
                   </div>
@@ -2979,6 +3016,28 @@ export function SuperAdminDashboard({
         onInviteCancelled={() => {
           void loadAdminAccounts(true);
           void loadFacultyFromDatabase(true);
+        }}
+      />
+
+      <ProfilePhotoCropModal
+        file={createAdminCropSourceFile}
+        initialTransform={createAdminCropInitialTransform}
+        onCancel={() => {
+          setCreateAdminCropSourceFile(null);
+          setCreateAdminCropInitialTransform(null);
+        }}
+        onApply={(croppedFile, transform) => {
+          if (createAdminCropSourceFile) {
+            setCreateAdminOriginalImageFile(createAdminCropSourceFile);
+          }
+          setCreateAdminLastCropTransform(transform);
+          setCreateAdminProfileImage(croppedFile);
+          if (createAdminProfileImagePreview) {
+            URL.revokeObjectURL(createAdminProfileImagePreview);
+          }
+          setCreateAdminProfileImagePreview(URL.createObjectURL(croppedFile));
+          setCreateAdminCropSourceFile(null);
+          setCreateAdminCropInitialTransform(null);
         }}
       />
     </div>
