@@ -2771,7 +2771,7 @@ export function FacultyVerificationDrawer({
               <div className="space-y-4">
                 {/* Class Header & Dropdown Switcher */}
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 py-1">
-                  <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2.5 min-w-0 flex-1">
                     <button
                       type="button"
                       onClick={() => {
@@ -2799,7 +2799,7 @@ export function FacultyVerificationDrawer({
                     <div className="h-6 w-px bg-amber-400/60 dark:bg-amber-600/40 hidden sm:block shrink-0" />
 
                     {/* Faculty Profile & Active Class Header */}
-                    <div className="min-w-0 flex-1 pl-1">
+                    <div className="min-w-0 flex-1 sm:pl-1">
                       <div className="flex items-center gap-2 flex-wrap">
                         {/* Faculty Name & Photo */}
                         <div className="flex items-center gap-2 shrink-0">
@@ -4209,7 +4209,7 @@ export function FacultyVerificationDrawer({
                 <div className="space-y-4">
                   {/* Class Header & Switcher */}
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 py-1">
-                    <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2.5 min-w-0 flex-1">
                       <button
                         type="button"
                         onClick={() => setSelectedHistoryClassId(null)}
@@ -4222,7 +4222,7 @@ export function FacultyVerificationDrawer({
 
                       <div className="h-6 w-px bg-amber-400/60 dark:bg-amber-600/40 hidden sm:block shrink-0" />
 
-                      <div className="min-w-0 flex-1 pl-1">
+                      <div className="min-w-0 flex-1 sm:pl-1">
                         <div className="flex items-center gap-2 flex-wrap">
                           <span className="font-mono text-xs font-black px-2.5 py-0.5 rounded-md bg-amber-400 text-amber-950 shrink-0">
                             {selectedHistoryGroup.isGeneral

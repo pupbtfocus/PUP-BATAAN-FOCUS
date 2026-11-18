@@ -433,7 +433,7 @@ export function SubmissionHistoryList<T extends PastSubmissionItem = PastSubmiss
     <div className={cn("w-full space-y-4", className)}>
       {/* Subject Context Header with Back Button matching Admin Validation History */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 py-1">
-        <div className="flex items-center gap-2.5 min-w-0 flex-1">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2.5 min-w-0 flex-1">
           <button
             type="button"
             onClick={() => setSelectedClassKey(null)}
@@ -446,7 +446,7 @@ export function SubmissionHistoryList<T extends PastSubmissionItem = PastSubmiss
 
           <div className="h-6 w-px bg-amber-400/60 dark:bg-amber-600/40 hidden sm:block shrink-0" />
 
-          <div className="min-w-0 flex-1 pl-1">
+          <div className="min-w-0 flex-1 sm:pl-1">
             <div className="flex items-center gap-2 flex-wrap">
               <span className="font-mono text-xs font-black px-2.5 py-0.5 rounded-md bg-amber-400 text-amber-950 shrink-0">
                 {selectedGroup.isGeneral ? "GENERAL" : selectedGroup.sectionCode}
