@@ -854,8 +854,8 @@ export function DocumentPreviewModal({
                 </div>
               </div>
 
-              {/* Compact Action Footer (Always pinned at bottom) */}
-              <div className="p-3 bg-slate-50/50 dark:bg-slate-900 border-t border-slate-200/80 dark:border-slate-800/80 space-y-1.5 shrink-0">
+              {/* Compact Action Footer (Pinned at bottom of right sidebar on desktop) */}
+              <div className="hidden lg:block p-3 bg-slate-50/50 dark:bg-slate-900 border-t border-slate-200/80 dark:border-slate-800/80 space-y-1.5 shrink-0">
                 <div className="grid grid-cols-2 gap-1.5">
                   <button
                     type="button"
@@ -887,6 +887,40 @@ export function DocumentPreviewModal({
                 </button>
               </div>
             </div>
+          </div>
+        </div>
+
+        {/* Always-Visible Mobile Bottom Action Bar */}
+        <div className="lg:hidden shrink-0 border-t border-slate-200 dark:border-slate-800 bg-slate-50/95 dark:bg-slate-900 px-2.5 py-2.5">
+          <div className="grid grid-cols-3 gap-1.5">
+            <button
+              type="button"
+              className="w-full inline-flex items-center justify-center gap-1 rounded-lg border border-[#08412a] bg-[#0b5336] hover:bg-[#08412a] text-white font-bold text-[11px] py-2 px-1.5 shadow-2xs transition-all cursor-pointer active:scale-95 whitespace-nowrap"
+              onClick={handleDownload}
+              title="Download file directly"
+            >
+              <AppIcon icon={Download} size="xs" color="white" className="shrink-0" />
+              <span>Download</span>
+            </button>
+
+            <button
+              type="button"
+              className="w-full inline-flex items-center justify-center gap-1 rounded-lg border border-amber-600/50 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-[11px] py-2 px-1.5 transition cursor-pointer shadow-2xs active:scale-95 whitespace-nowrap"
+              onClick={handleOpenFullView}
+              title="Open document in a new tab"
+            >
+              <AppIcon icon={OpenNewWindow} size="xs" color="inherit" className="shrink-0" />
+              <span>Full View</span>
+            </button>
+
+            <button
+              type="button"
+              className="w-full inline-flex items-center justify-center gap-1 rounded-lg border border-[#5e0000] bg-[#780000] hover:bg-[#5e0000] text-white font-bold text-[11px] py-2 px-1.5 shadow-2xs transition cursor-pointer active:scale-95 whitespace-nowrap"
+              onClick={onClose}
+              title="Close document preview"
+            >
+              <span>Close Preview</span>
+            </button>
           </div>
         </div>
       </div>
