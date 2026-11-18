@@ -514,11 +514,15 @@ export function SuperAdminDashboard({
       if (!f.is_active) continue;
       const statusMap = f.requirementStatus as Record<string, string | undefined> | undefined;
       let turnedIn = 0;
+      let needsRevision = 0;
       for (const code of reqCodes) {
         const s = statusMap?.[code];
         if (s === "validated" || s === "uploaded") turnedIn += 1;
+        else if (s === "rejected" || s === "needs_revision") needsRevision += 1;
       }
-      if (turnedIn === totalRequired && totalRequired > 0) {
+      if (needsRevision > 0) {
+        started += 1;
+      } else if (turnedIn === totalRequired && totalRequired > 0) {
         completed += 1;
       } else if (turnedIn > 0) {
         started += 1;
@@ -1276,7 +1280,11 @@ export function SuperAdminDashboard({
   }, []);
 
   useEffect(() => {
-    if (activeSection === "faculty" || activeSection === "verification") {
+    if (
+      activeSection === "dashboard" ||
+      activeSection === "faculty" ||
+      activeSection === "verification"
+    ) {
       void loadFacultyFromDatabase(facultyAccounts.length > 0);
     } else if (activeSection === "accounts") {
       void loadAdminAccounts(adminAccounts.length > 0);

@@ -138,10 +138,10 @@ export function SuperAdminComplianceAnalytics({
       totalRevisionDocs += revisionCount;
 
       let category: FacultyComplianceCategory = "in_progress";
-      if (submittedOrValidated === totalRequired && totalRequired > 0) {
-        category = "completed";
-      } else if (revisionCount > 0) {
+      if (revisionCount > 0) {
         category = "needs_revision";
+      } else if (submittedOrValidated === totalRequired && totalRequired > 0) {
+        category = "completed";
       } else if (submittedOrValidated === 0) {
         category = "not_started";
       } else {

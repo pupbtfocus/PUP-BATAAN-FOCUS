@@ -19,13 +19,21 @@ import {
 } from "@/lib/faculty-profile";
 import { getLoginAttemptRecord } from "@/lib/auth/login-attempts";
 
-type RequirementStatus = "not_submitted" | "uploaded" | "validated";
+type RequirementStatus =
+  | "not_submitted"
+  | "uploaded"
+  | "validated"
+  | "rejected"
+  | "needs_revision";
 
 type SubmissionRow = {
   faculty_profile_id: string;
   requirement_code: string;
   status: string | null;
   submitted_at: string | null;
+  faculty_assignment_id?: string | null;
+  class_id?: string | null;
+  is_archived?: boolean | null;
   document_versions?: Array<{ id: string }> | null;
 };
 
@@ -57,10 +65,23 @@ function buildInitialRequirementStatus(activeCodes?: readonly string[]) {
 }
 
 function toRequirementStatus(rawStatus: string | null): RequirementStatus {
-  const status = (rawStatus ?? "").toLowerCase();
+  const status = (rawStatus ?? "").toLowerCase().trim();
 
   if (status === "validated" || status === "approved") {
     return "validated";
+  }
+
+  if (status === "needs_revision") {
+    return "needs_revision";
+  }
+
+  if (
+    status === "rejected" ||
+    status === "returned" ||
+    status === "revision" ||
+    status === "revision_requested"
+  ) {
+    return "rejected";
   }
 
   if (
@@ -428,7 +449,7 @@ export async function GET(request: NextRequest) {
     const { data: submissionRows, error: submissionsError } = await supabase
       .from("submissions")
       .select(
-        "faculty_profile_id, requirement_code, status, submitted_at, faculty_assignment_id",
+        "faculty_profile_id, requirement_code, status, submitted_at, faculty_assignment_id, class_id, is_archived",
       )
       .in("faculty_profile_id", profileIds)
       .order("submitted_at", { ascending: false })
@@ -449,6 +470,8 @@ export async function GET(request: NextRequest) {
       not_submitted: 0,
       uploaded: 1,
       validated: 2,
+      needs_revision: 3,
+      rejected: 3,
     };
 
     const activeTemplates = (allTemplates && allTemplates.length > 0)
@@ -536,7 +559,13 @@ export async function GET(request: NextRequest) {
         .map((a: any) => a.id),
     );
 
-    for (const row of (submissionRows ?? []) as (SubmissionRow & { faculty_assignment_id?: string | null; requirement_id?: string | null })[]) {
+    const seenSlotKeys = new Set<string>();
+
+    for (const row of (submissionRows ?? []) as (SubmissionRow & { requirement_id?: string | null })[]) {
+      if (row.is_archived) {
+        continue;
+      }
+
       const profileId = row.faculty_profile_id;
       let requirementCode = row.requirement_code;
 
@@ -568,6 +597,13 @@ export async function GET(request: NextRequest) {
           }
         }
       }
+
+      // Rows are ordered by submitted_at desc; evaluate only the newest submission per class/slot
+      const slotKey = `${profileId}:${requirementCode}:${row.class_id ?? "__global__"}`;
+      if (seenSlotKeys.has(slotKey)) {
+        continue;
+      }
+      seenSlotKeys.add(slotKey);
 
       const mappedStatus = toRequirementStatus(row.status);
       const currentStatus = requirementStatusByProfileId.get(profileId);

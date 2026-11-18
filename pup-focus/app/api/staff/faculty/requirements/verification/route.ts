@@ -23,7 +23,12 @@ import {
   cleanDescription,
 } from "@/lib/requirement-templates/term-visibility";
 
-type RequirementStatus = "not_submitted" | "uploaded" | "validated";
+type RequirementStatus =
+  | "not_submitted"
+  | "uploaded"
+  | "validated"
+  | "rejected"
+  | "needs_revision";
 type SemesterOption = "1st Semester" | "2nd Semester" | "Summer Semester";
 
 const serverVerificationCache = new Map<
@@ -215,10 +220,23 @@ function convertManilaDateTimeToUtcIso(dateTime: string | null): string | null {
 }
 
 function toRequirementStatus(rawStatus: string | null): RequirementStatus {
-  const status = (rawStatus ?? "").toLowerCase();
+  const status = (rawStatus ?? "").toLowerCase().trim();
 
   if (status === "validated" || status === "approved") {
     return "validated";
+  }
+
+  if (status === "needs_revision") {
+    return "needs_revision";
+  }
+
+  if (
+    status === "rejected" ||
+    status === "returned" ||
+    status === "revision" ||
+    status === "revision_requested"
+  ) {
+    return "rejected";
   }
 
   if (
@@ -388,8 +406,9 @@ export async function GET(request: NextRequest) {
         .eq("is_archived", false),
       supabase
         .from("submissions")
-        .select("id, faculty_profile_id, requirement_code, status, submitted_at, faculty_assignment_id, class_id")
+        .select("id, faculty_profile_id, requirement_code, status, submitted_at, faculty_assignment_id, class_id, is_archived")
         .in("faculty_profile_id", requestedIds)
+        .eq("is_archived", false)
         .order("submitted_at", { ascending: false }),
     ]);
 
@@ -582,6 +601,8 @@ export async function GET(request: NextRequest) {
       not_submitted: 0,
       uploaded: 1,
       validated: 2,
+      needs_revision: 3,
+      rejected: 3,
     };
 
     const mandatoryTemplates = activeTemplateRows.filter((t) => t.is_mandatory);
@@ -613,6 +634,7 @@ export async function GET(request: NextRequest) {
           facultyAssignmentIds.has(s.faculty_assignment_id),
       );
 
+      const seenSlotKeys = new Set<string>();
       for (const row of facultySubmissions) {
         const code = matchRequirementCode(
           row.requirement_code,
@@ -620,6 +642,9 @@ export async function GET(request: NextRequest) {
           activeTemplateRows,
         );
         if (!code || !hasDocumentVersion(row)) continue;
+        const slotKey = `${code}:${(row as { class_id?: string | null }).class_id ?? "__global__"}`;
+        if (seenSlotKeys.has(slotKey)) continue;
+        seenSlotKeys.add(slotKey);
         const mappedStatus = toRequirementStatus(row.status);
         if (!requirementStatus[code] || rank[mappedStatus] > rank[requirementStatus[code]]) {
           requirementStatus[code] = mappedStatus;

@@ -6409,9 +6409,11 @@ export function RequirementsPanel({
         overallStatus = "Not Submitted";
         statusBadgeClass =
           "bg-white text-slate-600 border border-slate-200 dark:bg-slate-900 dark:text-slate-400 dark:border-slate-800 font-semibold";
-        actionButtonText = "Not Submitted Yet";
-        actionButtonClass =
-          "bg-slate-100 text-slate-400 border border-slate-200 dark:bg-slate-800 dark:text-slate-500 dark:border-slate-700 font-semibold cursor-not-allowed opacity-60 shadow-none";
+        if (activePanelTab !== "history") {
+          actionButtonText = "View Subject Loads";
+          actionButtonClass =
+            "bg-amber-500 hover:bg-amber-400 text-slate-950 border border-amber-600/40 font-semibold";
+        }
       }
 
       map.set(faculty.id, {
@@ -6435,6 +6437,7 @@ export function RequirementsPanel({
     requirementTemplates,
     facultyClassProgress,
     facultySubjectProgress,
+    activePanelTab,
   ]);
 
   // Tab counters
@@ -7036,13 +7039,17 @@ export function RequirementsPanel({
                   (overallStatus === "Not Submitted" ||
                     statInfo?.category === "not_submitted");
                 const statusBadgeClass = statInfo?.statusBadgeClass ?? "";
-                const actionButtonText = isNotSubmitted
-                  ? "Not Submitted Yet"
-                  : (statInfo?.actionButtonText ?? "Review Requirements");
-                const actionButtonClass = isNotSubmitted
-                  ? "bg-slate-100 text-slate-400 border border-slate-200 dark:bg-slate-800 dark:text-slate-500 dark:border-slate-700 font-semibold cursor-not-allowed opacity-60 shadow-none"
-                  : (statInfo?.actionButtonClass ??
-                    "bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold");
+                const actionButtonText =
+                  statInfo?.actionButtonText ?? "View Subject Loads";
+                const actionButtonClass =
+                  statInfo?.actionButtonClass ??
+                  "bg-amber-500 hover:bg-amber-400 text-slate-950 border border-amber-600/40 font-semibold";
+                const actionButtonIcon =
+                  activePanelTab === "history"
+                    ? ClockRotateRight
+                    : isNotSubmitted || statInfo?.category === "completed"
+                      ? Eye
+                      : Page;
                 const programCode =
                   faculty.program?.code || faculty.program?.name || "N/A";
                 const classList = facultyClassProgress[faculty.id] || [];
@@ -7155,21 +7162,16 @@ export function RequirementsPanel({
 
                     <button
                       type="button"
-                      disabled={isNotSubmitted}
                       onClick={() => {
-                        if (isNotSubmitted) return;
                         openedFromRowFlag = true;
                         initialOpenedRef.current = faculty.id;
                         setReviewingFaculty(faculty);
                         onSelectFaculty?.(faculty.id);
                       }}
-                      className={`${actionButtonClass} w-full px-3.5 py-2 rounded-xl text-xs shadow-sm transition inline-flex items-center justify-center ${
-                        isNotSubmitted
-                          ? "cursor-not-allowed opacity-60"
-                          : "active:scale-[0.98] cursor-pointer"
-                      }`}
+                      className={`${actionButtonClass} w-full px-3.5 py-2 rounded-xl text-xs shadow-sm transition inline-flex items-center justify-center gap-1.5 active:scale-[0.98] cursor-pointer`}
                     >
-                      {actionButtonText}
+                      <AppIcon icon={actionButtonIcon} size="xs" color="inherit" />
+                      <span>{actionButtonText}</span>
                     </button>
                   </div>
                 );
@@ -7236,13 +7238,17 @@ export function RequirementsPanel({
                       (overallStatus === "Not Submitted" ||
                         statInfo?.category === "not_submitted");
                     const statusBadgeClass = statInfo?.statusBadgeClass ?? "";
-                    const actionButtonText = isNotSubmitted
-                      ? "Not Submitted Yet"
-                      : (statInfo?.actionButtonText ?? "Review Requirements");
-                    const actionButtonClass = isNotSubmitted
-                      ? "bg-slate-100 text-slate-400 border border-slate-200 dark:bg-slate-800 dark:text-slate-500 dark:border-slate-700 font-semibold cursor-not-allowed opacity-60 shadow-none"
-                      : (statInfo?.actionButtonClass ??
-                        "bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold");
+                    const actionButtonText =
+                      statInfo?.actionButtonText ?? "View Subject Loads";
+                    const actionButtonClass =
+                      statInfo?.actionButtonClass ??
+                      "bg-amber-500 hover:bg-amber-400 text-slate-950 border border-amber-600/40 font-semibold";
+                    const actionButtonIcon =
+                      activePanelTab === "history"
+                        ? ClockRotateRight
+                        : isNotSubmitted || statInfo?.category === "completed"
+                          ? Eye
+                          : Page;
 
                     const programCode =
                       faculty.program?.code || faculty.program?.name || "N/A";
@@ -7251,9 +7257,7 @@ export function RequirementsPanel({
                       <tr
                         key={faculty.id}
                         onMouseEnter={() => {
-                          if (!isNotSubmitted) {
-                            void prefetchFacultySubmissions(faculty.id);
-                          }
+                          void prefetchFacultySubmissions(faculty.id);
                         }}
                         className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 border-b border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/40 transition"
                       >
@@ -7454,26 +7458,21 @@ export function RequirementsPanel({
                         <td className="px-4 py-3 text-right">
                           <button
                             type="button"
-                            disabled={isNotSubmitted}
                             title={
                               isNotSubmitted
-                                ? "This faculty member has not submitted any requirements yet"
+                                ? "View assigned classes & subject loads"
                                 : actionButtonText
                             }
                             onClick={() => {
-                              if (isNotSubmitted) return;
                               openedFromRowFlag = true;
                               initialOpenedRef.current = faculty.id;
                               setReviewingFaculty(faculty);
                               onSelectFaculty?.(faculty.id);
                             }}
-                            className={`${actionButtonClass} px-3.5 py-1.5 rounded-xl text-xs shadow-sm transition ${
-                              isNotSubmitted
-                                ? "cursor-not-allowed opacity-60"
-                                : "active:scale-[0.98] cursor-pointer"
-                            }`}
+                            className={`${actionButtonClass} inline-flex items-center justify-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs shadow-sm transition active:scale-[0.98] cursor-pointer`}
                           >
-                            {actionButtonText}
+                            <AppIcon icon={actionButtonIcon} size="xs" color="inherit" />
+                            <span>{actionButtonText}</span>
                           </button>
                         </td>
                       </tr>
