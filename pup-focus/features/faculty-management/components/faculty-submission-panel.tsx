@@ -4287,103 +4287,88 @@ function FacultySubmissionPanelContent({
       ? uploadTasks.filter((t) => t.classId === selectedClassId)
       : uploadTasks;
 
+    const uploadingCount = classUploadTasks.filter(
+      (t) => t.status === "uploading",
+    ).length;
+    const doneCount = classUploadTasks.filter((t) => t.status === "done").length;
+    const errorCount = classUploadTasks.filter((t) => t.status === "error").length;
+
     if (!isUploadSectionVisible) {
       return (
         <div className="my-2 flex items-center justify-start">
           <button
             type="button"
             onClick={() => setIsUploadSectionVisible(true)}
-            className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-950 dark:text-amber-100 text-xs font-extrabold shadow-xs transition cursor-pointer active:scale-95"
+            className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-800 dark:text-slate-100 text-xs font-bold shadow-xs transition cursor-pointer active:scale-95"
             title="Show document upload progress and status"
           >
-            <div className="p-1 rounded-md bg-amber-500 text-slate-950 font-bold shrink-0">
-              <AppIcon icon={CloudUpload} size="xs" color="inherit" />
-            </div>
-            <span>Document Upload Progress & Status</span>
-            {classUploadTasks.some((t) => t.status === "uploading") && (
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold bg-amber-500 text-slate-950 animate-pulse shrink-0">
-                <AppIcon
-                  icon={SystemRestart}
-                  size="xs"
-                  color="inherit"
-                  className="animate-spin"
-                />
-                (
-                {
-                  classUploadTasks.filter((t) => t.status === "uploading")
-                    .length
-                }
-                )
-              </span>
-            )}
-            {classUploadTasks.some((t) => t.status === "error") && (
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold bg-[#780000] text-white shrink-0">
-                <AppIcon icon={WarningCircle} size="xs" color="inherit" />
-                {
-                  classUploadTasks.filter((t) => t.status === "error").length
-                }{" "}
-                Failed
-              </span>
-            )}
-            {classUploadTasks.length > 0 ? (
-              <span className="text-[11px] text-slate-600 dark:text-slate-400 font-semibold shrink-0">
-                ({classUploadTasks.filter((t) => t.status === "done").length}/
-                {classUploadTasks.length} Done)
-              </span>
-            ) : (
-              <span className="text-[11px] text-slate-500 dark:text-slate-400 font-medium shrink-0">
-                (0 Active)
-              </span>
-            )}
             <AppIcon
-              icon={NavArrowRight}
-              size="xs"
+              icon={CloudUpload}
+              size="sm"
               color="inherit"
-              className="ml-0.5 text-slate-500 dark:text-slate-400"
+              className="text-amber-600 dark:text-amber-400"
             />
+            <span>Document Upload Progress &amp; Status</span>
+            <span
+              className={`px-2 py-0.5 rounded-full text-[11px] font-bold ${
+                errorCount > 0
+                  ? "bg-[#780000] text-white"
+                  : uploadingCount > 0
+                    ? "bg-amber-500 text-slate-950"
+                    : doneCount > 0
+                      ? "bg-[#0b5336] text-white"
+                      : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300"
+              }`}
+            >
+              {uploadingCount > 0
+                ? `${uploadingCount} Uploading`
+                : errorCount > 0
+                  ? `${errorCount} Failed`
+                  : classUploadTasks.length > 0
+                    ? `${doneCount}/${classUploadTasks.length} Done`
+                    : "0 Active"}
+            </span>
           </button>
         </div>
       );
     }
 
     return (
-      <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 sm:p-5 shadow-sm space-y-3 transition-all my-2">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 pb-2 border-b border-slate-200 dark:border-slate-800">
-          <div className="flex items-center gap-2.5">
-            <div className="p-2 rounded-xl bg-amber-500 text-slate-950 font-bold shadow-xs">
-              <AppIcon icon={CloudUpload} size="sm" color="inherit" />
+      <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 sm:p-5 shadow-xs space-y-3.5 transition-all my-2">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-200/80 dark:border-slate-800">
+          <div className="flex items-start sm:items-center gap-3 min-w-0">
+            <div className="h-9 w-9 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-[#780000] dark:text-amber-400 flex items-center justify-center shrink-0">
+              <AppIcon icon={CloudUpload} size="md" color="inherit" />
             </div>
-            <div>
-              <h3 className="font-extrabold text-sm sm:text-base text-slate-950 dark:text-amber-100 flex items-center gap-2">
-                Document Upload Progress & Status
-                {classUploadTasks.some((t) => t.status === "uploading") && (
-                  <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-500 text-slate-950 animate-pulse">
-                    <AppIcon
-                      icon={SystemRestart}
-                      size="xs"
-                      color="inherit"
-                      className="animate-spin"
-                    />
+            <div className="min-w-0">
+              <div className="flex items-center gap-2 flex-wrap">
+                <h3 className="font-extrabold text-sm sm:text-base text-slate-900 dark:text-slate-100">
+                  Document Upload Progress &amp; Status
+                </h3>
+                {uploadingCount > 0 ? (
+                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-amber-500 text-slate-950 shadow-2xs">
                     Uploading in background
                   </span>
-                )}
-              </h3>
-              <p className="text-xs text-slate-600 dark:text-slate-400 font-medium">
+                ) : classUploadTasks.length > 0 ? (
+                  <span
+                    className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-bold shadow-2xs ${
+                      errorCount > 0
+                        ? "bg-[#780000] text-white"
+                        : "bg-[#0b5336] text-white"
+                    }`}
+                  >
+                    {doneCount}/{classUploadTasks.length} Completed
+                  </span>
+                ) : null}
+              </div>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
                 Files upload in the background so you can continue submitting
                 other documents without waiting.
               </p>
             </div>
           </div>
-          <div className="flex items-center gap-2 self-end sm:self-auto">
-            <button
-              type="button"
-              onClick={() => setIsUploadSectionVisible(false)}
-              className="text-xs font-extrabold px-3 py-1.5 rounded-xl border border-amber-600 bg-amber-500 hover:bg-amber-400 text-slate-950 transition cursor-pointer shadow-xs active:scale-95 inline-flex items-center gap-1.5"
-              title="Hide document upload progress section"
-            >
-              <AppIcon icon={Minus} size="xs" color="inherit" />
-              <span>Hide</span>
-            </button>
+
+          <div className="flex items-center gap-2 self-end sm:self-center shrink-0">
             {classUploadTasks.some(
               (t) => t.status === "done" || t.status === "error",
             ) && (
@@ -4398,144 +4383,175 @@ function FacultySubmissionPanelContent({
                     ),
                   )
                 }
-                className="text-xs font-extrabold px-3 py-1.5 rounded-xl border border-[#5e0000] bg-[#780000] hover:bg-[#5e0000] text-white transition cursor-pointer shadow-xs active:scale-95"
+                className="inline-flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-xl border border-[#5e0000] bg-[#780000] hover:bg-[#5e0000] text-white shadow-xs transition cursor-pointer active:scale-95"
               >
-                Clear Completed
+                <AppIcon icon={Trash} size="xs" color="inherit" />
+                <span>Clear</span>
               </button>
             )}
+            <button
+              type="button"
+              onClick={() => setIsUploadSectionVisible(false)}
+              className="inline-flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-xl border border-amber-600 bg-amber-500 hover:bg-amber-400 text-slate-950 shadow-xs transition cursor-pointer active:scale-95"
+              title="Hide document upload progress section"
+            >
+              <AppIcon icon={Minus} size="xs" color="inherit" />
+              <span>Hide</span>
+            </button>
           </div>
         </div>
 
         {/* Task items list or empty state */}
         {classUploadTasks.length === 0 ? (
-          <div className="p-5 rounded-xl border border-dashed border-slate-200 dark:border-slate-800 bg-white/70 dark:bg-slate-950/40 text-center space-y-1">
+          <div className="py-6 px-4 rounded-xl border border-dashed border-slate-200 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-950/40 text-center space-y-1">
             <p className="text-xs font-bold text-slate-700 dark:text-slate-300">
               No Active Document Uploads
             </p>
-            <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">
-              When you submit compliance documents, real-time percentage
-              progress and completion status will appear here.
+            <p className="text-xs text-slate-500 dark:text-slate-400">
+              Real-time upload progress and completion status will appear here
+              when you submit a document.
             </p>
           </div>
         ) : (
-          <div className="space-y-2">
-            {classUploadTasks.map((task) => (
-              <div
-                key={task.id}
-                className={`flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 rounded-xl border transition-all ${
-                  task.status === "done"
-                    ? "bg-[#0b5336]/10 border-[#0b5336]/30 dark:bg-[#0b5336]/20 dark:border-[#0b5336]/40"
-                    : task.status === "error"
-                      ? "bg-[#780000]/10 border-[#780000]/30 dark:bg-[#780000]/20 dark:border-[#780000]/40"
-                      : "bg-white dark:bg-slate-950/60 border-slate-200 dark:border-slate-800 shadow-2xs"
-                }`}
-              >
-                <div className="flex items-start sm:items-center gap-3 min-w-0 flex-1">
-                  <div
-                    className={`p-2 rounded-xl shrink-0 ${
-                      task.status === "done"
-                        ? "bg-[#0b5336] text-white"
-                        : task.status === "error"
-                          ? "bg-[#780000] text-white"
-                          : "bg-amber-500 text-slate-950"
-                    }`}
-                  >
-                    <AppIcon
-                      icon={
-                        task.status === "done"
-                          ? CheckCircle
-                          : task.status === "error"
-                            ? WarningCircle
-                            : CloudUpload
-                      }
-                      size="sm"
-                      color="inherit"
-                      className={
-                        task.status === "uploading" ? "animate-pulse" : ""
-                      }
-                    />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <span className="font-bold text-xs sm:text-sm text-slate-900 dark:text-slate-100 truncate">
-                        {task.requirementTitle}
-                      </span>
-                      {task.isRevision && (
-                        <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase bg-amber-500/20 text-amber-900 dark:text-amber-200 border border-amber-500/30">
-                          Revision
-                        </span>
-                      )}
-                    </div>
-                    <p className="text-xs text-slate-500 dark:text-slate-400 truncate">
-                      {task.fileName} •{" "}
-                      {(task.fileSize / (1024 * 1024)).toFixed(2)} MB
-                    </p>
-                  </div>
-                </div>
+          <div className="space-y-2.5">
+            {classUploadTasks.map((task) => {
+              const clampedProgress = Math.min(
+                100,
+                Math.max(0, Math.round(task.progress || 0)),
+              );
+              const sizeText =
+                task.fileSize < 1024 * 1024
+                  ? `${Math.max(1, Math.round(task.fileSize / 1024))} KB`
+                  : `${(task.fileSize / (1024 * 1024)).toFixed(2)} MB`;
 
-                <div className="flex items-center gap-3 w-full sm:w-auto shrink-0 justify-between sm:justify-end">
-                  {task.status === "uploading" && (
-                    <div className="flex items-center gap-3 w-full sm:w-56">
-                      <div className="flex-1 h-2.5 rounded-full bg-slate-200 dark:bg-slate-800 overflow-hidden">
-                        <div
-                          className="h-full bg-gradient-to-r from-amber-500 to-amber-600 rounded-full transition-all duration-200"
-                          style={{ width: `${task.progress}%` }}
+              return (
+                <div
+                  key={task.id}
+                  className={`rounded-xl border p-3.5 transition-all ${
+                    task.status === "done"
+                      ? "bg-[#0b5336]/5 dark:bg-[#0b5336]/15 border-[#0b5336]/25 dark:border-[#0b5336]/40"
+                      : task.status === "error"
+                        ? "bg-[#780000]/5 dark:bg-[#780000]/15 border-[#780000]/25 dark:border-[#780000]/40"
+                        : "bg-slate-50/70 dark:bg-slate-950/50 border-slate-200 dark:border-slate-800"
+                  }`}
+                >
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-3 min-w-0 flex-1">
+                      <div
+                        className={`h-8 w-8 rounded-lg flex items-center justify-center shrink-0 ${
+                          task.status === "done"
+                            ? "bg-[#0b5336] text-white"
+                            : task.status === "error"
+                              ? "bg-[#780000] text-white"
+                              : "bg-amber-500 text-slate-950"
+                        }`}
+                      >
+                        <AppIcon
+                          icon={
+                            task.status === "done"
+                              ? Check
+                              : task.status === "error"
+                                ? WarningCircle
+                                : CloudUpload
+                          }
+                          size="sm"
+                          color="inherit"
+                          strokeWidth={2.2}
                         />
                       </div>
-                      <span className="text-xs font-bold text-amber-700 dark:text-amber-300 w-12 text-right">
-                        {task.progress}%
-                      </span>
+
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="font-bold text-xs sm:text-sm text-slate-900 dark:text-slate-100 truncate">
+                            {task.requirementTitle}
+                          </span>
+                          {task.isRevision && (
+                            <span className="px-2 py-0.5 rounded-md text-[10px] font-bold uppercase bg-amber-100 dark:bg-amber-900/40 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-800">
+                              Revision
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-[11px] sm:text-xs text-slate-500 dark:text-slate-400 truncate mt-0.5">
+                          {task.fileName} • {sizeText}
+                        </p>
+                      </div>
                     </div>
-                  )}
-                  {task.status === "done" && (
-                    <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#0b5336] text-white text-xs font-bold shadow-xs">
-                      <AppIcon icon={CheckCircle} size="xs" color="inherit" />
-                      Done (100%)
-                    </span>
-                  )}
-                  {task.status === "error" && (
-                    <div className="flex items-center gap-1.5">
-                      <span
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#780000] text-white text-xs font-bold shadow-xs"
-                        title={task.errorMessage}
-                      >
-                        <AppIcon
-                          icon={WarningCircle}
-                          size="xs"
-                          color="inherit"
-                        />
-                        Failed
-                      </span>
+
+                    <div className="flex items-center gap-2 shrink-0">
+                      {task.status === "uploading" && (
+                        <span className="text-xs font-extrabold text-amber-700 dark:text-amber-400 tabular-nums">
+                          {clampedProgress}%
+                        </span>
+                      )}
+                      {task.status === "done" && (
+                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-[#0b5336] border border-[#08412a] text-white text-[11px] font-bold shadow-2xs">
+                          <AppIcon
+                            icon={Check}
+                            size="xs"
+                            color="white"
+                            strokeWidth={2.5}
+                          />
+                          <span>Uploaded</span>
+                        </span>
+                      )}
+                      {task.status === "error" && (
+                        <>
+                          <span
+                            className="inline-flex items-center px-2.5 py-1 rounded-full bg-[#780000] border border-[#5e0000] text-white text-[11px] font-bold shadow-2xs"
+                            title={task.errorMessage}
+                          >
+                            Failed
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => handleRetryTask(task)}
+                            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-amber-500 hover:bg-amber-400 border border-amber-600 text-slate-950 text-[11px] font-bold shadow-2xs transition cursor-pointer active:scale-95"
+                            title="Retry upload"
+                          >
+                            <AppIcon
+                              icon={SystemRestart}
+                              size="xs"
+                              color="inherit"
+                            />
+                            <span>Retry</span>
+                          </button>
+                        </>
+                      )}
                       <button
                         type="button"
-                        onClick={() => handleRetryTask(task)}
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 active:scale-95 text-slate-950 text-xs font-extrabold shadow-xs transition cursor-pointer"
-                        title="Retry upload"
+                        onClick={() =>
+                          setUploadTasks((prev) =>
+                            prev.filter((t) => t.id !== task.id),
+                          )
+                        }
+                        className="h-7 w-7 inline-flex items-center justify-center rounded-lg border border-transparent hover:border-slate-200 dark:hover:border-slate-700 hover:bg-white dark:hover:bg-slate-800 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition cursor-pointer"
+                        title="Dismiss"
+                        aria-label="Dismiss upload item"
                       >
-                        <AppIcon
-                          icon={SystemRestart}
-                          size="xs"
-                          color="inherit"
-                        />
-                        <span>Retry</span>
+                        <AppIcon icon={Xmark} size="xs" color="inherit" />
                       </button>
                     </div>
+                  </div>
+
+                  {task.status === "uploading" && (
+                    <div className="mt-2.5 pl-11">
+                      <div className="h-2 w-full rounded-full bg-slate-200 dark:bg-slate-800 overflow-hidden">
+                        <div
+                          className="h-full rounded-full bg-amber-500 transition-all duration-200 ease-out"
+                          style={{ width: `${Math.max(clampedProgress, 3)}%` }}
+                        />
+                      </div>
+                    </div>
                   )}
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setUploadTasks((prev) =>
-                        prev.filter((t) => t.id !== task.id),
-                      )
-                    }
-                    className="p-1 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-600 transition cursor-pointer"
-                    title="Dismiss"
-                  >
-                    <AppIcon icon={Xmark} size="xs" color="inherit" />
-                  </button>
+
+                  {task.status === "error" && task.errorMessage && (
+                    <p className="mt-2 pl-11 text-[11px] font-medium text-rose-700 dark:text-rose-300">
+                      {task.errorMessage}
+                    </p>
+                  )}
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>
@@ -7400,22 +7416,22 @@ function FacultySubmissionPanelContent({
                               {/* Desktop Requirements Table */}
                               <div className="hidden md:block overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs">
                                 <div className="overflow-x-auto">
-                                  <table className="w-full table-fixed text-left text-xs text-slate-600 dark:text-slate-300 min-w-[880px]">
+                                  <table className="w-full table-fixed text-left text-xs text-slate-600 dark:text-slate-300 min-w-[840px]">
                                     <thead className="bg-slate-50/60 dark:bg-slate-950/50 border-b border-slate-200/80 dark:border-slate-800/80 text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
                                       <tr>
-                                        <th className="px-4 py-3 w-[25%] text-center">
+                                        <th className="px-3.5 py-3 w-[22%] text-center">
                                           Requirement
                                         </th>
-                                        <th className="px-3 py-3 w-[10%] text-center">
+                                        <th className="px-2.5 py-3 w-[10%] text-center">
                                           Type
                                         </th>
-                                        <th className="px-4 py-3 w-[25%] text-center">
+                                        <th className="px-3.5 py-3 w-[24%] text-center">
                                           Attached File
                                         </th>
-                                        <th className="px-4 py-3 w-[24%]">
+                                        <th className="px-3.5 py-3 w-[22%]">
                                           Notes &amp; Feedback
                                         </th>
-                                        <th className="px-4 py-3 w-[16%] text-center">
+                                        <th className="px-3 py-3 w-[22%] text-center">
                                           Status
                                         </th>
                                       </tr>
@@ -7624,11 +7640,11 @@ function FacultySubmissionPanelContent({
                                             </td>
 
                                             {/* Column 5: Status */}
-                                            <td className="px-4 py-3.5 align-middle text-center">
+                                            <td className="px-3 py-3.5 align-middle text-center">
                                               <div className="flex items-center justify-center">
                                                 <SubmissionStatusBadge
                                                   status={badgeStatus}
-                                                  size="md"
+                                                  size="sm"
                                                 />
                                               </div>
                                             </td>
