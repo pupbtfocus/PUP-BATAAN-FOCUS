@@ -597,7 +597,7 @@ export function DocumentPreviewModal({
         aria-hidden="true"
       />
       <div
-        className="relative z-10 w-full max-w-[96vw] xl:max-w-7xl h-[88dvh] max-h-[calc(100dvh-2rem)] flex flex-col rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xl overflow-hidden"
+        className="relative z-10 w-full min-w-0 max-w-[96vw] xl:max-w-7xl h-[90dvh] sm:h-[88dvh] max-h-[calc(100dvh-1rem)] sm:max-h-[calc(100dvh-2rem)] flex flex-col rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xl overflow-hidden"
         onClick={(event) => event.stopPropagation()}
       >
         {/* Header */}
@@ -619,7 +619,7 @@ export function DocumentPreviewModal({
         />
 
         {/* Subheader Metadata Bar */}
-        <div className="flex flex-wrap items-center justify-between gap-2.5 border-b border-slate-200 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-950/60 px-4 sm:px-5 py-2 shrink-0">
+        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-950/60 px-3 sm:px-5 py-2 shrink-0 min-w-0">
           <div className="flex flex-wrap items-center gap-2">
             {isUpload ? (
               <>
@@ -651,11 +651,11 @@ export function DocumentPreviewModal({
         </div>
 
         {/* Content Body: Wide Viewer + Compact Details Sidebar */}
-        <div className="p-2.5 sm:p-3.5 flex-1 overflow-y-auto lg:overflow-hidden min-h-0 flex flex-col">
-          <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs lg:overflow-hidden flex flex-col lg:grid lg:grid-cols-[minmax(0,1fr)_270px] xl:grid-cols-[minmax(0,1fr)_290px] divide-y lg:divide-y-0 lg:divide-x divide-slate-200 dark:divide-slate-800 lg:flex-1 lg:min-h-0">
+        <div className="p-2.5 sm:p-3.5 flex-1 overflow-y-auto overflow-x-hidden lg:overflow-hidden min-h-0 min-w-0 flex flex-col">
+          <div className="shrink-0 lg:shrink w-full min-w-0 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs lg:overflow-hidden block lg:grid lg:grid-cols-[minmax(0,1fr)_270px] xl:grid-cols-[minmax(0,1fr)_290px] divide-y lg:divide-y-0 lg:divide-x divide-slate-200 dark:divide-slate-800 lg:flex-1 lg:min-h-0">
             {/* Main Viewer Area (Left Side - Wide) */}
             {isOfficeDoc ? (
-              <div className="w-full h-[42dvh] min-h-[260px] sm:h-[48dvh] lg:h-full flex flex-col min-h-0 overflow-hidden bg-white dark:bg-slate-900">
+              <div className="w-full min-w-0 block lg:flex lg:flex-col lg:h-full lg:min-h-0 lg:overflow-y-auto bg-white dark:bg-slate-900">
                 <OnlineDocumentPreview
                   key={fileUrl}
                   fileName={effectiveFileName || documentTitle}
@@ -676,7 +676,7 @@ export function DocumentPreviewModal({
                 />
               </div>
             ) : (
-              <div className="h-[42dvh] min-h-[260px] sm:h-[48dvh] lg:flex-1 lg:min-h-0 overflow-hidden bg-slate-100 dark:bg-slate-950 flex items-center justify-center relative lg:h-full w-full">
+              <div className="w-full min-w-0 h-[42dvh] min-h-[240px] sm:h-[48dvh] lg:h-full lg:flex-1 lg:min-h-0 overflow-hidden bg-slate-100 dark:bg-slate-950 flex items-center justify-center relative">
                 {typeInfo.isPdf && (isLoadingBlob || (!blobUrl && !resolvedInfo)) ? (
                   <div className="flex flex-col items-center justify-center h-full w-full bg-slate-100 dark:bg-slate-950 text-slate-500 dark:text-slate-400 gap-2">
                     <AppIcon icon={SystemRestart} size="md" color="inherit" className="animate-spin text-slate-400" />
@@ -707,7 +707,7 @@ export function DocumentPreviewModal({
             )}
 
             {/* Compact Details & Actions Sidebar (Right Side) */}
-            <div className="flex flex-col bg-white dark:bg-slate-900 lg:h-full lg:min-h-0 text-xs lg:overflow-hidden">
+            <div className="block lg:flex lg:flex-col min-w-0 bg-white dark:bg-slate-900 lg:h-full lg:min-h-0 text-xs lg:overflow-hidden">
               {/* Scrollable Details */}
               <div className="lg:flex-1 lg:overflow-y-auto lg:min-h-0 divide-y divide-slate-200/80 dark:divide-slate-800/80">
                 {/* 1. Remarks & Notes */}
@@ -797,7 +797,7 @@ export function DocumentPreviewModal({
                           {typeInfo.icon("h-4 w-4")}
                         </div>
                         <div className="min-w-0 flex-1">
-                          <span className="leading-snug line-clamp-2 block text-xs">{documentTitle}</span>
+                          <span className="leading-snug break-words block text-xs">{documentTitle}</span>
                         </div>
                       </div>
                     </div>

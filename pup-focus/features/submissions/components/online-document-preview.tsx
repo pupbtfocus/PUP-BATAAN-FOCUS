@@ -244,7 +244,7 @@ export function OnlineDocumentPreview({
     const currentExternalUrl = isGoogle ? googleViewerUrl : officeViewerUrl;
 
     return (
-      <div className={`flex flex-col h-full w-full ${borderless ? "rounded-none border-0 shadow-none min-h-0" : "rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xl min-h-[360px] sm:min-h-[460px] lg:min-h-[560px]"} overflow-hidden bg-slate-100 dark:bg-slate-950`}>
+      <div className={`flex flex-col w-full min-w-0 ${borderless ? "rounded-none border-0 shadow-none h-[52dvh] min-h-[300px] sm:h-[58dvh] lg:h-full lg:min-h-0" : "h-full rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xl min-h-[360px] sm:min-h-[460px] lg:min-h-[560px]"} overflow-hidden bg-slate-100 dark:bg-slate-950`}>
         {/* Top Control Bar */}
         <div className="flex flex-wrap items-center justify-between gap-2 px-3 py-2 sm:px-3.5 sm:py-2.5 bg-slate-100 dark:bg-slate-950 border-b border-slate-200 dark:border-slate-800 text-xs">
           <div className="flex items-center gap-2">
@@ -317,7 +317,7 @@ export function OnlineDocumentPreview({
   // Local document reader mode (for blob: URLs that cloud viewers can't fetch)
   if (viewerMode === "local_doc") {
     return (
-      <div className={`flex flex-col h-full w-full ${borderless ? "rounded-none border-0 shadow-none min-h-0" : "rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xl min-h-[360px] sm:min-h-[460px] lg:min-h-[560px]"} overflow-hidden bg-slate-100 dark:bg-slate-950`}>
+      <div className={`flex flex-col w-full min-w-0 ${borderless ? "rounded-none border-0 shadow-none h-[52dvh] min-h-[300px] sm:h-[58dvh] lg:h-full lg:min-h-0" : "h-full rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xl min-h-[360px] sm:min-h-[460px] lg:min-h-[560px]"} overflow-hidden bg-slate-100 dark:bg-slate-950`}>
         {/* Top Control Bar */}
         <div className="flex flex-wrap items-center justify-between gap-2 px-3 py-2 sm:px-3.5 sm:py-2.5 bg-slate-100 dark:bg-slate-950 border-b border-slate-200 dark:border-slate-800 text-xs">
           <div className="flex items-center gap-2">
@@ -401,24 +401,24 @@ export function OnlineDocumentPreview({
 
   // Default: Simple, clean card matching user request with official icons
   return (
-    <div className={`flex flex-col items-center justify-center w-full max-w-lg mx-auto p-4 sm:p-6 lg:p-7 text-center ${borderless ? "bg-transparent my-auto" : "bg-white dark:bg-slate-900 rounded-2xl sm:rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm backdrop-blur-xs"} transition-all`}>
+    <div className={`flex flex-col items-center justify-center w-full min-w-0 max-w-lg mx-auto p-3.5 sm:p-6 lg:p-7 text-center ${borderless ? "bg-transparent lg:my-auto" : "bg-white dark:bg-slate-900 rounded-2xl sm:rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm backdrop-blur-xs"} transition-all`}>
       {/* File Brand Icon Badge (Using official Microsoft / Office App Icon) */}
-      <div className="relative p-2.5 sm:p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/80 mb-2.5 sm:mb-3.5 shadow-2xs border border-slate-200 dark:border-slate-700/60 flex items-center justify-center">
+      <div className="relative p-2.5 sm:p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/80 mb-2.5 sm:mb-3.5 shadow-2xs border border-slate-200 dark:border-slate-700/60 flex items-center justify-center shrink-0">
         <img
           src={officeAppIcon}
           alt={brand.label}
-          className="w-12 h-12 sm:w-14 sm:h-14 object-contain select-none drop-shadow-xs"
+          className="w-11 h-11 sm:w-14 sm:h-14 object-contain select-none drop-shadow-xs"
         />
         <span className="absolute -bottom-1.5 -right-1.5 px-2 py-0.5 rounded-md text-[10px] font-extrabold uppercase tracking-wider bg-slate-900 text-white dark:bg-slate-800 dark:text-slate-100 shadow-xs border border-slate-700 dark:border-slate-600">
           {ext.toUpperCase()}
         </span>
       </div>
 
-      <h4 className="text-sm sm:text-base lg:text-lg font-bold text-slate-900 dark:text-slate-100 mb-1 max-w-sm truncate px-1" title={displayName}>
+      <h4 className="w-full max-w-sm min-w-0 break-words text-sm sm:text-base lg:text-lg font-bold text-slate-900 dark:text-slate-100 mb-1 px-1" title={displayName}>
         {displayName}
       </h4>
 
-      <p className="text-xs text-slate-600 dark:text-slate-400 mb-3.5 sm:mb-5 max-w-md leading-relaxed px-1">
+      <p className="w-full min-w-0 break-words text-xs text-slate-600 dark:text-slate-400 mb-3.5 sm:mb-5 max-w-md leading-relaxed px-1">
         {isBlob ? (
           <>
             This file is <strong className="font-bold text-slate-800 dark:text-slate-200">selected but not yet uploaded</strong>. Cloud viewers become available after uploading. You can preview the document content directly below.
@@ -435,28 +435,28 @@ export function OnlineDocumentPreview({
       </p>
 
       {/* Online Viewer Action Cards */}
-      <div className="w-full space-y-2.5 sm:space-y-3 max-w-md text-left">
+      <div className="w-full min-w-0 space-y-2.5 sm:space-y-3 max-w-md text-left">
         {/* Option 1: Google Sheets / Docs / Slides */}
         <a
           href={isBlob ? undefined : googleViewerUrl}
           onClick={isBlob ? (e) => e.preventDefault() : undefined}
           target="_blank"
           rel="noopener noreferrer"
-          className={`flex items-center justify-between p-3 sm:p-3.5 rounded-xl sm:rounded-2xl border ${
+          className={`flex items-center justify-between gap-2 w-full min-w-0 p-3 sm:p-3.5 rounded-xl sm:rounded-2xl border ${
             isBlob
               ? "border-slate-200/50 dark:border-slate-800/50 bg-slate-50/50 dark:bg-slate-900/50 opacity-60 cursor-not-allowed"
               : "border-slate-200 dark:border-slate-800 bg-white hover:bg-slate-50 dark:bg-slate-900 dark:hover:bg-slate-800/80 hover:border-slate-300 dark:hover:border-slate-700 cursor-pointer active:scale-[0.99]"
           } transition-all group shadow-xs`}
         >
-          <div className="flex items-center gap-3 sm:gap-3.5 min-w-0">
-            <div className="shrink-0 w-10 h-10 sm:w-11 sm:h-11 p-1.5 sm:p-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700/80 flex items-center justify-center shadow-2xs group-hover:scale-105 transition-transform">
+          <div className="flex items-center gap-2.5 sm:gap-3.5 flex-1 min-w-0">
+            <div className="shrink-0 w-9 h-9 sm:w-11 sm:h-11 p-1.5 sm:p-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700/80 flex items-center justify-center shadow-2xs group-hover:scale-105 transition-transform">
               <img
                 src={googleAppIcon}
                 alt={googleAppName}
                 className="w-full h-full object-contain select-none"
               />
             </div>
-            <div className="min-w-0">
+            <div className="flex-1 min-w-0">
               <span className="text-xs sm:text-sm font-semibold text-slate-900 dark:text-slate-100 group-hover:text-slate-950 dark:group-hover:text-white transition-colors block truncate">
                 Open in {googleAppName} (Drive)
               </span>
@@ -469,7 +469,7 @@ export function OnlineDocumentPreview({
             icon={OpenNewWindow}
             size="md"
             color="muted"
-            className="shrink-0 ml-2 group-hover:text-slate-900 dark:group-hover:text-slate-100 transition-colors"
+            className="shrink-0 group-hover:text-slate-900 dark:group-hover:text-slate-100 transition-colors"
           />
         </a>
 
@@ -479,21 +479,21 @@ export function OnlineDocumentPreview({
           onClick={isBlob ? (e) => e.preventDefault() : undefined}
           target="_blank"
           rel="noopener noreferrer"
-          className={`flex items-center justify-between p-3 sm:p-3.5 rounded-xl sm:rounded-2xl border ${
+          className={`flex items-center justify-between gap-2 w-full min-w-0 p-3 sm:p-3.5 rounded-xl sm:rounded-2xl border ${
             isBlob
               ? "border-slate-200/50 dark:border-slate-800/50 bg-slate-50/50 dark:bg-slate-900/50 opacity-60 cursor-not-allowed"
               : "border-slate-200 dark:border-slate-800 bg-white hover:bg-slate-50 dark:bg-slate-900 dark:hover:bg-slate-800/80 hover:border-slate-300 dark:hover:border-slate-700 cursor-pointer active:scale-[0.99]"
           } transition-all group shadow-xs`}
         >
-          <div className="flex items-center gap-3 sm:gap-3.5 min-w-0">
-            <div className="shrink-0 w-10 h-10 sm:w-11 sm:h-11 p-1.5 sm:p-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700/80 flex items-center justify-center shadow-2xs group-hover:scale-105 transition-transform">
+          <div className="flex items-center gap-2.5 sm:gap-3.5 flex-1 min-w-0">
+            <div className="shrink-0 w-9 h-9 sm:w-11 sm:h-11 p-1.5 sm:p-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700/80 flex items-center justify-center shadow-2xs group-hover:scale-105 transition-transform">
               <img
                 src={officeAppIcon}
                 alt={officeAppName}
                 className="w-full h-full object-contain select-none"
               />
             </div>
-            <div className="min-w-0">
+            <div className="flex-1 min-w-0">
               <span className="text-xs sm:text-sm font-semibold text-slate-900 dark:text-slate-100 group-hover:text-slate-950 dark:group-hover:text-white transition-colors block truncate">
                 Open in {officeAppName}
               </span>
@@ -506,7 +506,7 @@ export function OnlineDocumentPreview({
             icon={OpenNewWindow}
             size="md"
             color="muted"
-            className="shrink-0 ml-2 group-hover:text-slate-900 dark:group-hover:text-slate-100 transition-colors"
+            className="shrink-0 group-hover:text-slate-900 dark:group-hover:text-slate-100 transition-colors"
           />
         </a>
 
