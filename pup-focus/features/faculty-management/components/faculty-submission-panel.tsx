@@ -1012,49 +1012,18 @@ function FacultySubmissionPanelContent({
   const facultyClassesRef = useRef<FacultyClass[]>([]);
   facultyClassesRef.current = facultyClasses;
   const classStatusesCacheRef = useRef<Record<string, RequirementStatus[]>>({});
-  const [programCodeOptions, setProgramCodeOptions] = useState<string[]>(() => {
-    const defaults = [
-      "BEED",
-      "BSA",
-      "BSBAHRM",
-      "BSENT",
-      "BSIE",
-      "BSIT",
-      "BSMA",
-      "DIT",
-      "DOMT-LOM",
-    ];
-    const initialCode = initialData?.program?.code?.trim().toUpperCase();
-    if (initialCode && !defaults.includes(initialCode)) {
-      defaults.push(initialCode);
-    }
-    return defaults.sort((a, b) => a.localeCompare(b));
-  });
-  const [defaultProgramCode, setDefaultProgramCode] = useState<string>(() => {
-    const code = initialData?.program?.code?.trim().toUpperCase();
-    if (code) return code;
-    const raw = initialData?.department || "";
-    if (raw.includes("—")) {
-      return raw.split("—")[0]?.trim().toUpperCase() || "";
-    }
-    return "";
-  });
+  const [programCodeOptions, setProgramCodeOptions] = useState<string[]>([]);
   const [isAddClassModalOpen, setIsAddClassModalOpen] = useState(false);
+  const [isCustomAddProgram, setIsCustomAddProgram] = useState(false);
+  const [isCustomEditProgram, setIsCustomEditProgram] = useState(false);
   const [isSubmittingClass, setIsSubmittingClass] = useState(false);
-  const [classForm, setClassForm] = useState(() => {
-    const code =
-      initialData?.program?.code?.trim().toUpperCase() ||
-      (initialData?.department?.includes("—")
-        ? initialData.department.split("—")[0]?.trim().toUpperCase() || ""
-        : "");
-    return {
-      subject_code: "",
-      description: "",
-      units: 3.0,
-      program: code,
-      year_section: "",
-      section_code: code,
-    };
+  const [classForm, setClassForm] = useState({
+    subject_code: "",
+    description: "",
+    units: 3.0,
+    program: "",
+    year_section: "",
+    section_code: "",
   });
   const [classFormError, setClassFormError] = useState<string | null>(null);
   const [isConfirmCreateClassModalOpen, setIsConfirmCreateClassModalOpen] =
@@ -2157,41 +2126,53 @@ function FacultySubmissionPanelContent({
     [],
   );
 
+  const fetchProgramOptions = useCallback(async () => {
+    try {
+      const res = await fetch(`/api/programs?_t=${Date.now()}`, {
+        cache: "no-store",
+      });
+      if (!res.ok) return;
+      const data = await res.json().catch(() => null);
+      if (!Array.isArray(data?.programs)) return;
+      const codes = Array.from(
+        new Set(
+          (data.programs as Array<{ code?: string; is_hidden?: boolean }>)
+            .filter((p) => !p.is_hidden)
+            .map((p) => (p.code || "").trim().toUpperCase())
+            .filter(
+              (code) =>
+                Boolean(code) && code !== "PROGRAM" && code !== "__CUSTOM__",
+            ),
+        ),
+      ).sort((a, b) => a.localeCompare(b));
+      setProgramCodeOptions(codes);
+    } catch {
+      // Keep current list on transient error
+    }
+  }, []);
+
   useEffect(() => {
     if (!isMounted) return;
     void fetchFacultyClasses();
-    let active = true;
-    fetch(`/api/programs?_t=${Date.now()}`, { cache: "no-store" })
-      .then((res) => (res.ok ? res.json() : null))
-      .then((data) => {
-        if (!active || !Array.isArray(data?.programs)) return;
-        const codes = (data.programs as Array<{ code?: string }>)
-          .map((p) => (p.code || "").trim().toUpperCase())
-          .filter(Boolean);
-        if (codes.length > 0) {
-          setProgramCodeOptions((prev) =>
-            Array.from(new Set([...prev, ...codes])).sort((a, b) =>
-              a.localeCompare(b),
-            ),
-          );
-        }
-      })
-      .catch(() => null);
-    return () => {
-      active = false;
-    };
-  }, [isMounted, fetchFacultyClasses]);
+    void fetchProgramOptions();
+  }, [isMounted, fetchFacultyClasses, fetchProgramOptions]);
 
   const addModalProgramOptions = useMemo(() => {
     const p = classForm.program.trim().toUpperCase();
-    return p && !programCodeOptions.includes(p)
+    return p &&
+      p !== "PROGRAM" &&
+      p !== "__CUSTOM__" &&
+      !programCodeOptions.includes(p)
       ? [...programCodeOptions, p].sort((a, b) => a.localeCompare(b))
       : programCodeOptions;
   }, [programCodeOptions, classForm.program]);
 
   const editModalProgramOptions = useMemo(() => {
     const p = editClassForm.program.trim().toUpperCase();
-    return p && !programCodeOptions.includes(p)
+    return p &&
+      p !== "PROGRAM" &&
+      p !== "__CUSTOM__" &&
+      !programCodeOptions.includes(p)
       ? [...programCodeOptions, p].sort((a, b) => a.localeCompare(b))
       : programCodeOptions;
   }, [programCodeOptions, editClassForm.program]);
@@ -2207,10 +2188,11 @@ function FacultySubmissionPanelContent({
     }
   }, [isMounted, facultyClasses, activeAY, activeSem]);
 
-  // Realtime synchronization for classes, submissions, reviews, windows, templates, and faculty profile
+  // Realtime synchronization for classes, submissions, reviews, windows, templates, programs, and faculty profile
   useRealtimeSync(() => {
     void refreshFacultyProfile();
     void fetchFacultyClasses({ silent: true });
+    void fetchProgramOptions();
     void fetchStatuses(activeAY, activeSem, selectedClassIdRef.current, {
       silent: true,
     });
@@ -2232,6 +2214,7 @@ function FacultySubmissionPanelContent({
       await Promise.all([
         refreshFacultyProfile(),
         fetchFacultyClasses({ silent: true }),
+        fetchProgramOptions(),
         fetchStatuses(activeAY, activeSem, selectedClassId, { silent: true }),
         ...facultyClasses
           .filter((c) => c.id !== selectedClassId)
@@ -2254,6 +2237,21 @@ function FacultySubmissionPanelContent({
     } finally {
       setIsRefreshingHistory(false);
     }
+  };
+
+  const openAddClassModal = () => {
+    setClassFormError(null);
+    setIsCustomAddProgram(false);
+    setClassForm({
+      subject_code: "",
+      description: "",
+      units: 3.0,
+      program: "",
+      year_section: "",
+      section_code: "",
+    });
+    void fetchProgramOptions();
+    setIsAddClassModalOpen(true);
   };
 
   const handleAddClassSubmit = (e: React.FormEvent) => {
@@ -2287,7 +2285,11 @@ function FacultySubmissionPanelContent({
       setClassFormError("Description is required.");
       return;
     }
-    if (!normalizedProgram) {
+    if (
+      !normalizedProgram ||
+      normalizedProgram === "PROGRAM" ||
+      normalizedProgram === "__CUSTOM__"
+    ) {
       setClassFormError("Program is required.");
       return;
     }
@@ -2374,6 +2376,7 @@ function FacultySubmissionPanelContent({
       });
       setIsConfirmCreateClassModalOpen(false);
       setIsAddClassModalOpen(false);
+      setIsCustomAddProgram(false);
       setCreatedClassSuccessData({
         id: newClass.id,
         subject_code: newClass.subject_code,
@@ -2386,9 +2389,9 @@ function FacultySubmissionPanelContent({
         subject_code: "",
         description: "",
         units: 3.0,
-        program: defaultProgramCode,
+        program: "",
         year_section: "",
-        section_code: defaultProgramCode,
+        section_code: "",
       });
       setSubmissionMessage(
         `Class ${newClass.subject_code} (${newClass.section_code}) created successfully.`,
@@ -2411,9 +2414,10 @@ function FacultySubmissionPanelContent({
 
   const handleOpenEditClass = (cls: FacultyClass, e?: React.MouseEvent) => {
     if (e) e.stopPropagation();
+    void fetchProgramOptions();
     setClassToEdit(cls);
     const parsedSection = splitSectionCode(cls.section_code || "");
-    const resolvedProgram = parsedSection.program || defaultProgramCode;
+    const resolvedProgram = parsedSection.program || "";
     const resolvedYearSection = parsedSection.yearSection;
     setEditClassForm({
       subject_code: cls.subject_code,
@@ -2423,6 +2427,7 @@ function FacultySubmissionPanelContent({
       year_section: resolvedYearSection,
       section_code: combineSectionCode(resolvedProgram, resolvedYearSection),
     });
+    setIsCustomEditProgram(false);
     setEditClassError(null);
     setIsEditClassModalOpen(true);
   };
@@ -2453,7 +2458,11 @@ function FacultySubmissionPanelContent({
       setEditClassError("Description is required.");
       return;
     }
-    if (!normalizedProgram) {
+    if (
+      !normalizedProgram ||
+      normalizedProgram === "PROGRAM" ||
+      normalizedProgram === "__CUSTOM__"
+    ) {
       setEditClassError("Program is required.");
       return;
     }
@@ -2499,6 +2508,7 @@ function FacultySubmissionPanelContent({
         timestamp: Date.now(),
       });
       setIsEditClassModalOpen(false);
+      setIsCustomEditProgram(false);
       setClassToEdit(null);
       setSubmissionMessage(
         `Class ${normalizedSubject} updated successfully.`,
@@ -4532,6 +4542,96 @@ function FacultySubmissionPanelContent({
     );
   };
 
+  const CUSTOM_PROGRAM_VALUE = "__CUSTOM__";
+  const normalizeCustomProgramInput = (raw: string) =>
+    raw.toUpperCase().replace(/[^A-Z0-9\s-]/g, "").replace(/\s{2,}/g, " ");
+
+  const renderProgramField = ({
+    value,
+    options,
+    isCustom,
+    onSetCustom,
+    onChangeProgram,
+  }: {
+    value: string;
+    options: string[];
+    isCustom: boolean;
+    onSetCustom: (custom: boolean) => void;
+    onChangeProgram: (program: string) => void;
+  }) => {
+    if (isCustom) {
+      return (
+        <div className="relative flex items-center">
+          <input
+            type="text"
+            required
+            autoFocus
+            value={value}
+            onChange={(e) =>
+              onChangeProgram(normalizeCustomProgramInput(e.target.value))
+            }
+            placeholder="ENTER PROGRAM"
+            autoCapitalize="characters"
+            maxLength={24}
+            className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-3 pr-8 py-2 text-xs sm:text-sm font-semibold uppercase text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 transition"
+          />
+          <button
+            type="button"
+            onClick={() => {
+              onSetCustom(false);
+              onChangeProgram("");
+            }}
+            title="Back to program list"
+            aria-label="Back to program list"
+            className="absolute right-2 p-1 rounded-md text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer"
+          >
+            <AppIcon icon={Xmark} size="xs" color="inherit" />
+          </button>
+        </div>
+      );
+    }
+
+    return (
+      <select
+        required
+        value={value}
+        onChange={(e) => {
+          const next = e.target.value.toUpperCase();
+          if (next === CUSTOM_PROGRAM_VALUE) {
+            onSetCustom(true);
+            onChangeProgram("");
+            return;
+          }
+          onChangeProgram(next);
+        }}
+        className={`w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-3 py-2 text-xs sm:text-sm font-semibold uppercase outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 transition cursor-pointer ${
+          value
+            ? "text-slate-900 dark:text-slate-100"
+            : "text-slate-400 dark:text-slate-500"
+        }`}
+      >
+        <option value="" disabled hidden>
+          Program
+        </option>
+        {options.map((code) => (
+          <option
+            key={code}
+            value={code}
+            className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100"
+          >
+            {code}
+          </option>
+        ))}
+        <option
+          value={CUSTOM_PROGRAM_VALUE}
+          className="bg-white dark:bg-slate-900 text-amber-700 dark:text-amber-400 font-bold"
+        >
+          + Custom (Enter Manually)
+        </option>
+      </select>
+    );
+  };
+
   return (
     <div className="relative flex min-h-full md:h-full w-full items-stretch gap-0">
       {/* ─── Initial page-load overlay ─────────────────────────────── */}
@@ -5421,10 +5521,7 @@ function FacultySubmissionPanelContent({
                       <div className="grid grid-cols-1 sm:flex sm:flex-wrap items-center gap-2 sm:gap-2.5 w-full sm:w-auto shrink-0">
                         <button
                           type="button"
-                          onClick={() => {
-                            setClassFormError(null);
-                            setIsAddClassModalOpen(true);
-                          }}
+                          onClick={openAddClassModal}
                           className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 bg-[#780000] hover:bg-[#5e0000] text-white border border-[#5e0000] rounded-xl px-4 py-2 sm:px-4.5 sm:py-2.5 text-xs sm:text-sm font-bold transition-all cursor-pointer whitespace-nowrap shadow-xs active:scale-[0.98]"
                         >
                           <AppIcon icon={Plus} size="sm" color="white" />
@@ -5699,10 +5796,7 @@ function FacultySubmissionPanelContent({
                             </p>
                             <button
                               type="button"
-                              onClick={() => {
-                                setClassFormError(null);
-                                setIsAddClassModalOpen(true);
-                              }}
+                              onClick={openAddClassModal}
                               className="mt-6 inline-flex items-center gap-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold px-5 py-2.5 text-xs sm:text-sm shadow-md transition-all cursor-pointer active:scale-95"
                             >
                               <AppIcon icon={Plus} size="sm" color="inherit" />
@@ -6394,10 +6488,7 @@ function FacultySubmissionPanelContent({
                         </select>
                         <button
                           type="button"
-                          onClick={() => {
-                            setClassFormError(null);
-                            setIsAddClassModalOpen(true);
-                          }}
+                          onClick={openAddClassModal}
                           className="w-full sm:w-auto inline-flex items-center justify-center gap-1 px-3.5 py-2 rounded-xl bg-[#780000] hover:bg-[#5e0000] text-white border border-[#5e0000] text-xs font-bold transition-all cursor-pointer shadow-xs active:scale-95 shrink-0"
                           title="Add another class load"
                         >
@@ -8714,11 +8805,12 @@ function FacultySubmissionPanelContent({
                           Program, Year &amp; Section <span className="text-rose-500">*</span>
                         </label>
                         <div className="grid grid-cols-[minmax(0,1fr)_6.5rem] gap-2">
-                          <select
-                            required
-                            value={classForm.program}
-                            onChange={(e) => {
-                              const program = e.target.value.toUpperCase();
+                          {renderProgramField({
+                            value: classForm.program,
+                            options: addModalProgramOptions,
+                            isCustom: isCustomAddProgram,
+                            onSetCustom: setIsCustomAddProgram,
+                            onChangeProgram: (program) =>
                               setClassForm((prev) => ({
                                 ...prev,
                                 program,
@@ -8726,21 +8818,8 @@ function FacultySubmissionPanelContent({
                                   program,
                                   prev.year_section,
                                 ),
-                              }));
-                            }}
-                            className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-3 py-2 text-xs sm:text-sm font-semibold uppercase text-slate-900 dark:text-slate-100 outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 transition cursor-pointer"
-                          >
-                            <option value="">Program</option>
-                            {addModalProgramOptions.map((code) => (
-                              <option
-                                key={code}
-                                value={code}
-                                className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100"
-                              >
-                                {code}
-                              </option>
-                            ))}
-                          </select>
+                              })),
+                          })}
                           <input
                             type="text"
                             inputMode="numeric"
@@ -9252,11 +9331,12 @@ function FacultySubmissionPanelContent({
                           Program, Year &amp; Section <span className="text-rose-500">*</span>
                         </label>
                         <div className="grid grid-cols-[minmax(0,1fr)_6.5rem] gap-2">
-                          <select
-                            required
-                            value={editClassForm.program}
-                            onChange={(e) => {
-                              const program = e.target.value.toUpperCase();
+                          {renderProgramField({
+                            value: editClassForm.program,
+                            options: editModalProgramOptions,
+                            isCustom: isCustomEditProgram,
+                            onSetCustom: setIsCustomEditProgram,
+                            onChangeProgram: (program) =>
                               setEditClassForm((prev) => ({
                                 ...prev,
                                 program,
@@ -9264,21 +9344,8 @@ function FacultySubmissionPanelContent({
                                   program,
                                   prev.year_section,
                                 ),
-                              }));
-                            }}
-                            className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-3 py-2 text-xs sm:text-sm font-semibold uppercase text-slate-900 dark:text-slate-100 outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 transition cursor-pointer"
-                          >
-                            <option value="">Program</option>
-                            {editModalProgramOptions.map((code) => (
-                              <option
-                                key={code}
-                                value={code}
-                                className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100"
-                              >
-                                {code}
-                              </option>
-                            ))}
-                          </select>
+                              })),
+                          })}
                           <input
                             type="text"
                             inputMode="numeric"

@@ -174,7 +174,7 @@ export function formatSectionCodeInput(raw: string): string {
 }
 
 export function isValidSectionCode(value: string): boolean {
-  return /^[A-Z]+(?:[ -][A-Z]+)*\s+\d-\d$/.test(value.trim());
+  return /^[A-Z0-9]+(?:[ -][A-Z0-9]+)*\s+\d-\d$/.test(value.trim());
 }
 
 export function formatYearSectionInput(raw: string): string {
@@ -203,7 +203,7 @@ export function splitSectionCode(sectionCode: string): {
   yearSection: string;
 } {
   const formatted = formatSectionCodeInput(sectionCode).trim();
-  const match = formatted.match(/^([A-Z]+(?:[ -][A-Z]+)*)\s+(\d-\d|\d-?)$/);
+  const match = formatted.match(/^([A-Z0-9]+(?:[ -][A-Z0-9]+)*)\s+(\d-\d|\d-?)$/);
   if (match) {
     return {
       program: match[1].trim(),
