@@ -373,7 +373,7 @@ export async function GET(request: NextRequest) {
       }
 
       const fileBuffer = await fileBlob.arrayBuffer();
-      const zipEntryName = `${sanitizeFileName(REQUIREMENT_LABEL[code])}/${fileEntry.fileName}`;
+      const zipEntryName = `${sanitizeFileName(fileEntry.label)}/${fileEntry.fileName}`;
       zip.file(zipEntryName, Buffer.from(fileBuffer));
     }
 
