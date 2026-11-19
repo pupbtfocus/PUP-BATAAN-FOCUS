@@ -188,14 +188,29 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Wave 2 (single Supabase Auth hop): verify credentials AND write SSR session cookies directly
+    // Wave 2: Verify credentials via service role client (Turnstile was already verified in Wave 1;
+    // using the anon SSR client here triggers Supabase Captcha double-verification on the consumed token)
     const { data: signInData, error: signInError } =
-      await userClient.auth.signInWithPassword({
+      await serviceClient.auth.signInWithPassword({
         email,
         password,
       });
 
     if (signInError || !signInData?.session || !signInData?.user) {
+      const errMsgLower = (signInError?.message || "").toLowerCase();
+      const isCredentialFailure =
+        !signInError ||
+        errMsgLower.includes("invalid login credentials") ||
+        errMsgLower.includes("invalid credentials") ||
+        errMsgLower.includes("email not confirmed");
+
+      if (!isCredentialFailure && signInError?.message) {
+        return NextResponse.json(
+          { error: signInError.message },
+          { status: signInError.status || 400 },
+        );
+      }
+
       let preloadedUser = undefined;
       if (profile?.user_id) {
         const { data: byId } = await serviceClient.auth.admin
@@ -260,7 +275,6 @@ export async function POST(request: NextRequest) {
       appMeta.locked_until ?? userMeta.locked_until ?? 0,
     );
     if (Number.isFinite(persistedLockedUntil) && persistedLockedUntil > now) {
-      await userClient.auth.signOut({ scope: "local" }).catch(() => null);
       const remainingMins = Math.ceil((persistedLockedUntil - now) / 60000);
       return NextResponse.json(
         {
@@ -282,7 +296,6 @@ export async function POST(request: NextRequest) {
       );
 
     if (isDeactivatedInAuth) {
-      await userClient.auth.signOut({ scope: "local" }).catch(() => null);
       return NextResponse.json(
         {
           error:
@@ -292,6 +305,9 @@ export async function POST(request: NextRequest) {
         { status: 403 },
       );
     }
+
+    // Synchronize SSR session cookies (session-only when Remember Me is unchecked)
+    await userClient.auth.setSession(signInData.session).catch(() => null);
 
     // Resolve authoritative role synchronously from auth metadata + Wave 1 DB records (0ms)
     const existingAppRole =
