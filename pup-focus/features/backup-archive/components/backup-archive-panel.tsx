@@ -433,7 +433,8 @@ export function BackupArchivePanel({
     const canDownload = matching.some((t) => t.has_downloadable_files === true);
     const isCleaned =
       !canDownload && matching.some((t) => t.is_files_cleaned === true);
-    const canClean = matching.some((t) => t.has_cleanable_data === true);
+    const canClean =
+      canDownload && matching.some((t) => t.has_cleanable_data === true);
     return { canDownload, isCleaned, canClean };
   };
 
@@ -1227,6 +1228,7 @@ export function BackupArchivePanel({
                 selectedSemester === "all" ||
                 isCleaningTerm ||
                 Boolean(exportingTermKey) ||
+                !selectedTermAvailability.canDownload ||
                 !selectedTermAvailability.canClean
               }
               onClick={() =>
@@ -1236,8 +1238,11 @@ export function BackupArchivePanel({
               title={
                 selectedAcademicYear === "all" || selectedSemester === "all"
                   ? "Select a specific Academic Year & Semester first"
-                  : !selectedTermAvailability.canClean
-                    ? "All files and logs for this semester have already been deleted"
+                  : !selectedTermAvailability.canDownload ||
+                      !selectedTermAvailability.canClean
+                    ? selectedTermAvailability.isCleaned
+                      ? "All files and logs for this semester have already been deleted"
+                      : "No uploaded files available for this semester"
                     : "Optional: permanently delete uploaded files, notifications, transaction logs & extension requests for this semester if database/storage is getting full"
               }
             >
@@ -1852,6 +1857,7 @@ export function BackupArchivePanel({
                       type="button"
                       disabled={
                         isCleaningTerm ||
+                        term.has_downloadable_files !== true ||
                         term.has_cleanable_data !== true
                       }
                       onClick={() =>
@@ -1862,9 +1868,12 @@ export function BackupArchivePanel({
                       }
                       className="p-1.5 rounded-lg bg-red-600 hover:bg-red-700 text-white border border-red-700 transition cursor-pointer shadow-2xs active:scale-[0.98] disabled:bg-slate-200 disabled:text-slate-400 disabled:border-slate-300 dark:disabled:bg-slate-800 dark:disabled:text-slate-500 dark:disabled:border-slate-700 disabled:shadow-none disabled:cursor-not-allowed"
                       title={
+                        term.has_downloadable_files === true &&
                         term.has_cleanable_data === true
                           ? "Optional: permanently delete semester files, logs, notifications & extension requests (cannot be restored)"
-                          : "All files and logs for this semester have already been deleted"
+                          : term.is_files_cleaned
+                            ? "All files and logs for this semester have already been deleted"
+                            : "No uploaded files available for this semester"
                       }
                     >
                       <AppIcon icon={Trash} size="xs" color="inherit" />
@@ -2040,6 +2049,7 @@ export function BackupArchivePanel({
                               type="button"
                               disabled={
                                 isCleaningTerm ||
+                                term.has_downloadable_files !== true ||
                                 term.has_cleanable_data !== true
                               }
                               onClick={() =>
@@ -2050,9 +2060,12 @@ export function BackupArchivePanel({
                               }
                               className="p-1.5 rounded-lg bg-red-600 hover:bg-red-700 text-white border border-red-700 transition cursor-pointer shadow-2xs active:scale-[0.98] disabled:bg-slate-200 disabled:text-slate-400 disabled:border-slate-300 dark:disabled:bg-slate-800 dark:disabled:text-slate-500 dark:disabled:border-slate-700 disabled:shadow-none disabled:cursor-not-allowed disabled:hover:bg-slate-200 dark:disabled:hover:bg-slate-800 shrink-0"
                               title={
+                                term.has_downloadable_files === true &&
                                 term.has_cleanable_data === true
                                   ? "Optional: permanently delete semester files, logs, notifications & extension requests (cannot be restored)"
-                                  : "All files and logs for this semester have already been deleted"
+                                  : term.is_files_cleaned
+                                    ? "All files and logs for this semester have already been deleted"
+                                    : "No uploaded files available for this semester"
                               }
                             >
                               <AppIcon icon={Trash} size="xs" color="inherit" />

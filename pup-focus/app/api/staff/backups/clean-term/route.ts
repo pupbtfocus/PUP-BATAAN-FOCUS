@@ -295,13 +295,27 @@ async function resolveTermScope(
     size_bytes: number | null;
   }> = [];
 
-  if (submissionIds.length > 0) {
-    const { data: dvData } = await supabase
-      .from("document_versions")
-      .select("id, submission_id, storage_path, size_bytes")
-      .in("submission_id", submissionIds);
-    docVersions = dvData ?? [];
-  }
+  let otherDocVersions: Array<{
+    storage_path: string | null;
+  }> = [];
+
+  const otherSubmissionIds = otherTermSubmissions.map((s) => s.id);
+  const [targetDvRes, otherDvRes] = await Promise.all([
+    submissionIds.length > 0
+      ? supabase
+          .from("document_versions")
+          .select("id, submission_id, storage_path, size_bytes")
+          .in("submission_id", submissionIds)
+      : Promise.resolve({ data: [] }),
+    otherSubmissionIds.length > 0
+      ? supabase
+          .from("document_versions")
+          .select("storage_path")
+          .in("submission_id", otherSubmissionIds)
+      : Promise.resolve({ data: [] }),
+  ]);
+  docVersions = (targetDvRes.data ?? []) as typeof docVersions;
+  otherDocVersions = (otherDvRes.data ?? []) as typeof otherDocVersions;
 
   // Scan actual Supabase Storage buckets so reported size/count is accurate
   const allBucketFiles = (
@@ -321,6 +335,9 @@ async function resolveTermScope(
   const knownOtherPaths = new Set<string>();
   for (const sub of otherTermSubmissions) {
     addPathVariants(knownOtherPaths, sub.storage_path);
+  }
+  for (const dv of otherDocVersions) {
+    addPathVariants(knownOtherPaths, dv.storage_path);
   }
 
   const termStorageFiles: BucketFileInfo[] = [];
@@ -737,6 +754,19 @@ export async function POST(request: NextRequest) {
     }
 
     const scope = await resolveTermScope(supabase, academicYear, semester);
+
+    // Prevent deleting a semester that has no uploaded files
+    if (
+      scope.termStorageFiles.length === 0 &&
+      scope.matchedSubmissions.length === 0
+    ) {
+      return NextResponse.json(
+        {
+          error: "No uploaded files found for this semester.",
+        },
+        { status: 400 },
+      );
+    }
 
     // 1. Delete matched Storage files (and orphaned Storage files if enabled; never touches avatars)
     const filesToDelete = includeOrphanStorage

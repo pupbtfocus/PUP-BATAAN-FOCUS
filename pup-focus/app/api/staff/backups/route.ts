@@ -319,10 +319,7 @@ export async function GET(request: NextRequest) {
       const subCount = termSubmissionCounts.get(termKey) ?? 0;
       const hasDownloadableFiles = termsWithActiveFiles.has(termKey);
       const isFilesCleaned = !hasDownloadableFiles && termsWithCleanedFiles.has(termKey);
-      const hasCleanableData =
-        hasDownloadableFiles ||
-        termsWithCleanableLogs.has(termKey) ||
-        (termsRows.length <= 1 && storageHasAnyFiles);
+      const hasCleanableData = hasDownloadableFiles;
 
       const termItem: AvailableAcademicTerm = {
         academic_year: term.academic_year,
