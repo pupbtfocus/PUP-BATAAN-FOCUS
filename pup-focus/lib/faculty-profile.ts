@@ -177,11 +177,14 @@ export function isValidSectionCode(value: string): boolean {
   return /^[A-Z0-9]+(?:[ -][A-Z0-9]+)*\s+\d-\d$/.test(value.trim());
 }
 
-export function formatYearSectionInput(raw: string): string {
+export function formatYearSectionInput(raw: string, previousValue = ""): string {
   const digits = raw.replace(/\D/g, "").slice(0, 2);
   if (!digits) return "";
   if (digits.length === 1) {
-    return raw.trimEnd().endsWith("-") ? `${digits}-` : digits;
+    if (previousValue.endsWith("-") && raw === previousValue.slice(0, -1)) {
+      return "";
+    }
+    return `${digits}-`;
   }
   return `${digits[0]}-${digits[1]}`;
 }

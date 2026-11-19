@@ -8489,17 +8489,21 @@ function FacultySubmissionPanelContent({
                             required
                             value={classForm.year_section}
                             onChange={(e) => {
-                              const year_section = formatYearSectionInput(
-                                e.target.value,
-                              );
-                              setClassForm((prev) => ({
-                                ...prev,
-                                year_section,
-                                section_code: combineSectionCode(
-                                  prev.program,
+                              const nextRaw = e.target.value;
+                              setClassForm((prev) => {
+                                const year_section = formatYearSectionInput(
+                                  nextRaw,
+                                  prev.year_section,
+                                );
+                                return {
+                                  ...prev,
                                   year_section,
-                                ),
-                              }));
+                                  section_code: combineSectionCode(
+                                    prev.program,
+                                    year_section,
+                                  ),
+                                };
+                              });
                             }}
                             placeholder="4-1"
                             maxLength={3}
@@ -8596,47 +8600,47 @@ function FacultySubmissionPanelContent({
                     </div>
                   </div>
 
-                  <div className="rounded-2xl border-2 border-amber-500 bg-amber-400 p-4 space-y-2.5 text-xs shadow-md shadow-amber-500/20 text-slate-950">
-                    <div className="flex items-center justify-between gap-2 border-b border-amber-500/50 pb-2">
-                      <span className="text-amber-950 font-bold">
-                        Subject Code:
+                  <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-800/40 divide-y divide-slate-200/80 dark:divide-slate-800 text-xs">
+                    <div className="flex items-center justify-between gap-3 px-4 py-2.5">
+                      <span className="text-slate-500 dark:text-slate-400 font-medium">
+                        Subject Code
                       </span>
-                      <span className="font-mono font-black text-slate-950 text-sm">
+                      <span className="font-mono font-bold text-slate-900 dark:text-slate-100 text-sm">
                         {classForm.subject_code.trim().toUpperCase()}
                       </span>
                     </div>
-                    <div className="flex items-start justify-between gap-2 border-b border-amber-500/50 pb-2">
-                      <span className="text-amber-950 font-bold shrink-0">
-                        Description:
+                    <div className="flex items-start justify-between gap-3 px-4 py-2.5">
+                      <span className="text-slate-500 dark:text-slate-400 font-medium shrink-0">
+                        Description
                       </span>
-                      <span className="font-bold text-slate-950 text-right break-words">
+                      <span className="font-semibold text-slate-900 dark:text-slate-100 text-right break-words">
                         {classForm.description.trim()}
                       </span>
                     </div>
-                    <div className="flex items-center justify-between gap-2 border-b border-amber-500/50 pb-2">
-                      <span className="text-amber-950 font-bold">
-                        Program, Year &amp; Section:
+                    <div className="flex items-center justify-between gap-3 px-4 py-2.5">
+                      <span className="text-slate-500 dark:text-slate-400 font-medium">
+                        Program, Year &amp; Section
                       </span>
-                      <span className="font-mono font-black text-slate-950">
+                      <span className="font-mono font-bold text-slate-900 dark:text-slate-100">
                         {combineSectionCode(
                           classForm.program,
                           classForm.year_section,
                         ) || classForm.section_code.trim().toUpperCase()}
                       </span>
                     </div>
-                    <div className="flex items-center justify-between gap-2 border-b border-amber-500/50 pb-2">
-                      <span className="text-amber-950 font-bold">
-                        Credit Units:
+                    <div className="flex items-center justify-between gap-3 px-4 py-2.5">
+                      <span className="text-slate-500 dark:text-slate-400 font-medium">
+                        Credit Units
                       </span>
-                      <span className="font-black text-slate-950">
+                      <span className="font-semibold text-slate-900 dark:text-slate-100">
                         {Number(classForm.units || 3.0).toFixed(1)} Units
                       </span>
                     </div>
-                    <div className="flex flex-wrap items-center justify-between gap-2">
-                      <span className="text-amber-950 font-bold">
-                        Academic Term:
+                    <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-2.5">
+                      <span className="text-slate-500 dark:text-slate-400 font-medium">
+                        Academic Term
                       </span>
-                      <span className="font-black text-slate-950">
+                      <span className="font-semibold text-slate-900 dark:text-slate-100">
                         A.Y. {activeAY} • {activeSem}
                       </span>
                     </div>
@@ -8775,15 +8779,15 @@ function FacultySubmissionPanelContent({
                   onClick={(e) => e.stopPropagation()}
                 >
                   {/* Header */}
-                  <div className="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-slate-800">
+                  <div className="flex items-center justify-between gap-3 pb-3.5 border-b border-slate-200 dark:border-slate-800">
                     <div className="flex items-center gap-3 min-w-0">
-                      <div className="p-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700/60 shadow-2xs shrink-0 flex items-center justify-center">
-                        <AppIcon icon={Eye} size="lg" color="default" />
+                      <div className="h-10 w-10 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700/60 shrink-0 flex items-center justify-center">
+                        <AppIcon icon={Eye} size="md" color="default" />
                       </div>
                       <div className="min-w-0">
                         <h3
                           id="view-class-modal-title"
-                          className="text-base sm:text-lg font-black text-slate-900 dark:text-slate-100"
+                          className="text-base sm:text-lg font-bold tracking-tight text-slate-900 dark:text-slate-100"
                         >
                           Subject Load Details
                         </h3>
@@ -8793,62 +8797,59 @@ function FacultySubmissionPanelContent({
                         </p>
                       </div>
                     </div>
+                    <span
+                      className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider shrink-0 border ${
+                        classToView.is_archived
+                          ? "bg-slate-100 text-slate-600 border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700"
+                          : "bg-[#0b5336] text-white border-[#08412a]"
+                      }`}
+                    >
+                      {classToView.is_archived ? "Archived" : "Active"}
+                    </span>
                   </div>
 
-                  {/* Solid Amber Card Content */}
-                  <div className="rounded-2xl border-2 border-amber-500 bg-amber-400 p-4 space-y-2.5 text-xs shadow-md shadow-amber-500/20 text-slate-950">
-                    <div className="flex items-center justify-between gap-2 border-b border-amber-500/50 pb-2">
-                      <span className="text-amber-950 font-bold">
-                        Course / Subject Code:
+                  {/* Neutral Structured Detail Content */}
+                  <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-800/40 divide-y divide-slate-200/80 dark:divide-slate-800 text-xs sm:text-[13px]">
+                    <div className="flex items-center justify-between gap-4 px-4 py-3">
+                      <span className="text-slate-500 dark:text-slate-400 font-medium">
+                        Course / Subject Code
                       </span>
-                      <span className="font-mono font-black text-slate-950 text-sm">
+                      <span className="font-mono font-bold text-slate-900 dark:text-slate-100 text-sm">
                         {classToView.subject_code}
                       </span>
                     </div>
-                    <div className="flex items-start justify-between gap-2 border-b border-amber-500/50 pb-2">
-                      <span className="text-amber-950 font-bold shrink-0">
-                        Subject Name / Description:
+                    <div className="flex items-start justify-between gap-4 px-4 py-3">
+                      <span className="text-slate-500 dark:text-slate-400 font-medium shrink-0">
+                        Subject Name
                       </span>
-                      <span className="font-bold text-slate-950 text-right break-words">
+                      <span className="font-semibold text-slate-900 dark:text-slate-100 text-right break-words">
                         {classToView.description}
                       </span>
                     </div>
-                    <div className="flex items-center justify-between gap-2 border-b border-amber-500/50 pb-2">
-                      <span className="text-amber-950 font-bold">
-                        Assigned Section:
+                    <div className="flex items-center justify-between gap-4 px-4 py-3">
+                      <span className="text-slate-500 dark:text-slate-400 font-medium">
+                        Assigned Section
                       </span>
-                      <span className="font-mono font-black text-slate-950">
+                      <span className="inline-flex items-center rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-2 py-0.5 font-mono text-xs font-bold text-slate-800 dark:text-slate-200">
                         {classToView.section_code}
                       </span>
                     </div>
-                    <div className="flex items-center justify-between gap-2 border-b border-amber-500/50 pb-2">
-                      <span className="text-amber-950 font-bold">
-                        Credit Units:
+                    <div className="flex items-center justify-between gap-4 px-4 py-3">
+                      <span className="text-slate-500 dark:text-slate-400 font-medium">
+                        Credit Units
                       </span>
-                      <span className="font-black text-slate-950">
+                      <span className="font-semibold text-slate-900 dark:text-slate-100">
                         {Number(classToView.units || 3.0).toFixed(1)} Units
                       </span>
                     </div>
-                    <div className="flex flex-wrap items-center justify-between gap-2 border-b border-amber-500/50 pb-2">
-                      <span className="text-amber-950 font-bold">
-                        Academic Term:
+                    <div className="flex flex-wrap items-center justify-between gap-4 px-4 py-3">
+                      <span className="text-slate-500 dark:text-slate-400 font-medium">
+                        Academic Term
                       </span>
-                      <span className="font-black text-slate-950">
+                      <span className="font-semibold text-slate-900 dark:text-slate-100">
                         A.Y.{" "}
                         {classToView.academic_year || activeAY || "Active Term"}{" "}
                         &bull; {classToView.semester || activeSem || ""}
-                      </span>
-                    </div>
-                    <div className="flex items-center justify-between gap-2">
-                      <span className="text-amber-950 font-bold">Status:</span>
-                      <span
-                        className={`px-2 py-0.5 rounded-md text-[11px] font-black uppercase tracking-wider ${
-                          classToView.is_archived
-                            ? "bg-white text-slate-700 border border-slate-300"
-                            : "bg-[#0b5336] text-white"
-                        }`}
-                      >
-                        {classToView.is_archived ? "Archived" : "Active"}
                       </span>
                     </div>
                   </div>
@@ -9015,17 +9016,21 @@ function FacultySubmissionPanelContent({
                             required
                             value={editClassForm.year_section}
                             onChange={(e) => {
-                              const year_section = formatYearSectionInput(
-                                e.target.value,
-                              );
-                              setEditClassForm((prev) => ({
-                                ...prev,
-                                year_section,
-                                section_code: combineSectionCode(
-                                  prev.program,
+                              const nextRaw = e.target.value;
+                              setEditClassForm((prev) => {
+                                const year_section = formatYearSectionInput(
+                                  nextRaw,
+                                  prev.year_section,
+                                );
+                                return {
+                                  ...prev,
                                   year_section,
-                                ),
-                              }));
+                                  section_code: combineSectionCode(
+                                    prev.program,
+                                    year_section,
+                                  ),
+                                };
+                              });
                             }}
                             placeholder="4-1"
                             maxLength={3}
