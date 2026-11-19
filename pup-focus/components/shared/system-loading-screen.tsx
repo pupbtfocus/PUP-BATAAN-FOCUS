@@ -12,7 +12,7 @@ export interface LoadingScreenProps {
 }
 
 export function SystemLoadingScreen({
-  text = "Loading PUP FOCUS...",
+  text = "Loading...",
   subtitle,
   progress,
   fullScreen = true,
@@ -23,117 +23,8 @@ export function SystemLoadingScreen({
     ? Math.min(100, Math.max(0, Math.round(progress)))
     : 0;
 
-  const content = (
-    <div
-      className={
-        fullScreen
-          ? "relative w-full max-w-[340px] sm:max-w-[368px] overflow-hidden rounded-2xl border border-slate-200/90 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xl shadow-slate-900/10 dark:shadow-black/50"
-          : "relative w-full max-w-sm flex flex-col items-center"
-      }
-    >
-      {/* Institutional Maroon & Gold Accent Bar */}
-      {fullScreen && (
-        <div className="h-1.5 w-full bg-gradient-to-r from-[#580000] via-[#800000] to-amber-500" />
-      )}
-
-      <div
-        className={
-          fullScreen
-            ? "flex flex-col items-center px-6 py-8 sm:px-8 sm:py-9 text-center"
-            : "flex flex-col items-center px-4 py-4 text-center w-full"
-        }
-      >
-        {/* Official Seal with Precision Maroon & Gold Orbital Ring */}
-        <div className="relative flex items-center justify-center">
-          {/* Outer subtle track */}
-          <div
-            className={`absolute rounded-full border border-slate-200 dark:border-slate-700/80 pointer-events-none ${
-              fullScreen ? "-inset-3" : "-inset-2.5"
-            }`}
-          />
-
-          {/* Primary Maroon Spinning Arc */}
-          <div
-            className={`absolute rounded-full border-[2.5px] border-transparent border-t-[#800000] dark:border-t-amber-400 border-r-[#800000]/35 dark:border-r-amber-400/35 animate-spin pointer-events-none ${
-              fullScreen ? "-inset-3" : "-inset-2.5"
-            }`}
-            style={{ animationDuration: "1.05s" }}
-          />
-
-          {/* Secondary Counter-Accent Gold Dot / Arc */}
-          <div
-            className={`absolute rounded-full border-2 border-transparent border-b-amber-500/85 animate-spin pointer-events-none ${
-              fullScreen ? "-inset-1.5" : "-inset-1"
-            }`}
-            style={{ animationDuration: "1.8s", animationDirection: "reverse" }}
-          />
-
-          {/* Clean Circular Seal Plate */}
-          <div
-            className={`relative z-10 flex items-center justify-center rounded-full bg-white dark:bg-slate-900 ring-1 ring-slate-200/80 dark:ring-slate-700/70 shadow-sm ${
-              fullScreen ? "p-1.5" : "p-1"
-            }`}
-          >
-            <Logo size={fullScreen ? 64 : 52} className="relative z-10" />
-          </div>
-        </div>
-
-        {/* Institutional Wordmark */}
-        <div className="mt-6 flex flex-col items-center">
-          <div className="flex items-center gap-1.5 text-base sm:text-lg font-black tracking-tight leading-none">
-            <span className="text-[#800000] dark:text-amber-400">PUP</span>
-            <span className="text-slate-900 dark:text-white">FOCUS</span>
-          </div>
-          <span className="mt-1.5 text-[10px] font-bold uppercase tracking-[0.22em] text-slate-500 dark:text-slate-400">
-            Bataan Campus
-          </span>
-        </div>
-
-        {/* Progress Indicator */}
-        <div className="mt-5 w-full max-w-[240px] space-y-2.5">
-          {hasProgress ? (
-            <>
-              <div className="flex items-center justify-between text-xs">
-                <span className="font-semibold text-slate-600 dark:text-slate-300 truncate pr-2">
-                  {text || "Processing..."}
-                </span>
-                <span className="font-mono font-bold tabular-nums text-[#800000] dark:text-amber-400 shrink-0">
-                  {clampedProgress}%
-                </span>
-              </div>
-              <div className="relative h-2 w-full overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700/70">
-                <div
-                  className="h-full rounded-full bg-gradient-to-r from-[#580000] via-[#800000] to-amber-500 transition-all duration-300 ease-out"
-                  style={{ width: `${clampedProgress}%` }}
-                />
-              </div>
-            </>
-          ) : (
-            <>
-              <div className="relative h-1.5 w-full overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
-                <div className="absolute inset-y-0 left-0 w-2/5 rounded-full bg-gradient-to-r from-[#580000] via-[#800000] to-amber-500 animate-pup-loader-slide" />
-              </div>
-
-              {text ? (
-                <div className="flex items-center justify-center gap-2 pt-0.5">
-                  <span className="h-1.5 w-1.5 rounded-full bg-amber-500 animate-pulse shrink-0" />
-                  <p className="text-xs sm:text-[13px] font-semibold text-slate-700 dark:text-slate-200 tracking-tight">
-                    {text}
-                  </p>
-                </div>
-              ) : null}
-            </>
-          )}
-
-          {subtitle ? (
-            <p className="text-[11px] font-medium text-slate-500 dark:text-slate-400 truncate max-w-full">
-              {subtitle}
-            </p>
-          ) : null}
-        </div>
-      </div>
-    </div>
-  );
+  const ringSize = fullScreen ? 116 : 88;
+  const logoSize = fullScreen ? 80 : 60;
 
   return (
     <div
@@ -142,11 +33,116 @@ export function SystemLoadingScreen({
       aria-label={text || "Loading system"}
       className={
         fullScreen
-          ? `fixed inset-0 z-[100] flex flex-col items-center justify-center p-4 select-none bg-slate-100/90 dark:bg-slate-950/90 backdrop-blur-md animate-in fade-in duration-150 ${className}`
-          : `relative flex flex-col items-center justify-center min-h-[240px] w-full p-6 sm:p-8 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs select-none animate-in fade-in duration-150 ${className}`
+          ? `fixed inset-0 z-[100] flex flex-col items-center justify-center p-6 select-none bg-white/96 dark:bg-slate-950/96 backdrop-blur-md animate-in fade-in duration-150 ${className}`
+          : `relative flex flex-col items-center justify-center min-h-[260px] w-full p-8 rounded-xl border border-slate-200/90 dark:border-slate-800 bg-white dark:bg-slate-900 select-none animate-in fade-in duration-150 ${className}`
       }
     >
-      {content}
+      {/* Hairline institutional top bar on full-screen view */}
+      {fullScreen && (
+        <div className="fixed inset-x-0 top-0 h-[3px] bg-[#800000] dark:bg-amber-500">
+          <div className="h-full w-32 bg-amber-400/90 dark:bg-[#800000]/80 animate-pup-loader-slide" />
+        </div>
+      )}
+
+      <div className="flex w-full max-w-sm flex-col items-center text-center">
+        {/* Precision SVG Orbital Ring + Official Seal */}
+        <div
+          className="relative flex items-center justify-center"
+          style={{ width: ringSize, height: ringSize }}
+        >
+          <svg
+            viewBox="0 0 100 100"
+            className="absolute inset-0 h-full w-full -rotate-90"
+            aria-hidden="true"
+          >
+            {/* Track */}
+            <circle
+              cx="50"
+              cy="50"
+              r="45"
+              fill="none"
+              strokeWidth="2.5"
+              className="stroke-slate-200 dark:stroke-slate-800"
+            />
+            {/* Smooth rounded-cap active arc */}
+            <circle
+              cx="50"
+              cy="50"
+              r="45"
+              fill="none"
+              strokeWidth="3"
+              strokeLinecap="round"
+              strokeDasharray={hasProgress ? "282.74" : "76 206.74"}
+              strokeDashoffset={
+                hasProgress
+                  ? 282.74 - (282.74 * clampedProgress) / 100
+                  : 0
+              }
+              className={
+                hasProgress
+                  ? "stroke-[#800000] dark:stroke-amber-400 transition-[stroke-dashoffset] duration-300 ease-out"
+                  : "stroke-[#800000] dark:stroke-amber-400 origin-center animate-spin"
+              }
+              style={hasProgress ? undefined : { animationDuration: "1.15s" }}
+            />
+          </svg>
+
+          <div className="relative z-10 flex items-center justify-center rounded-full bg-white dark:bg-slate-900 p-1.5">
+            <Logo size={logoSize} />
+          </div>
+        </div>
+
+        {/* Institutional Lockup */}
+        <div className="mt-6 flex flex-col items-center">
+          <div className="flex items-baseline gap-1.5 text-2xl sm:text-[28px] font-extrabold tracking-tight leading-none">
+            <span className="text-[#800000] dark:text-amber-400">PUP</span>
+            <span className="text-slate-900 dark:text-slate-50">FOCUS</span>
+          </div>
+          <span className="mt-2 text-xs font-semibold uppercase tracking-[0.22em] text-slate-500 dark:text-slate-400">
+            Bataan Campus
+          </span>
+        </div>
+
+        {/* Progress Track & Status */}
+        <div className="mt-6 w-full max-w-[280px] sm:max-w-[300px] space-y-3">
+          {hasProgress ? (
+            <>
+              <div className="flex items-center justify-between gap-2 text-xs sm:text-sm">
+                <span className="font-medium text-slate-600 dark:text-slate-300 truncate">
+                  {text || "Processing..."}
+                </span>
+                <span className="font-mono font-semibold tabular-nums text-slate-900 dark:text-slate-100 shrink-0">
+                  {clampedProgress}%
+                </span>
+              </div>
+              <div className="relative h-2 w-full overflow-hidden rounded-full bg-slate-200/80 dark:bg-slate-800">
+                <div
+                  className="h-full rounded-full bg-[#800000] dark:bg-amber-400 transition-[width] duration-300 ease-out"
+                  style={{ width: `${clampedProgress}%` }}
+                />
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="relative h-1 w-full overflow-hidden rounded-full bg-slate-200/80 dark:bg-slate-800">
+                <div className="absolute inset-y-0 left-0 w-1/3 rounded-full bg-[#800000] dark:bg-amber-400 animate-pup-loader-slide" />
+              </div>
+
+              {text ? (
+                <p className="text-sm font-medium text-slate-500 dark:text-slate-400 tracking-normal">
+                  {text}
+                </p>
+              ) : null}
+            </>
+          )}
+
+          {subtitle ? (
+            <p className="text-xs text-slate-400 dark:text-slate-500 truncate max-w-full">
+              {subtitle}
+            </p>
+          ) : null}
+        </div>
+      </div>
     </div>
   );
 }

@@ -510,17 +510,14 @@ a[class*="from-amber-"][class*="text-slate-950"] svg,
 
 @keyframes pupLoaderSlide {
   0% {
-    transform: translateX(-100%);
-  }
-  50% {
-    transform: translateX(120%);
+    transform: translateX(-110%);
   }
   100% {
-    transform: translateX(280%);
+    transform: translateX(330%);
   }
 }
 
 .animate-pup-loader-slide {
-  animation: pupLoaderSlide 1.45s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+  animation: pupLoaderSlide 1.35s cubic-bezier(0.45, 0, 0.55, 1) infinite;
 }
 
