@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { WarningCircle, Xmark } from "iconoir-react";
+import { Calendar, Folder, WarningCircle, Xmark } from "iconoir-react";
 import { AppIcon } from "@/components/ui/app-icon";
 
 export interface FacultyIncompleteRequirementsModalProps {
@@ -25,79 +25,129 @@ export function FacultyIncompleteRequirementsModal({
 }: FacultyIncompleteRequirementsModalProps) {
   if (!isOpen) return null;
 
+  const hasPendingItems =
+    notSubmittedCount > 0 || rejectedCount > 0 || pendingValidationCount > 0;
+
   return (
     <div
-      role="alert"
-      aria-live="polite"
-      className="fixed top-16 sm:top-20 left-1/2 -translate-x-1/2 z-[9999] w-[calc(100vw-2rem)] max-w-lg md:max-w-xl rounded-2xl border-2 border-amber-400/80 bg-[#780000] text-white p-3.5 sm:p-4 shadow-2xl shadow-black/60 animate-in fade-in slide-in-from-top-3 duration-250"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="pending-requirements-modal-title"
+      className="fixed inset-0 z-[9999] h-dvh overflow-hidden overscroll-none flex items-center justify-center p-3 sm:p-4 animate-in fade-in duration-200"
+      onClick={onClose}
     >
-      {/* Top ambient gold accent line */}
-      <div className="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-transparent via-amber-300 to-transparent rounded-t-2xl" />
+      {/* Blurred system backdrop to spotlight the modal */}
+      <div
+        className="fixed inset-0 h-lvh bg-slate-950/65 backdrop-blur-sm touch-none overscroll-none"
+        aria-hidden="true"
+      />
 
-      {/* Header row */}
-      <div className="flex items-start justify-between gap-2.5 sm:gap-3">
-        <div className="flex items-start gap-2.5 min-w-0">
-          <AppIcon icon={WarningCircle} size="lg" color="inherit" className="text-amber-300 shrink-0 mt-0.5" />
-          <div className="min-w-0">
-            <h3 className="text-sm sm:text-base md:text-lg font-bold text-white tracking-tight leading-snug">
-              Requirements Pending Submission & Review
-            </h3>
-            <p className="text-xs sm:text-sm text-white/85 mt-0.5 leading-relaxed">
-              You have compliance documents awaiting submission, revision, or validation for this semester.
-            </p>
+      {/* Centered System-Matched Modal Card */}
+      <div
+        className="relative z-10 w-full max-w-md sm:max-w-lg max-h-[90dvh] overflow-y-auto overflow-x-hidden overscroll-contain rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xl p-5 sm:p-6 space-y-5 animate-in zoom-in-95 duration-200"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Header */}
+        <div className="flex items-start justify-between gap-3 pb-4 border-b border-slate-200 dark:border-slate-800">
+          <div className="flex items-start gap-3 min-w-0">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-slate-200 dark:border-slate-700/60 bg-slate-100 dark:bg-slate-800 text-[#800000] dark:text-amber-400">
+              <AppIcon icon={WarningCircle} size="md" color="inherit" />
+            </div>
+            <div className="min-w-0">
+              <h3
+                id="pending-requirements-modal-title"
+                className="text-base sm:text-lg font-bold tracking-tight text-slate-900 dark:text-slate-100 leading-snug"
+              >
+                Requirements Pending Submission &amp; Review
+              </h3>
+              <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
+                You have compliance documents awaiting submission, revision, or validation for this semester.
+              </p>
+            </div>
           </div>
-        </div>
 
-        <button
-          type="button"
-          onClick={onClose}
-          className="p-1.5 rounded-lg border border-[#5e0000] bg-[#5e0000] hover:bg-[#4a0000] text-white transition-colors cursor-pointer shrink-0 -mr-1 -mt-0.5 shadow-xs"
-          aria-label="Dismiss alert"
-          title="Dismiss alert"
-        >
-          <AppIcon icon={Xmark} size="md" color="inherit" />
-        </button>
-      </div>
-
-      {/* Bottom section: Direct Counts & Actions */}
-      <div className="mt-3 pt-3 border-t border-white/15 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-        <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
-          {notSubmittedCount > 0 && (
-            <span className="px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-lg bg-white/15 text-white border border-white/20 text-xs sm:text-sm font-medium">
-              <strong className="text-amber-300 font-bold">{notSubmittedCount}</strong> Not Submitted
-            </span>
-          )}
-
-          {rejectedCount > 0 && (
-            <span className="px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-lg bg-white/15 text-white border border-white/20 text-xs sm:text-sm font-medium">
-              <strong className="text-amber-300 font-bold">{rejectedCount}</strong> Revise
-            </span>
-          )}
-
-          {pendingValidationCount > 0 && (
-            <span className="px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-lg bg-white/15 text-white border border-white/20 text-xs sm:text-sm font-medium">
-              <strong className="text-amber-300 font-bold">{pendingValidationCount}</strong> Pending for Validation
-            </span>
-          )}
-
-          {notSubmittedCount === 0 && rejectedCount === 0 && pendingValidationCount === 0 && (
-            <span className="px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-lg bg-white/15 text-white border border-white/20 text-xs sm:text-sm font-medium">
-              All documents up to date
-            </span>
-          )}
-
-          {deadlineDisplay && (
-            <span className="px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-lg bg-white/15 text-amber-200 border border-amber-300/40 text-xs sm:text-sm font-medium">
-              Due: <span className="text-amber-300 font-semibold">{deadlineDisplay}</span>
-            </span>
-          )}
-        </div>
-
-        <div className="grid grid-cols-2 sm:flex sm:items-center gap-2 w-full sm:w-auto sm:shrink-0 sm:ml-auto">
           <button
             type="button"
             onClick={onClose}
-            className="w-full sm:w-auto inline-flex items-center justify-center px-3.5 py-2 sm:py-1.5 rounded-lg border border-[#5e0000] bg-[#5e0000] hover:bg-[#4a0000] text-white text-xs sm:text-sm font-semibold cursor-pointer transition shadow-xs active:scale-[0.98]"
+            className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-xl text-slate-400 hover:bg-slate-100 hover:text-slate-700 dark:hover:bg-slate-800 dark:hover:text-slate-200 transition-colors cursor-pointer"
+            aria-label="Dismiss alert"
+            title="Dismiss"
+          >
+            <AppIcon icon={Xmark} size="sm" color="inherit" />
+          </button>
+        </div>
+
+        {/* Structured Status Breakdown Card */}
+        <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-800/40 divide-y divide-slate-200/80 dark:divide-slate-800 text-xs sm:text-[13px]">
+          {notSubmittedCount > 0 && (
+            <div className="flex items-center justify-between gap-4 px-4 py-3">
+              <span className="font-medium text-slate-600 dark:text-slate-300">
+                Not Submitted
+              </span>
+              <span className="inline-flex items-center rounded-full border border-[#5e0000] bg-[#780000] px-2.5 py-0.5 text-[11px] font-bold text-white tabular-nums">
+                {notSubmittedCount} {notSubmittedCount === 1 ? "Item" : "Items"}
+              </span>
+            </div>
+          )}
+
+          {rejectedCount > 0 && (
+            <div className="flex items-center justify-between gap-4 px-4 py-3">
+              <span className="font-medium text-slate-600 dark:text-slate-300">
+                Needs Revision
+              </span>
+              <span className="inline-flex items-center rounded-full border border-[#5e0000] bg-[#780000] px-2.5 py-0.5 text-[11px] font-bold text-white tabular-nums">
+                {rejectedCount} {rejectedCount === 1 ? "Item" : "Items"}
+              </span>
+            </div>
+          )}
+
+          {pendingValidationCount > 0 && (
+            <div className="flex items-center justify-between gap-4 px-4 py-3">
+              <span className="font-medium text-slate-600 dark:text-slate-300">
+                Pending Validation
+              </span>
+              <span className="inline-flex items-center rounded-full border border-amber-600 bg-amber-500 px-2.5 py-0.5 text-[11px] font-bold text-amber-950 tabular-nums">
+                {pendingValidationCount}{" "}
+                {pendingValidationCount === 1 ? "Item" : "Items"}
+              </span>
+            </div>
+          )}
+
+          {!hasPendingItems && (
+            <div className="flex items-center justify-between gap-4 px-4 py-3">
+              <span className="font-medium text-slate-600 dark:text-slate-300">
+                Compliance Status
+              </span>
+              <span className="inline-flex items-center rounded-full border border-[#08412a] bg-[#0b5336] px-2.5 py-0.5 text-[11px] font-bold text-white">
+                All Up to Date
+              </span>
+            </div>
+          )}
+
+          {deadlineDisplay && (
+            <div className="flex items-center justify-between gap-4 px-4 py-3">
+              <span className="inline-flex items-center gap-1.5 font-medium text-slate-600 dark:text-slate-300">
+                <AppIcon
+                  icon={Calendar}
+                  size="xs"
+                  color="inherit"
+                  className="text-slate-400"
+                />
+                <span>Submission Deadline</span>
+              </span>
+              <span className="font-semibold text-slate-900 dark:text-slate-100">
+                {deadlineDisplay}
+              </span>
+            </div>
+          )}
+        </div>
+
+        {/* Footer Actions matching PUP FOCUS Modal Buttons */}
+        <div className="grid grid-cols-2 sm:flex sm:items-center sm:justify-end gap-2.5 pt-3 border-t border-slate-200 dark:border-slate-800">
+          <button
+            type="button"
+            onClick={onClose}
+            className="w-full sm:w-auto px-4 py-2 rounded-xl text-xs font-bold bg-[#780000] hover:bg-[#5e0000] text-white border border-[#5e0000] shadow-xs transition cursor-pointer active:scale-[0.98] text-center"
           >
             Dismiss
           </button>
@@ -107,9 +157,10 @@ export function FacultyIncompleteRequirementsModal({
               onClose();
               onGoToSubmissions?.();
             }}
-            className="w-full sm:w-auto inline-flex items-center justify-center bg-amber-400 hover:bg-amber-300 text-slate-950 font-bold px-4 py-2 sm:py-1.5 rounded-lg text-xs sm:text-sm shadow-md transition active:scale-[0.98] cursor-pointer whitespace-nowrap"
+            className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-4.5 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 border border-amber-600/40 text-xs font-bold shadow-xs transition cursor-pointer active:scale-[0.98] whitespace-nowrap"
           >
-            Go to Documents
+            <AppIcon icon={Folder} size="xs" color="inherit" />
+            <span>Go to Documents</span>
           </button>
         </div>
       </div>
