@@ -1,19 +1,27 @@
-import { NextResponse, type NextRequest } from "next/server";
+import { after, NextResponse, type NextRequest } from "next/server";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { getServiceRoleClient } from "@/lib/supabase/service-role";
 import {
   extractTurnstileToken,
   verifyTurnstileToken,
 } from "@/lib/turnstile/verify";
-import { filterCondition, orFilter } from "@/lib/supabase/filters";
 import {
   LOCKOUT_DURATION_MS,
   MAX_FAILED_ATTEMPTS,
   clearPersistentLoginLockout,
+  getLoginAttemptRecord,
   getPersistentLoginAttempt,
   persistLoginAttempt,
 } from "@/lib/auth/login-attempts";
-import { syncTrustedAppMetadataRole } from "@/lib/auth/admin-security";
+import {
+  ROLE,
+  isAdminRoleToken,
+  isOriginalAdmin,
+  isQaAdmin,
+  resolveTrustedUserRole,
+} from "@/config/roles";
+import { setActiveSession } from "@/lib/auth/session-tracker";
+import { logTransactionEvent } from "@/features/transaction-logs/services/transaction-log.service";
 
 export async function GET(request: NextRequest) {
   try {
@@ -89,11 +97,54 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const turnstileCheck = await verifyTurnstileToken({
-      token,
-      expectedAction: "login",
-      request,
-    });
+    const now = Date.now();
+    const memoryAttempt = getLoginAttemptRecord(email);
+    if (memoryAttempt?.lockedUntil && memoryAttempt.lockedUntil > now) {
+      const remainingMins = Math.ceil((memoryAttempt.lockedUntil - now) / 60000);
+      return NextResponse.json(
+        {
+          error: `Account temporarily locked due to consecutive failed attempts. Please try again in ${remainingMins} minute${remainingMins > 1 ? "s" : ""}.`,
+        },
+        { status: 429 },
+      );
+    }
+
+    const serviceClient = getServiceRoleClient();
+
+    // Wave 1 (parallel): Turnstile verification, account status/role lookups, and SSR cookie client setup
+    const [turnstileCheck, profileRes, staffRes, adminRes, userClient] =
+      await Promise.all([
+        verifyTurnstileToken({
+          token,
+          expectedAction: "login",
+          request,
+        }),
+        Promise.resolve(
+          serviceClient
+            .from("profiles")
+            .select("id, user_id, status, is_active, user_roles(roles(code))")
+            .ilike("email", email)
+            .maybeSingle(),
+        ).catch(() => ({ data: null })),
+        Promise.resolve(
+          serviceClient
+            .from("staff")
+            .select("id, is_active")
+            .ilike("email", email)
+            .maybeSingle(),
+        ).catch(() => ({ data: null })),
+        Promise.resolve(
+          serviceClient
+            .from("admins")
+            .select("id, is_active")
+            .ilike("email", email)
+            .maybeSingle(),
+        ).catch(() => ({ data: null })),
+        createServerSupabaseClient({
+          ephemeralSession: !rememberMe,
+        }),
+      ]);
+
     if (!turnstileCheck.ok) {
       return NextResponse.json(
         {
@@ -108,109 +159,65 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const serviceClient = getServiceRoleClient();
-    const now = Date.now();
+    const profile = profileRes?.data as {
+      id?: string;
+      user_id?: string | null;
+      status?: string | null;
+      is_active?: boolean | null;
+      user_roles?: Array<{ roles: { code: string } | null }> | null;
+    } | null;
+    const staffRow = staffRes?.data as { id?: string; is_active?: boolean | null } | null;
+    const adminRow = adminRes?.data as { id?: string; is_active?: boolean | null } | null;
 
-    // 1. Check persistent & in-memory lockout state via indexed lookup (app_metadata)
-    const { record: attemptRecord, user: targetUser } =
-      await getPersistentLoginAttempt(serviceClient, email);
+    const pStatus = (profile?.status || "").toString().toLowerCase().trim();
+    const isDeactivatedInDb =
+      pStatus === "inactive" ||
+      pStatus === "deactivated" ||
+      profile?.is_active === false ||
+      staffRow?.is_active === false ||
+      adminRow?.is_active === false;
 
-    if (attemptRecord.lockedUntil && attemptRecord.lockedUntil > now) {
-      const remainingMins = Math.ceil((attemptRecord.lockedUntil - now) / 60000);
+    if (isDeactivatedInDb) {
       return NextResponse.json(
         {
-          error: `Account temporarily locked due to consecutive failed attempts. Please try again in ${remainingMins} minute${remainingMins > 1 ? "s" : ""}.`,
-        },
-        { status: 429 },
-      );
-    }
-
-    // Check if account is deactivated or inactive across user_metadata, profiles, staff, or admins tables
-    let isDeactivated = false;
-    if (targetUser) {
-      if (
-        targetUser.user_metadata?.is_active === false ||
-        targetUser.app_metadata?.is_active === false ||
-        targetUser.user_metadata?.status === "inactive" ||
-        targetUser.user_metadata?.status === "deactivated"
-      ) {
-        isDeactivated = true;
-      }
-      if (targetUser.banned_until && new Date(targetUser.banned_until).getTime() > now) {
-        isDeactivated = true;
-      }
-    }
-
-    if (!isDeactivated) {
-      try {
-        const { data: profile } = await serviceClient
-          .from("profiles")
-          .select("status, is_active")
-          .or(
-            orFilter([
-              ...(targetUser?.id
-                ? [
-                    filterCondition("id", "eq", targetUser.id),
-                    filterCondition("user_id", "eq", targetUser.id),
-                  ]
-                : []),
-              filterCondition("email", "eq", email),
-            ])
-          )
-          .maybeSingle();
-        const pStatus = (profile?.status || "").toString().toLowerCase().trim();
-        if (pStatus === "inactive" || pStatus === "deactivated" || profile?.is_active === false) {
-          isDeactivated = true;
-        }
-      } catch {}
-    }
-
-    if (!isDeactivated) {
-      try {
-        const { data: staffRow } = await serviceClient
-          .from("staff")
-          .select("is_active")
-          .ilike("email", email)
-          .maybeSingle();
-        if (staffRow?.is_active === false) {
-          isDeactivated = true;
-        }
-      } catch {}
-    }
-
-    if (!isDeactivated) {
-      try {
-        const { data: adminRow } = await serviceClient
-          .from("admins")
-          .select("is_active")
-          .ilike("email", email)
-          .maybeSingle();
-        if (adminRow?.is_active === false) {
-          isDeactivated = true;
-        }
-      } catch {}
-    }
-
-    if (isDeactivated) {
-      return NextResponse.json(
-        {
-          error: "Your account has been deactivated. Please contact the campus administrator or IT support for assistance.",
+          error:
+            "Your account has been deactivated. Please contact the campus administrator or IT support for assistance.",
           is_deactivated: true,
         },
         { status: 403 },
       );
     }
 
-    // 3. Verify credentials via service role client
-    const { data: signInData, error: signInError } = await serviceClient.auth.signInWithPassword({
-      email,
-      password,
-    });
+    // Wave 2 (single Supabase Auth hop): verify credentials AND write SSR session cookies directly
+    const { data: signInData, error: signInError } =
+      await userClient.auth.signInWithPassword({
+        email,
+        password,
+      });
 
-    if (signInError || !signInData?.session) {
-      const existingCount = attemptRecord.count;
-      const currentCount = existingCount + 1;
+    if (signInError || !signInData?.session || !signInData?.user) {
+      let preloadedUser = undefined;
+      if (profile?.user_id) {
+        const { data: byId } = await serviceClient.auth.admin
+          .getUserById(profile.user_id)
+          .catch(() => ({ data: { user: null } }));
+        if (byId?.user) preloadedUser = byId.user;
+      }
 
+      const { record: attemptRecord, user: targetUser } =
+        await getPersistentLoginAttempt(serviceClient, email, preloadedUser);
+
+      if (attemptRecord.lockedUntil && attemptRecord.lockedUntil > now) {
+        const remainingMins = Math.ceil((attemptRecord.lockedUntil - now) / 60000);
+        return NextResponse.json(
+          {
+            error: `Account temporarily locked due to consecutive failed attempts. Please try again in ${remainingMins} minute${remainingMins > 1 ? "s" : ""}.`,
+          },
+          { status: 429 },
+        );
+      }
+
+      const currentCount = attemptRecord.count + 1;
       if (currentCount >= MAX_FAILED_ATTEMPTS) {
         const lockedUntil = now + LOCKOUT_DURATION_MS;
         await persistLoginAttempt(
@@ -219,10 +226,10 @@ export async function POST(request: NextRequest) {
           { count: currentCount, lockedUntil },
           targetUser,
         );
-
         return NextResponse.json(
           {
-            error: "Too many failed login attempts. Account temporarily locked for 15 minutes.",
+            error:
+              "Too many failed login attempts. Account temporarily locked for 15 minutes.",
           },
           { status: 429 },
         );
@@ -244,48 +251,160 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 4. Verify account status before issuing session
-    const authedUser = signInData.user ?? targetUser;
-    if (
-      authedUser?.user_metadata?.is_active === false ||
-      authedUser?.app_metadata?.is_active === false ||
-      authedUser?.user_metadata?.status === "inactive" ||
-      authedUser?.user_metadata?.status === "deactivated"
-    ) {
+    const authedUser = signInData.user;
+    const appMeta = (authedUser.app_metadata ?? {}) as Record<string, unknown>;
+    const userMeta = (authedUser.user_metadata ?? {}) as Record<string, unknown>;
+
+    // Check persistent lockout on the authenticated user
+    const persistedLockedUntil = Number(
+      appMeta.locked_until ?? userMeta.locked_until ?? 0,
+    );
+    if (Number.isFinite(persistedLockedUntil) && persistedLockedUntil > now) {
+      await userClient.auth.signOut({ scope: "local" }).catch(() => null);
+      const remainingMins = Math.ceil((persistedLockedUntil - now) / 60000);
       return NextResponse.json(
         {
-          error: "Your account has been deactivated. Please contact the campus administrator or IT support for assistance.",
+          error: `Account temporarily locked due to consecutive failed attempts. Please try again in ${remainingMins} minute${remainingMins > 1 ? "s" : ""}.`,
+        },
+        { status: 429 },
+      );
+    }
+
+    // Check account deactivation / ban flags in auth metadata
+    const isDeactivatedInAuth =
+      userMeta.is_active === false ||
+      appMeta.is_active === false ||
+      userMeta.status === "inactive" ||
+      userMeta.status === "deactivated" ||
+      Boolean(
+        (authedUser as { banned_until?: string | null }).banned_until &&
+          new Date((authedUser as { banned_until?: string }).banned_until!).getTime() > now,
+      );
+
+    if (isDeactivatedInAuth) {
+      await userClient.auth.signOut({ scope: "local" }).catch(() => null);
+      return NextResponse.json(
+        {
+          error:
+            "Your account has been deactivated. Please contact the campus administrator or IT support for assistance.",
           is_deactivated: true,
         },
         { status: 403 },
       );
     }
 
-    // Reset failed attempts & auto-backfill immutable app_metadata.role upon login
-    await clearPersistentLoginLockout(serviceClient, email, authedUser);
-    const syncedRole = signInData.user
-      ? await syncTrustedAppMetadataRole(serviceClient, signInData.user)
-      : undefined;
-
-    if (signInData.user && syncedRole) {
-      signInData.user.app_metadata = {
-        ...(signInData.user.app_metadata ?? {}),
-        role: syncedRole,
-      };
+    // Resolve authoritative role synchronously from auth metadata + Wave 1 DB records (0ms)
+    const existingAppRole =
+      typeof appMeta.role === "string" ? appMeta.role.trim().toLowerCase() : "";
+    let resolvedRole: string | null = null;
+    if (isOriginalAdmin(email) || isQaAdmin(email)) {
+      resolvedRole = ROLE.ADMIN;
+    } else if (
+      existingAppRole === ROLE.STAFF ||
+      existingAppRole === ROLE.FACULTY ||
+      existingAppRole === ROLE.ADMIN
+    ) {
+      resolvedRole = existingAppRole;
+    } else {
+      const dbRoleCode = profile?.user_roles?.[0]?.roles?.code
+        ?.toLowerCase()
+        .trim();
+      if (dbRoleCode && !isAdminRoleToken(dbRoleCode)) {
+        resolvedRole = dbRoleCode;
+      } else if (staffRow?.id) {
+        resolvedRole = ROLE.STAFF;
+      } else {
+        const legacyMetaRole =
+          typeof userMeta.role === "string"
+            ? userMeta.role.trim().toLowerCase()
+            : "";
+        resolvedRole =
+          legacyMetaRole === ROLE.STAFF || legacyMetaRole === "staff"
+            ? ROLE.STAFF
+            : ROLE.FACULTY;
+      }
     }
 
-    // Synchronize session cookies (session-only when Remember Me is unchecked)
-    const userClient = await createServerSupabaseClient({
-      ephemeralSession: !rememberMe,
+    const needsRoleBackfill =
+      existingAppRole !== resolvedRole ||
+      (isOriginalAdmin(email) && appMeta.is_primary_admin !== true);
+
+    authedUser.app_metadata = {
+      ...appMeta,
+      role: resolvedRole,
+      ...(isOriginalAdmin(email) ? { is_primary_admin: true } : {}),
+    };
+
+    // Determine MFA requirement synchronously from returned factors (avoids client AAL/listFactors round-trips)
+    const verifiedTotpFactor = Array.isArray(authedUser.factors)
+      ? authedUser.factors.find(
+          (f: any) => f?.factor_type === "totp" && f?.status === "verified",
+        )
+      : null;
+
+    const sessionId = crypto.randomUUID();
+    const hasFailedAttemptState =
+      Boolean(appMeta.failed_attempts) ||
+      Boolean(appMeta.locked_until) ||
+      Boolean(userMeta.failed_attempts) ||
+      Boolean(userMeta.locked_until);
+
+    // Non-blocking background bookkeeping (does not delay login response)
+    after(async () => {
+      try {
+        const tasks: Array<Promise<unknown>> = [
+          setActiveSession(authedUser.id, sessionId).catch(() => null),
+          logTransactionEvent({
+            actorId: authedUser.id,
+            action: "auth.login",
+            entityType: "user",
+            entityId: authedUser.id,
+            metadata: {
+              email: authedUser.email,
+              role: resolveTrustedUserRole(authedUser),
+              sessionId,
+            },
+          }).catch(() => null),
+        ];
+
+        if (hasFailedAttemptState) {
+          tasks.push(
+            clearPersistentLoginLockout(serviceClient, email, authedUser).catch(
+              () => null,
+            ),
+          );
+        }
+
+        if (needsRoleBackfill) {
+          tasks.push(
+            serviceClient.auth.admin
+              .updateUserById(authedUser.id, {
+                app_metadata: {
+                  ...appMeta,
+                  role: resolvedRole,
+                  ...(isOriginalAdmin(email) ? { is_primary_admin: true } : {}),
+                },
+              })
+              .catch(() => null),
+          );
+        }
+
+        await Promise.all(tasks);
+      } catch {
+        // Non-fatal background sync
+      }
     });
-    await userClient.auth.setSession(signInData.session).catch(() => null);
 
     const response = NextResponse.json({
       success: true,
-      user: signInData.user,
+      user: authedUser,
       session: signInData.session,
       rememberMe,
+      sessionId,
+      mfaRequired: Boolean(verifiedTotpFactor?.id),
+      mfaFactorId: verifiedTotpFactor?.id ?? null,
     });
+
     response.cookies.set(
       "pup_focus_session_mode",
       rememberMe ? "persistent" : "ephemeral",
@@ -300,6 +419,14 @@ export async function POST(request: NextRequest) {
             sameSite: "lax",
           },
     );
+
+    response.cookies.set("pup_focus_session_id", sessionId, {
+      path: "/",
+      sameSite: "lax",
+      httpOnly: false,
+      ...(rememberMe ? { maxAge: 60 * 60 * 24 * 7 } : {}),
+    });
+
     return response;
   } catch (err) {
     return NextResponse.json(

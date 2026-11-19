@@ -482,15 +482,10 @@ export default function Home() {
     }
 
     const targetRoute = authModal.redirectTo as string;
-
-    const timeoutId = window.setTimeout(() => {
-      window.location.href = targetRoute;
-    }, 2000);
-
-    return () => {
-      window.clearTimeout(timeoutId);
-    };
-  }, [authModal]);
+    startTransition(() => {
+      router.replace(targetRoute);
+    });
+  }, [authModal, router, startTransition]);
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -598,35 +593,15 @@ export default function Home() {
     const currentPassword = creds.password;
     const activeRememberMe = creds.rememberMe;
 
-    const lockout = await resolveEffectiveLockout(normalizedEmail);
-    if (lockout.isLocked) {
-      const mins = Math.ceil(lockout.remainingSeconds / 60);
-      const lockMsg = `Account temporarily locked due to consecutive failed attempts. Please try again in ${mins} minute${mins > 1 ? "s" : ""}.`;
-      setError(lockMsg);
-      setNotice({ type: "timeout", message: lockMsg });
-      setAuthModal({
-        title: "Account Locked",
-        message: lockMsg,
-        actionLabel: "Understood",
-        variant: "error",
-      });
-      setIsSubmitting(false);
-      pendingCredentialsRef.current = null;
-      return;
-    }
-
-    const startTime = Date.now();
-    const ensureMinLoadingTime = async () => {
-      const elapsed = Date.now() - startTime;
-      if (elapsed < 800) {
-        await new Promise((resolve) => setTimeout(resolve, 800 - elapsed));
-      }
-    };
-
     const supabase = createClient();
 
     try {
-      let signInData: { user: any; session: any } | null = null;
+      let signInData: {
+        user: any;
+        session: any;
+        mfaRequired?: boolean;
+        mfaFactorId?: string | null;
+      } | null = null;
       let signInError: any = null;
 
       try {
@@ -643,11 +618,13 @@ export default function Home() {
         });
         const json = await res.json().catch(() => ({}));
         if (res.ok && json.session && json.user) {
-          if (json.session) {
-            await supabase.auth.setSession(json.session).catch(() => null);
-          }
           markLoginPersistence(activeRememberMe);
-          signInData = { user: json.user, session: json.session };
+          signInData = {
+            user: json.user,
+            session: json.session,
+            mfaRequired: Boolean(json.mfaRequired),
+            mfaFactorId: json.mfaFactorId ?? null,
+          };
           signInError = null;
         } else {
           signInError = new Error(json.error || "Invalid login credentials.");
@@ -659,7 +636,6 @@ export default function Home() {
       }
 
       if (signInError || !signInData?.user) {
-        await ensureMinLoadingTime();
         const rawMessage = signInError?.message ?? "Sign in failed";
         const isDeactivated =
           (signInError as any)?.is_deactivated === true ||
@@ -741,52 +717,9 @@ export default function Home() {
         (user.user_metadata as any)?.must_change_password === true ||
         (user.user_metadata as any)?.force_password_change === true;
       if (mustChange) {
-        await ensureMinLoadingTime();
         setIsSubmitting(false);
-        setAuthModal({
-          title: "Login Successful",
-          message: "First-time login detected. Redirecting to set your password...",
-          variant: "success",
-          redirectTo: "/auth/change-password",
-        });
-        return;
-      }
-
-      const metadataIsActive =
-        (user.user_metadata as any)?.is_active ??
-        (user.app_metadata as any)?.is_active;
-
-      let isActive: boolean | null = null;
-      if (typeof metadataIsActive === "boolean") {
-        isActive = metadataIsActive;
-      } else {
-        try {
-          const resp = await fetch("/api/auth/validate");
-          if (resp.ok) {
-            const body = (await resp.json()) as { is_active?: boolean };
-            if (typeof body.is_active === "boolean") {
-              isActive = body.is_active;
-            }
-          }
-        } catch {
-          // ignore validation errors and proceed
-        }
-      }
-
-      if (isActive === false) {
-        await ensureMinLoadingTime();
-        await supabase.auth.signOut();
-        console.warn("[Auth] Account is deactivated:", normalizedEmail);
-        const deactMsg = "Your account has been deactivated. Please contact the campus administrator or IT support for assistance.";
-        setError(deactMsg);
-        setNotice({ type: "error", message: deactMsg });
-        setAuthModal({
-          title: "Account Deactivated",
-          message: deactMsg,
-          actionLabel: "Understood",
-          variant: "error",
-        });
-        setIsSubmitting(false);
+        setAuthModal(null);
+        router.replace("/auth/change-password");
         return;
       }
 
@@ -794,41 +727,27 @@ export default function Home() {
         (resolveTrustedUserRole(user) as AppRole | undefined) ?? ROLE.FACULTY;
       const nextTarget = ROUTE_BY_ROLE[signedInRole];
 
-      try {
-        const { data: aalData } =
-          await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
-        if (
-          aalData?.nextLevel === "aal2" &&
-          aalData?.currentLevel !== "aal2"
-        ) {
-          const { data: factorsData } = await supabase.auth.mfa.listFactors();
-          const verifiedTotp = (factorsData?.totp ?? []).find(
-            (f: any) => f.status === "verified",
-          );
-          if (verifiedTotp?.id) {
-            await ensureMinLoadingTime();
-            setIsSubmitting(false);
-            setAuthModal(null);
-            setMfaCode("");
-            setUseBackupCode(false);
-            setMfaError(null);
-            setMfaChallenge({
-              factorId: verifiedTotp.id,
-              email: normalizedEmail,
-              rememberMe: activeRememberMe,
-              nextTarget,
-              roleLabel: ROLE_LABEL[signedInRole],
-              userId: user.id,
-              loginTime:
-                (typeof user.last_sign_in_at === "string" &&
-                  user.last_sign_in_at) ||
-                new Date().toISOString(),
-            });
-            return;
-          }
-        }
-      } catch {
-        // Continue normal sign-in when no MFA factor is enrolled
+      // Only trigger MFA flow if server detected a verified TOTP factor
+      if (signInData.mfaRequired && signInData.mfaFactorId) {
+        await supabase.auth.setSession(signInData.session).catch(() => null);
+        setIsSubmitting(false);
+        setAuthModal(null);
+        setMfaCode("");
+        setUseBackupCode(false);
+        setMfaError(null);
+        setMfaChallenge({
+          factorId: signInData.mfaFactorId,
+          email: normalizedEmail,
+          rememberMe: activeRememberMe,
+          nextTarget,
+          roleLabel: ROLE_LABEL[signedInRole],
+          userId: user.id,
+          loginTime:
+            (typeof user.last_sign_in_at === "string" &&
+              user.last_sign_in_at) ||
+            new Date().toISOString(),
+        });
+        return;
       }
 
       // Save or clear Remember Me credentials safely in localStorage
@@ -847,36 +766,20 @@ export default function Home() {
       // Always reset all role active views/tabs so every new session starts fresh on the Dashboard
       resetDashboardNavigationState();
 
-      // Store this session's sign-in timestamp to enforce single-session concurrency
-      let loginTime: string = "";
-      try {
-        const { data: freshUserData } = await supabase.auth.getUser();
-        if (typeof freshUserData?.user?.last_sign_in_at === "string") {
-          loginTime = freshUserData.user.last_sign_in_at;
-        }
-      } catch {
-        // Fallback to returned user
-      }
-
-      if (!loginTime) {
-        loginTime =
-          (typeof user.last_sign_in_at === "string" && user.last_sign_in_at) ||
-          new Date().toISOString();
-      }
+      const loginTime =
+        (typeof user.last_sign_in_at === "string" && user.last_sign_in_at) ||
+        new Date().toISOString();
 
       markLoginPersistence(activeRememberMe);
       recordActiveSessionLogin(loginTime, user.id);
 
-      await ensureMinLoadingTime();
-      setIsSubmitting(false);
       setAuthModal({
         title: "Login Successful",
-        message: `Welcome back! You are signed in as ${ROLE_LABEL[signedInRole]}.`,
+        message: `Welcome back! Redirecting to ${ROLE_LABEL[signedInRole]} dashboard...`,
         variant: "success",
         redirectTo: nextTarget,
       });
     } catch (err: unknown) {
-      await ensureMinLoadingTime();
       const rawMsg = err instanceof Error ? err.message : "An unexpected error occurred during sign in.";
       const isFetchError = rawMsg.toLowerCase().includes("failed to fetch") || rawMsg.toLowerCase().includes("network");
       const msg = isFetchError
