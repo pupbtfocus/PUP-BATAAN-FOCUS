@@ -63,31 +63,31 @@ export function FacultyIncompleteRequirementsModal({
       <div className="mt-3 pt-3 border-t border-white/15 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
           {notSubmittedCount > 0 && (
-            <span className="px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-lg bg-black/25 text-white/95 border border-white/15 text-xs sm:text-sm font-medium">
+            <span className="px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-lg bg-white/15 text-white border border-white/20 text-xs sm:text-sm font-medium">
               <strong className="text-amber-300 font-bold">{notSubmittedCount}</strong> Not Submitted
             </span>
           )}
 
           {rejectedCount > 0 && (
-            <span className="px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-lg bg-black/25 text-white/95 border border-white/15 text-xs sm:text-sm font-medium">
+            <span className="px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-lg bg-white/15 text-white border border-white/20 text-xs sm:text-sm font-medium">
               <strong className="text-amber-300 font-bold">{rejectedCount}</strong> Revise
             </span>
           )}
 
           {pendingValidationCount > 0 && (
-            <span className="px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-lg bg-black/25 text-white/95 border border-white/15 text-xs sm:text-sm font-medium">
+            <span className="px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-lg bg-white/15 text-white border border-white/20 text-xs sm:text-sm font-medium">
               <strong className="text-amber-300 font-bold">{pendingValidationCount}</strong> Pending for Validation
             </span>
           )}
 
           {notSubmittedCount === 0 && rejectedCount === 0 && pendingValidationCount === 0 && (
-            <span className="px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-lg bg-black/25 text-white/95 border border-white/15 text-xs sm:text-sm font-medium">
+            <span className="px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-lg bg-white/15 text-white border border-white/20 text-xs sm:text-sm font-medium">
               All documents up to date
             </span>
           )}
 
           {deadlineDisplay && (
-            <span className="px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-lg bg-black/25 text-amber-200 border border-amber-400/30 text-xs sm:text-sm font-medium">
+            <span className="px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-lg bg-white/15 text-amber-200 border border-amber-300/40 text-xs sm:text-sm font-medium">
               Due: <span className="text-amber-300 font-semibold">{deadlineDisplay}</span>
             </span>
           )}

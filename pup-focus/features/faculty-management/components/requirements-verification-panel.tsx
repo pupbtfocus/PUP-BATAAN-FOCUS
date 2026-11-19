@@ -102,7 +102,7 @@ export const getFileBrand = (
       label: "Adobe PDF Document",
       iconUrl: "/icons/adobe-pdf.svg",
       borderColor: "border-slate-200 dark:border-slate-800",
-      badgeBg: "bg-slate-800 text-white dark:bg-slate-700 dark:text-slate-100",
+      badgeBg: "bg-slate-100 text-slate-700 border border-slate-300 dark:bg-slate-800 dark:text-slate-200 dark:border-slate-700",
       googleApp: "Google Drive",
       googleAction: "Open in Google Drive",
       officeApp: null,
@@ -114,7 +114,7 @@ export const getFileBrand = (
       label: "Microsoft Excel Spreadsheet",
       iconUrl: "/icons/microsoft-excel.svg",
       borderColor: "border-slate-200 dark:border-slate-800",
-      badgeBg: "bg-slate-800 text-white dark:bg-slate-700 dark:text-slate-100",
+      badgeBg: "bg-slate-100 text-slate-700 border border-slate-300 dark:bg-slate-800 dark:text-slate-200 dark:border-slate-700",
       googleApp: "Google Sheets",
       googleAction: "Open in Google Sheets (Drive)",
       officeApp: "Excel Online",
@@ -126,7 +126,7 @@ export const getFileBrand = (
       label: "Microsoft Word Document",
       iconUrl: "/icons/microsoft-word.svg",
       borderColor: "border-slate-200 dark:border-slate-800",
-      badgeBg: "bg-slate-800 text-white dark:bg-slate-700 dark:text-slate-100",
+      badgeBg: "bg-slate-100 text-slate-700 border border-slate-300 dark:bg-slate-800 dark:text-slate-200 dark:border-slate-700",
       googleApp: "Google Docs",
       googleAction: "Open in Google Docs (Drive)",
       officeApp: "Word Online",
@@ -138,7 +138,7 @@ export const getFileBrand = (
       label: "Microsoft PowerPoint Presentation",
       iconUrl: "/icons/microsoft-powerpoint.svg",
       borderColor: "border-slate-200 dark:border-slate-800",
-      badgeBg: "bg-slate-800 text-white dark:bg-slate-700 dark:text-slate-100",
+      badgeBg: "bg-slate-100 text-slate-700 border border-slate-300 dark:bg-slate-800 dark:text-slate-200 dark:border-slate-700",
       googleApp: "Google Slides",
       googleAction: "Open in Google Slides (Drive)",
       officeApp: "PowerPoint Online",
@@ -150,7 +150,7 @@ export const getFileBrand = (
       label: "Compressed Archive",
       iconUrl: "https://api.iconify.design/vscode-icons:file-type-zip.svg",
       borderColor: "border-slate-200 dark:border-slate-800",
-      badgeBg: "bg-slate-800 text-white dark:bg-slate-700 dark:text-slate-100",
+      badgeBg: "bg-slate-100 text-slate-700 border border-slate-300 dark:bg-slate-800 dark:text-slate-200 dark:border-slate-700",
     };
   }
   if (["png", "jpg", "jpeg", "webp", "gif", "bmp", "svg"].includes(ext)) {
@@ -158,14 +158,14 @@ export const getFileBrand = (
       label: "Image File",
       iconUrl: "https://api.iconify.design/vscode-icons:file-type-image.svg",
       borderColor: "border-slate-200 dark:border-slate-800",
-      badgeBg: "bg-slate-800 text-white dark:bg-slate-700 dark:text-slate-100",
+      badgeBg: "bg-slate-100 text-slate-700 border border-slate-300 dark:bg-slate-800 dark:text-slate-200 dark:border-slate-700",
     };
   }
   return {
     label: "Document File",
     iconUrl: "https://api.iconify.design/vscode-icons:file-type-text.svg",
     borderColor: "border-slate-200 dark:border-slate-800",
-    badgeBg: "bg-slate-800 text-white dark:bg-slate-700 dark:text-slate-100",
+    badgeBg: "bg-slate-100 text-slate-700 border border-slate-300 dark:bg-slate-800 dark:text-slate-200 dark:border-slate-700",
   };
 };
 
@@ -2349,7 +2349,7 @@ export function FacultyVerificationDrawer({
         </div>
       </div>
 
-      <div className="w-full flex flex-col rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 shadow-xs transition-all animate-in fade-in duration-150 overflow-hidden">
+      <div className="w-full flex flex-col rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 shadow-xs transition-all animate-in fade-in duration-150">
         <AlertPopup
           type={actionFeedback?.type}
           message={actionFeedback?.message}
@@ -2357,14 +2357,14 @@ export function FacultyVerificationDrawer({
         />
         {/* Inline Section Header - Only visible when in Class Selection Step */}
         {selectedClassId === null ? (
-          <div className="border-b border-slate-200 dark:border-slate-800/80 p-4 sm:p-6 bg-slate-50/50 dark:bg-slate-950/30 rounded-t-2xl space-y-3">
+          <div className="border-b border-slate-200 dark:border-slate-800 p-4 sm:p-6 bg-slate-50/60 dark:bg-slate-950/30 rounded-t-xl space-y-3">
             {/* Top row with Back button and PUP SIS style Faculty Name Header */}
             <div className="flex items-center justify-between gap-3 flex-wrap">
               <div className="flex items-center gap-3 flex-wrap">
                 <button
                   type="button"
                   onClick={handleClose}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#780000] hover:bg-[#5e0000] text-white border border-[#5e0000] text-xs font-bold transition-all cursor-pointer shadow-xs active:scale-95 shrink-0"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#580000] hover:bg-[#780000] text-white text-xs font-semibold transition-colors cursor-pointer shadow-xs active:scale-[0.98] shrink-0"
                   title="Return to Faculty List"
                 >
                   <AppIcon icon={NavArrowLeft} size="sm" color="white" />
@@ -2382,46 +2382,46 @@ export function FacultyVerificationDrawer({
                       <span>{buildFacultyInitials(faculty.fullName)}</span>
                     )}
                   </div>
-                  <span className="text-xs sm:text-sm font-black text-[#780000] dark:text-rose-400 tracking-wide uppercase">
+                  <span className="text-xs sm:text-sm font-bold text-[#580000] dark:text-rose-400 tracking-wide uppercase">
                     {facultyDisplayName}
                   </span>
                 </div>
               </div>
             </div>
 
-            {/* PUP SIS Style Academic Term & Info Card */}
+            {/* Academic Term & Faculty Info Card */}
             <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 overflow-hidden shadow-2xs">
-              <div className="bg-[#780000] text-white px-4 py-2 font-bold text-xs sm:text-sm tracking-wide">
+              <div className="bg-[#580000] text-white px-4 py-2.5 font-semibold text-xs sm:text-sm tracking-wide">
                 {academicYear
                   ? `School Year ${academicYear} ${semester}`
                   : "No Active Academic Term Configured"}
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-y-3.5 gap-x-6 p-4 bg-white dark:bg-slate-900 text-xs">
                 <div>
-                  <span className="font-bold text-slate-900 dark:text-slate-100 block mb-0.5">
+                  <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 block mb-1">
                     Faculty Department &amp; Program
                   </span>
-                  <p className="font-medium text-slate-700 dark:text-slate-300">
+                  <p className="font-semibold text-slate-900 dark:text-slate-100">
                     {departmentLabel}
                   </p>
                 </div>
 
                 <div>
-                  <span className="font-bold text-slate-900 dark:text-slate-100 block mb-0.5">
+                  <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 block mb-1">
                     Assigned Class Loads
                   </span>
-                  <p className="font-medium text-slate-700 dark:text-slate-300">
+                  <p className="font-semibold text-slate-900 dark:text-slate-100">
                     {classGroups.length} Registered Class Load
                     {classGroups.length === 1 ? "" : "s"}
                   </p>
                 </div>
 
                 <div>
-                  <span className="font-bold text-slate-900 dark:text-slate-100 block mb-0.5">
+                  <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 block mb-1">
                     Faculty Email
                   </span>
                   <p
-                    className="font-medium text-slate-700 dark:text-slate-300 truncate"
+                    className="font-semibold text-slate-900 dark:text-slate-100 truncate"
                     title={faculty.email}
                   >
                     {faculty.email || "—"}
@@ -2436,7 +2436,7 @@ export function FacultyVerificationDrawer({
         {activeTab === "current" &&
           selectedClassId === null &&
           classGroups.length > 0 && (
-            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 border-b border-slate-200 dark:border-slate-800/80 px-4 sm:px-6 py-3 bg-white dark:bg-slate-900">
+            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 border-b border-slate-200 dark:border-slate-800 px-4 sm:px-6 py-3.5 bg-white dark:bg-slate-900">
               <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 w-full lg:w-auto">
                 {/* Search Input */}
                 <input
@@ -2444,7 +2444,7 @@ export function FacultyVerificationDrawer({
                   placeholder="Search subject or section..."
                   value={subjectSearchTerm}
                   onChange={(e) => setSubjectSearchTerm(e.target.value)}
-                  className="w-full sm:w-60 rounded-xl border border-slate-400 dark:border-slate-800 bg-white dark:bg-slate-950 px-3.5 py-2 text-xs sm:text-sm text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 outline-none transition focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20"
+                  className="w-full sm:w-60 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-950 px-3.5 py-2 text-xs text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 outline-none transition focus:border-[#580000] focus:ring-2 focus:ring-[#580000]/15"
                 />
 
                 {/* Custom Status Dropdown Filter */}
@@ -2454,7 +2454,7 @@ export function FacultyVerificationDrawer({
                     onClick={() =>
                       setIsSubjectStatusDropdownOpen((prev) => !prev)
                     }
-                    className="flex w-full sm:w-auto items-center justify-between gap-2.5 rounded-xl border border-slate-400 dark:border-slate-800 bg-white dark:bg-slate-900 px-3.5 py-2 text-xs sm:text-sm text-slate-900 dark:text-slate-200 outline-none transition hover:border-slate-500 dark:hover:border-slate-700 focus:border-amber-500 cursor-pointer shadow-2xs"
+                    className="flex w-full sm:w-auto items-center justify-between gap-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-3.5 py-2 text-xs text-slate-700 dark:text-slate-200 outline-none transition hover:border-slate-300 dark:hover:border-slate-600 focus:border-[#580000] cursor-pointer"
                   >
                     <div className="flex items-center gap-1.5 text-left">
                       <span className="text-slate-500 dark:text-slate-400 font-medium">
@@ -2463,8 +2463,8 @@ export function FacultyVerificationDrawer({
                       <span className="font-semibold text-slate-900 dark:text-slate-100">
                         {currentSubjectStatusOption.label}
                       </span>
-                      <span className="ml-1 inline-flex items-center justify-center px-2 py-0.5 rounded-full text-xs font-bold bg-amber-500 text-slate-950 shadow-2xs">
-                        ({subjectStatusCounts[subjectStatusFilter]})
+                      <span className="ml-1 inline-flex items-center justify-center px-2 py-0.5 rounded-full text-[11px] font-bold bg-[#580000] text-white">
+                        {subjectStatusCounts[subjectStatusFilter]}
                       </span>
                     </div>
                     <NavArrowDown
@@ -2480,7 +2480,7 @@ export function FacultyVerificationDrawer({
                         className="fixed inset-0 z-20"
                         onClick={() => setIsSubjectStatusDropdownOpen(false)}
                       />
-                      <div className="absolute right-0 top-full mt-1.5 z-30 w-full sm:w-64 rounded-2xl border border-slate-400 dark:border-slate-800 bg-white dark:bg-slate-900 py-1 shadow-xl text-xs sm:text-sm text-slate-900 dark:text-slate-200 overflow-hidden">
+                      <div className="absolute right-0 top-full mt-1.5 z-30 w-full sm:w-64 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 py-1 shadow-xl text-xs text-slate-900 dark:text-slate-200 overflow-hidden">
                         {subjectStatusFilterOptions.map((opt) => {
                           const isSelected = subjectStatusFilter === opt.id;
                           const count = subjectStatusCounts[opt.id];
@@ -2500,15 +2500,15 @@ export function FacultyVerificationDrawer({
                             >
                               <span className="truncate">{opt.label}</span>
                               <span
-                                className={`ml-2 inline-flex items-center justify-center px-2 py-0.5 rounded-full text-xs font-bold shrink-0 shadow-2xs ${
+                                className={`ml-2 inline-flex items-center justify-center px-2 py-0.5 rounded-full text-[11px] font-bold shrink-0 ${
                                   isSelected
-                                    ? "bg-amber-500 text-slate-950"
+                                    ? "bg-[#580000] text-white"
                                     : count > 0
-                                      ? "bg-slate-700 dark:bg-slate-600 text-white"
+                                      ? "bg-slate-200 dark:bg-slate-700 text-slate-800 dark:text-slate-200"
                                       : "bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-400"
                                 }`}
                               >
-                                ({count})
+                                {count}
                               </span>
                             </button>
                           );
@@ -2522,27 +2522,27 @@ export function FacultyVerificationDrawer({
           )}
 
         {/* Body Content */}
-        <div className="px-4 sm:px-6 py-4 sm:py-5">
+        <div className="px-4 sm:px-6 py-5">
           {activeTab === "current" ? (
             /* Tab 1: Current Submissions */
             isLoading ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-5 pt-2">
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
                 {[1, 2, 3].map((i) => (
                   <div
                     key={i}
-                    className="h-64 rounded-2xl border-2 border-slate-200 dark:border-slate-800 bg-white/50 dark:bg-slate-900/50 animate-pulse p-5"
+                    className="h-56 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-900/50 animate-pulse p-5"
                   />
                 ))}
               </div>
             ) : selectedClassId === null || !selectedGroup ? (
               /* Step 1: Class Selection Step (Default) */
-              <div className="space-y-4 pt-1">
+              <div className="space-y-4">
                 {/* Responsive Grid of Class Cards */}
                 {classGroups.length === 0 ? (
-                  <div className="overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xs py-14 text-center text-slate-500 dark:text-slate-400">
+                  <div className="overflow-hidden rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 py-14 text-center text-slate-500 dark:text-slate-400">
                     <div className="flex flex-col items-center justify-center gap-2 max-w-sm mx-auto">
                       <AppIcon icon={InfoCircle} size="lg" color="muted" />
-                      <h5 className="text-sm font-bold text-slate-800 dark:text-slate-200">
+                      <h5 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
                         No Classes Registered
                       </h5>
                       <p className="text-xs text-slate-500 dark:text-slate-400">
@@ -2553,10 +2553,10 @@ export function FacultyVerificationDrawer({
                     </div>
                   </div>
                 ) : filteredClassGroups.length === 0 ? (
-                  <div className="overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xs py-14 text-center text-slate-500 dark:text-slate-400">
+                  <div className="overflow-hidden rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 py-14 text-center text-slate-500 dark:text-slate-400">
                     <div className="flex flex-col items-center justify-center gap-2 max-w-sm mx-auto">
                       <AppIcon icon={InfoCircle} size="lg" color="muted" />
-                      <h5 className="text-sm font-bold text-slate-800 dark:text-slate-200">
+                      <h5 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
                         No Matching Subjects
                       </h5>
                       <p className="text-xs text-slate-500 dark:text-slate-400">
@@ -2566,7 +2566,7 @@ export function FacultyVerificationDrawer({
                     </div>
                   </div>
                 ) : (
-                  <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5 pt-1">
+                  <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
                     {filteredClassGroups.map((group) => {
                       const groupPendingCount = group.submissions.filter(
                         (s) => {
@@ -2615,150 +2615,149 @@ export function FacultyVerificationDrawer({
                       ).length;
 
                       const totalReqs = allRequirements.length;
+                      const submittedCount =
+                        totalReqs > 0
+                          ? Math.min(
+                              totalReqs,
+                              groupValidatedCount + groupPendingCount,
+                            )
+                          : 0;
+                      const isComplete =
+                        totalReqs > 0 &&
+                        groupValidatedCount >= totalReqs &&
+                        groupRevisionCount === 0;
                       const progressPct =
                         totalReqs > 0
-                          ? Math.round((groupValidatedCount / totalReqs) * 100)
+                          ? Math.min(
+                              100,
+                              Math.round(
+                                (groupValidatedCount / totalReqs) * 100,
+                              ),
+                            )
                           : 0;
 
                       return (
                         <div
                           key={group.key}
                           onClick={() => setSelectedClassId(group.key)}
-                          className="group relative flex flex-col cursor-pointer text-left transition-all duration-200 hover:-translate-y-1"
+                          className={`group relative flex flex-col justify-between gap-4 rounded-xl border border-slate-200 dark:border-slate-800 border-l-4 ${
+                            isComplete
+                              ? "border-l-[#0b5336]"
+                              : "border-l-[#580000]"
+                          } bg-white dark:bg-slate-900 p-5 shadow-xs transition-all hover:border-slate-300 dark:hover:border-slate-700 hover:shadow-sm cursor-pointer text-left`}
                         >
-                          {/* Folder Top Tab with Smooth Slanted Shoulder */}
-                          <div className="flex items-end -mb-[2px] relative z-10 self-start">
-                            {/* Tab Left + Content */}
-                            <div className="h-7.5 px-3.5 rounded-tl-xl flex items-center gap-2 text-xs font-black tracking-wide border-t-2 border-l-2 border-amber-500 dark:border-amber-600 bg-amber-400 dark:bg-amber-500 text-slate-950 shadow-2xs group-hover:bg-amber-300 transition-colors duration-200">
-                              <AppIcon
-                                icon={Folder}
-                                size="xs"
-                                color="inherit"
-                              />
-                              <span className="truncate max-w-[150px]">
+                          {/* 1. Top Metadata Row */}
+                          <div className="flex flex-wrap items-center justify-between gap-2">
+                            <div className="flex flex-wrap items-center gap-1.5 min-w-0">
+                              <span className="inline-flex items-center rounded-md border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 px-2.5 py-0.5 text-xs font-semibold text-slate-800 dark:text-slate-200 truncate max-w-[160px]">
                                 {group.isGeneral
                                   ? "General Requirements"
                                   : group.sectionCode}
                               </span>
+                              <span className="inline-flex items-center rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-2 py-0.5 text-xs font-medium text-slate-600 dark:text-slate-400">
+                                {group.units !== null
+                                  ? `${group.units.toFixed(1)} Units`
+                                  : "Institutional"}
+                              </span>
                             </div>
 
-                            {/* Tab Smooth Slant Shoulder */}
-                            <div className="relative w-5 h-7.5 shrink-0 -ml-[1px]">
-                              <svg
-                                viewBox="0 0 20 30"
-                                fill="none"
-                                className="w-full h-full text-amber-400 dark:text-amber-500"
-                              >
-                                <path
-                                  d="M 0,0 L 2,0 C 8,0 13,8 16,18 L 20,30 L 0,30 Z"
-                                  fill="currentColor"
+                            {isComplete ? (
+                              <span className="inline-flex items-center gap-1 rounded-full border border-[#08412a] bg-[#0b5336] px-2.5 py-0.5 text-[11px] font-semibold text-white shadow-2xs shrink-0">
+                                <AppIcon
+                                  icon={CheckCircle}
+                                  size="xs"
+                                  color="white"
                                 />
-                                <path
-                                  d="M 0,1 L 2,1 C 8,1 13,9 16,19 L 20,30"
-                                  stroke="#f59e0b"
-                                  strokeWidth="2"
-                                  fill="none"
-                                  className="text-amber-500 dark:text-amber-600"
+                                <span>Complete</span>
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-600 bg-amber-500 px-2.5 py-0.5 text-[11px] font-bold text-amber-950 shadow-2xs shrink-0">
+                                <span className="h-1.5 w-1.5 rounded-full bg-amber-950" />
+                                <span>
+                                  {submittedCount}/{totalReqs} Submitted
+                                </span>
+                              </span>
+                            )}
+                          </div>
+
+                          {/* 2. Center Body (Primary Focal Point) */}
+                          <div className="flex-1 space-y-3.5">
+                            <div className="space-y-2.5">
+                              <div>
+                                <span className="block text-[11px] font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">
+                                  COURSE CODE
+                                </span>
+                                <h3 className="mt-0.5 text-lg font-bold tracking-tight text-slate-900 dark:text-slate-100 group-hover:text-[#580000] dark:group-hover:text-rose-300 transition-colors">
+                                  {group.isGeneral
+                                    ? "General Requirements"
+                                    : group.subjectCode}
+                                </h3>
+                              </div>
+
+                              <div>
+                                <span className="block text-[11px] font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">
+                                  SUBJECT NAME
+                                </span>
+                                <p className="mt-0.5 text-sm font-medium text-slate-700 dark:text-slate-300 line-clamp-2 leading-snug">
+                                  {group.description}
+                                </p>
+                              </div>
+                            </div>
+
+                            {/* Slim Validation Progress Bar */}
+                            <div className="space-y-1.5 pt-0.5">
+                              <div className="flex items-center justify-between gap-2 text-xs">
+                                <span className="font-medium text-slate-500 dark:text-slate-400">
+                                  Validation Progress
+                                  {groupPendingCount > 0 ? (
+                                    <span className="ml-1.5 font-semibold text-amber-700 dark:text-amber-400">
+                                      ({groupPendingCount} pending)
+                                    </span>
+                                  ) : null}
+                                  {groupRevisionCount > 0 ? (
+                                    <span className="ml-1.5 font-semibold text-[#780000] dark:text-rose-400">
+                                      ({groupRevisionCount} revision)
+                                    </span>
+                                  ) : null}
+                                </span>
+                                <span
+                                  className={`font-semibold tabular-nums ${
+                                    isComplete
+                                      ? "text-[#0b5336] dark:text-emerald-400"
+                                      : "text-slate-700 dark:text-slate-300"
+                                  }`}
+                                >
+                                  {progressPct}%
+                                </span>
+                              </div>
+                              <div className="h-1.5 w-full overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
+                                <div
+                                  className={`h-full rounded-full transition-all duration-300 ${
+                                    isComplete ? "bg-[#0b5336]" : "bg-[#580000]"
+                                  }`}
+                                  style={{ width: `${progressPct}%` }}
                                 />
-                              </svg>
+                              </div>
                             </div>
                           </div>
 
-                          {/* Folder Main Body */}
-                          <div className="relative flex-1 flex flex-col justify-between rounded-2xl rounded-tl-none border-2 border-amber-500 dark:border-amber-600 transition-all duration-200 overflow-hidden bg-white dark:bg-slate-900 shadow-xs group-hover:shadow-lg group-hover:border-amber-400">
-                            <div className="p-5 flex-1 flex flex-col justify-between gap-4">
-                              <div className="space-y-3.5">
-                                {/* Top Row: Units & Status Badges */}
-                                <div className="flex items-center justify-between gap-2">
-                                  <div className="flex items-center gap-1.5 flex-wrap">
-                                    {group.units !== null ? (
-                                      <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-bold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
-                                        {group.units.toFixed(1)} Units
-                                      </span>
-                                    ) : (
-                                      <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-bold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700">
-                                        Institutional
-                                      </span>
-                                    )}
-                                  </div>
-
-                                  <div className="flex items-center gap-1.5 shrink-0">
-                                    {groupPendingCount > 0 && (
-                                      <span className="inline-flex items-center gap-1 rounded-full bg-amber-500 border border-amber-600 text-slate-950 px-2.5 py-0.5 text-[10.5px] font-bold shadow-2xs">
-                                        <span className="h-1.5 w-1.5 rounded-full bg-[#780000] animate-pulse" />
-                                        {groupPendingCount} Pending
-                                      </span>
-                                    )}
-                                    {groupRevisionCount > 0 && (
-                                      <span className="inline-flex items-center gap-1 rounded-full bg-[#780000] border border-[#5e0000] text-white px-2.5 py-0.5 text-[10.5px] font-bold shadow-2xs">
-                                        {groupRevisionCount} Revision
-                                      </span>
-                                    )}
-                                  </div>
-                                </div>
-
-                                {/* Course Code & Subject Name Fields */}
-                                <div className="space-y-2 pt-1">
-                                  <div>
-                                    <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 block mb-0.5">
-                                      Course Code:
-                                    </span>
-                                    <h3 className="text-xl sm:text-2xl font-black text-slate-950 dark:text-slate-100 group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors">
-                                      {group.isGeneral
-                                        ? "General Requirements"
-                                        : group.subjectCode}
-                                    </h3>
-                                  </div>
-
-                                  <div>
-                                    <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 block mb-0.5">
-                                      Subject Name / Description:
-                                    </span>
-                                    <p className="text-base sm:text-lg font-bold text-slate-800 dark:text-slate-200 line-clamp-2 leading-snug">
-                                      {group.description}
-                                    </p>
-                                  </div>
-                                </div>
-
-                                {/* Validation Progress Bar */}
-                                <div className="pt-1">
-                                  <div className="flex items-center justify-between text-[11px] font-medium text-slate-500 dark:text-slate-400 mb-1.5">
-                                    <span>Validation Progress</span>
-                                    <span className="font-bold text-slate-700 dark:text-slate-300">
-                                      {progressPct}% ({groupValidatedCount}/
-                                      {totalReqs} Validated)
-                                    </span>
-                                  </div>
-                                  <div className="h-1.5 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
-                                    <div
-                                      className="h-full bg-gradient-to-r from-amber-500 to-emerald-500 transition-all duration-300 rounded-full"
-                                      style={{ width: `${progressPct}%` }}
-                                    />
-                                  </div>
-                                </div>
-                              </div>
-
-                              {/* Bottom Action Footer */}
-                              <div className="pt-2">
-                                <div className="w-full flex items-center justify-between px-3.5 py-2 rounded-xl bg-amber-400 group-hover:bg-amber-500 border border-amber-500 transition-all duration-200 shadow-2xs">
-                                  <span className="text-xs font-extrabold text-amber-950 flex items-center gap-2">
-                                    <AppIcon
-                                      icon={Folder}
-                                      size="xs"
-                                      color="inherit"
-                                    />
-                                    <span>View & Verify Documents</span>
-                                  </span>
-                                  <span className="inline-flex items-center justify-center h-6 w-6 rounded-full bg-[#780000] text-white group-hover:bg-[#5e0000] transition-colors shadow-2xs">
-                                    <AppIcon
-                                      icon={NavArrowRight}
-                                      size="xs"
-                                      color="white"
-                                    />
-                                  </span>
-                                </div>
-                              </div>
-                            </div>
+                          {/* 3. Bottom Action Footer */}
+                          <div className="border-t border-slate-100 dark:border-slate-800 pt-3.5">
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setSelectedClassId(group.key);
+                              }}
+                              className="w-full inline-flex items-center justify-center gap-1.5 rounded-lg bg-[#580000] hover:bg-[#780000] px-3.5 py-2 text-xs font-semibold text-white shadow-2xs transition-colors cursor-pointer active:scale-[0.99]"
+                            >
+                              <span>View &amp; Verify Documents</span>
+                              <AppIcon
+                                icon={NavArrowRight}
+                                size="xs"
+                                color="white"
+                              />
+                            </button>
                           </div>
                         </div>
                       );
@@ -2769,9 +2768,10 @@ export function FacultyVerificationDrawer({
             ) : (
               /* Step 2: Class Detail Step */
               <div className="space-y-4">
-                {/* Class Header & Dropdown Switcher */}
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 py-1">
-                  <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2.5 min-w-0 flex-1">
+                {/* Class Context Navigation Bar */}
+                <div className="space-y-3">
+                  {/* Top Row: Back Navigation & Quick Class Switcher */}
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
                     <button
                       type="button"
                       onClick={() => {
@@ -2789,21 +2789,45 @@ export function FacultyVerificationDrawer({
                         }
                         setSelectedClassId(null);
                       }}
-                      className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-[#780000] hover:bg-[#5e0000] text-white border border-[#5e0000] text-xs font-bold transition-all cursor-pointer shadow-xs active:scale-95 shrink-0"
+                      className="w-full sm:w-auto inline-flex items-center justify-center sm:justify-start gap-1.5 px-3.5 py-2 rounded-lg bg-[#580000] hover:bg-[#780000] text-white text-xs font-semibold transition-colors cursor-pointer shadow-xs active:scale-[0.98] shrink-0"
                       title="Return to Class List"
                     >
-                      <AppIcon icon={NavArrowLeft} size="sm" color="white" />
+                      <AppIcon icon={NavArrowLeft} size="xs" color="white" />
                       <span>Back to Class List</span>
                     </button>
 
-                    <div className="h-6 w-px bg-amber-400/60 dark:bg-amber-600/40 hidden sm:block shrink-0" />
+                    {classGroups.length > 1 && (
+                      <div className="flex items-center gap-2 shrink-0 w-full sm:w-auto">
+                        <label
+                          htmlFor="quick-class-switcher"
+                          className="text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 shrink-0"
+                        >
+                          Switch Class:
+                        </label>
+                        <select
+                          id="quick-class-switcher"
+                          value={selectedGroup.key}
+                          onChange={(e) => setSelectedClassId(e.target.value)}
+                          className="flex-1 sm:flex-initial min-w-0 sm:min-w-[200px] rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-950 px-3 py-2 text-xs font-semibold text-slate-800 dark:text-slate-100 outline-none transition focus:border-[#580000] focus:ring-2 focus:ring-[#580000]/15 cursor-pointer"
+                        >
+                          {classGroups.map((g) => (
+                            <option key={g.key} value={g.key}>
+                              {g.isGeneral
+                                ? "General Requirements"
+                                : `${g.sectionCode} • ${g.subjectCode}`}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    )}
+                  </div>
 
-                    {/* Faculty Profile & Active Class Header */}
-                    <div className="min-w-0 flex-1 sm:pl-1">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        {/* Faculty Name & Photo */}
-                        <div className="flex items-center gap-2 shrink-0">
-                          <div className="flex h-7 w-7 shrink-0 items-center justify-center overflow-hidden rounded-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-[10px] font-bold text-slate-800 dark:text-slate-200 shadow-2xs">
+                  {/* Selected Class Context Strip */}
+                  <div className="rounded-xl border border-slate-200 dark:border-slate-800 border-l-4 border-l-[#580000] bg-slate-50/70 dark:bg-slate-950/40 px-4 py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <div className="min-w-0 space-y-1.5">
+                      <div className="flex flex-wrap items-center gap-1.5">
+                        <div className="inline-flex items-center gap-1.5 pr-1">
+                          <div className="flex h-6 w-6 shrink-0 items-center justify-center overflow-hidden rounded-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-[10px] font-bold text-slate-800 dark:text-slate-200">
                             {faculty.profileImageUrl ? (
                               <img
                                 src={faculty.profileImageUrl}
@@ -2816,90 +2840,57 @@ export function FacultyVerificationDrawer({
                               </span>
                             )}
                           </div>
-                          <span className="text-sm font-bold text-slate-900 dark:text-slate-100">
+                          <span className="text-xs font-semibold text-slate-700 dark:text-slate-300">
                             {faculty.fullName}
                           </span>
                         </div>
 
-                        <span className="text-slate-400 dark:text-slate-600 font-bold hidden sm:inline">
-                          &bull;
+                        <span className="inline-flex items-center rounded-md border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 text-xs font-semibold text-slate-800 dark:text-slate-200">
+                          {selectedGroup.isGeneral
+                            ? "General"
+                            : selectedGroup.sectionCode}
                         </span>
 
-                        {selectedGroup.isGeneral ? (
-                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-bold bg-slate-800 text-slate-100 tracking-wide shadow-2xs">
-                            General
-                          </span>
-                        ) : (
-                          <span className="font-mono text-xs font-black px-2.5 py-0.5 rounded-md bg-amber-400 text-slate-950 shrink-0">
-                            {selectedGroup.sectionCode}
-                          </span>
-                        )}
-                        {!selectedGroup.isGeneral && (
-                          <span className="text-sm sm:text-base font-black text-slate-950 dark:text-amber-100">
-                            {selectedGroup.subjectCode} &bull;{" "}
-                            {selectedGroup.description}
-                          </span>
-                        )}
-                        {selectedGroup.isGeneral && (
-                          <span className="text-sm sm:text-base font-black text-slate-950 dark:text-amber-100">
-                            {selectedGroup.description}
-                          </span>
-                        )}
                         {selectedGroup.units !== null ? (
-                          <span className="text-xs font-semibold text-slate-600 dark:text-slate-400 shrink-0">
-                            ({selectedGroup.units.toFixed(1)} Units)
+                          <span className="inline-flex items-center rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-2 py-0.5 text-xs font-medium text-slate-600 dark:text-slate-400">
+                            {selectedGroup.units.toFixed(1)} Units
                           </span>
                         ) : null}
                       </div>
+
+                      <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
+                        <h2 className="text-sm sm:text-base font-bold text-slate-900 dark:text-slate-100">
+                          {selectedGroup.isGeneral
+                            ? "General Requirements"
+                            : selectedGroup.subjectCode}
+                        </h2>
+                        <span className="text-xs sm:text-sm font-medium text-slate-500 dark:text-slate-400 break-words">
+                          {selectedGroup.description}
+                        </span>
+                      </div>
                     </div>
                   </div>
-
-                  {/* Quick Dropdown Select */}
-                  {classGroups.length > 1 && (
-                    <div className="flex items-center gap-2 shrink-0 w-full sm:w-auto sm:ml-auto">
-                      <label
-                        htmlFor="quick-class-switcher"
-                        className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 shrink-0"
-                      >
-                        Switch Class:
-                      </label>
-                      <select
-                        id="quick-class-switcher"
-                        value={selectedGroup.key}
-                        onChange={(e) => setSelectedClassId(e.target.value)}
-                        className="flex-1 sm:flex-none rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-1.5 text-xs text-slate-900 dark:text-slate-100 font-semibold outline-none transition focus:border-amber-500 cursor-pointer shadow-2xs"
-                      >
-                        {classGroups.map((g) => (
-                          <option key={g.key} value={g.key}>
-                            {g.isGeneral
-                              ? "General Requirements"
-                              : `${g.sectionCode} • ${g.subjectCode}`}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                  )}
                 </div>
 
                 {/* Scoped Filter Toolbar & Bulk Actions */}
-                <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-2.5 rounded-2xl border border-slate-200 dark:border-slate-800/80 bg-slate-50/80 dark:bg-slate-950/40 p-2.5 shadow-2xs">
+                <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-950/40 p-1.5 sm:p-2 shadow-2xs">
                   {/* Filter Chips */}
-                  <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
+                  <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 w-full xl:w-auto">
                     <button
                       type="button"
                       onClick={() => setFilterMode("all")}
-                      className={`inline-flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-semibold whitespace-nowrap transition cursor-pointer shadow-2xs ${
+                      className={`flex-1 sm:flex-none inline-flex items-center justify-center gap-1.5 rounded-lg px-2.5 sm:px-3 py-1.5 text-[11px] sm:text-xs font-semibold whitespace-nowrap transition-colors cursor-pointer ${
                         filterMode === "all"
-                          ? "bg-amber-500 hover:bg-amber-400 text-slate-950 border border-amber-600/30 shadow-xs font-bold"
-                          : "bg-white hover:bg-slate-50 text-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800 border border-slate-300 dark:border-slate-700"
+                          ? "bg-[#580000] hover:bg-[#780000] text-white shadow-2xs"
+                          : "bg-white hover:bg-slate-50 text-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700"
                       }`}
                     >
                       <AppIcon icon={Page} size="xs" color="inherit" />
                       <span>All Files</span>
                       <span
-                        className={`rounded-full px-1.5 py-0.5 text-[10.5px] font-bold ${
+                        className={`inline-flex items-center justify-center rounded-full px-1.5 py-0.5 text-[10px] font-bold leading-none ${
                           filterMode === "all"
-                            ? "bg-white text-slate-950 border border-amber-600/30 shadow-2xs"
+                            ? "bg-white/20 text-white"
                             : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400"
                         }`}
                       >
@@ -2910,18 +2901,18 @@ export function FacultyVerificationDrawer({
                     <button
                       type="button"
                       onClick={() => setFilterMode("pending")}
-                      className={`inline-flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-semibold whitespace-nowrap transition cursor-pointer shadow-2xs ${
+                      className={`flex-1 sm:flex-none inline-flex items-center justify-center gap-1.5 rounded-lg px-2.5 sm:px-3 py-1.5 text-[11px] sm:text-xs font-semibold whitespace-nowrap transition-colors cursor-pointer ${
                         filterMode === "pending"
-                          ? "bg-amber-500 hover:bg-amber-400 text-slate-950 border border-amber-600/30 shadow-xs font-bold"
-                          : "bg-white hover:bg-slate-50 text-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800 border border-slate-300 dark:border-slate-700"
+                          ? "bg-[#580000] hover:bg-[#780000] text-white shadow-2xs"
+                          : "bg-white hover:bg-slate-50 text-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700"
                       }`}
                     >
                       <AppIcon icon={Hourglass} size="xs" color="inherit" />
                       <span>Need Review</span>
                       <span
-                        className={`rounded-full px-1.5 py-0.5 text-[10.5px] font-bold ${
+                        className={`inline-flex items-center justify-center rounded-full px-1.5 py-0.5 text-[10px] font-bold leading-none ${
                           filterMode === "pending"
-                            ? "bg-white text-slate-950 border border-amber-600/30 shadow-2xs"
+                            ? "bg-white/20 text-white"
                             : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400"
                         }`}
                       >
@@ -2933,10 +2924,10 @@ export function FacultyVerificationDrawer({
                       <button
                         type="button"
                         onClick={() => setFilterMode("revision_uploaded")}
-                        className={`inline-flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-semibold whitespace-nowrap transition cursor-pointer shadow-2xs ${
+                        className={`flex-1 sm:flex-none inline-flex items-center justify-center gap-1.5 rounded-lg px-2.5 sm:px-3 py-1.5 text-[11px] sm:text-xs font-semibold whitespace-nowrap transition-colors cursor-pointer ${
                           filterMode === "revision_uploaded"
-                            ? "bg-amber-500 hover:bg-amber-400 text-slate-950 border border-amber-600/30 shadow-xs font-bold"
-                            : "bg-white hover:bg-slate-50 text-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800 border border-slate-300 dark:border-slate-700"
+                            ? "bg-[#580000] hover:bg-[#780000] text-white shadow-2xs"
+                            : "bg-white hover:bg-slate-50 text-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700"
                         }`}
                       >
                         <AppIcon
@@ -2946,9 +2937,9 @@ export function FacultyVerificationDrawer({
                         />
                         <span>Revisions Uploaded</span>
                         <span
-                          className={`rounded-full px-1.5 py-0.5 text-[10.5px] font-bold ${
+                          className={`inline-flex items-center justify-center rounded-full px-1.5 py-0.5 text-[10px] font-bold leading-none ${
                             filterMode === "revision_uploaded"
-                              ? "bg-white text-slate-950 border border-amber-600/30 shadow-2xs"
+                              ? "bg-white/20 text-white"
                               : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400"
                           }`}
                         >
@@ -2960,18 +2951,18 @@ export function FacultyVerificationDrawer({
                     <button
                       type="button"
                       onClick={() => setFilterMode("validated")}
-                      className={`inline-flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-semibold whitespace-nowrap transition cursor-pointer shadow-2xs ${
+                      className={`flex-1 sm:flex-none inline-flex items-center justify-center gap-1.5 rounded-lg px-2.5 sm:px-3 py-1.5 text-[11px] sm:text-xs font-semibold whitespace-nowrap transition-colors cursor-pointer ${
                         filterMode === "validated"
-                          ? "bg-amber-500 hover:bg-amber-400 text-slate-950 border border-amber-600/30 shadow-xs font-bold"
-                          : "bg-white hover:bg-slate-50 text-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800 border border-slate-300 dark:border-slate-700"
+                          ? "bg-[#580000] hover:bg-[#780000] text-white shadow-2xs"
+                          : "bg-white hover:bg-slate-50 text-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700"
                       }`}
                     >
                       <AppIcon icon={Check} size="xs" color="inherit" />
                       <span>Validated</span>
                       <span
-                        className={`rounded-full px-1.5 py-0.5 text-[10.5px] font-bold ${
+                        className={`inline-flex items-center justify-center rounded-full px-1.5 py-0.5 text-[10px] font-bold leading-none ${
                           filterMode === "validated"
-                            ? "bg-white text-slate-950 border border-amber-600/30 shadow-2xs"
+                            ? "bg-white/20 text-white"
                             : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400"
                         }`}
                       >
@@ -2983,18 +2974,18 @@ export function FacultyVerificationDrawer({
                       <button
                         type="button"
                         onClick={() => setFilterMode("revision")}
-                        className={`inline-flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-semibold whitespace-nowrap transition cursor-pointer shadow-2xs ${
+                        className={`flex-1 sm:flex-none inline-flex items-center justify-center gap-1.5 rounded-lg px-2.5 sm:px-3 py-1.5 text-[11px] sm:text-xs font-semibold whitespace-nowrap transition-colors cursor-pointer ${
                           filterMode === "revision"
-                            ? "bg-amber-500 hover:bg-amber-400 text-slate-950 border border-amber-600/30 shadow-xs font-bold"
-                            : "bg-white hover:bg-slate-50 text-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800 border border-slate-300 dark:border-slate-700"
+                            ? "bg-[#580000] hover:bg-[#780000] text-white shadow-2xs"
+                            : "bg-white hover:bg-slate-50 text-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700"
                         }`}
                       >
                         <AppIcon icon={Xmark} size="xs" color="inherit" />
                         <span>Needs Revision</span>
                         <span
-                          className={`rounded-full px-1.5 py-0.5 text-[10.5px] font-bold ${
+                          className={`inline-flex items-center justify-center rounded-full px-1.5 py-0.5 text-[10px] font-bold leading-none ${
                             filterMode === "revision"
-                              ? "bg-white text-slate-950 border border-amber-600/30 shadow-2xs"
+                              ? "bg-white/20 text-white"
                               : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400"
                           }`}
                         >
@@ -3194,7 +3185,7 @@ export function FacultyVerificationDrawer({
                                   Required
                                 </span>
                               ) : (
-                                <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider bg-slate-700 text-white border border-slate-600 shrink-0">
+                                <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-300 dark:border-slate-700 shrink-0">
                                   Optional
                                 </span>
                               )}
@@ -3577,7 +3568,7 @@ export function FacultyVerificationDrawer({
                                         Required
                                       </span>
                                     ) : (
-                                      <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider bg-slate-700 text-white border border-slate-600 shadow-2xs">
+                                      <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-300 dark:border-slate-700 shadow-2xs">
                                         Optional
                                       </span>
                                     )}
@@ -4046,7 +4037,7 @@ export function FacultyVerificationDrawer({
                       </div>
                     </div>
                   ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5 pt-2">
+                    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
                       {historyClassGroups.map((group) => {
                         const groupValidatedCount = group.submissions.filter(
                           (s) => {
@@ -4056,10 +4047,15 @@ export function FacultyVerificationDrawer({
                         ).length;
 
                         const totalReqs = allRequirements.length;
+                        const isComplete =
+                          totalReqs > 0 && groupValidatedCount >= totalReqs;
                         const progressPct =
                           totalReqs > 0
-                            ? Math.round(
-                                (groupValidatedCount / totalReqs) * 100,
+                            ? Math.min(
+                                100,
+                                Math.round(
+                                  (groupValidatedCount / totalReqs) * 100,
+                                ),
                               )
                             : 0;
 
@@ -4067,136 +4063,116 @@ export function FacultyVerificationDrawer({
                           <div
                             key={group.key}
                             onClick={() => setSelectedHistoryClassId(group.key)}
-                            className="group relative flex flex-col cursor-pointer text-left transition-all duration-200 hover:-translate-y-1"
+                            className={`group relative flex flex-col justify-between gap-4 rounded-xl border border-slate-200 dark:border-slate-800 border-l-4 ${
+                              isComplete
+                                ? "border-l-[#0b5336]"
+                                : "border-l-[#580000]"
+                            } bg-white dark:bg-slate-900 p-5 shadow-xs transition-all hover:border-slate-300 dark:hover:border-slate-700 hover:shadow-sm cursor-pointer text-left`}
                           >
-                            {/* Folder Top Tab with Smooth Slanted Shoulder */}
-                            <div className="flex items-end -mb-[2px] relative z-10 self-start">
-                              <div className="h-7.5 px-3.5 rounded-tl-xl flex items-center gap-2 text-xs font-black tracking-wide border-t-2 border-l-2 border-amber-500 dark:border-amber-600 bg-amber-400 dark:bg-amber-500 text-slate-950 shadow-2xs group-hover:bg-amber-300 transition-colors duration-200">
-                                <AppIcon
-                                  icon={Folder}
-                                  size="xs"
-                                  color="inherit"
-                                />
-                                <span className="truncate max-w-[150px]">
+                            {/* 1. Top Metadata Row */}
+                            <div className="flex flex-wrap items-center justify-between gap-2">
+                              <div className="flex flex-wrap items-center gap-1.5 min-w-0">
+                                <span className="inline-flex items-center rounded-md border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 px-2.5 py-0.5 text-xs font-semibold text-slate-800 dark:text-slate-200 truncate max-w-[160px]">
                                   {group.isGeneral
                                     ? "General Requirements"
                                     : group.sectionCode}
                                 </span>
+                                <span className="inline-flex items-center rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-2 py-0.5 text-xs font-medium text-slate-600 dark:text-slate-400">
+                                  {group.units !== null
+                                    ? `${group.units.toFixed(1)} Units`
+                                    : "Institutional"}
+                                </span>
                               </div>
 
-                              <div className="relative w-5 h-7.5 shrink-0 -ml-[1px]">
-                                <svg
-                                  viewBox="0 0 20 30"
-                                  fill="none"
-                                  className="w-full h-full text-amber-400 dark:text-amber-500"
-                                >
-                                  <path
-                                    d="M 0,0 L 2,0 C 8,0 13,8 16,18 L 20,30 L 0,30 Z"
-                                    fill="currentColor"
+                              {isComplete ? (
+                                <span className="inline-flex items-center gap-1 rounded-full border border-[#08412a] bg-[#0b5336] px-2.5 py-0.5 text-[11px] font-semibold text-white shadow-2xs shrink-0">
+                                  <AppIcon
+                                    icon={CheckCircle}
+                                    size="xs"
+                                    color="white"
                                   />
-                                  <path
-                                    d="M 0,1 L 2,1 C 8,1 13,9 16,19 L 20,30"
-                                    stroke="#f59e0b"
-                                    strokeWidth="2"
-                                    fill="none"
-                                    className="text-amber-500 dark:text-amber-600"
+                                  <span>Complete</span>
+                                </span>
+                              ) : (
+                                <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-600 bg-amber-500 px-2.5 py-0.5 text-[11px] font-bold text-amber-950 shadow-2xs shrink-0">
+                                  <span className="h-1.5 w-1.5 rounded-full bg-amber-950" />
+                                  <span>
+                                    {groupValidatedCount}/{totalReqs} Validated
+                                  </span>
+                                </span>
+                              )}
+                            </div>
+
+                            {/* 2. Center Body (Primary Focal Point) */}
+                            <div className="flex-1 space-y-3.5">
+                              <div className="space-y-2.5">
+                                <div>
+                                  <span className="block text-[11px] font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">
+                                    COURSE CODE
+                                  </span>
+                                  <h3 className="mt-0.5 text-lg font-bold tracking-tight text-slate-900 dark:text-slate-100 group-hover:text-[#580000] dark:group-hover:text-rose-300 transition-colors">
+                                    {group.isGeneral
+                                      ? "General Requirements"
+                                      : group.subjectCode}
+                                  </h3>
+                                </div>
+
+                                <div>
+                                  <span className="block text-[11px] font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">
+                                    SUBJECT NAME
+                                  </span>
+                                  <p className="mt-0.5 text-sm font-medium text-slate-700 dark:text-slate-300 line-clamp-2 leading-snug">
+                                    {group.description}
+                                  </p>
+                                </div>
+                              </div>
+
+                              {/* Slim Validation Progress Bar */}
+                              <div className="space-y-1.5 pt-0.5">
+                                <div className="flex items-center justify-between gap-2 text-xs">
+                                  <span className="font-medium text-slate-500 dark:text-slate-400">
+                                    Validation Progress
+                                  </span>
+                                  <span
+                                    className={`font-semibold tabular-nums ${
+                                      isComplete
+                                        ? "text-[#0b5336] dark:text-emerald-400"
+                                        : "text-slate-700 dark:text-slate-300"
+                                    }`}
+                                  >
+                                    {progressPct}%
+                                  </span>
+                                </div>
+                                <div className="h-1.5 w-full overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
+                                  <div
+                                    className={`h-full rounded-full transition-all duration-300 ${
+                                      isComplete
+                                        ? "bg-[#0b5336]"
+                                        : "bg-[#580000]"
+                                    }`}
+                                    style={{ width: `${progressPct}%` }}
                                   />
-                                </svg>
+                                </div>
                               </div>
                             </div>
 
-                            {/* Folder Main Body */}
-                            <div className="relative flex-1 flex flex-col justify-between rounded-2xl rounded-tl-none border-2 border-amber-500 dark:border-amber-600 transition-all duration-200 overflow-hidden bg-white dark:bg-slate-900 shadow-xs group-hover:shadow-lg group-hover:border-amber-400">
-                              <div className="p-5 flex-1 flex flex-col justify-between gap-4">
-                                <div className="space-y-3.5">
-                                  {/* Top Row: Units & Validated Count Badge */}
-                                  <div className="flex items-center justify-between gap-2">
-                                    <div className="flex items-center gap-1.5 flex-wrap">
-                                      {group.units !== null ? (
-                                        <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-bold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
-                                          {group.units.toFixed(1)} Units
-                                        </span>
-                                      ) : (
-                                        <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-bold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700">
-                                          Institutional
-                                        </span>
-                                      )}
-                                    </div>
-
-                                    <div className="flex items-center gap-1.5 shrink-0">
-                                      <span className="inline-flex items-center gap-1 rounded-full bg-[#0b5336] border border-[#08412a] text-white px-2.5 py-0.5 text-[10.5px] font-bold shadow-2xs">
-                                        <AppIcon
-                                          icon={Check}
-                                          size="xs"
-                                          color="white"
-                                        />
-                                        {groupValidatedCount} Validated
-                                      </span>
-                                    </div>
-                                  </div>
-
-                                  {/* Course Code & Subject Name Fields */}
-                                  <div className="space-y-2 pt-1">
-                                    <div>
-                                      <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 block mb-0.5">
-                                        Course Code:
-                                      </span>
-                                      <h3 className="text-xl sm:text-2xl font-black text-slate-950 dark:text-slate-100 group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors">
-                                        {group.isGeneral
-                                          ? "General Requirements"
-                                          : group.subjectCode}
-                                      </h3>
-                                    </div>
-
-                                    <div>
-                                      <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 block mb-0.5">
-                                        Subject Name / Description:
-                                      </span>
-                                      <p className="text-base sm:text-lg font-bold text-slate-800 dark:text-slate-200 line-clamp-2 leading-snug">
-                                        {group.description}
-                                      </p>
-                                    </div>
-                                  </div>
-
-                                  {/* Validation Progress Bar */}
-                                  <div className="pt-1">
-                                    <div className="flex items-center justify-between text-[11px] font-medium text-slate-500 dark:text-slate-400 mb-1.5">
-                                      <span>Validation Progress</span>
-                                      <span className="font-bold text-slate-700 dark:text-slate-300">
-                                        {progressPct}% ({groupValidatedCount}/
-                                        {totalReqs} Validated)
-                                      </span>
-                                    </div>
-                                    <div className="h-1.5 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
-                                      <div
-                                        className="h-full bg-gradient-to-r from-amber-500 to-emerald-500 transition-all duration-300 rounded-full"
-                                        style={{ width: `${progressPct}%` }}
-                                      />
-                                    </div>
-                                  </div>
-                                </div>
-
-                                {/* Bottom Action Footer */}
-                                <div className="pt-2">
-                                  <div className="w-full flex items-center justify-between px-3.5 py-2 rounded-xl bg-amber-400 group-hover:bg-amber-500 border border-amber-500 transition-all duration-200 shadow-2xs">
-                                    <span className="text-xs font-extrabold text-amber-950 flex items-center gap-2">
-                                      <AppIcon
-                                        icon={Folder}
-                                        size="xs"
-                                        color="inherit"
-                                      />
-                                      <span>View Verified Documents</span>
-                                    </span>
-                                    <span className="inline-flex items-center justify-center h-6 w-6 rounded-full bg-[#780000] text-white group-hover:bg-[#5e0000] transition-colors shadow-2xs">
-                                      <AppIcon
-                                        icon={NavArrowRight}
-                                        size="xs"
-                                        color="white"
-                                      />
-                                    </span>
-                                  </div>
-                                </div>
-                              </div>
+                            {/* 3. Bottom Action Footer */}
+                            <div className="border-t border-slate-100 dark:border-slate-800 pt-3.5">
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setSelectedHistoryClassId(group.key);
+                                }}
+                                className="w-full inline-flex items-center justify-center gap-1.5 rounded-lg bg-[#580000] hover:bg-[#780000] px-3.5 py-2 text-xs font-semibold text-white shadow-2xs transition-colors cursor-pointer active:scale-[0.99]"
+                              >
+                                <span>View Verified Documents</span>
+                                <AppIcon
+                                  icon={NavArrowRight}
+                                  size="xs"
+                                  color="white"
+                                />
+                              </button>
                             </div>
                           </div>
                         );
@@ -4207,56 +4183,66 @@ export function FacultyVerificationDrawer({
               ) : (
                 /* History Step 2: Subject Historical Requirements View */
                 <div className="space-y-4">
-                  {/* Class Header & Switcher */}
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 py-1">
-                    <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2.5 min-w-0 flex-1">
+                  {/* History Class Context Navigation Bar */}
+                  <div className="space-y-3">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
                       <button
                         type="button"
                         onClick={() => setSelectedHistoryClassId(null)}
-                        className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-[#780000] hover:bg-[#5e0000] text-white border border-[#5e0000] text-xs font-bold transition-all cursor-pointer shadow-xs active:scale-95 shrink-0"
+                        className="w-full sm:w-auto inline-flex items-center justify-center sm:justify-start gap-1.5 px-3.5 py-2 rounded-lg bg-[#580000] hover:bg-[#780000] text-white text-xs font-semibold transition-colors cursor-pointer shadow-xs active:scale-[0.98] shrink-0"
                         title="Return to Class List"
                       >
-                        <AppIcon icon={NavArrowLeft} size="sm" color="white" />
+                        <AppIcon icon={NavArrowLeft} size="xs" color="white" />
                         <span>Back to Class List</span>
                       </button>
 
-                      <div className="h-6 w-px bg-amber-400/60 dark:bg-amber-600/40 hidden sm:block shrink-0" />
-
-                      <div className="min-w-0 flex-1 sm:pl-1">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <span className="font-mono text-xs font-black px-2.5 py-0.5 rounded-md bg-amber-400 text-amber-950 shrink-0">
-                            {selectedHistoryGroup.isGeneral
-                              ? "GENERAL"
-                              : selectedHistoryGroup.sectionCode}
-                          </span>
-                          <span className="text-sm sm:text-base font-black text-slate-900 dark:text-slate-100 break-words">
-                            {selectedHistoryGroup.subjectCode} &bull;{" "}
-                            {selectedHistoryGroup.description}
-                          </span>
-                          {selectedHistoryGroup.units !== null && (
-                            <span className="text-xs font-semibold text-slate-600 dark:text-slate-400 shrink-0">
-                              ({selectedHistoryGroup.units} Units)
-                            </span>
-                          )}
-                        </div>
+                      {/* Quick History Switcher Dropdown */}
+                      <div className="flex items-center gap-2 shrink-0 w-full sm:w-auto">
+                        <select
+                          value={selectedHistoryClassId}
+                          onChange={(e) =>
+                            setSelectedHistoryClassId(e.target.value)
+                          }
+                          aria-label="Switch historical class load"
+                          className="w-full sm:w-auto sm:min-w-[200px] rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-950 px-3 py-2 text-xs font-semibold text-slate-800 dark:text-slate-100 outline-none transition focus:border-[#580000] focus:ring-2 focus:ring-[#580000]/15 cursor-pointer"
+                        >
+                          {historyClassGroups.map((g) => (
+                            <option key={g.key} value={g.key}>
+                              {g.sectionCode} - {g.subjectCode}
+                            </option>
+                          ))}
+                        </select>
                       </div>
                     </div>
 
-                    {/* Quick History Switcher Dropdown */}
-                    <div className="flex items-center gap-2 shrink-0 w-full sm:w-auto">
-                      <select
-                        value={selectedHistoryClassId}
-                        onChange={(e) =>
-                          setSelectedHistoryClassId(e.target.value)
-                        }
-                        className="w-full sm:w-auto rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-2 sm:py-1.5 text-xs font-bold text-slate-800 dark:text-slate-200 outline-none focus:border-amber-500 cursor-pointer shadow-2xs"
-                      >
-                        {historyClassGroups.map((g) => (
-                          <option key={g.key} value={g.key}>
-                            {g.sectionCode} - {g.subjectCode}
-                          </option>
-                        ))}
-                      </select>
+                    {/* Selected Historical Class Context Strip */}
+                    <div className="rounded-xl border border-slate-200 dark:border-slate-800 border-l-4 border-l-[#580000] bg-slate-50/70 dark:bg-slate-950/40 px-4 py-3">
+                      <div className="min-w-0 space-y-1.5">
+                        <div className="flex flex-wrap items-center gap-1.5">
+                          <span className="inline-flex items-center rounded-md border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 text-xs font-semibold text-slate-800 dark:text-slate-200">
+                            {selectedHistoryGroup.isGeneral
+                              ? "General"
+                              : selectedHistoryGroup.sectionCode}
+                          </span>
+                          {selectedHistoryGroup.units !== null && (
+                            <span className="inline-flex items-center rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-2 py-0.5 text-xs font-medium text-slate-600 dark:text-slate-400">
+                              {Number(selectedHistoryGroup.units || 0).toFixed(1)}{" "}
+                              Units
+                            </span>
+                          )}
+                        </div>
+
+                        <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
+                          <h2 className="text-sm sm:text-base font-bold text-slate-900 dark:text-slate-100">
+                            {selectedHistoryGroup.isGeneral
+                              ? "General Requirements"
+                              : selectedHistoryGroup.subjectCode}
+                          </h2>
+                          <span className="text-xs sm:text-sm font-medium text-slate-500 dark:text-slate-400 break-words">
+                            {selectedHistoryGroup.description}
+                          </span>
+                        </div>
+                      </div>
                     </div>
                   </div>
 
@@ -4335,7 +4321,7 @@ export function FacultyVerificationDrawer({
                                   Required
                                 </span>
                               ) : (
-                                <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider bg-slate-700 text-white border border-slate-600 shrink-0">
+                                <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-300 dark:border-slate-700 shrink-0">
                                   Optional
                                 </span>
                               )}
@@ -4627,7 +4613,7 @@ export function FacultyVerificationDrawer({
                                         Required
                                       </span>
                                     ) : (
-                                      <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider bg-slate-700 text-white border border-slate-600 shadow-2xs">
+                                      <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-300 dark:border-slate-700 shadow-2xs">
                                         Optional
                                       </span>
                                     )}
@@ -6959,7 +6945,7 @@ export function RequirementsPanel({
                                 isSelected
                                   ? "bg-amber-500 text-slate-950"
                                   : count > 0
-                                    ? "bg-slate-700 dark:bg-slate-600 text-white"
+                                    ? "bg-slate-200 dark:bg-slate-700 text-slate-800 dark:text-slate-200"
                                     : "bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-400"
                               }`}
                             >

@@ -772,7 +772,7 @@ export function SuperAdminSettings({
 
                 {/* Persistent Floating Camera Badge */}
                 <div
-                  className="absolute bottom-0 right-0 w-7 h-7 rounded-full bg-slate-900 dark:bg-white text-white dark:text-slate-900 flex items-center justify-center shadow-md border-2 border-white dark:border-slate-900 transition-transform group-hover:scale-110 pointer-events-none"
+                  className="absolute bottom-0 right-0 w-7 h-7 rounded-full bg-[#580000] text-white flex items-center justify-center shadow-md border-2 border-white dark:border-slate-900 transition-transform group-hover:scale-110 pointer-events-none"
                   aria-hidden="true"
                 >
                   <AppIcon icon={Camera} size="sm" color="inherit" />

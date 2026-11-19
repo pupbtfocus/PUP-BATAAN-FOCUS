@@ -51,11 +51,11 @@ export function AlertPopup({
     ? "bg-[#780000] text-white border-2 border-amber-400/80 shadow-2xl shadow-black/50 font-semibold tracking-wide"
     : isWarning
     ? "bg-amber-500 text-slate-950 border-2 border-amber-600 font-bold shadow-2xl shadow-amber-500/30"
-    : "bg-slate-900 text-white border-2 border-slate-700 shadow-2xl";
+    : "bg-[#580000] text-white border-2 border-amber-400/80 shadow-2xl";
 
   const closeButtonHover = isSuccess || isError || !isWarning
     ? "hover:bg-white/20 text-white/90 hover:text-white"
-    : "hover:bg-black/15 text-slate-950/80 hover:text-slate-950";
+    : "hover:bg-white/30 text-amber-950/80 hover:text-amber-950";
 
   const positionStyles =
     position === "top-right"

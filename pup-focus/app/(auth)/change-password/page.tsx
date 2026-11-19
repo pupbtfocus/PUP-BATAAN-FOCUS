@@ -389,7 +389,7 @@ export default function ChangePasswordPage() {
             </p>
             {userEmail && (
               <div className="mt-1.5 inline-block">
-                <span className="text-[10.5px] font-mono text-[#fff8e7]/90 bg-black/20 px-2.5 py-0.5 rounded-full border border-white/10">
+                <span className="text-[10.5px] font-mono text-[#fff8e7]/90 bg-white/15 px-2.5 py-0.5 rounded-full border border-white/20">
                   {userEmail}
                 </span>
               </div>

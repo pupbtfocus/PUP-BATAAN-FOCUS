@@ -1141,7 +1141,7 @@ export function UserRegistrationLogsModal({
               <button
                 type="button"
                 onClick={() => setSelectedLogForDetails(null)}
-                className="p-1.5 rounded-lg bg-black/20 hover:bg-black/30 border border-white/20 text-white transition-colors cursor-pointer"
+                className="p-1.5 rounded-lg bg-white/10 hover:bg-white/20 border border-white/20 text-white transition-colors cursor-pointer"
                 aria-label="Close modal"
               >
                 <AppIcon icon={Xmark} size="md" color="white" />

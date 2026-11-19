@@ -273,7 +273,7 @@ export function DatabaseCapacityAlert({
       <div className="flex items-start sm:items-center gap-3 min-w-0">
         <div
           className={`p-2 rounded-xl shrink-0 flex items-center justify-center ${
-            isCritical ? "bg-white/15 text-amber-300" : "bg-black/10 text-slate-950"
+            isCritical ? "bg-white/15 text-amber-300" : "bg-white text-amber-950 border border-amber-600/30"
           }`}
         >
           <AppIcon icon={WarningTriangle} size="md" color="inherit" />
@@ -321,7 +321,7 @@ export function DatabaseCapacityAlert({
           className={`p-1.5 rounded-lg transition cursor-pointer ${
             isCritical
               ? "hover:bg-white/15 text-white"
-              : "hover:bg-black/10 text-slate-950"
+              : "hover:bg-white/30 text-amber-950"
           }`}
           aria-label="Dismiss database capacity alert"
         >

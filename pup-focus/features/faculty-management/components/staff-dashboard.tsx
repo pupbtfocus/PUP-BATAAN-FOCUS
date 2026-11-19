@@ -1165,7 +1165,7 @@ export function AdminFacultyDashboard({
                                       }
                                       handleSetActiveSection("requirements");
                                     }}
-                                    className="shrink-0 px-3.5 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-white dark:bg-slate-100 dark:hover:bg-white dark:text-slate-900 text-xs font-semibold shadow-xs transition-colors cursor-pointer"
+                                    className="shrink-0 px-3.5 py-2 rounded-xl bg-[#580000] hover:bg-[#780000] text-white text-xs font-semibold shadow-xs transition-colors cursor-pointer"
                                   >
                                     Review
                                   </button>

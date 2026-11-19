@@ -172,7 +172,7 @@ export function SubmissionScheduleLogsModal({
         };
       default:
         return {
-          bg: "bg-slate-700 text-white border border-slate-800",
+          bg: "bg-slate-100 text-slate-700 border border-slate-300 dark:bg-slate-800 dark:text-slate-200 dark:border-slate-700",
           icon: <ClockRotateRight className="h-3 w-3" />,
           label: "Schedule Event",
         };

@@ -185,7 +185,7 @@ function getFileTypeDetails(fileName: string) {
   ) {
     return {
       icon: (
-        <div className="h-10 w-10 rounded-xl bg-slate-700 flex items-center justify-center text-white shadow-xs">
+        <div className="h-10 w-10 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-center text-slate-700 dark:text-slate-200 shadow-xs">
           <AppIcon icon={Code} size="lg" color="inherit" strokeWidth={2} />
         </div>
       ),
@@ -203,7 +203,7 @@ function getFileTypeDetails(fileName: string) {
   ) {
     return {
       icon: (
-        <div className="h-10 w-10 rounded-xl bg-slate-800 dark:bg-slate-700 flex items-center justify-center text-white shadow-xs">
+        <div className="h-10 w-10 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-center text-slate-700 dark:text-slate-200 shadow-xs">
           <AppIcon icon={MediaImage} size="lg" color="inherit" strokeWidth={2} />
         </div>
       ),
@@ -234,7 +234,7 @@ export const getFileBrand = (
       label: "Adobe PDF Document",
       iconUrl: "/icons/adobe-pdf.svg",
       borderColor: "border-slate-200 dark:border-slate-800",
-      badgeBg: "bg-slate-800 text-white dark:bg-slate-700 dark:text-slate-100",
+      badgeBg: "bg-slate-100 text-slate-700 border border-slate-300 dark:bg-slate-800 dark:text-slate-200 dark:border-slate-700",
     };
   }
   if (isExcel || ["xlsx", "xls", "csv"].includes(ext)) {
@@ -242,7 +242,7 @@ export const getFileBrand = (
       label: "Microsoft Excel Spreadsheet",
       iconUrl: "/icons/microsoft-excel.svg",
       borderColor: "border-slate-200 dark:border-slate-800",
-      badgeBg: "bg-slate-800 text-white dark:bg-slate-700 dark:text-slate-100",
+      badgeBg: "bg-slate-100 text-slate-700 border border-slate-300 dark:bg-slate-800 dark:text-slate-200 dark:border-slate-700",
     };
   }
   if (isWord || ["docx", "doc"].includes(ext)) {
@@ -250,7 +250,7 @@ export const getFileBrand = (
       label: "Microsoft Word Document",
       iconUrl: "/icons/microsoft-word.svg",
       borderColor: "border-slate-200 dark:border-slate-800",
-      badgeBg: "bg-slate-800 text-white dark:bg-slate-700 dark:text-slate-100",
+      badgeBg: "bg-slate-100 text-slate-700 border border-slate-300 dark:bg-slate-800 dark:text-slate-200 dark:border-slate-700",
     };
   }
   if (["pptx", "ppt"].includes(ext)) {
@@ -258,7 +258,7 @@ export const getFileBrand = (
       label: "Microsoft PowerPoint Presentation",
       iconUrl: "/icons/microsoft-powerpoint.svg",
       borderColor: "border-slate-200 dark:border-slate-800",
-      badgeBg: "bg-slate-800 text-white dark:bg-slate-700 dark:text-slate-100",
+      badgeBg: "bg-slate-100 text-slate-700 border border-slate-300 dark:bg-slate-800 dark:text-slate-200 dark:border-slate-700",
     };
   }
   if (["zip", "rar", "7z", "tar", "gz"].includes(ext)) {
@@ -266,7 +266,7 @@ export const getFileBrand = (
       label: "Compressed Archive",
       iconUrl: "https://api.iconify.design/vscode-icons:file-type-zip.svg",
       borderColor: "border-slate-200 dark:border-slate-800",
-      badgeBg: "bg-slate-800 text-white dark:bg-slate-700 dark:text-slate-100",
+      badgeBg: "bg-slate-100 text-slate-700 border border-slate-300 dark:bg-slate-800 dark:text-slate-200 dark:border-slate-700",
     };
   }
   if (["png", "jpg", "jpeg", "webp", "gif", "bmp", "svg"].includes(ext)) {
@@ -274,14 +274,14 @@ export const getFileBrand = (
       label: "Image File",
       iconUrl: "https://api.iconify.design/vscode-icons:file-type-image.svg",
       borderColor: "border-slate-200 dark:border-slate-800",
-      badgeBg: "bg-slate-800 text-white dark:bg-slate-700 dark:text-slate-100",
+      badgeBg: "bg-slate-100 text-slate-700 border border-slate-300 dark:bg-slate-800 dark:text-slate-200 dark:border-slate-700",
     };
   }
   return {
     label: "Document File",
     iconUrl: "https://api.iconify.design/vscode-icons:file-type-text.svg",
     borderColor: "border-slate-200 dark:border-slate-800",
-    badgeBg: "bg-slate-800 text-white dark:bg-slate-700 dark:text-slate-100",
+    badgeBg: "bg-slate-100 text-slate-700 border border-slate-300 dark:bg-slate-800 dark:text-slate-200 dark:border-slate-700",
   };
 };
 

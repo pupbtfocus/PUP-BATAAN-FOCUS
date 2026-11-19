@@ -188,7 +188,7 @@ export function SubmissionWindowCountdown({
               dot: "bg-amber-400",
             }
           : {
-              box: "border-rose-400/40 bg-black/30 text-rose-300",
+              box: "border-rose-400/40 bg-[#580000]/90 text-rose-200",
               dot: "bg-rose-400",
             };
     const tipParts = [
@@ -220,8 +220,8 @@ export function SubmissionWindowCountdown({
         </div>
         <div className="mt-2.5 mx-auto h-3.5 w-40 rounded bg-amber-400/20" />
         <div className="mt-3 grid grid-cols-2 gap-2">
-          <div className="h-14 rounded-lg bg-black/25 border border-amber-400/10" />
-          <div className="h-14 rounded-lg bg-black/25 border border-amber-400/10" />
+          <div className="h-14 rounded-lg bg-[#580000]/70 border border-amber-400/10" />
+          <div className="h-14 rounded-lg bg-[#580000]/70 border border-amber-400/10" />
         </div>
       </div>
     );
@@ -230,7 +230,7 @@ export function SubmissionWindowCountdown({
   // Completed all mandatory requirements for the semester
   if (isAllValidated) {
     return (
-      <div className="relative overflow-hidden rounded-2xl border border-amber-400/50 bg-black/20 p-3.5 shadow-sm text-white text-center space-y-2">
+      <div className="relative overflow-hidden rounded-2xl border border-amber-400/50 bg-[#580000]/80 p-3.5 shadow-sm text-white text-center space-y-2">
         <div className="inline-flex items-center justify-center gap-1.5 rounded-full border border-emerald-400/40 bg-[#0b5336] px-3 py-1 shadow-2xs">
           <AppIcon icon={CheckCircle} size="xs" color="inherit" className="text-emerald-300 shrink-0" />
           <span className="text-[10.5px] font-bold uppercase tracking-wider text-white">
@@ -387,7 +387,7 @@ export function SubmissionWindowCountdown({
       <div className="mt-3 pt-2.5 border-t border-amber-400/20">
         <div className="grid grid-cols-2 gap-2 text-left">
           {/* Start Date */}
-          <div className="rounded-lg bg-black/25 border border-amber-400/20 p-2 flex flex-col justify-between">
+          <div className="rounded-lg bg-[#580000]/70 border border-amber-400/20 p-2 flex flex-col justify-between">
             <div>
               <span className="text-[9px] uppercase tracking-wider text-amber-200/70 font-semibold block">
                 Start Date
@@ -404,7 +404,7 @@ export function SubmissionWindowCountdown({
           </div>
 
           {/* End Date */}
-          <div className="rounded-lg bg-black/25 border border-amber-400/20 p-2 flex flex-col justify-between">
+          <div className="rounded-lg bg-[#580000]/70 border border-amber-400/20 p-2 flex flex-col justify-between">
             <div>
               <span className="text-[9px] uppercase tracking-wider text-amber-200/70 font-semibold block">
                 {isAlwaysOpen ? "End Date" : status === "Closed" ? "Closed Date" : "End Date"}

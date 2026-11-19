@@ -328,7 +328,7 @@ export function SessionTimeoutProvider({
               <button
                 type="button"
                 onClick={handleStayLoggedIn}
-                className="bg-slate-900 dark:bg-slate-100 hover:bg-slate-800 dark:hover:bg-white text-white dark:text-slate-900 font-medium px-4 py-2.5 rounded-lg transition-colors flex-1 text-xs cursor-pointer inline-flex items-center justify-center gap-1.5 shadow-sm"
+                className="bg-[#580000] hover:bg-[#780000] text-white font-semibold px-4 py-2.5 rounded-lg transition-colors flex-1 text-xs cursor-pointer inline-flex items-center justify-center gap-1.5 shadow-sm"
               >
                 <AppIcon icon={Refresh} size="sm" color="inherit" />
                 <span>Stay Logged In</span>

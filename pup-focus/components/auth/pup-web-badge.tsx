@@ -23,7 +23,7 @@ export function PupWebBadge() {
             className="object-cover scale-110 transition-transform duration-200 group-hover:scale-125"
           />
         </div>
-        <span className="pointer-events-none absolute -top-8 right-0 whitespace-nowrap rounded-md bg-black/85 px-2 py-0.5 text-[10px] font-medium text-amber-200 opacity-0 shadow-md backdrop-blur-sm transition-opacity duration-200 group-hover:opacity-100">
+        <span className="pointer-events-none absolute -top-8 right-0 whitespace-nowrap rounded-md bg-[#580000]/95 border border-amber-400/40 px-2 py-0.5 text-[10px] font-medium text-amber-200 opacity-0 shadow-md backdrop-blur-sm transition-opacity duration-200 group-hover:opacity-100">
           PUP Website
         </span>
       </a>

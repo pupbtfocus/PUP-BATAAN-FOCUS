@@ -389,7 +389,7 @@ export function TemplatesAndProgramsPanel({
           <button
             type="button"
             onClick={() => setFeedback(null)}
-            className="p-1 rounded hover:bg-black/10 dark:hover:bg-white/10 text-current cursor-pointer shrink-0"
+            className="p-1 rounded hover:bg-slate-900/10 dark:hover:bg-white/10 text-current cursor-pointer shrink-0"
           >
             <AppIcon icon={Xmark} size="xs" color="inherit" />
           </button>

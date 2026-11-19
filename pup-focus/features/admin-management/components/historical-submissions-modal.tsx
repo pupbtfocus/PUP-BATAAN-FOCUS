@@ -315,7 +315,7 @@ export function HistoricalSubmissionsModal({
                   <span style={{ color: "#fef08a" }} className="!text-amber-200 hover:!text-white">Go to Requirements Verification →</span>
                 </a>
               )}
-              <span className="font-bold bg-black/20 px-2.5 py-0.5 rounded-full text-white shrink-0">
+              <span className="font-bold bg-white/20 border border-white/25 px-2.5 py-0.5 rounded-full text-white shrink-0">
                 Total: {filteredSubmissions.length} records
               </span>
             </div>

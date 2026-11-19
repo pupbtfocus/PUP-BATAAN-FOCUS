@@ -571,7 +571,7 @@ export function SubmissionHistoryList<T extends PastSubmissionItem = PastSubmiss
                             Required
                           </span>
                         ) : (
-                          <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider bg-slate-700 text-white border border-slate-600 shadow-2xs">
+                          <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-300 dark:border-slate-700 shadow-2xs">
                             Optional
                           </span>
                         )}
@@ -747,7 +747,7 @@ export function SubmissionHistoryList<T extends PastSubmissionItem = PastSubmiss
                         Required
                       </span>
                     ) : (
-                      <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider bg-slate-700 dark:bg-slate-700 text-white border border-slate-600 shadow-2xs shrink-0">
+                      <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-300 dark:border-slate-700 shadow-2xs shrink-0">
                         Optional
                       </span>
                     )}

@@ -361,12 +361,12 @@ export function ExtendSubmissionWindowModal({
                 onClick={() => setScope("global")}
                 className={`flex flex-col items-center justify-center p-3 rounded-xl border text-xs font-medium transition cursor-pointer ${
                   scope === "global"
-                    ? "border-slate-900 bg-slate-900 text-white dark:border-slate-100 dark:bg-slate-100 dark:text-slate-900 font-bold shadow-xs"
+                    ? "border-[#580000] bg-[#580000] text-white font-bold shadow-xs"
                     : "border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/50 text-slate-700 dark:text-slate-400 hover:border-slate-300 dark:hover:border-slate-700"
                 }`}
               >
                 <span className="font-semibold">Global</span>
-                <span className={`text-[10px] mt-0.5 ${scope === "global" ? "text-slate-300 dark:text-slate-600" : "text-slate-500 dark:text-slate-400"}`}>All Faculty</span>
+                <span className={`text-[10px] mt-0.5 ${scope === "global" ? "text-rose-100" : "text-slate-500 dark:text-slate-400"}`}>All Faculty</span>
               </button>
 
               <button
@@ -374,12 +374,12 @@ export function ExtendSubmissionWindowModal({
                 onClick={() => setScope("program")}
                 className={`flex flex-col items-center justify-center p-3 rounded-xl border text-xs font-medium transition cursor-pointer ${
                   scope === "program"
-                    ? "border-slate-900 bg-slate-900 text-white dark:border-slate-100 dark:bg-slate-100 dark:text-slate-900 font-bold shadow-xs"
+                    ? "border-[#580000] bg-[#580000] text-white font-bold shadow-xs"
                     : "border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/50 text-slate-700 dark:text-slate-400 hover:border-slate-300 dark:hover:border-slate-700"
                 }`}
               >
                 <span className="font-semibold">By Program</span>
-                <span className={`text-[10px] mt-0.5 ${scope === "program" ? "text-slate-300 dark:text-slate-600" : "text-slate-500 dark:text-slate-400"}`}>Specific Dept</span>
+                <span className={`text-[10px] mt-0.5 ${scope === "program" ? "text-rose-100" : "text-slate-500 dark:text-slate-400"}`}>Specific Dept</span>
               </button>
 
               <button
@@ -387,12 +387,12 @@ export function ExtendSubmissionWindowModal({
                 onClick={() => setScope("faculty")}
                 className={`flex flex-col items-center justify-center p-3 rounded-xl border text-xs font-medium transition cursor-pointer ${
                   scope === "faculty"
-                    ? "border-slate-900 bg-slate-900 text-white dark:border-slate-100 dark:bg-slate-100 dark:text-slate-900 font-bold shadow-xs"
+                    ? "border-[#580000] bg-[#580000] text-white font-bold shadow-xs"
                     : "border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/50 text-slate-700 dark:text-slate-400 hover:border-slate-300 dark:hover:border-slate-700"
                 }`}
               >
                 <span className="font-semibold">Specific Faculty</span>
-                <span className={`text-[10px] mt-0.5 ${scope === "faculty" ? "text-slate-300 dark:text-slate-600" : "text-slate-500 dark:text-slate-400"}`}>Individual Waiver</span>
+                <span className={`text-[10px] mt-0.5 ${scope === "faculty" ? "text-rose-100" : "text-slate-500 dark:text-slate-400"}`}>Individual Waiver</span>
               </button>
             </div>
 
@@ -569,7 +569,7 @@ export function ExtendSubmissionWindowModal({
                   onClick={() => setPreset(p)}
                   className={`rounded-lg border px-3 py-1.5 text-xs font-medium transition cursor-pointer ${
                     preset === p
-                      ? "border-slate-900 bg-slate-900 text-white dark:border-slate-100 dark:bg-slate-100 dark:text-slate-900 font-semibold shadow-xs"
+                      ? "border-[#580000] bg-[#580000] text-white font-semibold shadow-xs"
                       : "border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 text-slate-700 dark:text-slate-400 hover:border-slate-300 dark:hover:border-slate-700 hover:text-slate-900 dark:hover:text-slate-200"
                   }`}
                 >

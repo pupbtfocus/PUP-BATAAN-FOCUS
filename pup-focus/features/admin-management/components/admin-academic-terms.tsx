@@ -691,8 +691,8 @@ export function AdminAcademicTerms({
       );
     }
     return (
-      <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md text-xs font-semibold bg-amber-500 text-slate-950 border border-amber-600 shadow-2xs">
-        <span className="h-1.5 w-1.5 rounded-full bg-slate-950" />
+      <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md text-xs font-semibold bg-amber-500 text-amber-950 border border-amber-600 shadow-2xs">
+        <span className="h-1.5 w-1.5 rounded-full bg-amber-950" />
         Upcoming
       </span>
     );

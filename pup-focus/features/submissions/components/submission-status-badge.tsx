@@ -112,18 +112,18 @@ export function SubmissionStatusBadge({
     "Revision Under Review": {
       label: "Revision Under Review",
       containerClass:
-        "bg-amber-500 text-slate-950 border border-amber-600 font-bold dark:bg-amber-500 dark:text-slate-950 dark:border-amber-400",
-      dotClass: "bg-slate-950",
-      iconBadgeClass: "bg-slate-950/20 text-slate-950 border border-slate-950/30",
-      icon: <AppIcon icon={Hourglass} color="inherit" className="shrink-0 text-slate-950" strokeWidth={2.2} />,
+        "bg-amber-500 text-amber-950 border border-amber-600 font-bold dark:bg-amber-500 dark:text-amber-950 dark:border-amber-400",
+      dotClass: "bg-amber-950",
+      iconBadgeClass: "bg-white text-amber-950 border border-amber-600/30",
+      icon: <AppIcon icon={Hourglass} color="inherit" className="shrink-0 text-amber-950" strokeWidth={2.2} />,
     },
     "Pending Review": {
       label: status?.toLowerCase().trim() === "pending" ? "Pending" : "Pending Review",
       containerClass:
-        "bg-amber-500 text-slate-950 border border-amber-600 font-bold dark:bg-amber-500 dark:text-slate-950 dark:border-amber-400",
-      dotClass: "bg-slate-950",
-      iconBadgeClass: "bg-slate-950/20 text-slate-950 border border-slate-950/30",
-      icon: <AppIcon icon={Hourglass} color="inherit" className="shrink-0 text-slate-950" strokeWidth={2.2} />,
+        "bg-amber-500 text-amber-950 border border-amber-600 font-bold dark:bg-amber-500 dark:text-amber-950 dark:border-amber-400",
+      dotClass: "bg-amber-950",
+      iconBadgeClass: "bg-white text-amber-950 border border-amber-600/30",
+      icon: <AppIcon icon={Hourglass} color="inherit" className="shrink-0 text-amber-950" strokeWidth={2.2} />,
     },
     Exempted: {
       label: "Exempted",
@@ -136,10 +136,10 @@ export function SubmissionStatusBadge({
     Pending: {
       label: "Pending",
       containerClass:
-        "bg-amber-500 text-slate-950 border border-amber-600 font-bold dark:bg-amber-500 dark:text-slate-950 dark:border-amber-400",
-      dotClass: "bg-slate-950",
-      iconBadgeClass: "bg-slate-950/20 text-slate-950 border border-slate-950/30",
-      icon: <AppIcon icon={Hourglass} color="inherit" className="shrink-0 text-slate-950" strokeWidth={2.2} />,
+        "bg-amber-500 text-amber-950 border border-amber-600 font-bold dark:bg-amber-500 dark:text-amber-950 dark:border-amber-400",
+      dotClass: "bg-amber-950",
+      iconBadgeClass: "bg-white text-amber-950 border border-amber-600/30",
+      icon: <AppIcon icon={Hourglass} color="inherit" className="shrink-0 text-amber-950" strokeWidth={2.2} />,
     },
     Overdue: {
       label: "Overdue",
