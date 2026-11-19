@@ -14,27 +14,40 @@ export function LogoutButton({ className }: { className?: string }) {
   const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   async function handleLogout() {
+    if (isLoggingOut) return;
     setIsLoggingOut(true);
 
     stopRealtimeSync();
     resetDashboardNavigationState();
 
+    let accessToken: string | null = null;
     try {
-      await fetch("/api/auth/logout", { method: "POST", credentials: "include" });
+      const supabase = createClient();
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      accessToken = session?.access_token ?? null;
+      void supabase.auth.signOut({ scope: "local" }).catch(() => null);
     } catch {
-      // Ignore
+      // Ignore local session read errors
     }
 
     try {
-      const supabase = createClient();
-      await supabase.auth.signOut();
+      void fetch("/api/auth/logout", {
+        method: "POST",
+        credentials: "include",
+        keepalive: true,
+        headers: accessToken
+          ? { Authorization: `Bearer ${accessToken}` }
+          : undefined,
+      }).catch(() => null);
     } catch {
       // Ignore
     }
 
     clearEphemeralSessionState();
     clearBrowserSupabaseSession();
-    window.location.href = "/";
+    window.location.replace("/");
   }
 
   return (

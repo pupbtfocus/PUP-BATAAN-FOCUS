@@ -25,7 +25,7 @@ export function AuthHashListener() {
       const supabase = createClient();
 
       // Clear stale local session first if any to prevent session collisions
-      supabase.auth.signOut().then(() => {
+      supabase.auth.signOut({ scope: "local" }).then(() => {
         const hashParams = new URLSearchParams(
           hash.startsWith("#") ? hash.substring(1) : hash,
         );

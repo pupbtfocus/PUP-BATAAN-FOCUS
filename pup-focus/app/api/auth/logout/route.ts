@@ -1,4 +1,4 @@
-import { NextResponse, type NextRequest } from "next/server";
+import { after, NextResponse, type NextRequest } from "next/server";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { clearActiveSession } from "@/lib/auth/session-tracker";
 import { resolveTrustedUserRole } from "@/config/roles";
@@ -6,26 +6,44 @@ import { logTransactionEvent } from "@/features/transaction-logs/services/transa
 
 export async function POST(request: NextRequest) {
   try {
+    const authHeader = request.headers.get("authorization") || "";
+    const bearerToken = authHeader.toLowerCase().startsWith("bearer ")
+      ? authHeader.slice(7).trim()
+      : null;
+
     const supabase = await createServerSupabaseClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
 
-    if (user) {
-      await clearActiveSession(user.id);
-      await logTransactionEvent({
-        actorId: user.id,
-        action: "auth.logout",
-        entityType: "user",
-        entityId: user.id,
-        metadata: {
-          email: user.email,
-          role: resolveTrustedUserRole(user),
-        },
-      });
-    }
+    // Perform remote auth lookup, active-session clearing, and audit logging after sending the response
+    after(async () => {
+      try {
+        const {
+          data: { user },
+        } = bearerToken
+          ? await supabase.auth.getUser(bearerToken)
+          : await supabase.auth.getUser();
 
-    await supabase.auth.signOut({ scope: "local" }).catch(() => null);
+        if (user) {
+          await Promise.allSettled([
+            clearActiveSession(
+              user.id,
+              (user.app_metadata ?? {}) as Record<string, unknown>,
+            ),
+            logTransactionEvent({
+              actorId: user.id,
+              action: "auth.logout",
+              entityType: "user",
+              entityId: user.id,
+              metadata: {
+                email: user.email,
+                role: resolveTrustedUserRole(user),
+              },
+            }),
+          ]);
+        }
+      } catch {
+        // Non-fatal background cleanup error
+      }
+    });
 
     const response = NextResponse.json({ success: true });
     request.cookies.getAll().forEach((cookie) => {

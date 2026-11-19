@@ -9,7 +9,10 @@ import React, {
   useCallback,
 } from "react";
 import { useRouter } from "next/navigation";
-import { createClient } from "@/lib/supabase/client";
+import { createClient, clearBrowserSupabaseSession } from "@/lib/supabase/client";
+import { clearEphemeralSessionState } from "@/lib/auth/ephemeral-session";
+import { resetDashboardNavigationState } from "@/config/routes";
+import { stopRealtimeSync } from "@/lib/realtime";
 import { Hourglass, LogOut, Refresh, ShieldAlert } from "iconoir-react";
 import { AppIcon } from "@/components/ui/app-icon";
 
@@ -58,12 +61,34 @@ export function SessionTimeoutProvider({
     isLoggingOutRef.current = true;
     setShowModal(false);
 
+    stopRealtimeSync();
+    resetDashboardNavigationState();
+
+    let accessToken: string | null = null;
     try {
       const supabase = createClient();
-      await supabase.auth.signOut();
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      accessToken = session?.access_token ?? null;
+      void supabase.auth.signOut({ scope: "local" }).catch(() => null);
     } catch (signOutErr) {
       console.error("[SessionTimeout] SignOut error:", signOutErr);
     }
+
+    try {
+      void fetch("/api/auth/logout", {
+        method: "POST",
+        credentials: "include",
+        keepalive: true,
+        headers: accessToken
+          ? { Authorization: `Bearer ${accessToken}` }
+          : undefined,
+      }).catch(() => null);
+    } catch {}
+
+    clearEphemeralSessionState();
+    clearBrowserSupabaseSession();
 
     try {
       if (typeof window !== "undefined") {
@@ -72,7 +97,7 @@ export function SessionTimeoutProvider({
       }
     } catch {}
 
-    window.location.href = "/login?reason=timeout";
+    window.location.replace("/login?reason=timeout");
   }, []);
 
   // ---------------------------------------------------------------------------

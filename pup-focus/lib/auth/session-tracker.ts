@@ -72,17 +72,23 @@ export async function getActiveSession(
 /**
  * Clears the active session for a user on explicit logout.
  */
-export async function clearActiveSession(userId: string): Promise<void> {
+export async function clearActiveSession(
+  userId: string,
+  existingAppMeta?: Record<string, unknown>,
+): Promise<void> {
   if (!userId) return;
   activeSessions.delete(userId);
 
   try {
     const serviceClient = getServiceRoleClient();
-    const { data } = await serviceClient.auth.admin.getUserById(userId);
-    const currentAppMeta = (data?.user?.app_metadata ?? {}) as Record<
-      string,
-      unknown
-    >;
+    let currentAppMeta = existingAppMeta;
+    if (!currentAppMeta) {
+      const { data } = await serviceClient.auth.admin.getUserById(userId);
+      currentAppMeta = (data?.user?.app_metadata ?? {}) as Record<
+        string,
+        unknown
+      >;
+    }
     await serviceClient.auth.admin.updateUserById(userId, {
       app_metadata: {
         ...currentAppMeta,

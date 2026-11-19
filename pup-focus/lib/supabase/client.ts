@@ -127,7 +127,12 @@ export function clearBrowserSupabaseSession() {
 
   for (const storage of [window.localStorage, window.sessionStorage]) {
     for (const key of Object.keys(storage)) {
-      if (key.startsWith("sb-")) {
+      if (
+        key.startsWith("sb-") ||
+        key === "pup_focus_login_time" ||
+        key === "pup_focus_login_user" ||
+        key === "pup_focus_session_id"
+      ) {
         storage.removeItem(key);
       }
     }
@@ -136,11 +141,17 @@ export function clearBrowserSupabaseSession() {
   if (typeof document !== "undefined") {
     document.cookie.split(";").forEach((cookie) => {
       const name = cookie.split("=")[0].trim();
-      if (name.startsWith("sb-") || name === "pup_focus_session_mode") {
+      if (
+        name.startsWith("sb-") ||
+        name === "pup_focus_session_mode" ||
+        name === "pup_focus_session_id"
+      ) {
         document.cookie = `${name}=; path=/; max-age=0; expires=Thu, 01 Jan 1970 00:00:00 GMT`;
       }
     });
   }
+
+  cachedBrowserClient = null;
 }
 
 let cachedBrowserClient: ReturnType<typeof createBrowserClient> | null = null;

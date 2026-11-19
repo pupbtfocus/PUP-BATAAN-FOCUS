@@ -244,37 +244,33 @@ export async function performEphemeralAutoLogout(options?: {
 }) {
   if (typeof window === "undefined") return;
 
-  clearEphemeralSessionState();
-
-  try {
-    localStorage.removeItem("pup_focus_login_time");
-    localStorage.removeItem("pup_focus_login_user");
-    localStorage.removeItem("pup_focus_session_id");
-    sessionStorage.removeItem("pup_focus_login_time");
-    sessionStorage.removeItem("pup_focus_login_user");
-    sessionStorage.removeItem("pup_focus_session_id");
-    resetDashboardNavigationState();
-  } catch {
-    // Ignore storage errors
-  }
-
-  try {
-    await fetch("/api/auth/logout", {
-      method: "POST",
-      credentials: "include",
-      keepalive: true,
-    });
-  } catch {
-    // Ignore logout logging errors
-  }
-
+  let accessToken: string | null = null;
   try {
     const supabase = createClient();
-    await supabase.auth.signOut({ scope: "local" });
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+    accessToken = session?.access_token ?? null;
+    void supabase.auth.signOut({ scope: "local" }).catch(() => null);
   } catch {
     // Ignore client signout errors
   }
 
+  try {
+    void fetch("/api/auth/logout", {
+      method: "POST",
+      credentials: "include",
+      keepalive: true,
+      headers: accessToken
+        ? { Authorization: `Bearer ${accessToken}` }
+        : undefined,
+    }).catch(() => null);
+  } catch {
+    // Ignore logout logging errors
+  }
+
+  clearEphemeralSessionState();
+  resetDashboardNavigationState();
   clearBrowserSupabaseSession();
 
   if (!options?.skipRedirect) {
