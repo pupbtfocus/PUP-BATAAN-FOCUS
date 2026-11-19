@@ -263,43 +263,99 @@ export function LoginForm({
       `}</style>
 
       {!publicEnvConfigured ? (
-        <div className="mt-4 rounded-2xl border-2 border-amber-400 bg-[#2d1b00] px-4 py-3 text-sm font-semibold text-amber-100 shadow-[0_4px_16px_rgba(0,0,0,0.5),0_0_12px_rgba(251,191,36,0.3)]">
-          Supabase is not configured yet. Add NEXT_PUBLIC_SUPABASE_URL and
-          NEXT_PUBLIC_SUPABASE_ANON_KEY in .env.local before using sign in.
+        <div
+          role="alert"
+          className="relative mt-3 overflow-hidden rounded-xl border border-amber-400/45 bg-[#5c0000] pl-4 pr-3.5 py-2.5 text-left shadow-[inset_0_1px_0_rgba(255,215,0,0.12),0_4px_12px_rgba(0,0,0,0.28)]"
+        >
+          <span className="absolute inset-y-0 left-0 w-1 bg-amber-400" aria-hidden="true" />
+          <div className="flex items-start gap-3">
+            <span className="mt-0.5 inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-amber-400/35 bg-[#6e0000] text-amber-400">
+              <AppIcon icon={WarningTriangle} size="sm" color="inherit" />
+            </span>
+            <div className="min-w-0 flex-1">
+              <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-amber-300">
+                Configuration Required
+              </p>
+              <p className="mt-0.5 text-xs font-medium leading-snug text-amber-50/95">
+                Supabase is not configured yet. Add NEXT_PUBLIC_SUPABASE_URL and
+                NEXT_PUBLIC_SUPABASE_ANON_KEY in .env.local before using sign in.
+              </p>
+            </div>
+          </div>
         </div>
       ) : null}
 
       <form className="mt-1 sm:mt-2 space-y-2 sm:space-y-2.5" onSubmit={onSubmit} onPaste={handleInputPaste}>
-        {/* Universal Alert Banner */}
-        {notice ? (
-          <div
-            className={`rounded-xl px-3.5 py-2.5 text-xs flex items-start gap-2.5 border transition-all shadow-[0_4px_16px_rgba(0,0,0,0.5),inset_0_1px_0_rgba(251,191,36,0.15)] ${
-              notice.type === "timeout"
-                ? "bg-[#300000]/95 border-amber-400/80 text-amber-50"
-                : notice.type === "success"
-                ? "bg-[#0b291a]/95 border-emerald-400/70 text-emerald-50"
-                : notice.type === "info"
-                ? "bg-[#0a2036]/95 border-sky-400/70 text-sky-50"
-                : "bg-[#380205]/95 border-amber-400/80 text-amber-50"
-            }`}
-          >
-            {notice.type === "timeout" ? (
-              <AppIcon icon={Hourglass} size="md" color="inherit" className="mt-0.5 !text-amber-300 shrink-0 drop-shadow-[0_0_8px_rgba(251,191,36,0.7)]" />
-            ) : notice.type === "success" ? (
-              <AppIcon icon={CheckCircle} size="md" color="inherit" className="mt-0.5 !text-emerald-300 shrink-0 drop-shadow-[0_0_8px_rgba(16,185,129,0.7)]" />
-            ) : notice.type === "info" ? (
-              <AppIcon icon={WarningCircle} size="md" color="inherit" className="mt-0.5 !text-sky-300 shrink-0 drop-shadow-[0_0_8px_rgba(56,189,248,0.7)]" />
-            ) : (
-              <AppIcon icon={WarningCircle} size="md" color="inherit" className="mt-0.5 !text-amber-400 shrink-0 drop-shadow-[0_0_8px_rgba(251,191,36,0.7)]" />
-            )}
-            <span className="leading-relaxed font-semibold tracking-wide text-amber-50 drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]">{notice.message}</span>
-          </div>
-        ) : error ? (
-          <div className="rounded-xl px-3.5 py-2.5 text-xs flex items-start gap-2.5 border border-amber-400/80 bg-[#380205]/95 text-amber-50 shadow-[0_4px_16px_rgba(0,0,0,0.5),inset_0_1px_0_rgba(251,191,36,0.15)] transition-all">
-            <AppIcon icon={WarningCircle} size="md" color="inherit" className="mt-0.5 !text-amber-400 shrink-0 drop-shadow-[0_0_8px_rgba(251,191,36,0.7)]" />
-            <span className="leading-relaxed font-semibold tracking-wide text-amber-50 drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]">{error}</span>
-          </div>
-        ) : null}
+        {/* Universal Institutional Status Banner */}
+        {(() => {
+          const activeBanner = notice
+            ? notice
+            : error
+              ? ({ type: "error", message: error } as const)
+              : null;
+
+          if (!activeBanner) return null;
+
+          const styles = {
+            timeout: {
+              rail: "bg-amber-400",
+              iconWrap: "border-amber-400/35 bg-[#6e0000] text-amber-400",
+              eyebrow: "text-amber-300",
+              label: "Security & Session Notice",
+              icon: Hourglass,
+            },
+            success: {
+              rail: "bg-amber-400",
+              iconWrap: "border-amber-400/35 bg-[#6e0000] text-amber-300",
+              eyebrow: "text-amber-300",
+              label: "Verified",
+              icon: CheckCircle,
+            },
+            info: {
+              rail: "bg-amber-400/80",
+              iconWrap: "border-amber-400/35 bg-[#6e0000] text-amber-300",
+              eyebrow: "text-[#f3d9b3]",
+              label: "Information",
+              icon: WarningCircle,
+            },
+            error: {
+              rail: "bg-amber-400",
+              iconWrap: "border-amber-400/35 bg-[#6e0000] text-amber-400",
+              eyebrow: "text-amber-300",
+              label: "Authentication Notice",
+              icon: WarningCircle,
+            },
+          }[activeBanner.type];
+
+          return (
+            <div
+              role="alert"
+              className="relative overflow-hidden rounded-xl border border-amber-400/45 bg-[#5c0000] pl-4 pr-3.5 py-2.5 text-left shadow-[inset_0_1px_0_rgba(255,215,0,0.12),0_4px_12px_rgba(0,0,0,0.28)] transition-all animate-in fade-in duration-150"
+            >
+              <span
+                className={`absolute inset-y-0 left-0 w-1 ${styles.rail}`}
+                aria-hidden="true"
+              />
+              <div className="flex items-start gap-3">
+                <span
+                  className={`mt-0.5 inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border ${styles.iconWrap}`}
+                >
+                  <AppIcon icon={styles.icon} size="sm" color="inherit" />
+                </span>
+                <div className="min-w-0 flex-1">
+                  <p
+                    className={`text-[10px] font-bold uppercase tracking-[0.14em] leading-tight ${styles.eyebrow}`}
+                  >
+                    {styles.label}
+                  </p>
+                  <p className="mt-0.5 text-xs font-medium leading-snug text-amber-50/95">
+                    {activeBanner.message}
+                  </p>
+                </div>
+              </div>
+            </div>
+          );
+        })()}
 
 
         <div className="space-y-1">

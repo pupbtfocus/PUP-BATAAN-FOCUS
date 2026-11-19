@@ -24,7 +24,7 @@ import {
 } from "@/config/roles";
 import { isValidEmailAddress } from "@/lib/validation/email";
 import { recordActiveSessionLogin } from "@/components/auth/single-session-enforcer";
-import { Lock, SystemRestart } from "iconoir-react";
+import { Lock, SystemRestart, WarningCircle } from "iconoir-react";
 import { AppIcon } from "@/components/ui/app-icon";
 import {
   isEphemeralSessionActive,
@@ -1135,8 +1135,27 @@ export default function Home() {
                 className="space-y-4"
               >
                 {mfaError && (
-                  <div className="rounded-xl border border-amber-400/50 bg-[#520000] px-3.5 py-2.5 text-xs font-semibold text-amber-200 shadow-xs">
-                    {mfaError}
+                  <div
+                    role="alert"
+                    className="relative overflow-hidden rounded-xl border border-amber-400/45 bg-[#5c0000] pl-4 pr-3.5 py-2.5 text-left shadow-[inset_0_1px_0_rgba(255,215,0,0.12),0_4px_12px_rgba(0,0,0,0.28)]"
+                  >
+                    <span
+                      className="absolute inset-y-0 left-0 w-1 bg-amber-400"
+                      aria-hidden="true"
+                    />
+                    <div className="flex items-start gap-3">
+                      <span className="mt-0.5 inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-amber-400/35 bg-[#6e0000] text-amber-400">
+                        <AppIcon icon={WarningCircle} size="sm" color="inherit" />
+                      </span>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-[10px] font-bold uppercase tracking-[0.14em] leading-tight text-amber-300">
+                          Verification Failed
+                        </p>
+                        <p className="mt-0.5 text-xs font-medium leading-snug text-amber-50/95">
+                          {mfaError}
+                        </p>
+                      </div>
+                    </div>
                   </div>
                 )}
 
