@@ -6322,7 +6322,14 @@ export function RequirementsPanel({
             .length
         : 0;
 
-      const allStatuses = statusRecord ? Object.values(statusRecord) : [];
+      const activeCodes = new Set(activeTemplates.map((t) => t.code));
+      const allStatuses = statusRecord
+        ? activeCodes.size > 0
+          ? Object.entries(statusRecord)
+              .filter(([code]) => activeCodes.has(code))
+              .map(([, st]) => st)
+          : Object.values(statusRecord)
+        : [];
       const totalValidatedCount = allStatuses.filter(
         (s) => s === "validated",
       ).length;
@@ -6648,17 +6655,23 @@ export function RequirementsPanel({
             initialOpenedRef.current = "__closed__";
             setReviewingFaculty(null);
             onSelectFaculty?.(null);
+            void fetchAllStatuses(academicYear || undefined, semester || undefined, {
+              silent: true,
+            });
           }}
           onClose={() => {
             openedFromRowFlag = false;
             initialOpenedRef.current = "__closed__";
             setReviewingFaculty(null);
             onSelectFaculty?.(null);
+            void fetchAllStatuses(academicYear || undefined, semester || undefined, {
+              silent: true,
+            });
           }}
           onStatusUpdated={() => {
-            if (academicYear && semester) {
-              void fetchAllStatuses(academicYear, semester, { silent: true });
-            }
+            void fetchAllStatuses(academicYear || undefined, semester || undefined, {
+              silent: true,
+            });
           }}
         />
       ) : (

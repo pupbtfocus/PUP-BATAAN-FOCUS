@@ -397,9 +397,9 @@ export function SidebarContent({
         <div
           className={`flex ${
             collapsed
-              ? "flex-col items-center gap-2 px-0 py-1 pb-3"
-              : "items-center justify-between gap-2 px-1 py-1 pb-3"
-          } mb-1 border-b border-white/10 shrink-0`}
+              ? "flex-col items-center gap-4 px-0 pt-1 pb-4 mb-2"
+              : "items-center justify-between gap-2 px-1 py-1 pb-3 mb-1"
+          } border-b border-white/10 shrink-0`}
         >
           <div className={`flex items-center ${collapsed ? "justify-center" : "gap-2.5 min-w-0"}`}>
             <BrandMark size={collapsed ? 32 : 38} className="shrink-0" />
@@ -420,12 +420,16 @@ export function SidebarContent({
               onClick={onToggleCollapse}
               title={collapsed ? "Expand side panel" : "Minimize side panel"}
               aria-label={collapsed ? "Expand side panel" : "Minimize side panel"}
-              className="group inline-flex h-8 w-8 items-center justify-center rounded-lg border border-amber-300/50 bg-[#660000]/90 hover:bg-white/15 text-amber-300 hover:text-white transition-colors cursor-pointer shadow-2xs shrink-0"
+              className={`group inline-flex h-8 w-8 items-center justify-center rounded-lg transition-colors cursor-pointer shrink-0 ${
+                collapsed
+                  ? "bg-amber-500 hover:bg-amber-400 text-slate-900 shadow-sm"
+                  : "bg-transparent hover:bg-white/15 active:bg-amber-500 active:text-slate-900 text-amber-100/85 hover:text-white"
+              }`}
             >
               {collapsed ? (
-                <SidebarExpand strokeWidth={2.2} className="h-4 w-4 text-amber-300 group-hover:text-white transition-colors" />
+                <SidebarExpand strokeWidth={2.5} className="h-4 w-4 text-current transition-colors" />
               ) : (
-                <SidebarCollapse strokeWidth={2.2} className="h-4 w-4 text-amber-300 group-hover:text-white transition-colors" />
+                <SidebarCollapse strokeWidth={2.2} className="h-4 w-4 text-current transition-colors" />
               )}
             </button>
           )}
@@ -675,8 +679,8 @@ export function Sidebar(props: SidebarProps) {
         {onToggleCollapse && (
           <div
             className={`flex items-center ${
-              collapsed ? "justify-center" : "justify-between"
-            } px-1 pb-2 mb-1 shrink-0`}
+              collapsed ? "justify-center pt-1 pb-4 mb-3 border-b border-white/10" : "justify-between px-1 pb-2 mb-1"
+            } shrink-0`}
           >
             {!collapsed && (
               <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-amber-200/70">
@@ -688,12 +692,16 @@ export function Sidebar(props: SidebarProps) {
               onClick={onToggleCollapse}
               title={collapsed ? "Expand side panel" : "Minimize side panel"}
               aria-label={collapsed ? "Expand side panel" : "Minimize side panel"}
-              className="group inline-flex h-8 w-8 items-center justify-center rounded-lg border border-amber-300/50 bg-[#660000]/90 hover:bg-white/15 text-amber-300 hover:text-white transition-colors cursor-pointer shadow-2xs shrink-0"
+              className={`group inline-flex h-8 w-8 items-center justify-center rounded-lg transition-colors cursor-pointer shrink-0 ${
+                collapsed
+                  ? "bg-amber-500 hover:bg-amber-400 text-slate-900 shadow-sm"
+                  : "bg-transparent hover:bg-white/15 active:bg-amber-500 active:text-slate-900 text-amber-100/85 hover:text-white"
+              }`}
             >
               {collapsed ? (
-                <SidebarExpand strokeWidth={2.2} className="h-4 w-4 text-amber-300 group-hover:text-white transition-colors" />
+                <SidebarExpand strokeWidth={2.5} className="h-4 w-4 text-current transition-colors" />
               ) : (
-                <SidebarCollapse strokeWidth={2.2} className="h-4 w-4 text-amber-300 group-hover:text-white transition-colors" />
+                <SidebarCollapse strokeWidth={2.2} className="h-4 w-4 text-current transition-colors" />
               )}
             </button>
           </div>

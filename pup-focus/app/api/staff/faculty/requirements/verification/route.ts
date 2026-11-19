@@ -392,7 +392,7 @@ export async function GET(request: NextRequest) {
         .order("academic_year", { ascending: false }),
       supabase
         .from("requirement_templates")
-        .select("code, title, description, is_mandatory, max_size_mb, allowed_formats, is_active")
+        .select("*")
         .order("is_mandatory", { ascending: false })
         .order("created_at", { ascending: true }),
       supabase
@@ -403,13 +403,11 @@ export async function GET(request: NextRequest) {
       supabase
         .from("faculty_classes")
         .select("id, faculty_profile_id, subject_code, description, section_code, units, is_archived, academic_year, semester")
-        .in("faculty_profile_id", requestedIds)
-        .eq("is_archived", false),
+        .in("faculty_profile_id", requestedIds),
       supabase
         .from("submissions")
         .select("id, faculty_profile_id, requirement_code, status, submitted_at, faculty_assignment_id, class_id, is_archived")
         .in("faculty_profile_id", requestedIds)
-        .eq("is_archived", false)
         .order("submitted_at", { ascending: false }),
     ]);
 
@@ -433,7 +431,72 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const assignmentRows = assignmentRowsRes.data ?? [];
+    // If any requestedId was an auth user_id whose profile.id was not in requestedIds, fetch its rows too
+    const missingProfileIds = Array.from(allProfileIds).filter(
+      (pid) => !requestedIds.includes(pid),
+    );
+    let assignmentRows = assignmentRowsRes.data ?? [];
+    let rawAllClasses = (classesRes.data as any[] | null) ?? [];
+    let rawAllSubmissions = (submissionsRes.data as any[] | null) ?? [];
+
+    if (submissionsRes.error) {
+      const fallbackSubs = await supabase
+        .from("submissions")
+        .select("id, faculty_profile_id, requirement_code, status, submitted_at, faculty_assignment_id, class_id")
+        .in("faculty_profile_id", Array.from(new Set([...requestedIds, ...allProfileIds])))
+        .order("submitted_at", { ascending: false });
+      rawAllSubmissions = (fallbackSubs.data as any[] | null) ?? [];
+    }
+
+    if (classesRes.error) {
+      const fallbackClasses = await supabase
+        .from("faculty_classes")
+        .select("id, faculty_profile_id, subject_code, description, section_code, units, academic_year, semester")
+        .in("faculty_profile_id", Array.from(new Set([...requestedIds, ...allProfileIds])));
+      rawAllClasses = ((fallbackClasses.data as any[] | null) ?? []).map((c) => ({
+        ...c,
+        is_archived: false,
+      }));
+    }
+
+    if (missingProfileIds.length > 0) {
+      const [extraAssignments, extraClasses, extraSubs] = await Promise.all([
+        supabase
+          .from("faculty_program_assignments")
+          .select("id, faculty_profile_id, academic_year, term")
+          .in("faculty_profile_id", missingProfileIds)
+          .limit(2000),
+        supabase
+          .from("faculty_classes")
+          .select("id, faculty_profile_id, subject_code, description, section_code, units, is_archived, academic_year, semester")
+          .in("faculty_profile_id", missingProfileIds),
+        supabase
+          .from("submissions")
+          .select("id, faculty_profile_id, requirement_code, status, submitted_at, faculty_assignment_id, class_id, is_archived")
+          .in("faculty_profile_id", missingProfileIds)
+          .order("submitted_at", { ascending: false }),
+      ]);
+      if (extraAssignments.data?.length) {
+        assignmentRows = [...assignmentRows, ...extraAssignments.data];
+      }
+      if (extraClasses.data?.length) {
+        rawAllClasses = [...rawAllClasses, ...extraClasses.data];
+      }
+      if (extraSubs.data?.length) {
+        rawAllSubmissions = [...rawAllSubmissions, ...extraSubs.data];
+      }
+    }
+
+    const archivedClassIds = new Set<string>(
+      rawAllClasses
+        .filter((c: any) => Boolean(c.is_archived))
+        .map((c: any) => c.id)
+        .filter(Boolean),
+    );
+    const activeClasses = rawAllClasses.filter((c: any) => !c.is_archived);
+    const nonArchivedSubmissions = rawAllSubmissions.filter(
+      (s: any) => !s.is_archived && !(s.class_id && archivedClassIds.has(s.class_id)),
+    );
     const dbTerms = dbTermsRes.data ?? [];
 
     const currentTermRow = dbTerms.find(
@@ -517,12 +580,13 @@ export async function GET(request: NextRequest) {
 
     const filteredAssignments = (assignmentRows ?? []).filter(
       (row: any) =>
-        row.academic_year === selectedAcademicYear &&
+        normalizeAcademicYear(row.academic_year) ===
+          normalizeAcademicYear(selectedAcademicYear) &&
         normalizeSemester(row.term) === effectiveSelectedSemester,
     );
     const allFilteredAssignmentIds = filteredAssignments.map((row: any) => row.id);
 
-    const allSubmissionRows = ((submissionsRes.data as any[] | null) ?? []).filter(
+    const allSubmissionRows = nonArchivedSubmissions.filter(
       (s: any) =>
         allFilteredAssignmentIds.length === 0 ||
         !s.faculty_assignment_id ||
@@ -531,8 +595,10 @@ export async function GET(request: NextRequest) {
 
     const isCurrentTerm = Boolean(
       currentAcademicTerm &&
-      currentAcademicTerm.academicYear === selectedAcademicYear &&
-      currentAcademicTerm.semester === effectiveSelectedSemester
+      normalizeAcademicYear(currentAcademicTerm.academicYear) ===
+        normalizeAcademicYear(selectedAcademicYear) &&
+      normalizeSemester(currentAcademicTerm.semester) ===
+        effectiveSelectedSemester
     );
 
     if (!dbTemplatesRes.error && Array.isArray(dbTemplatesRes.data)) {
@@ -542,22 +608,31 @@ export async function GET(request: NextRequest) {
           .filter(Boolean)
       );
 
+      const seenTemplateCodes = new Set<string>();
       activeTemplateRows = dbTemplatesRes.data
         .filter((t: any) => {
-          // If evaluating current active term, current is_active state is respected
+          const codeKey = (t.code || "").trim().toLowerCase();
+          if (!codeKey || seenTemplateCodes.has(codeKey)) {
+            return false;
+          }
+
+          // If evaluating current active term, only strictly active templates apply
           if (isCurrentTerm) {
-            return t.is_active !== false;
+            if (!t.is_active) return false;
+            seenTemplateCodes.add(codeKey);
+            return true;
           }
 
           // Evaluating past/other term:
           // 1. If faculty made submissions for this requirement in this term, keep it visible
           if (submittedCodesInTerm.has(t.code)) {
+            seenTemplateCodes.add(codeKey);
             return true;
           }
 
           // 2. If explicitly hidden for this term or currently hidden, do not show it
           if (
-            t.is_active === false ||
+            !t.is_active ||
             isTemplateHiddenForTerm(t, selectedAcademicYear, effectiveSelectedSemester, false)
           ) {
             return false;
@@ -565,6 +640,7 @@ export async function GET(request: NextRequest) {
 
           // 3. Otherwise keep active standard requirements visible
           if ((DEFAULT_REQUIREMENTS as readonly string[]).includes(t.code)) {
+            seenTemplateCodes.add(codeKey);
             return true;
           }
 
@@ -573,8 +649,8 @@ export async function GET(request: NextRequest) {
         .map((t: any) => ({
           code: t.code,
           title: t.title,
-          is_mandatory: t.is_mandatory,
-          is_active: t.is_active !== false,
+          is_mandatory: Boolean(t.is_mandatory),
+          is_active: Boolean(t.is_active),
           max_size_mb: t.max_size_mb || 5,
           allowed_formats: t.allowed_formats || ["PDF"],
         }));
@@ -594,7 +670,7 @@ export async function GET(request: NextRequest) {
       if (orderA !== orderB) return orderA - orderB;
       return a.title.localeCompare(b.title);
     });
-    const allFacultyClasses = (classesRes.data as any[] | null) ?? [];
+    const allFacultyClasses = activeClasses;
 
     const rank: Record<RequirementStatus, number> = {
       not_submitted: 0,
@@ -604,6 +680,7 @@ export async function GET(request: NextRequest) {
       rejected: 3,
     };
 
+    const activeTemplateCodeSet = new Set(activeTemplateRows.map((t) => t.code));
     const mandatoryTemplates = activeTemplateRows.filter((t) => t.is_mandatory);
     const reqsToCheck = mandatoryTemplates.length > 0 ? mandatoryTemplates : activeTemplateRows;
 
@@ -614,35 +691,6 @@ export async function GET(request: NextRequest) {
       const requirementStatus: Record<string, RequirementStatus> = {};
       for (const tpl of activeTemplateRows) {
         requirementStatus[tpl.code] = "not_submitted";
-      }
-
-      const facultyAssignmentIds = new Set(
-        filteredAssignments
-          .filter((a: any) => validIds.has(a.faculty_profile_id))
-          .map((a: any) => a.id),
-      );
-
-      const facultySubmissions = allSubmissionRows.filter(
-        (s: any) =>
-          validIds.has(s.faculty_profile_id) &&
-          facultyAssignmentIds.has(s.faculty_assignment_id),
-      );
-
-      const seenSlotKeys = new Set<string>();
-      for (const row of facultySubmissions) {
-        const code = matchRequirementCode(
-          row.requirement_code,
-          (row as { requirement_id?: string }).requirement_id,
-          activeTemplateRows,
-        );
-        if (!code || !hasDocumentVersion(row)) continue;
-        const slotKey = `${code}:${(row as { class_id?: string | null }).class_id ?? "__global__"}`;
-        if (seenSlotKeys.has(slotKey)) continue;
-        seenSlotKeys.add(slotKey);
-        const mappedStatus = toRequirementStatus(row.status);
-        if (!requirementStatus[code] || rank[mappedStatus] > rank[requirementStatus[code]]) {
-          requirementStatus[code] = mappedStatus;
-        }
       }
 
       const rawClasses = allFacultyClasses.filter((fc: any) =>
@@ -664,25 +712,85 @@ export async function GET(request: NextRequest) {
       if (facultyClassesData.length === 0 && rawClasses.length > 0) {
         facultyClassesData = rawClasses;
       }
+      const facultyClassIdSet = new Set<string>(
+        facultyClassesData.map((c: any) => c.id).filter(Boolean),
+      );
+      const otherTermClassIdSet = new Set<string>(
+        rawClasses
+          .filter((c: any) => c.id && !facultyClassIdSet.has(c.id))
+          .map((c: any) => c.id),
+      );
 
-      const classProgressList = facultyClassesData.map((cls: any) => {
-        const classSubs = facultySubmissions.filter(
-          (s: any) => s.class_id === cls.id || (!s.class_id && facultyClassesData.length === 1),
+      const facultyAssignmentIds = new Set(
+        filteredAssignments
+          .filter((a: any) => validIds.has(a.faculty_profile_id))
+          .map((a: any) => a.id),
+      );
+      const facultyAllAssignmentIds = new Set(
+        (assignmentRows ?? [])
+          .filter((a: any) => validIds.has(a.faculty_profile_id))
+          .map((a: any) => a.id),
+      );
+
+      const facultySubmissions = allSubmissionRows.filter((s: any) => {
+        if (!validIds.has(s.faculty_profile_id)) return false;
+        if (s.class_id && otherTermClassIdSet.has(s.class_id)) return false;
+        if (s.faculty_assignment_id) {
+          if (facultyAssignmentIds.size > 0) {
+            return facultyAssignmentIds.has(s.faculty_assignment_id);
+          }
+          // Keep if not bound to another term's assignment
+          return !facultyAllAssignmentIds.has(s.faculty_assignment_id);
+        }
+        // Include uploads whose faculty_assignment_id is null (e.g. rows created after a reset)
+        if (!s.submitted_at) return false;
+        return isCurrentTerm || (Boolean(s.class_id) && facultyClassIdSet.has(s.class_id));
+      });
+
+      const seenSlotKeys = new Set<string>();
+      for (const row of facultySubmissions) {
+        const code = matchRequirementCode(
+          row.requirement_code,
+          (row as { requirement_id?: string }).requirement_id,
+          activeTemplateRows,
         );
-        const validatedReqs = new Set<string>();
+        if (!code || !activeTemplateCodeSet.has(code) || !hasDocumentVersion(row)) continue;
+        const slotKey = `${code}:${(row as { class_id?: string | null }).class_id ?? "__global__"}`;
+        if (seenSlotKeys.has(slotKey)) continue;
+        seenSlotKeys.add(slotKey);
+        const mappedStatus = toRequirementStatus(row.status);
+        if (rank[mappedStatus] > rank[requirementStatus[code] ?? "not_submitted"]) {
+          requirementStatus[code] = mappedStatus;
+        }
+      }
+
+      const classProgressList = facultyClassesData.map((cls: any, clsIdx: number) => {
+        const classSubs = facultySubmissions.filter(
+          (s: any) =>
+            s.class_id === cls.id ||
+            (!s.class_id && (facultyClassesData.length === 1 || clsIdx === 0)),
+        );
+        const latestStatusByCode = new Map<string, RequirementStatus>();
         for (const s of classSubs) {
-          if (toRequirementStatus(s.status) === "validated") {
-            const code = matchRequirementCode(
-              s.requirement_code,
-              (s as any).requirement_id,
-              activeTemplateRows,
-            );
-            if (code) validatedReqs.add(code);
+          const code = matchRequirementCode(
+            s.requirement_code,
+            (s as any).requirement_id,
+            activeTemplateRows,
+          );
+          if (!code || !activeTemplateCodeSet.has(code) || !hasDocumentVersion(s)) continue;
+          if (!latestStatusByCode.has(code)) {
+            latestStatusByCode.set(code, toRequirementStatus(s.status));
           }
         }
-        const validatedCount = reqsToCheck.filter((t) => validatedReqs.has(t.code)).length;
+        const validatedCount = reqsToCheck.filter(
+          (t) => latestStatusByCode.get(t.code) === "validated",
+        ).length;
+        const hasRevision = reqsToCheck.some((t) => {
+          const st = latestStatusByCode.get(t.code);
+          return st === "rejected" || st === "needs_revision";
+        });
         const totalRequired = reqsToCheck.length;
-        const isDone = totalRequired > 0 && validatedCount >= totalRequired;
+        const isDone = totalRequired > 0 && validatedCount >= totalRequired && !hasRevision;
 
         return {
           id: cls.id,

@@ -23,6 +23,118 @@ export function SystemLoadingScreen({
     ? Math.min(100, Math.max(0, Math.round(progress)))
     : 0;
 
+  const content = (
+    <div
+      className={
+        fullScreen
+          ? "relative w-full max-w-[340px] sm:max-w-[368px] overflow-hidden rounded-2xl border border-slate-200/90 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xl shadow-slate-900/10 dark:shadow-black/50"
+          : "relative w-full max-w-sm flex flex-col items-center"
+      }
+    >
+      {/* Institutional Maroon & Gold Accent Bar */}
+      {fullScreen && (
+        <div className="h-1.5 w-full bg-gradient-to-r from-[#580000] via-[#800000] to-amber-500" />
+      )}
+
+      <div
+        className={
+          fullScreen
+            ? "flex flex-col items-center px-6 py-8 sm:px-8 sm:py-9 text-center"
+            : "flex flex-col items-center px-4 py-4 text-center w-full"
+        }
+      >
+        {/* Official Seal with Precision Maroon & Gold Orbital Ring */}
+        <div className="relative flex items-center justify-center">
+          {/* Outer subtle track */}
+          <div
+            className={`absolute rounded-full border border-slate-200 dark:border-slate-700/80 pointer-events-none ${
+              fullScreen ? "-inset-3" : "-inset-2.5"
+            }`}
+          />
+
+          {/* Primary Maroon Spinning Arc */}
+          <div
+            className={`absolute rounded-full border-[2.5px] border-transparent border-t-[#800000] dark:border-t-amber-400 border-r-[#800000]/35 dark:border-r-amber-400/35 animate-spin pointer-events-none ${
+              fullScreen ? "-inset-3" : "-inset-2.5"
+            }`}
+            style={{ animationDuration: "1.05s" }}
+          />
+
+          {/* Secondary Counter-Accent Gold Dot / Arc */}
+          <div
+            className={`absolute rounded-full border-2 border-transparent border-b-amber-500/85 animate-spin pointer-events-none ${
+              fullScreen ? "-inset-1.5" : "-inset-1"
+            }`}
+            style={{ animationDuration: "1.8s", animationDirection: "reverse" }}
+          />
+
+          {/* Clean Circular Seal Plate */}
+          <div
+            className={`relative z-10 flex items-center justify-center rounded-full bg-white dark:bg-slate-900 ring-1 ring-slate-200/80 dark:ring-slate-700/70 shadow-sm ${
+              fullScreen ? "p-1.5" : "p-1"
+            }`}
+          >
+            <Logo size={fullScreen ? 64 : 52} className="relative z-10" />
+          </div>
+        </div>
+
+        {/* Institutional Wordmark */}
+        <div className="mt-6 flex flex-col items-center">
+          <div className="flex items-center gap-1.5 text-base sm:text-lg font-black tracking-tight leading-none">
+            <span className="text-[#800000] dark:text-amber-400">PUP</span>
+            <span className="text-slate-900 dark:text-white">FOCUS</span>
+          </div>
+          <span className="mt-1.5 text-[10px] font-bold uppercase tracking-[0.22em] text-slate-500 dark:text-slate-400">
+            Bataan Campus
+          </span>
+        </div>
+
+        {/* Progress Indicator */}
+        <div className="mt-5 w-full max-w-[240px] space-y-2.5">
+          {hasProgress ? (
+            <>
+              <div className="flex items-center justify-between text-xs">
+                <span className="font-semibold text-slate-600 dark:text-slate-300 truncate pr-2">
+                  {text || "Processing..."}
+                </span>
+                <span className="font-mono font-bold tabular-nums text-[#800000] dark:text-amber-400 shrink-0">
+                  {clampedProgress}%
+                </span>
+              </div>
+              <div className="relative h-2 w-full overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700/70">
+                <div
+                  className="h-full rounded-full bg-gradient-to-r from-[#580000] via-[#800000] to-amber-500 transition-all duration-300 ease-out"
+                  style={{ width: `${clampedProgress}%` }}
+                />
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="relative h-1.5 w-full overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
+                <div className="absolute inset-y-0 left-0 w-2/5 rounded-full bg-gradient-to-r from-[#580000] via-[#800000] to-amber-500 animate-pup-loader-slide" />
+              </div>
+
+              {text ? (
+                <div className="flex items-center justify-center gap-2 pt-0.5">
+                  <span className="h-1.5 w-1.5 rounded-full bg-amber-500 animate-pulse shrink-0" />
+                  <p className="text-xs sm:text-[13px] font-semibold text-slate-700 dark:text-slate-200 tracking-tight">
+                    {text}
+                  </p>
+                </div>
+              ) : null}
+            </>
+          )}
+
+          {subtitle ? (
+            <p className="text-[11px] font-medium text-slate-500 dark:text-slate-400 truncate max-w-full">
+              {subtitle}
+            </p>
+          ) : null}
+        </div>
+      </div>
+    </div>
+  );
+
   return (
     <div
       role="status"
@@ -30,76 +142,11 @@ export function SystemLoadingScreen({
       aria-label={text || "Loading system"}
       className={
         fullScreen
-          ? `fixed inset-0 z-[100] flex flex-col items-center justify-center p-4 select-none bg-black/85 backdrop-blur-md bg-[radial-gradient(ellipse_at_center,_rgba(120,0,0,0.4)_0%,_rgba(20,2,2,0.9)_60%,_rgba(10,0,0,0.98)_100%)] animate-in fade-in duration-200 ${className}`
-          : `relative flex flex-col items-center justify-center min-h-[280px] w-full p-6 sm:p-8 rounded-3xl bg-gradient-to-b from-[#2a0000]/60 via-[#1a0000]/70 to-[#100000]/80 backdrop-blur-md border border-amber-500/25 shadow-2xl select-none animate-in fade-in duration-200 ${className}`
+          ? `fixed inset-0 z-[100] flex flex-col items-center justify-center p-4 select-none bg-slate-100/90 dark:bg-slate-950/90 backdrop-blur-md animate-in fade-in duration-150 ${className}`
+          : `relative flex flex-col items-center justify-center min-h-[240px] w-full p-6 sm:p-8 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs select-none animate-in fade-in duration-150 ${className}`
       }
     >
-      {/* Central Identity: Official Logo with Delicate Golden Spinner & Glow */}
-      <div className="relative flex items-center justify-center">
-        {/* Soft breathing golden ambient halo */}
-        <div className="absolute inset-0 -m-5 rounded-full bg-amber-500/20 blur-2xl animate-pulse pointer-events-none" />
-
-        {/* Minimalist spinning golden arc */}
-        <div className="absolute -inset-3.5 rounded-full border-2 border-amber-400/20 border-t-amber-400 border-r-amber-400/60 animate-spin pointer-events-none" />
-
-        {/* Outer subtle static golden ring */}
-        <div className="absolute -inset-1.5 rounded-full border border-amber-400/30 pointer-events-none" />
-
-        {/* Official Brand Seal Logo */}
-        <Logo
-          size={fullScreen ? 82 : 68}
-          className="relative z-10 drop-shadow-[0_8px_20px_rgba(0,0,0,0.85)]"
-        />
-      </div>
-
-      {/* Institutional Branding & Loading Status */}
-      <div className="mt-5 flex flex-col items-center text-center space-y-2.5 max-w-sm px-4">
-        {/* Institutional Title */}
-        <div className="space-y-0.5">
-          <h2 className="text-xs sm:text-sm font-black uppercase tracking-[0.25em] text-amber-300 drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]">
-            PUP FOCUS
-          </h2>
-        </div>
-
-        {/* Percentage or Minimalist Indeterminate Progress */}
-        {hasProgress ? (
-          <div className="space-y-2 w-full flex flex-col items-center">
-            {/* Percentage Badge */}
-            <div className="flex items-center justify-center">
-              <span className="font-mono text-xl sm:text-2xl font-black tracking-tight text-amber-300 drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)]">
-                {clampedProgress}%
-              </span>
-            </div>
-
-            {/* Progress Bar Track */}
-            <div className="relative w-44 sm:w-56 h-2 rounded-full bg-amber-950/90 overflow-hidden border border-amber-400/35 shadow-[inset_0_1px_3px_rgba(0,0,0,0.8)]">
-              <div
-                className="h-full rounded-full bg-gradient-to-r from-amber-500 via-amber-300 to-amber-400 transition-all duration-300 ease-out shadow-[0_0_12px_rgba(251,191,36,0.9)]"
-                style={{ width: `${clampedProgress}%` }}
-              />
-            </div>
-          </div>
-        ) : (
-          /* Minimalist Indeterminate Golden Progress Shimmer Line */
-          <div className="relative w-36 sm:w-44 h-1 rounded-full bg-amber-950/80 overflow-hidden border border-amber-400/25 shadow-[inset_0_1px_2px_rgba(0,0,0,0.6)]">
-            <div className="absolute inset-y-0 w-2/5 rounded-full bg-gradient-to-r from-amber-500/20 via-amber-300 to-amber-500/20 animate-pup-shimmer shadow-[0_0_8px_rgba(251,191,36,0.8)]" />
-          </div>
-        )}
-
-        {/* Dynamic Status Text */}
-        {text ? (
-          <p className="text-xs sm:text-sm font-semibold tracking-wide text-amber-100/90 pt-0.5">
-            {text}
-          </p>
-        ) : null}
-
-        {/* Subtitle / Filename */}
-        {subtitle ? (
-          <p className="text-[11px] sm:text-xs text-amber-200/70 truncate max-w-[280px] sm:max-w-xs font-medium">
-            {subtitle}
-          </p>
-        ) : null}
-      </div>
+      {content}
     </div>
   );
 }

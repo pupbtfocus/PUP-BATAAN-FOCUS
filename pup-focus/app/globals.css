@@ -508,3 +508,19 @@ a[class*="from-amber-"][class*="text-slate-950"] svg,
   animation: authRingPulse 0.45s ease-out both;
 }
 
+@keyframes pupLoaderSlide {
+  0% {
+    transform: translateX(-100%);
+  }
+  50% {
+    transform: translateX(120%);
+  }
+  100% {
+    transform: translateX(280%);
+  }
+}
+
+.animate-pup-loader-slide {
+  animation: pupLoaderSlide 1.45s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+

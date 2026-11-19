@@ -37,6 +37,7 @@ import { AddFacultyModal } from "./faculty-modals/add-faculty-modal";
 import { FacultyDetailsModal } from "./faculty-modals/faculty-details-modal";
 import { InviteStatusModal } from "./faculty-modals/invite-status-modal";
 import { RequirementsPanel } from "./requirements-verification-panel";
+import { SuperAdminComplianceAnalytics } from "@/features/admin-management/components/super-admin-compliance-analytics";
 
 function normalizeAdminSection(raw?: string | null): AdminSection | null {
   if (!raw) return null;
@@ -197,6 +198,55 @@ export function AdminFacultyDashboard({
       } catch {}
     }
   };
+
+  const facultyStats = useMemo(() => {
+    const total = facultyAccounts.length;
+    const active = facultyAccounts.filter((f) => f.is_active).length;
+    const activePct = total > 0 ? Math.round((active / total) * 100) : 0;
+
+    const allKeys = new Set<string>();
+    for (const f of facultyAccounts) {
+      if (f.requirementStatus) {
+        for (const k of Object.keys(f.requirementStatus)) allKeys.add(k);
+      }
+    }
+    const reqCodes = Array.from(allKeys);
+    const totalRequired = reqCodes.length;
+
+    let completed = 0;
+    let started = 0;
+    let notStarted = 0;
+
+    for (const f of facultyAccounts) {
+      if (!f.is_active) continue;
+      const statusMap = f.requirementStatus as Record<string, string | undefined> | undefined;
+      let turnedIn = 0;
+      let needsRevision = 0;
+      for (const code of reqCodes) {
+        const s = statusMap?.[code];
+        if (s === "validated" || s === "uploaded") turnedIn += 1;
+        else if (s === "rejected" || s === "needs_revision") needsRevision += 1;
+      }
+      if (needsRevision > 0) {
+        started += 1;
+      } else if (turnedIn === totalRequired && totalRequired > 0) {
+        completed += 1;
+      } else if (turnedIn > 0) {
+        started += 1;
+      } else {
+        notStarted += 1;
+      }
+    }
+
+    return {
+      total,
+      active,
+      activePct,
+      completed,
+      inProgress: started,
+      notStarted,
+    };
+  }, [facultyAccounts]);
 
   const handleSelectFaculty = useCallback((facultyId: string | null) => {
     setSelectedFacultyId((prev) => (prev === facultyId ? prev : facultyId));
@@ -789,7 +839,7 @@ export function AdminFacultyDashboard({
   }
 
   return (
-    <div className="flex flex-col h-screen w-full bg-slate-50 text-slate-900 overflow-hidden font-sans transition-colors duration-200">
+    <div className="flex flex-col min-h-dvh md:h-screen w-full bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 md:overflow-hidden font-sans transition-colors duration-200">
       <header
         className={`fixed inset-x-0 ${
           isSidebarCollapsed ? "md:left-[calc(5rem-4px)]" : "md:left-[calc(18rem-4px)]"
@@ -830,7 +880,7 @@ export function AdminFacultyDashboard({
 
       {/* Body Wrapper */}
       <div
-        className={`flex flex-1 h-screen pt-14 overflow-hidden relative ${
+        className={`flex flex-1 min-h-0 md:h-screen pt-14 md:overflow-hidden relative ${
           isSidebarCollapsed ? "md:pl-20" : "md:pl-72"
         } transition-all duration-200`}
       >
@@ -900,360 +950,276 @@ export function AdminFacultyDashboard({
 
         {/* Scrollable Main Content Area */}
         <div className="flex min-h-full md:h-full min-w-0 w-full flex-col">
-          <div className="flex md:min-h-0 flex-1 flex-col md:overflow-hidden border-l-0 bg-slate-100 dark:bg-[#0b0f19] shadow-sm transition-colors duration-200">
-            <main className="md:min-h-0 flex-1 md:overflow-y-auto overflow-x-clip p-4 pb-8 sm:p-6 lg:p-8 bg-slate-100 dark:bg-[#0b0f19] text-slate-900 dark:text-slate-100 transition-colors duration-200">
-              <div className="max-w-7xl mx-auto w-full">
+          <div className="flex min-h-0 flex-1 flex-col md:overflow-hidden border-l-0 bg-slate-50 dark:bg-slate-950 shadow-sm transition-colors duration-200">
+            <main className="min-h-0 flex-1 overflow-y-auto overflow-x-clip p-3.5 sm:p-6 pb-8 sm:pb-6 bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 transition-colors duration-200">
+              <div className="w-full">
                 {activeSection === "dashboard" ? (
-                  <article className="space-y-4 sm:space-y-5">
-                    {/* Solid Amber Card Header */}
-                    <div className="relative overflow-hidden rounded-2xl border-2 border-amber-500 bg-amber-400 p-5 sm:p-6 shadow-md shadow-amber-500/10 space-y-3 transition-colors mb-6">
-                      <div>
-                        <div className="flex items-center gap-2.5 flex-wrap">
-                          <h1 className="text-2xl sm:text-3xl font-black text-slate-950 tracking-tight">
-                            Dashboard
-                          </h1>
-                        </div>
-                        <p className="mt-1.5 text-sm sm:text-base text-amber-950/90 font-medium leading-relaxed">
-                          Here&apos;s how everyone is doing: see who turned in requirements, check pending files, and track recent updates.
+                  <article className="space-y-4 sm:space-y-6">
+                    {/* Solid Amber Card Header matching Admin Dashboard */}
+                    <div className="relative overflow-hidden rounded-2xl border-2 border-amber-500 bg-amber-400 p-4 sm:p-6 shadow-md shadow-amber-500/10 flex flex-col sm:flex-row sm:items-center justify-between gap-3.5 sm:gap-4 transition-colors">
+                      <div className="min-w-0">
+                        <h1 className="text-xl sm:text-3xl font-black text-slate-950 tracking-tight">
+                          Dashboard
+                        </h1>
+                        <p className="mt-1 sm:mt-1.5 text-xs sm:text-base text-amber-950/90 font-medium leading-relaxed">
+                          Here&apos;s how everyone is doing: track faculty submissions, review pending files, and monitor term compliance.
                         </p>
                       </div>
+                      <div className="flex items-center gap-2 w-full sm:w-auto shrink-0">
+                        <button
+                          type="button"
+                          onClick={() => void refreshCurrentPanel()}
+                          disabled={isRefreshing}
+                          title="Refresh dashboard"
+                          className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white hover:bg-slate-50 dark:bg-slate-800 dark:hover:bg-slate-750 text-slate-700 dark:text-slate-200 px-3.5 py-2 sm:py-1.5 text-xs font-semibold transition-all disabled:opacity-50 cursor-pointer shadow-xs active:scale-[0.98]"
+                        >
+                          <Refresh
+                            className={`h-3.5 w-3.5 ${isRefreshing ? "animate-spin" : ""}`}
+                          />
+                          <span>{isRefreshing ? "Refreshing..." : "Refresh"}</span>
+                        </button>
+                      </div>
+                    </div>
 
-                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-0.5">
-                        <p className="text-xs sm:text-sm text-amber-950 dark:text-amber-300 font-semibold">
-                          {dashboardStats?.currentAcademicYear ? (
-                            <>
-                              A.Y. {dashboardStats.currentAcademicYear} • {dashboardStats?.currentSemester || "1st Semester"}
-                              {windowStatus && (windowStatus.status === "Closed" || !windowStatus.isOpen) ? (
-                                <span className="ml-2 font-semibold">
-                                  • (Submissions Closed)
-                                </span>
-                              ) : null}
-                            </>
-                          ) : (
-                            <span>No active school term right now</span>
-                          )}
-                        </p>
+                    {/* TIER 2: Stat Grid (3 Cards matching Admin Dashboard) */}
+                    <section className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                      {/* Card 1: Faculty Members */}
+                      <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 sm:p-5 shadow-xs h-full flex flex-col justify-between space-y-3 transition-colors">
+                        <div className="space-y-2.5">
+                          <div className="flex items-center justify-between gap-2">
+                            <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+                              Faculty Members
+                            </span>
+                            <Group className="h-5 w-5 text-slate-400 shrink-0" strokeWidth={2} />
+                          </div>
 
-                        <div className="flex flex-wrap items-center justify-end gap-2 shrink-0 sm:ml-auto">
+                          <div className="flex items-center justify-between gap-2">
+                            <h3 className="text-xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">
+                              {facultyStats.active} Active
+                            </h3>
+                            <span className="inline-flex items-center rounded-full bg-[#0b5336] text-white border border-[#08412a] px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider whitespace-nowrap shrink-0">
+                              {facultyStats.activePct}% Active
+                            </span>
+                          </div>
+
+                          <div className="h-1.5 w-full overflow-hidden rounded-full bg-slate-200 dark:bg-slate-800">
+                            <div
+                              className="h-full rounded-full bg-[#0b5336] transition-all duration-500"
+                              style={{
+                                width: `${facultyStats.total > 0 ? Math.min(100, Math.max(4, (facultyStats.active / facultyStats.total) * 100)) : 0}%`,
+                              }}
+                            />
+                          </div>
+                        </div>
+
+                        <div className="pt-2 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between gap-2 mt-auto">
+                          <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate min-w-0">
+                            {facultyStats.completed} finished • {facultyStats.inProgress} in progress
+                          </p>
                           <button
                             type="button"
-                            onClick={() => void refreshCurrentPanel()}
-                            disabled={isRefreshing}
-                            title="Refresh dashboard"
-                            className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white hover:bg-slate-50 dark:bg-slate-800 dark:hover:bg-slate-750 text-slate-700 dark:text-slate-200 px-3.5 py-2 sm:py-1.5 text-xs font-semibold transition-all disabled:opacity-50 cursor-pointer shadow-xs active:scale-[0.98]"
+                            onClick={() => handleSetActiveSection("facultyManagement")}
+                            className="inline-flex items-center gap-1 text-xs font-bold text-[#800000] dark:text-amber-400 hover:underline cursor-pointer shrink-0"
                           >
-                            <Refresh
-                              className={`h-3.5 w-3.5 ${isRefreshing ? "animate-spin" : ""}`}
-                            />
-                            <span>{isRefreshing ? "Refreshing..." : "Refresh"}</span>
+                            <span>View faculty</span>
+                            <NavArrowRight className="h-3.5 w-3.5" />
                           </button>
                         </div>
                       </div>
-                    </div>
 
-                    {/* Clean Status Counts with Legend Strip */}
-                    <div className="flex flex-wrap items-center gap-3 sm:gap-4 text-xs sm:text-sm text-slate-600 dark:text-slate-400 font-medium pt-1">
-                      <span className="inline-flex items-center gap-1.5" title="Approved: Requirements checked and accepted">
-                        <span className="inline-flex items-center justify-center h-5 w-5 rounded-full bg-[#0b5336] text-white border border-[#08412a] shrink-0 shadow-2xs">
-                          <AppIcon icon={Check} size="xs" color="white" />
-                        </span>
-                        <span>
-                          <strong className="text-slate-900 dark:text-slate-100 font-semibold">{dashboardStats?.verified ?? 0}</strong> Approved
-                        </span>
-                      </span>
-                      <span className="inline-flex items-center gap-1.5" title="Waiting for review: Files needing your check">
-                        <span className="inline-flex items-center justify-center h-5 w-5 rounded-full bg-amber-500 text-slate-950 border border-amber-600 shrink-0 shadow-2xs">
-                          <AppIcon icon={Hourglass} size="xs" color="inherit" />
-                        </span>
-                        <span>
-                          <strong className="text-slate-900 dark:text-slate-100 font-semibold">{dashboardStats?.pending ?? 0}</strong> Waiting for Review
-                        </span>
-                      </span>
-                      <span className="inline-flex items-center gap-1.5" title="Needs changes: Returned for corrections">
-                        <span className="inline-flex items-center justify-center h-5 w-5 rounded-full bg-[#780000] text-white border border-[#5e0000] shrink-0 shadow-2xs">
-                          <AppIcon icon={Xmark} size="xs" color="white" />
-                        </span>
-                        <span>
-                          <strong className="text-slate-900 dark:text-slate-100 font-semibold">{dashboardStats?.revisions ?? 0}</strong> Needs Changes
-                        </span>
-                      </span>
-                      <span className="inline-flex items-center gap-1.5" title="Active Faculty: Registered teachers in the system">
-                        <span className="inline-flex items-center justify-center h-5 w-5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border border-slate-300 dark:border-slate-700 shrink-0 shadow-2xs">
-                          <AppIcon icon={Group} size="xs" color="inherit" />
-                        </span>
-                        <span>
-                          <strong className="text-slate-900 dark:text-slate-100 font-semibold">
-                            {dashboardStats && dashboardStats.totalFaculty > 0 ? dashboardStats.activeFaculty : facultyAccounts.filter((f) => f.is_active).length}
-                          </strong> Active Teachers
-                        </span>
-                      </span>
-                    </div>
+                      {/* Card 2: Overall Progress */}
+                      {(() => {
+                        const verified = dashboardStats?.verified ?? 0;
+                        const pending = dashboardStats?.pending ?? 0;
+                        const revisions = dashboardStats?.revisions ?? 0;
+                        const totalSubmissions = verified + pending + revisions;
+                        const approvedPct =
+                          totalSubmissions > 0
+                            ? Math.round((verified / totalSubmissions) * 100)
+                            : 0;
+                        const pendingPct =
+                          totalSubmissions > 0
+                            ? Math.round((pending / totalSubmissions) * 100)
+                            : 0;
 
-                    {/* Top Stat Summary Grid (3 Cards) */}
-                    <section className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-5">
-                      {/* Card 1: Overall Progress */}
-                      <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs p-5 sm:p-6 space-y-3 transition-colors">
-                        <div className="flex items-center justify-between">
-                          <span className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-                            Overall Progress
-                          </span>
-                          <CheckCircle className="h-5 w-5 text-emerald-600 dark:text-emerald-400" strokeWidth={2} />
-                        </div>
-                        <div>
-                          <div className="flex items-baseline justify-between">
-                            <h3 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">
-                              {isLoadingStats ? "..." : `${dashboardStats?.verified ?? 0} Approved`}
+                        return (
+                          <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 sm:p-5 shadow-xs h-full flex flex-col justify-between space-y-3 transition-colors">
+                            <div className="space-y-2.5">
+                              <div className="flex items-center justify-between gap-2">
+                                <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+                                  Submission Progress
+                                </span>
+                                <CheckCircle className="h-5 w-5 text-slate-400 shrink-0" strokeWidth={2} />
+                              </div>
+
+                              <div className="flex items-center justify-between gap-2">
+                                <h3 className="text-xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">
+                                  {isLoadingStats ? "..." : `${verified} Approved`}
+                                </h3>
+                                <span className="inline-flex items-center rounded-full bg-[#0b5336] text-white border border-[#08412a] px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider whitespace-nowrap shrink-0">
+                                  {approvedPct}% Verified
+                                </span>
+                              </div>
+
+                              <div className="space-y-1">
+                                <div className="flex items-center justify-between gap-2 text-[11px]">
+                                  <span className="text-slate-600 dark:text-slate-400 truncate min-w-0">
+                                    Approved Files
+                                  </span>
+                                  <span className="font-semibold text-slate-700 dark:text-slate-300 whitespace-nowrap shrink-0">
+                                    {verified} / {totalSubmissions} ({approvedPct}%)
+                                  </span>
+                                </div>
+                                <div className="h-1.5 w-full overflow-hidden rounded-full bg-slate-200 dark:bg-slate-800">
+                                  <div
+                                    className="h-full rounded-full bg-[#0b5336] transition-all duration-500"
+                                    style={{
+                                      width: `${totalSubmissions > 0 ? Math.min(100, Math.max(verified > 0 ? 4 : 0, approvedPct)) : 0}%`,
+                                    }}
+                                  />
+                                </div>
+                              </div>
+
+                              <div className="space-y-1">
+                                <div className="flex items-center justify-between gap-2 text-[11px]">
+                                  <span className="text-slate-600 dark:text-slate-400 truncate min-w-0">
+                                    Waiting for Review
+                                  </span>
+                                  <span className="font-semibold text-slate-700 dark:text-slate-300 whitespace-nowrap shrink-0">
+                                    {pending} / {totalSubmissions} ({pendingPct}%)
+                                  </span>
+                                </div>
+                                <div className="h-1.5 w-full overflow-hidden rounded-full bg-slate-200 dark:bg-slate-800">
+                                  <div
+                                    className="h-full rounded-full bg-amber-500 transition-all duration-500"
+                                    style={{
+                                      width: `${totalSubmissions > 0 ? Math.min(100, Math.max(pending > 0 ? 4 : 0, pendingPct)) : 0}%`,
+                                    }}
+                                  />
+                                </div>
+                              </div>
+                            </div>
+
+                            <div className="pt-2 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between gap-2 mt-auto">
+                              <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate min-w-0">
+                                {revisions > 0
+                                  ? `${revisions} returned for revision`
+                                  : `${pending} waiting in review queue`}
+                              </p>
+                              <button
+                                type="button"
+                                onClick={() => handleSetActiveSection("requirements")}
+                                className="inline-flex items-center gap-1 text-xs font-bold text-[#800000] dark:text-amber-400 hover:underline cursor-pointer shrink-0"
+                              >
+                                <span>Verify files</span>
+                                <NavArrowRight className="h-3.5 w-3.5" />
+                              </button>
+                            </div>
+                          </div>
+                        );
+                      })()}
+
+                      {/* Card 3: Submission Window & Term */}
+                      <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 sm:p-5 shadow-xs h-full flex flex-col justify-between space-y-3 transition-colors">
+                        <div className="space-y-2.5">
+                          <div className="flex items-center justify-between gap-2">
+                            <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+                              Submission Window
+                            </span>
+                            <Calendar className="h-5 w-5 text-slate-400 shrink-0" strokeWidth={2} />
+                          </div>
+
+                          <div className="flex items-center justify-between gap-2">
+                            <h3 className="text-xl font-bold text-slate-900 dark:text-slate-100 tracking-tight truncate">
+                              {windowStatus?.isAlwaysOpen
+                                ? "Always Open"
+                                : windowStatus?.isOpen
+                                  ? "Open"
+                                  : windowStatus?.status === "Upcoming"
+                                    ? "Opening Soon"
+                                    : "Closed"}
                             </h3>
-                            <span className="text-xs sm:text-sm font-bold text-emerald-600 dark:text-emerald-400">
-                              {(() => {
-                                const total = (dashboardStats?.verified ?? 0) + (dashboardStats?.pending ?? 0) + (dashboardStats?.revisions ?? 0);
-                                return total > 0 ? Math.round(((dashboardStats?.verified ?? 0) / total) * 100) : 0;
-                              })()}%
+                            <span
+                              className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider whitespace-nowrap shrink-0 border ${
+                                windowStatus?.isOpen || windowStatus?.isAlwaysOpen
+                                  ? "bg-[#0b5336] text-white border-[#08412a]"
+                                  : windowStatus?.status === "Upcoming"
+                                    ? "bg-amber-500 text-amber-950 border-amber-600"
+                                    : "bg-[#780000] text-white border-[#5e0000]"
+                              }`}
+                            >
+                              {windowStatus?.isOpen || windowStatus?.isAlwaysOpen
+                                ? "Active"
+                                : windowStatus?.status === "Upcoming"
+                                  ? "Scheduled"
+                                  : "Locked"}
                             </span>
                           </div>
-                          <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1 font-medium">
-                            {isLoadingStats
-                              ? "Loading progress..."
-                              : `${dashboardStats?.verified ?? 0} approved • ${dashboardStats?.pending ?? 0} waiting for review`}
-                          </p>
-                        </div>
-                        <div className="h-2.5 w-full overflow-hidden rounded-full bg-slate-200 dark:bg-slate-800/90 border border-slate-300 dark:border-slate-700">
-                          <div
-                            className="h-full bg-emerald-500 transition-all duration-500 rounded-full"
-                            style={{
-                              width: `${(() => {
-                                const total = (dashboardStats?.verified ?? 0) + (dashboardStats?.pending ?? 0) + (dashboardStats?.revisions ?? 0);
-                                return total > 0 ? Math.min(100, Math.round(((dashboardStats?.verified ?? 0) / total) * 100)) : 0;
-                              })()}%`,
-                            }}
-                          />
-                        </div>
-                      </div>
 
-                      {/* Card 2: Submission Schedule / Window Status */}
-                      <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs p-5 sm:p-6 space-y-3 transition-colors">
-                        <div className="flex items-center justify-between">
-                          <span className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-                            Submission Window
-                          </span>
-                          <Calendar className="h-5 w-5 text-slate-400" strokeWidth={2} />
-                        </div>
-                        <div>
-                          <h3 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">
+                          <p className="text-xs font-medium text-slate-600 dark:text-slate-300">
+                            {dashboardStats?.currentAcademicYear
+                              ? `A.Y. ${dashboardStats.currentAcademicYear} • ${dashboardStats.currentSemester || "1st Semester"}`
+                              : "No active academic term configured"}
+                          </p>
+                          <p className="text-[11px] text-slate-500 dark:text-slate-400">
                             {windowStatus?.isAlwaysOpen
-                              ? "Always Open"
-                              : windowStatus?.isOpen
-                                ? "Open for Submissions"
-                                : windowStatus?.status === "Upcoming"
-                                  ? "Opening Soon"
-                                  : "Submissions Closed"}
-                          </h3>
-                          <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1 font-medium">
-                            {windowStatus?.endDate && windowStatus?.endTimeLabel
-                              ? `Deadline: ${windowStatus.endDate} at ${windowStatus.endTimeLabel}`
-                              : "No deadline set yet"}
+                              ? "No closing deadline set"
+                              : windowStatus?.endDate && windowStatus?.endTimeLabel
+                                ? `Deadline: ${windowStatus.endDate} at ${windowStatus.endTimeLabel}`
+                                : "No active deadline configured"}
                           </p>
                         </div>
-                        <p className="text-xs text-slate-500 dark:text-slate-400">
-                          {windowStatus?.isOpen
-                            ? "Faculty members can upload and submit files right now"
-                            : "Submissions are currently closed"}
-                        </p>
-                      </div>
 
-                      {/* Card 3: Action Required */}
-                      <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs p-5 sm:p-6 space-y-3 transition-colors">
-                        <div className="flex items-center justify-between">
-                          <span className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-                            Needs Your Review
-                          </span>
-                          <TaskList className="h-5 w-5 text-slate-400" strokeWidth={2} />
-                        </div>
-                        <div>
-                          <h3 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-slate-100 tracking-tight flex items-center gap-2">
-                            <span>{isLoadingStats ? "..." : `${dashboardStats?.pending ?? 0} Waiting`}</span>
-                            {!isLoadingStats && dashboardStats && dashboardStats.revisions > 0 && (
-                              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">
-                                {dashboardStats.revisions} sent back
-                              </span>
-                            )}
-                          </h3>
-                          <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1 font-medium">
-                            Files waiting for you to check and approve
+                        <div className="pt-2 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between gap-2 mt-auto">
+                          <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate min-w-0">
+                            {(dashboardStats?.pending ?? 0) > 0
+                              ? `${dashboardStats?.pending} submission(s) awaiting review`
+                              : "All caught up! No files waiting"}
                           </p>
+                          <button
+                            type="button"
+                            onClick={() => handleSetActiveSection("requirements")}
+                            className="inline-flex items-center gap-1 text-xs font-bold text-[#800000] dark:text-amber-400 hover:underline cursor-pointer shrink-0"
+                          >
+                            <span>Check queue</span>
+                            <NavArrowRight className="h-3.5 w-3.5" />
+                          </button>
                         </div>
-                        <p className="text-xs text-slate-500 dark:text-slate-400">
-                          {(dashboardStats?.pending ?? 0) > 0
-                            ? `${dashboardStats?.pending} submission(s) waiting in your queue`
-                            : "You're all caught up! No files waiting."}
-                        </p>
                       </div>
                     </section>
 
-                    {/* Main Dashboard Body: 2-Column Layout */}
-                    <section className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
-                      {/* Left Column (2-Span) — Pending Verification Queue */}
-                      <div className="lg:col-span-2 space-y-4">
-                        <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs p-5 sm:p-6 space-y-4 transition-colors">
-                          <div className="flex items-center justify-between pb-3 border-b border-slate-300 dark:border-slate-800">
-                            <div className="flex items-center gap-2">
-                              <h3 className="text-base sm:text-lg font-bold text-slate-900 dark:text-slate-100 tracking-tight">
-                                Files Waiting for Review
-                              </h3>
-                              {pendingQueue.length > 0 && (
-                                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500 text-slate-950">
-                                  {pendingQueue.length}
-                                </span>
-                              )}
-                            </div>
-                            <button
-                              type="button"
-                              onClick={() => handleSetActiveSection("requirements")}
-                              className="text-xs sm:text-sm text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200 transition cursor-pointer font-semibold"
-                            >
-                              View all
-                            </button>
-                          </div>
-
-                          {pendingQueue.length === 0 ? (
-                            <div className="py-8 text-center space-y-2">
-                              <div className="inline-flex items-center justify-center h-10 w-10 rounded-full bg-[#0b5336] text-white border border-[#08412a] shadow-xs mb-1">
-                                <AppIcon icon={Check} size="md" color="white" strokeWidth={2.5} />
-                              </div>
-                              <p className="text-sm font-semibold text-slate-800 dark:text-slate-200">All caught up!</p>
-                              <p className="text-xs text-slate-500 dark:text-slate-400">There are no submissions waiting for review right now.</p>
-                            </div>
-                          ) : (
-                            <div className="space-y-3">
-                              {pendingQueue.slice(0, 5).map((item) => (
-                                <div
-                                  key={item.id}
-                                  className="flex items-start gap-3.5 p-3.5 rounded-xl bg-slate-50 hover:bg-slate-100/80 dark:bg-slate-950/60 dark:hover:bg-slate-950/90 border border-slate-300 dark:border-slate-800/80 transition-colors"
-                                >
-                                  <div className="mt-0.5 shrink-0">
-                                    <span className="inline-flex items-center justify-center h-8 w-8 rounded-full bg-amber-500/20 text-amber-700 dark:text-amber-400 border border-amber-500/40">
-                                      <AppIcon icon={Hourglass} size="sm" color="inherit" />
-                                    </span>
-                                  </div>
-                                  <div className="flex-1 min-w-0">
-                                    <div className="flex items-center gap-2">
-                                      <p className="text-sm font-semibold text-slate-900 dark:text-slate-100 truncate">
-                                        {item.facultyName}
-                                      </p>
-                                      {item.isRevision && (
-                                        <span className="px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/30 text-[10px] font-bold">
-                                          Revised
-                                        </span>
-                                      )}
-                                    </div>
-                                    <p className="text-xs text-slate-600 dark:text-slate-400 mt-0.5 truncate">
-                                      {item.requirementTitle}
-                                    </p>
-                                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                                      Turned in: {new Date(item.submittedAt).toLocaleDateString("en-PH", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}
-                                    </p>
-                                  </div>
-                                  <button
-                                    type="button"
-                                    onClick={() => {
-                                      if (item.facultyId) {
-                                        setSelectedFacultyId(item.facultyId);
-                                        setInitialReviewFacultyId(item.facultyId);
-                                      }
-                                      if (item.requirementCode) {
-                                        setInitialHighlightRequirementCode(item.requirementCode);
-                                      }
-                                      handleSetActiveSection("requirements");
-                                    }}
-                                    className="shrink-0 px-3.5 py-2 rounded-xl bg-[#580000] hover:bg-[#780000] text-white text-xs font-semibold shadow-xs transition-colors cursor-pointer"
-                                  >
-                                    Review
-                                  </button>
-                                </div>
-                              ))}
-                            </div>
-                          )}
-                        </div>
-                      </div>
-
-                      {/* Right Column (1-Span) — Recent Admin Actions / Activity */}
-                      <div className="space-y-4">
-                        <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs p-5 sm:p-6 space-y-4 transition-colors">
-                          <div className="flex items-center justify-between pb-3 border-b border-slate-300 dark:border-slate-800">
-                            <h3 className="text-base sm:text-lg font-bold text-slate-900 dark:text-slate-100 tracking-tight">
-                              Recent Activity
-                            </h3>
-                            <button
-                              type="button"
-                              onClick={() => handleSetActiveSection("requirements")}
-                              className="text-xs sm:text-sm text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200 transition cursor-pointer font-semibold"
-                            >
-                              View all
-                            </button>
-                          </div>
-                          {recentActivity.length === 0 ? (
-                            <div className="py-8 text-center">
-                              <p className="text-xs text-slate-500 dark:text-slate-400">No recent activity yet.</p>
-                            </div>
-                          ) : (
-                            <div className="space-y-3">
-                              {recentActivity.slice(0, 4).map((act) => (
-                                <div
-                                  key={act.id}
-                                  className="flex items-start gap-3.5 p-3.5 rounded-xl bg-slate-50 hover:bg-slate-100/80 dark:bg-slate-950/60 dark:hover:bg-slate-950/90 border border-slate-300 dark:border-slate-800/80 transition-colors"
-                                >
-                                  <div className="mt-0.5 shrink-0">
-                                    {act.decision === "validated" ? (
-                                      <span className="inline-flex items-center justify-center h-8 w-8 rounded-full bg-emerald-500/20 text-emerald-700 dark:text-emerald-400 border border-emerald-500/40">
-                                        <AppIcon icon={Check} size="sm" color="inherit" />
-                                      </span>
-                                    ) : (
-                                      <span className="inline-flex items-center justify-center h-8 w-8 rounded-full bg-rose-500/20 text-rose-700 dark:text-rose-400 border border-rose-500/40">
-                                        <AppIcon icon={Xmark} size="sm" color="inherit" />
-                                      </span>
-                                    )}
-                                  </div>
-                                  <div className="flex-1 min-w-0">
-                                    <div className="flex items-center justify-between gap-2">
-                                      <p className="text-sm font-semibold text-slate-900 dark:text-slate-100 truncate">
-                                        {act.facultyName}
-                                      </p>
-                                      <SubmissionStatusBadge
-                                        status={act.decision === "validated" ? "Validated" : "Revision Requested"}
-                                        label={act.decision === "validated" ? "Approved" : "Needs Changes"}
-                                        size="sm"
-                                      />
-                                    </div>
-                                    <p className="text-xs text-slate-600 dark:text-slate-400 mt-0.5 truncate">
-                                      {act.requirementTitle}
-                                    </p>
-                                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                                      {new Date(act.createdAt).toLocaleDateString("en-PH", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}
-                                    </p>
-                                  </div>
-                                </div>
-                              ))}
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    </section>
+                    {/* TIER 2.5: Term Submission Scale & Distribution matching Admin Dashboard */}
+                    <SuperAdminComplianceAnalytics
+                      facultyAccounts={facultyAccounts}
+                      isLoadingFaculty={isLoading}
+                      onInspectFaculty={(facultyId) => {
+                        handleSelectFaculty(facultyId);
+                        handleSetActiveSection("requirements");
+                      }}
+                      onNavigateSection={(sec) => {
+                        if (sec === "faculty") {
+                          handleSetActiveSection("facultyManagement");
+                        } else {
+                          handleSetActiveSection("requirements");
+                        }
+                      }}
+                    />
                   </article>
                 ) : null}
 
                 {activeSection === "facultyManagement" ? (
-                  <article className="space-y-4 p-2 sm:p-4 md:p-5">
-                    {/* Solid Amber Card Header */}
-                    <div className="relative overflow-hidden rounded-2xl border-2 border-amber-500 bg-amber-400 p-5 sm:p-6 shadow-md shadow-amber-500/10 flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
-                      <div>
-                        <h1 className="text-2xl sm:text-3xl font-black text-slate-950 tracking-tight">
+                  <article className="space-y-4 sm:space-y-5">
+                    {/* Solid Amber Card Header matching Admin */}
+                    <div className="relative overflow-hidden rounded-2xl border-2 border-amber-500 bg-amber-400 p-4 sm:p-6 shadow-md shadow-amber-500/10 flex flex-col lg:flex-row lg:items-center justify-between gap-3.5 sm:gap-4">
+                      <div className="min-w-0">
+                        <h1 className="text-xl sm:text-3xl font-black text-slate-950 tracking-tight">
                           Faculty Management
                         </h1>
-                        <p className="mt-1.5 text-sm sm:text-base text-amber-950/90 font-medium leading-relaxed">
+                        <p className="mt-1 sm:mt-1.5 text-xs sm:text-base text-amber-950/90 font-medium leading-relaxed">
                           View, manage, and monitor faculty profiles, department assignments, and account statuses.
                         </p>
                       </div>
-                      <div className="flex items-center gap-2 w-full sm:w-auto shrink-0 flex-wrap">
+                      <div className="grid grid-cols-1 sm:flex sm:items-center gap-2 w-full lg:w-auto shrink-0 flex-wrap">
                         <button
                           type="button"
                           onClick={() => {
@@ -1291,15 +1257,15 @@ export function AdminFacultyDashboard({
                 ) : null}
 
                 {activeSection === "requirements" ? (
-                  <article className="space-y-4 p-2 sm:p-4 md:p-5">
-                    {/* Solid Amber Card Header - only show when in faculty list */}
+                  <article className="space-y-4 sm:space-y-5">
+                    {/* Solid Amber Card Header matching Admin - only show when in faculty list */}
                     {!selectedFaculty ? (
-                      <div className="relative overflow-hidden rounded-2xl border-2 border-amber-500 bg-amber-400 p-5 sm:p-6 shadow-md shadow-amber-500/10 flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
-                        <div>
-                          <h1 className="text-2xl sm:text-3xl font-black text-slate-950 tracking-tight">
+                      <div className="relative overflow-hidden rounded-2xl border-2 border-amber-500 bg-amber-400 p-4 sm:p-6 shadow-md shadow-amber-500/10 flex flex-col sm:flex-row sm:items-center justify-between gap-3.5 sm:gap-4">
+                        <div className="min-w-0">
+                          <h1 className="text-xl sm:text-3xl font-black text-slate-950 tracking-tight">
                             Requirements Verification
                           </h1>
-                          <p className="mt-1.5 text-sm sm:text-base text-amber-950/90 font-medium leading-relaxed">
+                          <p className="mt-1 sm:mt-1.5 text-xs sm:text-base text-amber-950/90 font-medium leading-relaxed">
                             Review, validate, or request revisions for submitted faculty compliance documents for this academic term.
                           </p>
                         </div>
@@ -1322,18 +1288,20 @@ export function AdminFacultyDashboard({
                       selectedFaculty={selectedFaculty}
                       onSelectFaculty={handleSelectFaculty}
                       resetTrigger={verificationResetTrigger}
-                      initialReviewFacultyId={initialReviewFacultyId}
-                      initialRequirementCode={initialHighlightRequirementCode}
+                      initialReviewFacultyId={
+                        initialReviewFacultyId || searchParams?.get("facultyId") || null
+                      }
+                      initialRequirementCode={
+                        initialHighlightRequirementCode || searchParams?.get("reqCode") || null
+                      }
                       initialAcademicYear={dashboardStats?.currentAcademicYear}
                       initialSemester={dashboardStats?.currentSemester as any}
                     />
                   </article>
                 ) : null}
 
-
-
                 {activeSection === "settings" ? (
-                  <article className="space-y-4 p-2 sm:p-4 md:p-5">
+                  <article className="space-y-4 sm:space-y-5">
                     <AdminSettings
                       adminName={(currentAdminName || adminName) ?? "Admin"}
                       adminEmail={adminEmail ?? null}
