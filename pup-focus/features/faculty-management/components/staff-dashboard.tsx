@@ -1131,50 +1131,68 @@ export function AdminFacultyDashboard({
 
                           <div className="flex items-center justify-between gap-2">
                             <h3 className="text-xl font-bold text-slate-900 dark:text-slate-100 tracking-tight truncate">
-                              {windowStatus?.isAlwaysOpen
-                                ? "Always Open"
-                                : windowStatus?.isOpen
-                                  ? "Open"
-                                  : windowStatus?.status === "Upcoming"
-                                    ? "Opening Soon"
-                                    : "Closed"}
+                              {!windowStatus
+                                ? "Checking..."
+                                : windowStatus.isAlwaysOpen
+                                  ? "Always Open"
+                                  : windowStatus.isOpen
+                                    ? "Submission Open"
+                                    : windowStatus.status === "Upcoming"
+                                      ? "Opening Soon"
+                                      : "Submission Closed"}
                             </h3>
                             <span
                               className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider whitespace-nowrap shrink-0 border ${
-                                windowStatus?.isOpen || windowStatus?.isAlwaysOpen
-                                  ? "bg-[#0b5336] text-white border-[#08412a]"
-                                  : windowStatus?.status === "Upcoming"
-                                    ? "bg-amber-500 text-amber-950 border-amber-600"
-                                    : "bg-[#780000] text-white border-[#5e0000]"
+                                !windowStatus
+                                  ? "bg-slate-100 text-slate-600 border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700"
+                                  : windowStatus.isOpen || windowStatus.isAlwaysOpen
+                                    ? "bg-[#0b5336] text-white border-[#08412a]"
+                                    : windowStatus.status === "Upcoming"
+                                      ? "bg-amber-500 text-amber-950 border-amber-600"
+                                      : "bg-[#780000] text-white border-[#5e0000]"
                               }`}
                             >
-                              {windowStatus?.isOpen || windowStatus?.isAlwaysOpen
-                                ? "Active"
-                                : windowStatus?.status === "Upcoming"
-                                  ? "Scheduled"
-                                  : "Locked"}
+                              {!windowStatus
+                                ? "Syncing"
+                                : windowStatus.isOpen || windowStatus.isAlwaysOpen
+                                  ? "Open"
+                                  : windowStatus.status === "Upcoming"
+                                    ? "Scheduled"
+                                    : "Closed"}
                             </span>
                           </div>
 
-                          <p className="text-xs font-medium text-slate-600 dark:text-slate-300">
+                          <p className="text-xs font-medium text-slate-600 dark:text-slate-300 truncate">
                             {dashboardStats?.currentAcademicYear
                               ? `A.Y. ${dashboardStats.currentAcademicYear} • ${dashboardStats.currentSemester || "1st Semester"}`
                               : "No active academic term configured"}
                           </p>
-                          <p className="text-[11px] text-slate-500 dark:text-slate-400">
-                            {windowStatus?.isAlwaysOpen
-                              ? "No closing deadline set"
-                              : windowStatus?.endDate && windowStatus?.endTimeLabel
-                                ? `Deadline: ${windowStatus.endDate} at ${windowStatus.endTimeLabel}`
-                                : "No active deadline configured"}
+                          <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate">
+                            {!windowStatus
+                              ? "Loading submission schedule..."
+                              : windowStatus.isAlwaysOpen
+                                ? "No closing deadline set"
+                                : windowStatus.status === "Upcoming" &&
+                                    windowStatus.startDate &&
+                                    windowStatus.startTimeLabel
+                                  ? `Opens: ${windowStatus.startDate} at ${windowStatus.startTimeLabel}`
+                                  : windowStatus.endDate && windowStatus.endTimeLabel
+                                    ? `Deadline: ${windowStatus.endDate} at ${windowStatus.endTimeLabel}`
+                                    : windowStatus.isOpen
+                                      ? "Accepting faculty submissions"
+                                      : "Submissions are currently closed"}
                           </p>
                         </div>
 
                         <div className="pt-2 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between gap-2 mt-auto">
                           <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate min-w-0">
-                            {(dashboardStats?.pending ?? 0) > 0
-                              ? `${dashboardStats?.pending} submission(s) awaiting review`
-                              : "All caught up! No files waiting"}
+                            {!windowStatus
+                              ? "Checking portal status"
+                              : windowStatus.isOpen || windowStatus.isAlwaysOpen
+                                ? "Faculty can upload files now"
+                                : windowStatus.status === "Upcoming"
+                                  ? "Waiting for scheduled start"
+                                  : "Faculty uploads are locked"}
                           </p>
                           <button
                             type="button"

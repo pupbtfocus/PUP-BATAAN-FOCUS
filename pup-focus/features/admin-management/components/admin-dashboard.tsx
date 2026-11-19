@@ -10,7 +10,7 @@ import { isValidEmailAddress } from "@/lib/validation/email";
 import { ROLE, ROLE_LABEL, type AppRole, canManageAdminAccount } from "@/config/roles";
 import { TransactionLogsPanel } from "@/features/transaction-logs/components/transaction-logs-panel";
 import { SystemHeartbeatSection } from "@/features/transaction-logs/components/system-heartbeat-section";
-import { Activity, CheckCircle, ClockRotateRight, EditPencil, Eye, EyeClosed, Group, Key, Menu, NavArrowRight, Page, Refresh, SendMail, Shield, User, UserPlus, Xmark } from "iconoir-react";
+import { Activity, Calendar, CheckCircle, ClockRotateRight, EditPencil, Eye, EyeClosed, Group, Key, Menu, NavArrowRight, Page, Refresh, SendMail, Shield, User, UserPlus, Xmark } from "iconoir-react";
 import { AppIcon } from "@/components/ui/app-icon";
 import { ModalHeader } from "@/components/ui/modal-header";
 import { AlertPopup } from "@/components/ui/alert-popup";
@@ -1210,6 +1210,36 @@ export function SuperAdminDashboard({
   }
 
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [windowStatus, setWindowStatus] = useState<{
+    isOpen?: boolean;
+    isAlwaysOpen?: boolean;
+    status?: string;
+    startDate?: string | null;
+    endDate?: string | null;
+    startTimeLabel?: string | null;
+    endTimeLabel?: string | null;
+  } | null>(null);
+
+  async function loadSubmissionWindowStatus() {
+    try {
+      const res = await fetch(`/api/staff/submission-window?_t=${Date.now()}`, {
+        credentials: "include",
+        cache: "no-store",
+      });
+      if (res.ok) {
+        const winData = await res.json();
+        const isAlwaysOpenWindow = Boolean(
+          winData.endDate &&
+            (winData.endDate.startsWith("2099") ||
+              new Date(winData.endDate).getFullYear() >= 2099),
+        );
+        setWindowStatus({
+          ...winData,
+          isAlwaysOpen: isAlwaysOpenWindow,
+        });
+      }
+    } catch {}
+  }
 
   async function refreshCurrentPanel() {
     if (isRefreshing) return;
@@ -1229,9 +1259,18 @@ export function SuperAdminDashboard({
       } else if (activeSection === "templates" || activeSection === "programs") {
         setTemplatesRefreshTrigger((prev) => prev + 1);
       } else if (activeSection === "dashboard") {
-        await Promise.all([loadAdminAccounts(true), loadFacultyFromDatabase(true)]);
+        await Promise.all([
+          loadAdminAccounts(true),
+          loadFacultyFromDatabase(true),
+          loadCurrentTerm(),
+          loadSubmissionWindowStatus(),
+        ]);
       } else {
-        await Promise.all([loadAdminAccounts(true), loadFacultyFromDatabase(true)]);
+        await Promise.all([
+          loadAdminAccounts(true),
+          loadFacultyFromDatabase(true),
+          loadSubmissionWindowStatus(),
+        ]);
       }
       emitRealtimeSync({ source: "manual-refresh", timestamp: Date.now() });
     } finally {
@@ -1277,6 +1316,7 @@ export function SuperAdminDashboard({
     prefetchUserRegistrationLogs("admin");
     prefetchUserRegistrationLogs("faculty");
     void loadCurrentTerm();
+    void loadSubmissionWindowStatus();
   }, []);
 
   useEffect(() => {
@@ -1286,6 +1326,9 @@ export function SuperAdminDashboard({
       activeSection === "verification"
     ) {
       void loadFacultyFromDatabase(facultyAccounts.length > 0);
+      if (activeSection === "dashboard") {
+        void loadSubmissionWindowStatus();
+      }
     } else if (activeSection === "accounts") {
       void loadAdminAccounts(adminAccounts.length > 0);
     }
@@ -1296,6 +1339,7 @@ export function SuperAdminDashboard({
     void loadFacultyFromDatabase(true);
     void loadAdminAccounts(true);
     void loadCurrentTerm();
+    void loadSubmissionWindowStatus();
   });
 
   useEffect(() => {
@@ -2162,7 +2206,7 @@ export function SuperAdminDashboard({
                 </div>
 
                 {/* TIER 2: Stat Grid */}
-                <section className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                <section className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
                   {/* Card 1: Active Admin & Staff Accounts */}
                   <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 sm:p-5 shadow-xs h-full flex flex-col justify-between space-y-3 transition-colors">
                     <div className="space-y-2.5">
@@ -2282,7 +2326,93 @@ export function SuperAdminDashboard({
                     </div>
                   </div>
 
-                  {/* Card 3: Database Capacity */}
+                  {/* Card 3: Submission Window Status */}
+                  <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 sm:p-5 shadow-xs h-full flex flex-col justify-between space-y-3 transition-colors">
+                    <div className="space-y-2.5">
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+                          Submission Window
+                        </span>
+                        <Calendar className="h-5 w-5 text-slate-400 shrink-0" strokeWidth={2} />
+                      </div>
+
+                      <div className="flex items-center justify-between gap-2">
+                        <h3 className="text-xl font-bold text-slate-900 dark:text-slate-100 tracking-tight truncate">
+                          {!windowStatus
+                            ? "Checking..."
+                            : windowStatus.isAlwaysOpen
+                              ? "Always Open"
+                              : windowStatus.isOpen
+                                ? "Submission Open"
+                                : windowStatus.status === "Upcoming"
+                                  ? "Opening Soon"
+                                  : "Submission Closed"}
+                        </h3>
+                        <span
+                          className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider whitespace-nowrap shrink-0 border ${
+                            !windowStatus
+                              ? "bg-slate-100 text-slate-600 border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700"
+                              : windowStatus.isOpen || windowStatus.isAlwaysOpen
+                                ? "bg-[#0b5336] text-white border-[#08412a]"
+                                : windowStatus.status === "Upcoming"
+                                  ? "bg-amber-500 text-amber-950 border-amber-600"
+                                  : "bg-[#780000] text-white border-[#5e0000]"
+                          }`}
+                        >
+                          {!windowStatus
+                            ? "Syncing"
+                            : windowStatus.isOpen || windowStatus.isAlwaysOpen
+                              ? "Open"
+                              : windowStatus.status === "Upcoming"
+                                ? "Scheduled"
+                                : "Closed"}
+                        </span>
+                      </div>
+
+                      <p className="text-xs font-medium text-slate-600 dark:text-slate-300 truncate">
+                        {currentAcademicYear
+                          ? `A.Y. ${currentAcademicYear} • ${currentSemester || "1st Semester"}`
+                          : "No active academic term configured"}
+                      </p>
+                      <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate">
+                        {!windowStatus
+                          ? "Loading submission schedule..."
+                          : windowStatus.isAlwaysOpen
+                            ? "No closing deadline set"
+                            : windowStatus.status === "Upcoming" &&
+                                windowStatus.startDate &&
+                                windowStatus.startTimeLabel
+                              ? `Opens: ${windowStatus.startDate} at ${windowStatus.startTimeLabel}`
+                              : windowStatus.endDate && windowStatus.endTimeLabel
+                                ? `Deadline: ${windowStatus.endDate} at ${windowStatus.endTimeLabel}`
+                                : windowStatus.isOpen
+                                  ? "Accepting faculty submissions"
+                                  : "Submissions are currently closed"}
+                      </p>
+                    </div>
+
+                    <div className="pt-2 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between gap-2 mt-auto">
+                      <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate min-w-0">
+                        {!windowStatus
+                          ? "Checking portal status"
+                          : windowStatus.isOpen || windowStatus.isAlwaysOpen
+                            ? "Faculty can upload files now"
+                            : windowStatus.status === "Upcoming"
+                              ? "Waiting for scheduled start"
+                              : "Faculty uploads are locked"}
+                      </p>
+                      <button
+                        type="button"
+                        onClick={() => handleSetActiveSection("window")}
+                        className="inline-flex items-center gap-1 text-xs font-bold text-[#800000] dark:text-amber-400 hover:underline cursor-pointer shrink-0"
+                      >
+                        <span>Manage window</span>
+                        <NavArrowRight className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Card 4: Database Capacity */}
                   <DatabaseCapacityAlert
                     showCard
                     onManageStorage={() => handleSetActiveSection("backups")}
