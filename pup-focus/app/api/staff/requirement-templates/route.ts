@@ -155,15 +155,8 @@ export async function GET(request: NextRequest) {
       .order("id", { ascending: true });
 
     if (error) {
-      console.warn("requirement_templates table lookup fallback:", error.message);
-      // Fallback to defaults
-      const mapped = DEFAULT_SEEDS.map((s, idx) => ({
-        id: `default-${idx + 1}`,
-        ...s,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      }));
-      return NextResponse.json({ templates: mapped });
+      console.warn("requirement_templates table lookup error:", error.message);
+      return NextResponse.json({ templates: [] });
     }
 
     // If table is empty, auto-seed defaults
@@ -210,7 +203,14 @@ export async function GET(request: NextRequest) {
       description: cleanDescription(r.description),
     }));
     const filtered = onlyActive ? sanitizedRows.filter((r) => r.is_active) : sanitizedRows;
-    return NextResponse.json({ templates: filtered });
+    return NextResponse.json(
+      { templates: filtered },
+      {
+        headers: {
+          "Cache-Control": "no-store, no-cache, must-revalidate",
+        },
+      },
+    );
   } catch (error) {
     console.error("GET requirement-templates error:", error);
     return NextResponse.json(

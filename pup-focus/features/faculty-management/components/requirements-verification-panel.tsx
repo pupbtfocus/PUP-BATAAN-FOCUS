@@ -522,7 +522,11 @@ export function FacultyVerificationDrawer({
       is_mandatory: boolean;
       is_active?: boolean;
     }>
-  >(requirementTemplatesProp || []);
+  >(() =>
+    Array.isArray(requirementTemplatesProp)
+      ? requirementTemplatesProp.filter((t) => t.is_active !== false)
+      : [],
+  );
 
   useEffect(() => {
     if (requirementTemplatesProp && requirementTemplatesProp.length > 0) {
@@ -540,7 +544,7 @@ export function FacultyVerificationDrawer({
         });
         if (res.ok && !isCancelled) {
           const data = await res.json();
-          if (Array.isArray(data.templates) && data.templates.length > 0) {
+          if (Array.isArray(data.templates)) {
             setDbTemplates(
               data.templates
                 .filter((t: any) => t.is_active !== false)
@@ -554,7 +558,7 @@ export function FacultyVerificationDrawer({
           }
         }
       } catch {
-        // Fallback
+        // Ignore network errors and keep current state
       }
     }
     loadTemplates();
@@ -5912,19 +5916,21 @@ export function RequirementsPanel({
       });
       if (res.ok) {
         const data = await res.json();
-        if (Array.isArray(data.templates) && data.templates.length > 0) {
+        if (Array.isArray(data.templates)) {
           setRequirementTemplates(
-            data.templates.map((t: any) => ({
-              code: t.code,
-              title: t.title,
-              is_mandatory: Boolean(t.is_mandatory),
-              is_active: t.is_active !== false,
-            })),
+            data.templates
+              .filter((t: any) => t.is_active !== false)
+              .map((t: any) => ({
+                code: t.code,
+                title: t.title,
+                is_mandatory: Boolean(t.is_mandatory),
+                is_active: t.is_active !== false,
+              })),
           );
         }
       }
     } catch {
-      // Fallback
+      // Ignore network error
     }
   }, []);
 
@@ -6006,7 +6012,11 @@ export function RequirementsPanel({
   async function fetchAllStatuses(
     ay?: string,
     sem?: SemesterOption,
-    options?: { silent?: boolean; syncActiveTerm?: boolean },
+    options?: {
+      silent?: boolean;
+      syncActiveTerm?: boolean;
+      prefetchOnly?: boolean;
+    },
   ) {
     const allIds = facultyAccounts.map((f) => f?.id).filter(Boolean);
     if (allIds.length === 0) {
@@ -6014,6 +6024,7 @@ export function RequirementsPanel({
       return;
     }
 
+    const isPrefetchOnly = Boolean(options?.prefetchOnly);
     const targetAy =
       ay ??
       (activePanelTab === "history" ? historyAy : academicYear) ??
@@ -6027,14 +6038,14 @@ export function RequirementsPanel({
     const termKey = `${targetAy}::${targetSem}`;
     const cached = globalVerificationCache[termKey];
 
-    if (cached) {
+    if (cached && !isPrefetchOnly) {
       setFacultyStatuses(cached.statusMap);
       setFacultyClassProgress(cached.classProgressMap);
       setFacultySubjectProgress(cached.subjectProgressMap);
     }
 
     const hasAnyData = cached || Object.keys(facultyClassProgress).length > 0;
-    const isSilent = options?.silent || Boolean(hasAnyData);
+    const isSilent = isPrefetchOnly || options?.silent || Boolean(hasAnyData);
     if (!isSilent) {
       setIsLoadingStatuses(true);
     }
@@ -6070,21 +6081,28 @@ export function RequirementsPanel({
         if (!res.ok) return;
         const data = await res.json();
 
-        if (
-          Array.isArray(data.requirementTemplates) &&
-          data.requirementTemplates.length > 0
-        ) {
+        const isCurrentActiveResponse =
+          !isPrefetchOnly &&
+          (options?.syncActiveTerm ||
+            (activePanelTab === "current" &&
+              (!data.currentAcademicYear ||
+                (data.selectedAcademicYear === data.currentAcademicYear &&
+                  data.selectedSemester === data.currentSemester))));
+
+        if (isCurrentActiveResponse && Array.isArray(data.requirementTemplates)) {
           setRequirementTemplates(
-            data.requirementTemplates.map((t: any) => ({
-              code: t.code,
-              title: t.title,
-              is_mandatory: Boolean(t.is_mandatory),
-              is_active: t.is_active !== false,
-            })),
+            data.requirementTemplates
+              .filter((t: any) => t.is_active !== false)
+              .map((t: any) => ({
+                code: t.code,
+                title: t.title,
+                is_mandatory: Boolean(t.is_mandatory),
+                is_active: t.is_active !== false,
+              })),
           );
         }
 
-        if (options?.syncActiveTerm) {
+        if (!isPrefetchOnly && options?.syncActiveTerm) {
           const isTermConfigured = Boolean(
             data.currentTermConfigured && data.currentAcademicYear,
           );
@@ -6180,15 +6198,19 @@ export function RequirementsPanel({
           statusesByTermRef.current[resolvedKey] =
             globalVerificationCache[resolvedKey];
 
-          setFacultyStatuses(statusMap);
-          setFacultyClassProgress(classProgressMap);
-          setFacultySubjectProgress(subjectProgressMap);
+          if (!isPrefetchOnly) {
+            setFacultyStatuses(statusMap);
+            setFacultyClassProgress(classProgressMap);
+            setFacultySubjectProgress(subjectProgressMap);
+          }
         }
       } catch (err) {
         console.error("Error fetching faculty statuses:", err);
       } finally {
         inflightVerificationFetches.delete(inflightKey);
-        setIsLoadingStatuses(false);
+        if (!isPrefetchOnly) {
+          setIsLoadingStatuses(false);
+        }
       }
     })();
 
@@ -6209,7 +6231,7 @@ export function RequirementsPanel({
             globalVerificationCache[termKey]
           )
             return;
-          void fetchAllStatuses(y, s, { silent: true });
+          void fetchAllStatuses(y, s, { silent: true, prefetchOnly: true });
         });
       });
     }, 1200);
@@ -6582,8 +6604,8 @@ export function RequirementsPanel({
         const isCompleted = statInfo?.category === "completed";
         const progressText =
           totalSubjects > 0
-            ? `${doneSubjects}/${totalSubjects} Subjects Done (${statInfo?.validatedMandatoryCount ?? 0}/${statInfo?.totalMandatoryCount ?? 6} Req)`
-            : `${statInfo?.validatedMandatoryCount ?? 0}/${statInfo?.totalMandatoryCount ?? 6} Validated`;
+            ? `${doneSubjects}/${totalSubjects} Subjects Done (${statInfo?.validatedMandatoryCount ?? 0}/${statInfo?.totalMandatoryCount ?? 0} Req)`
+            : `${statInfo?.validatedMandatoryCount ?? 0}/${statInfo?.totalMandatoryCount ?? 0} Validated`;
 
         return {
           index: index + 1,
@@ -7213,8 +7235,7 @@ export function RequirementsPanel({
                     const validatedMandatoryCount =
                       statInfo?.validatedMandatoryCount ?? 0;
                     const totalMandatoryCount =
-                      statInfo?.totalMandatoryCount ??
-                      DEFAULT_REQUIREMENTS.length;
+                      statInfo?.totalMandatoryCount ?? 0;
                     const totalValidatedCount =
                       statInfo?.totalValidatedCount ?? 0;
                     const overallStatus =

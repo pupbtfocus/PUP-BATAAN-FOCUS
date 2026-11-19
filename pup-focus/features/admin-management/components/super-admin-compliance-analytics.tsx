@@ -95,10 +95,7 @@ export function SuperAdminComplianceAnalytics({
         }
       }
     }
-    const requiredCodes =
-      allRequirementCodes.size > 0
-        ? Array.from(allRequirementCodes)
-        : (DEFAULT_REQUIREMENTS as readonly string[]);
+    const requiredCodes = Array.from(allRequirementCodes);
 
     const totalRequired = requiredCodes.length;
     const totalActive = activeFaculty.length;

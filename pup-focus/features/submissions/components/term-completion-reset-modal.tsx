@@ -90,7 +90,7 @@ export function TermCompletionResetModal({
                 Done All for This Semester (100% Validated)
               </span>
               <span className="text-[11px] font-bold text-[#0b5336] dark:text-emerald-400 shrink-0">
-                6 of 6 Validated
+                {requirements?.length ?? 0} of {requirements?.length ?? 0} Validated
               </span>
             </div>
             <p className="text-xs text-slate-700 dark:text-slate-300">
@@ -102,19 +102,13 @@ export function TermCompletionResetModal({
           {/* Validated Requirements List */}
           <div>
             <h4 className="text-xs font-bold text-slate-800 dark:text-slate-200 mb-2">
-              Verified Compliance Checklist ({requirements?.length || DEFAULT_REQUIREMENTS.length}/{requirements?.length || DEFAULT_REQUIREMENTS.length}):
+              Verified Compliance Checklist ({requirements?.length ?? 0}/{requirements?.length ?? 0}):
             </h4>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 max-h-44 overflow-y-auto pr-1">
-              {(requirements && requirements.length > 0
-                ? requirements.map((r) => ({
-                    code: r.code,
-                    label: r.title || (REQUIREMENT_LABEL as Record<string, string>)[r.code] || r.code,
-                  }))
-                : DEFAULT_REQUIREMENTS.map((code) => ({
-                    code,
-                    label: REQUIREMENT_LABEL[code],
-                  }))
-              ).map(({ code, label }) => {
+              {(requirements ?? []).map((r) => ({
+                code: r.code,
+                label: r.title || (REQUIREMENT_LABEL as Record<string, string>)[r.code] || r.code,
+              })).map(({ code, label }) => {
                 return (
                   <div
                     key={code}

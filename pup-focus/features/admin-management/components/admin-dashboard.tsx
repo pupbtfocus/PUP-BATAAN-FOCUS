@@ -503,7 +503,7 @@ export function SuperAdminDashboard({
         for (const k of Object.keys(f.requirementStatus)) allKeys.add(k);
       }
     }
-    const reqCodes = allKeys.size > 0 ? Array.from(allKeys) : (DEFAULT_REQUIREMENTS as readonly string[]);
+    const reqCodes = Array.from(allKeys);
     const totalRequired = reqCodes.length;
 
     let completed = 0;

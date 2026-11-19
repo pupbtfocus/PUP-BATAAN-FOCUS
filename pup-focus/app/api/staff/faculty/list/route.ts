@@ -54,7 +54,7 @@ function matchRequirementCode(
 }
 
 function buildInitialRequirementStatus(activeCodes?: readonly string[]) {
-  const codes = activeCodes && activeCodes.length > 0 ? activeCodes : DEFAULT_REQUIREMENTS;
+  const codes = activeCodes !== undefined ? activeCodes : [];
   return codes.reduce(
     (acc, requirementCode) => {
       acc[requirementCode] = "not_submitted";
@@ -474,14 +474,14 @@ export async function GET(request: NextRequest) {
       rejected: 3,
     };
 
-    const activeTemplates = (allTemplates && allTemplates.length > 0)
+    const hasDbTemplates = Array.isArray(allTemplates);
+    const activeTemplates = hasDbTemplates
       ? allTemplates.filter((t: any) => t.is_active !== false)
-      : null;
+      : [];
 
-    const activeRequirementCodes: readonly string[] =
-      activeTemplates && activeTemplates.length > 0
-        ? activeTemplates.map((t: any) => t.code)
-        : DEFAULT_REQUIREMENTS;
+    const activeRequirementCodes: readonly string[] = activeTemplates.map(
+      (t: any) => t.code,
+    );
 
     const requirementStatusByProfileId = new Map<
       string,
@@ -781,7 +781,7 @@ export async function GET(request: NextRequest) {
           : null;
       const requirementStatus =
         requirementStatusByProfileId.get(profile.id) ??
-        buildInitialRequirementStatus();
+        buildInitialRequirementStatus(activeRequirementCodes);
 
       const profileImageUrl = profileImagePath
         ? signedUrlMap.get(`${profileImageBucket}:${profileImagePath}`) ?? null

@@ -10,7 +10,7 @@ export type RequirementState = {
 };
 
 export function calculateComplianceProgress(requirements: RequirementState[]) {
-  const total = DEFAULT_REQUIREMENTS.length;
+  const total = requirements.length;
   const compliantCount = requirements.filter(
     (item) => item.status === "compliant",
   ).length;

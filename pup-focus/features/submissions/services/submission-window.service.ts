@@ -788,14 +788,10 @@ export async function getActiveRequirementTemplates(
       return templates as ActiveRequirementTemplate[];
     }
   } catch {
-    // Fall back to defaults
+    // Return empty list rather than leaking hidden default templates
   }
 
-  return DEFAULT_REQUIREMENTS.map((code) => ({
-    code,
-    title: REQUIREMENT_LABEL[code] || code,
-    description: null,
-  }));
+  return [];
 }
 
 /**

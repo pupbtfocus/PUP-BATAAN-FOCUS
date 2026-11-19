@@ -263,13 +263,13 @@ export function AddFacultyPanel({
           if (winRes.ok && isMounted) {
             const winData = await winRes.json();
             if (winData.status === "Closed" || !winData.isOpen) {
-              const fallbackSchedules = DEFAULT_REQUIREMENTS.map((code) => ({
-                code,
-                title: REQUIREMENT_LABEL[code] || code,
-                globalDeadlineDate: winData.endDate || new Date().toISOString().split("T")[0],
-                globalDeadlineTime: winData.endTime || "11:59 PM",
-                globalDeadlineIso: `${winData.endDate || new Date().toISOString().split("T")[0]}T23:59:59+08:00`,
-              }));
+              const fallbackSchedules: Array<{
+                code: string;
+                title: string;
+                globalDeadlineDate: string;
+                globalDeadlineTime: string;
+                globalDeadlineIso: string;
+              }> = [];
               const hasPastFallback = Boolean(
                 winData.endDate &&
                   new Date(

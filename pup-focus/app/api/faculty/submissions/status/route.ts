@@ -158,21 +158,16 @@ export async function GET(request: NextRequest) {
       logger.error("supabase_client_creation_failed", {
         error: clientError instanceof Error ? clientError.message : String(clientError),
       });
-      const defaultRequirementStatuses: RequirementStatus[] = DEFAULT_REQUIREMENTS.map(
-        (code) => ({
-          code,
-          status: "Not Submitted" as const,
-        }),
-      );
       return NextResponse.json(
         {
-          requirementStatuses: defaultRequirementStatuses,
+          requirementStatuses: [],
+          requirementTemplates: [],
           counts: {
-            total: defaultRequirementStatuses.length,
+            total: 0,
             validated: 0,
             rejected: 0,
             pending: 0,
-            notSubmitted: defaultRequirementStatuses.length,
+            notSubmitted: 0,
           },
           message: "Database connection unavailable",
         },
@@ -329,23 +324,9 @@ export async function GET(request: NextRequest) {
             max_size_mb: t.max_size_mb ? Number(t.max_size_mb) : 10,
             allowed_formats: Array.isArray(t.allowed_formats) && t.allowed_formats.length > 0 ? t.allowed_formats : ["PDF", "DOCX", "XLSX", "PNG", "JPG", "ZIP"],
           }));
-      } else {
-        activeTemplateRows = DEFAULT_REQUIREMENTS.map((code) => ({
-          code,
-          title: (REQUIREMENT_LABEL as Record<string, string>)[code] || code,
-          is_mandatory: true,
-          max_size_mb: 10,
-          allowed_formats: ["PDF", "DOCX", "XLSX"],
-        }));
       }
     } catch {
-      activeTemplateRows = DEFAULT_REQUIREMENTS.map((code) => ({
-        code,
-        title: (REQUIREMENT_LABEL as Record<string, string>)[code] || code,
-        is_mandatory: true,
-        max_size_mb: 10,
-        allowed_formats: ["PDF", "DOCX", "XLSX"],
-      }));
+      activeTemplateRows = [];
     }
 
     function matchRequirementCode(
@@ -1033,21 +1014,16 @@ export async function GET(request: NextRequest) {
     logger.error("status_endpoint_error", {
       error: error instanceof Error ? error.message : "Unknown error",
     });
-    const defaultRequirementStatuses: RequirementStatus[] = DEFAULT_REQUIREMENTS.map(
-      (code) => ({
-        code,
-        status: "Not Submitted" as const,
-      }),
-    );
     return NextResponse.json(
       {
-        requirementStatuses: defaultRequirementStatuses,
+        requirementStatuses: [],
+        requirementTemplates: [],
         counts: {
-          total: defaultRequirementStatuses.length,
+          total: 0,
           validated: 0,
           rejected: 0,
           pending: 0,
-          notSubmitted: defaultRequirementStatuses.length,
+          notSubmitted: 0,
         },
         message: "Internal server error handled gracefully",
       },

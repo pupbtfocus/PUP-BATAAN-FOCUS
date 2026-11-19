@@ -178,7 +178,7 @@ export function FacultyRequirementsModule({
     academicYear:
       initialSubmissionWindow?.academicYear || academicYears[0] || "2026-2027",
     semester: initialSubmissionWindow?.semester || SEMESTER_OPTIONS[0],
-    requirementCode: initialTemplates?.[0]?.code || DEFAULT_REQUIREMENTS[0],
+    requirementCode: initialTemplates?.[0]?.code || "",
     remarks: "",
   };
 
@@ -187,8 +187,9 @@ export function FacultyRequirementsModule({
   const [isRefreshing, setIsRefreshing] = useState(false);
 
   const activeRequirementItems = useMemo(() => {
-    if (requirementTemplates.length > 0) {
-      return requirementTemplates.map((t) => ({
+    return requirementTemplates
+      .filter((t: any) => t.is_active !== false)
+      .map((t) => ({
         code: t.code,
         title: t.title,
         is_mandatory: t.is_mandatory !== false,
@@ -198,14 +199,6 @@ export function FacultyRequirementsModule({
             ? t.allowed_formats
             : ["PDF", "DOCX", "XLSX", "PNG", "JPG", "ZIP"],
       }));
-    }
-    return DEFAULT_REQUIREMENTS.map((code) => ({
-      code,
-      title: REQUIREMENT_LABEL[code] ?? code,
-      is_mandatory: true,
-      maxSizeMb: 10,
-      allowedFormats: ["PDF", "DOCX", "XLSX", "PNG", "JPG", "ZIP"],
-    }));
   }, [requirementTemplates]);
 
   const summary = useMemo(() => {
@@ -258,11 +251,10 @@ export function FacultyRequirementsModule({
 
       const data = (await response.json()) as StatusResponse;
       setRequirementStatuses(data.requirementStatuses || []);
-      if (
-        Array.isArray(data.requirementTemplates) &&
-        data.requirementTemplates.length > 0
-      ) {
-        setRequirementTemplates(data.requirementTemplates);
+      if (Array.isArray(data.requirementTemplates)) {
+        setRequirementTemplates(
+          data.requirementTemplates.filter((t: any) => t.is_active !== false),
+        );
       }
       setCounts(data.counts || null);
     } catch {

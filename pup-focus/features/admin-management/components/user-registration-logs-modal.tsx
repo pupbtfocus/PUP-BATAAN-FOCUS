@@ -250,14 +250,16 @@ export function UserRegistrationLogsModal({
   const [editProgram, setEditProgram] = useState("");
   const [isSavingEdit, setIsSavingEdit] = useState(false);
   const [editError, setEditError] = useState<string | null>(null);
-  const [programsList, setProgramsList] = useState<{ id: string; code: string; name: string }[]>(DEFAULT_PROGRAMS);
+  const [programsList, setProgramsList] = useState<{ id: string; code: string; name: string }[]>([]);
 
   useEffect(() => {
-    void fetch("/api/programs")
+    void fetch("/api/programs", { cache: "no-store" })
       .then((res) => res.json())
       .then((data) => {
-        if (Array.isArray(data.programs) && data.programs.length > 0) {
-          setProgramsList(data.programs);
+        if (Array.isArray(data.programs)) {
+          setProgramsList(
+            data.programs.filter((p: { is_hidden?: boolean }) => !p.is_hidden),
+          );
         }
       })
       .catch(() => {});

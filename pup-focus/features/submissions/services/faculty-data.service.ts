@@ -302,14 +302,6 @@ export async function getFacultyInitialData(
             ? t.allowed_formats
             : ["PDF", "DOCX", "XLSX", "PNG", "JPG", "ZIP"],
       }));
-  } else {
-    activeTemplates = DEFAULT_REQUIREMENTS.map((code) => ({
-      code,
-      title: (REQUIREMENT_LABEL as Record<string, string>)[code] || code,
-      is_mandatory: true,
-      max_size_mb: 10,
-      allowed_formats: ["PDF", "DOCX", "XLSX"],
-    }));
   }
 
   // Faculty Profile IDs & Avatar Metadata

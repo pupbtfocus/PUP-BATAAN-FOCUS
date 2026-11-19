@@ -356,11 +356,12 @@ export async function GET(request: NextRequest) {
     }
 
     const cacheKey = `${user.id}:${requestedAcademicYear || ""}:${selectedSemester || ""}:${requestedIds.slice().sort().join(",")}`;
-    const cached = serverVerificationCache.get(cacheKey);
+    const hasCacheBuster = url.searchParams.has("_t");
+    const cached = !hasCacheBuster ? serverVerificationCache.get(cacheKey) : null;
     if (cached && Date.now() - cached.timestamp < SERVER_CACHE_TTL_MS) {
       return NextResponse.json(cached.payload, {
         headers: {
-          "Cache-Control": "public, max-age=15, stale-while-revalidate=30",
+          "Cache-Control": "no-store, no-cache, must-revalidate",
         },
       });
     }
@@ -391,7 +392,7 @@ export async function GET(request: NextRequest) {
         .order("academic_year", { ascending: false }),
       supabase
         .from("requirement_templates")
-        .select("code, title, is_mandatory, max_size_mb, allowed_formats, is_active")
+        .select("code, title, description, is_mandatory, max_size_mb, allowed_formats, is_active")
         .order("is_mandatory", { ascending: false })
         .order("created_at", { ascending: true }),
       supabase
@@ -509,15 +510,10 @@ export async function GET(request: NextRequest) {
       code: string;
       title: string;
       is_mandatory: boolean;
+      is_active: boolean;
       max_size_mb: number;
       allowed_formats: string[];
-    }> = DEFAULT_REQUIREMENTS.map((code) => ({
-      code,
-      title: (REQUIREMENT_LABEL as Record<string, string>)[code] || code,
-      is_mandatory: true,
-      max_size_mb: 10,
-      allowed_formats: ["PDF", "DOCX", "XLSX"],
-    }));
+    }> = [];
 
     const filteredAssignments = (assignmentRows ?? []).filter(
       (row: any) =>
@@ -539,7 +535,7 @@ export async function GET(request: NextRequest) {
       currentAcademicTerm.semester === effectiveSelectedSemester
     );
 
-    if (dbTemplatesRes.data && dbTemplatesRes.data.length > 0) {
+    if (!dbTemplatesRes.error && Array.isArray(dbTemplatesRes.data)) {
       const submittedCodesInTerm = new Set(
         allSubmissionRows
           .map((s: any) => matchRequirementCode(s.requirement_code, s.requirement_id, dbTemplatesRes.data) || s.requirement_code)
@@ -553,29 +549,32 @@ export async function GET(request: NextRequest) {
             return t.is_active !== false;
           }
 
-          // Evaluating past term:
-          // 1. If faculty made submissions for this requirement in this past term, CANNOT hide it in past submissions!
+          // Evaluating past/other term:
+          // 1. If faculty made submissions for this requirement in this term, keep it visible
           if (submittedCodesInTerm.has(t.code)) {
             return true;
           }
 
-          // 2. If it was explicitly marked hidden in that past academic term, keep it hidden
-          if (isTemplateHiddenForTerm(t, selectedAcademicYear, effectiveSelectedSemester, false)) {
+          // 2. If explicitly hidden for this term or currently hidden, do not show it
+          if (
+            t.is_active === false ||
+            isTemplateHiddenForTerm(t, selectedAcademicYear, effectiveSelectedSemester, false)
+          ) {
             return false;
           }
 
-          // 3. If standard default requirement and not hidden in that past term, keep visible
+          // 3. Otherwise keep active standard requirements visible
           if ((DEFAULT_REQUIREMENTS as readonly string[]).includes(t.code)) {
             return true;
           }
 
-          // 4. Custom templates without submissions in this past term are omitted so past sem history stays clean
           return false;
         })
         .map((t: any) => ({
           code: t.code,
           title: t.title,
           is_mandatory: t.is_mandatory,
+          is_active: t.is_active !== false,
           max_size_mb: t.max_size_mb || 5,
           allowed_formats: t.allowed_formats || ["PDF"],
         }));
@@ -615,11 +614,6 @@ export async function GET(request: NextRequest) {
       const requirementStatus: Record<string, RequirementStatus> = {};
       for (const tpl of activeTemplateRows) {
         requirementStatus[tpl.code] = "not_submitted";
-      }
-      for (const code of DEFAULT_REQUIREMENTS) {
-        if (!requirementStatus[code]) {
-          requirementStatus[code] = "not_submitted";
-        }
       }
 
       const facultyAssignmentIds = new Set(
@@ -743,7 +737,7 @@ export async function GET(request: NextRequest) {
 
       return NextResponse.json(payload, {
         headers: {
-          "Cache-Control": "public, max-age=15, stale-while-revalidate=30",
+          "Cache-Control": "no-store, no-cache, must-revalidate",
         },
       });
     }
@@ -772,7 +766,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json(payload, {
       headers: {
-        "Cache-Control": "public, max-age=15, stale-while-revalidate=30",
+        "Cache-Control": "no-store, no-cache, must-revalidate",
       },
     });
   } catch (error) {

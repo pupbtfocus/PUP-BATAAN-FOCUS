@@ -265,15 +265,26 @@ export async function GET(request: NextRequest) {
       );
     }
 
+    const { data: templateRows } = await supabase
+      .from("requirement_templates")
+      .select("code, title");
+    const templateTitleByCode = new Map<string, string>();
+    for (const tpl of templateRows ?? []) {
+      if (tpl?.code) {
+        templateTitleByCode.set(
+          tpl.code.toLowerCase(),
+          tpl.title || tpl.code,
+        );
+      }
+    }
+
     const selectedFiles = new Map<
-      RequirementCode,
-      { submissionId: string; storagePath: string; fileName: string }
+      string,
+      { submissionId: string; storagePath: string; fileName: string; label: string }
     >();
 
     for (const row of submissions || []) {
-      if (
-        !DEFAULT_REQUIREMENTS.includes(row.requirement_code as RequirementCode)
-      ) {
+      if (!row.requirement_code) {
         continue;
       }
 
@@ -306,15 +317,21 @@ export async function GET(request: NextRequest) {
         continue;
       }
 
-      const code = row.requirement_code as RequirementCode;
+      const code = row.requirement_code;
       if (selectedFiles.has(code)) {
         continue;
       }
 
+      const resolvedLabel =
+        templateTitleByCode.get(code.toLowerCase()) ||
+        (REQUIREMENT_LABEL as Record<string, string>)[code] ||
+        code;
+
       selectedFiles.set(code, {
         submissionId: row.id,
         storagePath: latestDocument.storage_path,
-        fileName: `${sanitizeFileName(REQUIREMENT_LABEL[code])}${getFileExtension(latestDocument.storage_path) || ""}`,
+        label: resolvedLabel,
+        fileName: `${sanitizeFileName(resolvedLabel)}${getFileExtension(latestDocument.storage_path) || ""}`,
       });
     }
 
@@ -327,11 +344,7 @@ export async function GET(request: NextRequest) {
 
     const zip = new JSZip();
 
-    for (const code of DEFAULT_REQUIREMENTS) {
-      const fileEntry = selectedFiles.get(code);
-      if (!fileEntry) {
-        continue;
-      }
+    for (const [, fileEntry] of selectedFiles.entries()) {
 
       let resolvedDownloadPath = fileEntry.storagePath.replace(/^faculty-submissions\//, "");
       // If path points to a directory or does not have extension, discover file inside
@@ -352,7 +365,7 @@ export async function GET(request: NextRequest) {
       if (downloadError || !fileBlob) {
         return NextResponse.json(
           {
-            error: `Failed to download ${REQUIREMENT_LABEL[code]}`,
+            error: `Failed to download ${fileEntry.label}`,
             details: downloadError?.message,
           },
           { status: 500 },
