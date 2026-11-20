@@ -12,6 +12,15 @@ function isAdminRole(role: string | undefined) {
   return role === ROLE.STAFF || role === ROLE.ADMIN || role === ROLE.SUPER_ADMIN || role === "staff";
 }
 
+function normalizeSemesterLabel(value: string | null | undefined): string {
+  const s = (value || "").toLowerCase().trim();
+  if (s.includes("2nd") || s.includes("second") || s === "2") return "2nd Semester";
+  if (s.includes("summer") || s.includes("midyear") || s.includes("3rd") || s.includes("third") || s === "3") {
+    return "Summer Semester";
+  }
+  return "1st Semester";
+}
+
 function toAcademicYearAndSemester(dateInput: string | null | undefined): {
   academicYear: string;
   semester: "1st Semester" | "2nd Semester";
@@ -66,24 +75,31 @@ export async function POST(request: NextRequest) {
 
     const supabase = getServiceRoleClient();
 
-    // Map faculty_program_assignments for accurate term resolution
+    // Map faculty_program_assignments and faculty_classes for accurate term resolution
     const assignmentMap = new Map<string, { academicYear: string; semester: string }>();
+    const classMap = new Map<string, { academicYear: string; semester: string }>();
     try {
-      const { data: assignments } = await supabase
-        .from("faculty_program_assignments")
-        .select("id, academic_year, term");
+      const [{ data: assignments }, { data: classes }] = await Promise.all([
+        supabase.from("faculty_program_assignments").select("id, academic_year, term"),
+        supabase.from("faculty_classes").select("id, academic_year, semester"),
+      ]);
 
       if (assignments) {
         for (const a of assignments) {
           if (a.id) {
-            const semNorm = a.term?.toLowerCase().includes("2nd")
-              ? "2nd Semester"
-              : a.term?.toLowerCase().includes("summer")
-              ? "Summer Term"
-              : "1st Semester";
             assignmentMap.set(a.id, {
               academicYear: a.academic_year,
-              semester: semNorm,
+              semester: normalizeSemesterLabel(a.term),
+            });
+          }
+        }
+      }
+      if (classes) {
+        for (const c of classes) {
+          if (c.id && c.academic_year && c.semester) {
+            classMap.set(c.id, {
+              academicYear: c.academic_year,
+              semester: normalizeSemesterLabel(c.semester),
             });
           }
         }
@@ -94,11 +110,23 @@ export async function POST(request: NextRequest) {
 
     const getTermInfo = (sub: {
       faculty_assignment_id?: string | null;
+      academic_year?: string | null;
+      semester?: string | null;
+      class_id?: string | null;
       submitted_at?: string | null;
       created_at?: string | null;
     }): { academicYear: string; semester: string } => {
       if (sub.faculty_assignment_id && assignmentMap.has(sub.faculty_assignment_id)) {
         return assignmentMap.get(sub.faculty_assignment_id)!;
+      }
+      if (sub.academic_year && sub.semester) {
+        return {
+          academicYear: sub.academic_year,
+          semester: normalizeSemesterLabel(sub.semester),
+        };
+      }
+      if (sub.class_id && classMap.has(sub.class_id)) {
+        return classMap.get(sub.class_id)!;
       }
       return toAcademicYearAndSemester(sub.submitted_at || sub.created_at);
     };
@@ -234,10 +262,10 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // 2. Collect Submissions including storage paths, file names, and mime types
+    // 2. Collect Submissions including storage paths, file names, mime types, and direct term/class metadata
     const { data: submissionsData } = await supabase
       .from("submissions")
-      .select("id, faculty_profile_id, requirement_code, status, submitted_at, remarks, admin_remarks, is_archived, created_at, faculty_assignment_id, storage_path, file_name, mime_type, size_bytes");
+      .select("*");
 
     // 3. Fallback Document Versions if file columns are in legacy table
     const subIds = (submissionsData || []).map((s) => s.id);
@@ -304,8 +332,8 @@ export async function POST(request: NextRequest) {
       }
       if (targetSem) {
         const semMatch =
-          termInfo.semester.toLowerCase().includes(targetSem.toLowerCase()) ||
-          targetSem.toLowerCase().includes(termInfo.semester.toLowerCase());
+          normalizeSemesterLabel(termInfo.semester) ===
+          normalizeSemesterLabel(targetSem);
         if (!semMatch) return false;
       }
       return true;
