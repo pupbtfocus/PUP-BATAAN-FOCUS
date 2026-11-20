@@ -398,6 +398,8 @@ export interface FacultyVerificationDrawerProps {
   faculty: FacultyAccount;
   academicYear: string;
   semester: SemesterOption;
+  currentActiveAcademicYear?: string;
+  currentActiveSemester?: SemesterOption;
   initialTab?: "current" | "history";
   initialRequirementCode?: string | null;
   requirementTemplates?: Array<{
@@ -455,6 +457,8 @@ export function FacultyVerificationDrawer({
   faculty,
   academicYear,
   semester,
+  currentActiveAcademicYear,
+  currentActiveSemester,
   initialTab = "current",
   initialRequirementCode,
   requirementTemplates: requirementTemplatesProp,
@@ -627,7 +631,8 @@ export function FacultyVerificationDrawer({
   >(() => {
     const isMatchingActive =
       Boolean(activeAy && activeSem) &&
-      (initialTab === "history" || (activeAy && activeSem));
+      selectedHistoryAy === activeAy &&
+      selectedHistorySem === activeSem;
     if (
       isMatchingActive &&
       initialSubmissions &&
@@ -640,7 +645,8 @@ export function FacultyVerificationDrawer({
   const [historyClasses, setHistoryClasses] = useState<any[]>(() => {
     const isMatchingActive =
       Boolean(activeAy && activeSem) &&
-      (initialTab === "history" || (activeAy && activeSem));
+      selectedHistoryAy === activeAy &&
+      selectedHistorySem === activeSem;
     if (isMatchingActive && initialClasses && initialClasses.length > 0) {
       return initialClasses.map((c) => ({
         id: c.id,
@@ -1104,15 +1110,21 @@ export function FacultyVerificationDrawer({
     });
   }, [classGroups, subjectSearchTerm, subjectStatusFilter, getGroupCategory]);
 
+  const operationalAy = currentActiveAcademicYear || activeAy;
+  const operationalSem = currentActiveSemester || activeSem;
+  const isViewingPastHistoryTerm = Boolean(
+    operationalAy &&
+      operationalSem &&
+      (selectedHistoryAy !== operationalAy || selectedHistorySem !== operationalSem),
+  );
+
   const historyClassGroups = useMemo<SubmissionClassGroup[]>(() => {
     const groups: SubmissionClassGroup[] = [];
     const classMap = new Map<string, SubmissionClassGroup>();
 
-    const targetClasses =
-      historyClasses.length > 0 ? historyClasses : facultyClasses;
-
-    targetClasses
-      .filter((fc: any) => !fc.is_archived)
+    // Strictly use term-scoped historyClasses — never fall back to current term's facultyClasses
+    historyClasses
+      .filter((fc: any) => isViewingPastHistoryTerm || !fc.is_archived)
       .forEach((fc) => {
         const key = fc.id || `${fc.section_code}_${fc.subject_code}`;
         const group: SubmissionClassGroup = {
@@ -1130,7 +1142,7 @@ export function FacultyVerificationDrawer({
       });
 
     historySubmissions.forEach((sub) => {
-      if (sub.faculty_class && !(sub.faculty_class as any).is_archived) {
+      if (sub.faculty_class && (isViewingPastHistoryTerm || !(sub.faculty_class as any).is_archived)) {
         const fc = sub.faculty_class;
         const key = fc.id || `${fc.section_code}_${fc.subject_code}`;
         if (!classMap.has(key) && !(fc.id && classMap.has(fc.id))) {
@@ -1154,6 +1166,7 @@ export function FacultyVerificationDrawer({
 
     historySubmissions.forEach((sub) => {
       if (
+        !isViewingPastHistoryTerm &&
         sub.faculty_class &&
         Boolean((sub.faculty_class as any).is_archived)
       ) {
@@ -1196,8 +1209,11 @@ export function FacultyVerificationDrawer({
       });
     }
 
-    return groups;
-  }, [historyClasses, facultyClasses, historySubmissions]);
+    // For past semesters, exclude empty subjects (e.g. subjects added or unhidden in a different semester)
+    return isViewingPastHistoryTerm
+      ? groups.filter((g) => g.submissions.length > 0)
+      : groups;
+  }, [historyClasses, historySubmissions, isViewingPastHistoryTerm]);
 
   const selectedHistoryGroup = useMemo<SubmissionClassGroup | null>(() => {
     if (!selectedHistoryClassId) return null;
@@ -2396,9 +2412,13 @@ export function FacultyVerificationDrawer({
             {/* Academic Term & Faculty Info Card */}
             <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 overflow-hidden shadow-2xs">
               <div className="bg-[#580000] text-white px-4 py-2.5 font-semibold text-xs sm:text-sm tracking-wide">
-                {academicYear
-                  ? `School Year ${academicYear} ${semester}`
-                  : "No Active Academic Term Configured"}
+                {activeTab === "history"
+                  ? selectedHistoryAy
+                    ? `School Year ${selectedHistoryAy} ${selectedHistorySem}`
+                    : "Validation History"
+                  : academicYear
+                    ? `School Year ${academicYear} ${semester}`
+                    : "No Active Academic Term Configured"}
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-y-3.5 gap-x-6 p-4 bg-white dark:bg-slate-900 text-xs">
                 <div>
@@ -2415,8 +2435,15 @@ export function FacultyVerificationDrawer({
                     Assigned Class Loads
                   </span>
                   <p className="font-semibold text-slate-900 dark:text-slate-100">
-                    {classGroups.length} Registered Class Load
-                    {classGroups.length === 1 ? "" : "s"}
+                    {(activeTab === "history"
+                      ? historyClassGroups.length
+                      : classGroups.length)}{" "}
+                    Registered Class Load
+                    {(activeTab === "history"
+                      ? historyClassGroups.length
+                      : classGroups.length) === 1
+                      ? ""
+                      : "s"}
                   </p>
                 </div>
 
@@ -4043,14 +4070,35 @@ export function FacultyVerificationDrawer({
                   ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
                       {historyClassGroups.map((group) => {
-                        const groupValidatedCount = group.submissions.filter(
-                          (s) => {
-                            const st = (s.status || "").toLowerCase();
-                            return st === "validated" || st === "approved";
-                          },
-                        ).length;
+                        const submittedCodes = new Set(
+                          group.submissions
+                            .map(
+                              (s) =>
+                                matchRequirementCode(s.requirement_code) ||
+                                s.requirement_code,
+                            )
+                            .filter(Boolean),
+                        );
+                        const validatedCodes = new Set(
+                          group.submissions
+                            .filter((s) => {
+                              const st = (s.status || "").toLowerCase();
+                              return st === "validated" || st === "approved";
+                            })
+                            .map(
+                              (s) =>
+                                matchRequirementCode(s.requirement_code) ||
+                                s.requirement_code,
+                            )
+                            .filter(Boolean),
+                        );
+                        const groupValidatedCount = validatedCodes.size;
 
-                        const totalReqs = allRequirements.length;
+                        // On past terms, denominator reflects only requirements actually recorded in that term
+                        // so newly unhidden/added requirements in later terms never mark past terms incomplete
+                        const totalReqs = isViewingPastHistoryTerm
+                          ? submittedCodes.size
+                          : allRequirements.length;
                         const isComplete =
                           totalReqs > 0 && groupValidatedCount >= totalReqs;
                         const progressPct =
@@ -6634,6 +6682,8 @@ export function RequirementsPanel({
           faculty={reviewingFaculty}
           academicYear={academicYear}
           semester={semester}
+          currentActiveAcademicYear={activeTermAy}
+          currentActiveSemester={activeTermSem}
           initialTab={activePanelTab}
           initialRequirementCode={
             openedFromRowFlag ? null : initialRequirementCode

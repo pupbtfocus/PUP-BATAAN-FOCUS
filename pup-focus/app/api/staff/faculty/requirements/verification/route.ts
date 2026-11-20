@@ -624,22 +624,9 @@ export async function GET(request: NextRequest) {
           }
 
           // Evaluating past/other term:
-          // 1. If faculty made submissions for this requirement in this term, keep it visible
+          // Strictly keep only requirements that had actual submissions recorded in this past term
+          // so templates hidden in a past term and unhidden in a later term never pollute past history
           if (submittedCodesInTerm.has(t.code)) {
-            seenTemplateCodes.add(codeKey);
-            return true;
-          }
-
-          // 2. If explicitly hidden for this term or currently hidden, do not show it
-          if (
-            !t.is_active ||
-            isTemplateHiddenForTerm(t, selectedAcademicYear, effectiveSelectedSemester, false)
-          ) {
-            return false;
-          }
-
-          // 3. Otherwise keep active standard requirements visible
-          if ((DEFAULT_REQUIREMENTS as readonly string[]).includes(t.code)) {
             seenTemplateCodes.add(codeKey);
             return true;
           }
@@ -696,22 +683,28 @@ export async function GET(request: NextRequest) {
       const rawClasses = allFacultyClasses.filter((fc: any) =>
         validIds.has(fc.faculty_profile_id),
       );
-      let facultyClassesData = rawClasses.filter((fc: any) => {
-        if (fc.academic_year && selectedAcademicYear) {
-          if (normalizeAcademicYear(fc.academic_year) !== normalizeAcademicYear(selectedAcademicYear)) {
-            return false;
-          }
-        }
-        if (fc.semester && effectiveSelectedSemester) {
-          if (normalizeSemester(fc.semester) !== normalizeSemester(effectiveSelectedSemester)) {
-            return false;
-          }
-        }
-        return true;
-      });
-      if (facultyClassesData.length === 0 && rawClasses.length > 0) {
-        facultyClassesData = rawClasses;
-      }
+      const rawAllFacultyClasses = rawAllClasses.filter((fc: any) =>
+        validIds.has(fc.faculty_profile_id),
+      );
+      // Active term: non-archived classes persist forward across semesters; past terms are scoped strictly below
+      let facultyClassesData = isCurrentTerm
+        ? rawClasses
+        : rawClasses.filter((fc: any) => {
+            if (fc.academic_year && selectedAcademicYear) {
+              if (normalizeAcademicYear(fc.academic_year) !== normalizeAcademicYear(selectedAcademicYear)) {
+                return false;
+              }
+            }
+            if (fc.semester && effectiveSelectedSemester) {
+              if (normalizeSemester(fc.semester) !== normalizeSemester(effectiveSelectedSemester)) {
+                return false;
+              }
+            }
+            if (!fc.academic_year && !fc.semester) {
+              return false;
+            }
+            return true;
+          });
       const facultyClassIdSet = new Set<string>(
         facultyClassesData.map((c: any) => c.id).filter(Boolean),
       );
@@ -746,6 +739,16 @@ export async function GET(request: NextRequest) {
         if (!s.submitted_at) return false;
         return isCurrentTerm || (Boolean(s.class_id) && facultyClassIdSet.has(s.class_id));
       });
+
+      // For past/historical terms, strictly scope class progress to classes that actually had submissions in that term
+      if (!isCurrentTerm) {
+        const submittedClassIdsInPastTerm = new Set(
+          facultySubmissions.map((s: any) => s.class_id).filter(Boolean),
+        );
+        facultyClassesData = rawAllFacultyClasses.filter((fc: any) =>
+          submittedClassIdsInPastTerm.has(fc.id),
+        );
+      }
 
       const seenSlotKeys = new Set<string>();
       for (const row of facultySubmissions) {

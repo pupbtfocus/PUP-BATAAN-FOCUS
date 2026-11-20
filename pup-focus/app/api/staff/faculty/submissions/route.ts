@@ -113,7 +113,7 @@ export async function GET(request: NextRequest) {
     const requestedAcademicYear = url.searchParams.get("academicYear")?.trim();
     const requestedSemester = url.searchParams.get("semester")?.trim();
 
-    // Wave 1: Resolve faculty profile ID and active academic term in parallel
+    // Wave 1: Resolve faculty profile ID and current active academic term in parallel
     const [profileRes, activeTermRes] = await Promise.all([
       supabase
         .from("profiles")
@@ -125,13 +125,11 @@ export async function GET(request: NextRequest) {
           ])
         )
         .maybeSingle(),
-      !requestedAcademicYear || !requestedSemester
-        ? supabase
-            .from("academic_terms")
-            .select("academic_year, semester, created_at")
-            .eq("status", "Current")
-            .maybeSingle()
-        : Promise.resolve({ data: null, error: null }),
+      supabase
+        .from("academic_terms")
+        .select("academic_year, semester, created_at")
+        .eq("status", "Current")
+        .maybeSingle(),
     ]);
 
     const { data: profileRow, error: profileError } = profileRes;
@@ -173,6 +171,26 @@ export async function GET(request: NextRequest) {
 
     targetAcademicYear = targetAcademicYear || "2026-2027";
     targetSemester = targetSemester || "2nd Semester";
+
+    const normalizeAy = (v?: string | null) =>
+      (v || "")
+        .trim()
+        .toLowerCase()
+        .replace(/^s\.?y\.?\s*/i, "")
+        .replace(/^a\.?y\.?\s*/i, "");
+    const normalizeSem = (v?: string | null) => {
+      const s = (v || "").trim().toLowerCase();
+      if (s.includes("2nd") || s.includes("second")) return "2nd semester";
+      if (s.includes("summer") || s.includes("midyear")) return "summer semester";
+      if (s.includes("1st") || s.includes("first")) return "1st semester";
+      return s;
+    };
+
+    const isCurrentActiveTerm = Boolean(
+      !activeTermRow ||
+        (normalizeAy(activeTermRow.academic_year) === normalizeAy(targetAcademicYear) &&
+          normalizeSem(activeTermRow.semester) === normalizeSem(targetSemester)),
+    );
 
     // Wave 2: Fetch target assignments and faculty classes in parallel
     const [targetAssignmentsRes, allFacultyClassesRes] = await Promise.all([
@@ -303,6 +321,15 @@ export async function GET(request: NextRequest) {
     const classesMap = new Map<string, any>();
     let facultyClassesList: any[] = [];
 
+    const classMatchesTargetTerm = (c: any) => {
+      const cAy = normalizeAy(c.academic_year);
+      const cSem = normalizeSem(c.semester);
+      if (cAy && cAy !== normalizeAy(targetAcademicYear)) return false;
+      if (cSem && cSem !== normalizeSem(targetSemester)) return false;
+      if (!cAy && !cSem) return isCurrentActiveTerm;
+      return true;
+    };
+
     try {
       let fetchedClasses: any[] | null = allFacultyClassesRes.data;
       if (allFacultyClassesRes.error) {
@@ -317,43 +344,61 @@ export async function GET(request: NextRequest) {
         for (const c of fetchedClasses) {
           classesMap.set(c.id, c);
         }
-        // Exclude archived classes so they do not show in admin class list
-        facultyClassesList = fetchedClasses.filter((c: any) => !c.is_archived);
       }
 
       const missingClassIds = classIds.filter((cid) => !classesMap.has(cid));
       if (missingClassIds.length > 0) {
         const { data: extraClasses } = await supabase
           .from("faculty_classes")
-          .select("id, subject_code, description, units, section_code, is_archived")
+          .select("id, subject_code, description, units, section_code, academic_year, semester, is_archived")
           .in("id", missingClassIds);
         if (extraClasses) {
           for (const c of extraClasses) {
             classesMap.set(c.id, c);
-            if (!c.is_archived && !facultyClassesList.some((fc) => fc.id === c.id)) {
-              facultyClassesList.push(c);
-            }
           }
         }
+      }
+
+      // Filter null-assignment submissions on past terms so another semester's uploads never leak in
+      const termScopedSubmissions = rawSubmissions.filter((s: any) => {
+        if (s.class_id && classesMap.has(s.class_id)) {
+          const cls = classesMap.get(s.class_id);
+          if (isCurrentActiveTerm && cls && Boolean(cls.is_archived)) {
+            return false;
+          }
+          if (!s.faculty_assignment_id && cls && !classMatchesTargetTerm(cls)) {
+            return false;
+          }
+        } else if (!s.faculty_assignment_id && !isCurrentActiveTerm) {
+          return false;
+        }
+        return true;
+      });
+      rawSubmissions = termScopedSubmissions;
+
+      const submittedClassIdSet = new Set(
+        rawSubmissions.map((s: any) => s.class_id).filter(Boolean),
+      );
+
+      const allKnownClasses = Array.from(classesMap.values());
+      if (isCurrentActiveTerm) {
+        // Active term: classes persist forward across semesters; show all non-archived classes
+        facultyClassesList = allKnownClasses.filter((c: any) => !c.is_archived);
+      } else {
+        // Past term (Validation History): strictly show only classes that actually have submissions in this past term
+        // so subjects added or unhidden in later semesters never appear empty in past history
+        facultyClassesList = allKnownClasses.filter((c: any) =>
+          submittedClassIdSet.has(c.id),
+        );
       }
     } catch {
       // faculty_classes optional
     }
 
     const submissions: SubmissionRow[] = rawSubmissions
-      .filter((s: any) => {
-        if (s.class_id && classesMap.has(s.class_id)) {
-          const cls = classesMap.get(s.class_id);
-          if (cls && Boolean(cls.is_archived)) {
-            return false;
-          }
-        }
-        return true;
-      })
       .map((s: any) => {
-        // Auto-heal: If submission has no class_id but faculty has registered class load(s),
-        // link the submission to the active class load so it displays within the subject rather than generating an orphaned General Requirements card
-        if (!s.class_id && facultyClassesList.length > 0) {
+        // Auto-heal only on the current active term when submission lacks class_id
+        if (isCurrentActiveTerm && !s.class_id && facultyClassesList.length > 0) {
           const matchedClass = facultyClassesList[0];
           s.class_id = matchedClass.id;
           void supabase

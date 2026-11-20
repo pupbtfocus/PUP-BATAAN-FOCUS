@@ -7937,7 +7937,14 @@ function FacultySubmissionPanelContent({
                         viewedSubmissionIds={viewedSubmissionIds}
                         getRequirementTitle={getRequirementTitle}
                         templateMandatoryMap={templateMandatoryMap}
-                        totalRequiredCount={activeTemplates.length}
+                        totalRequiredCount={
+                          historyAcademicYear ===
+                            (historyCurrentTerm?.academicYear || activeAY) &&
+                          historySemester ===
+                            (historyCurrentTerm?.semester || activeSem)
+                            ? activeTemplates.length
+                            : undefined
+                        }
                         emptyMessage="No validated documents found for the selected academic term."
                       />
                     )}
