@@ -34,8 +34,22 @@ type SubmissionWindowCountdownProps = {
   collapsed?: boolean;
 };
 
+function isAlwaysOpenDate(dateStr?: string | null): boolean {
+  if (!dateStr) return false;
+  const yearNum = parseInt(dateStr.slice(0, 4), 10);
+  return (
+    dateStr.startsWith("2099") ||
+    dateStr.startsWith("9999") ||
+    (!Number.isNaN(yearNum) && yearNum >= 2099)
+  );
+}
+
 function getManilaTimestamp(date: string, time: string): number {
-  const iso = `${date}T${time}+08:00`;
+  const parts = time.trim().split(":");
+  const hh = (parts[0] || "23").padStart(2, "0");
+  const mm = (parts[1] || "59").padStart(2, "0");
+  const ss = (parts[2] || "00").padStart(2, "0");
+  const iso = `${date}T${hh}:${mm}:${ss}+08:00`;
   return new Date(iso).getTime();
 }
 
@@ -191,12 +205,21 @@ export function SubmissionWindowCountdown({
               box: "border-rose-400/40 bg-[#580000]/90 text-rose-200",
               dot: "bg-rose-400",
             };
+    const isCollapsedAlwaysOpen = isAlwaysOpenDate(windowState.endDate);
+    const collapsedEndTime = formatTimeReadable(
+      windowState.endTime,
+      windowState.endTimeLabel,
+    );
     const tipParts = [
-      `Submission ${status}`,
+      isCollapsedAlwaysOpen ? "Submissions Always Open" : `Submission ${status}`,
       windowState.academicYear && windowState.semester
         ? `A.Y. ${windowState.academicYear} • ${windowState.semester}`
         : null,
-      windowState.endDate ? `Ends ${windowState.endDate}` : null,
+      isCollapsedAlwaysOpen
+        ? "No closing deadline"
+        : windowState.endDate
+          ? `Ends ${formatDateReadable(windowState.endDate)}${collapsedEndTime ? ` · ${collapsedEndTime}` : ""}`
+          : null,
     ].filter(Boolean);
 
     return (
@@ -304,12 +327,7 @@ export function SubmissionWindowCountdown({
 
   const { status, academicYear, semester, startDate, endDate, startTime, endTime } =
     windowState;
-  const isAlwaysOpen = Boolean(
-    windowState?.endDate && (
-      windowState.endDate.startsWith("2099") ||
-      new Date(windowState.endDate).getFullYear() >= 2099
-    )
-  );
+  const isAlwaysOpen = isAlwaysOpenDate(windowState?.endDate);
 
   const formattedStartTime = formatTimeReadable(startTime, windowState.startTimeLabel);
   const formattedEndTime = formatTimeReadable(endTime, windowState.endTimeLabel);

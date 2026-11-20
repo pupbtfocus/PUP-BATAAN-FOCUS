@@ -12,6 +12,7 @@ export interface FacultyIncompleteRequirementsModalProps {
   rejectedCount?: number;
   pendingValidationCount?: number;
   deadlineDisplay?: string | null;
+  isAlwaysOpen?: boolean;
 }
 
 export function FacultyIncompleteRequirementsModal({
@@ -22,11 +23,17 @@ export function FacultyIncompleteRequirementsModal({
   rejectedCount = 0,
   pendingValidationCount = 0,
   deadlineDisplay = null,
+  isAlwaysOpen = false,
 }: FacultyIncompleteRequirementsModalProps) {
   if (!isOpen) return null;
 
   const hasPendingItems =
     notSubmittedCount > 0 || rejectedCount > 0 || pendingValidationCount > 0;
+  const resolvedAlwaysOpen =
+    isAlwaysOpen ||
+    Boolean(deadlineDisplay && /(2099|9999|always open)/i.test(deadlineDisplay));
+  const visibleDeadline =
+    !resolvedAlwaysOpen && deadlineDisplay ? deadlineDisplay : null;
 
   return (
     <div
@@ -124,7 +131,22 @@ export function FacultyIncompleteRequirementsModal({
             </div>
           )}
 
-          {deadlineDisplay && (
+          {resolvedAlwaysOpen ? (
+            <div className="flex items-center justify-between gap-4 px-4 py-3">
+              <span className="inline-flex items-center gap-1.5 font-medium text-slate-600 dark:text-slate-300">
+                <AppIcon
+                  icon={Calendar}
+                  size="xs"
+                  color="inherit"
+                  className="text-slate-400"
+                />
+                <span>Submission Schedule</span>
+              </span>
+              <span className="inline-flex items-center rounded-full border border-[#08412a] bg-[#0b5336] px-2.5 py-0.5 text-[11px] font-bold text-white">
+                Always Open
+              </span>
+            </div>
+          ) : visibleDeadline ? (
             <div className="flex items-center justify-between gap-4 px-4 py-3">
               <span className="inline-flex items-center gap-1.5 font-medium text-slate-600 dark:text-slate-300">
                 <AppIcon
@@ -136,10 +158,10 @@ export function FacultyIncompleteRequirementsModal({
                 <span>Submission Deadline</span>
               </span>
               <span className="font-semibold text-slate-900 dark:text-slate-100">
-                {deadlineDisplay}
+                {visibleDeadline}
               </span>
             </div>
-          )}
+          ) : null}
         </div>
 
         {/* Footer Actions matching PUP FOCUS Modal Buttons */}

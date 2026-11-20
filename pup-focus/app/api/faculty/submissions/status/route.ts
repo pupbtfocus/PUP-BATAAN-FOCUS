@@ -215,7 +215,7 @@ export async function GET(request: NextRequest) {
       "2026-2027";
 
     function toWindowSemester(sem?: string | null): SubmissionWindowSemester {
-      const norm = normalizeSemester(sem);
+      const norm = normalizeSemester(sem).toLowerCase();
       if (norm.includes("2")) return "2nd Semester";
       if (norm.includes("summer") || norm.includes("3")) return "Summer Semester";
       return "1st Semester";

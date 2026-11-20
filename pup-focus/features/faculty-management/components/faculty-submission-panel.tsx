@@ -3134,8 +3134,17 @@ function FacultySubmissionPanelContent({
   const gracePeriodDeadlineLabel = earliestGracePeriodDeadline
     ? earliestGracePeriodDeadline.toLocaleDateString("en-PH", {
         year: "numeric",
-        month: "long",
+        month: "short",
         day: "numeric",
+        timeZone: "Asia/Manila",
+      })
+    : null;
+
+  const gracePeriodDeadlineTime = earliestGracePeriodDeadline
+    ? earliestGracePeriodDeadline.toLocaleTimeString("en-PH", {
+        hour: "numeric",
+        minute: "2-digit",
+        hour12: true,
         timeZone: "Asia/Manila",
       })
     : null;
@@ -3143,10 +3152,10 @@ function FacultySubmissionPanelContent({
   const personalDeadlineFormatted =
     submissionWindow?.formattedDueAt ||
     (gracePeriodDeadlineLabel
-      ? `${gracePeriodDeadlineLabel} at 11:59 PM`
+      ? `${gracePeriodDeadlineLabel}${gracePeriodDeadlineTime ? ` · ${gracePeriodDeadlineTime}` : ""}`
       : null) ||
     (submissionWindow?.endDate
-      ? `${submissionWindow.endDate} at 11:59 PM`
+      ? `${submissionWindow.endDate}${submissionWindow.endTimeLabel ? ` · ${submissionWindow.endTimeLabel}` : submissionWindow.endTime ? ` · ${format24HourTo12Hour(submissionWindow.endTime)}` : ""}`
       : null);
 
   const isEffectivelyOpen = isSubmissionAvailable || hasActiveGracePeriod;
@@ -3162,7 +3171,17 @@ function FacultySubmissionPanelContent({
     }
     if (hasActiveGracePeriod && earliestGracePeriodDeadline) {
       const iso = earliestGracePeriodDeadline.toISOString();
-      const datePart = iso.split("T")[0];
+      const datePart = new Intl.DateTimeFormat("en-CA", {
+        timeZone: "Asia/Manila",
+      }).format(earliestGracePeriodDeadline);
+      const time24Part = new Intl.DateTimeFormat("en-GB", {
+        timeZone: "Asia/Manila",
+        hour12: false,
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+      }).format(earliestGracePeriodDeadline);
+      const time12Part = format24HourTo12Hour(time24Part);
       return {
         isConfigured: true,
         isOpen: true,
@@ -3172,12 +3191,12 @@ function FacultySubmissionPanelContent({
         startDate: submissionWindow?.startDate || getTodayInManila(),
         endDate: datePart,
         startTime: "00:00:00",
-        endTime: "23:59:59",
+        endTime: time24Part,
         academicYear:
           statusAcademicYear || submissionWindow?.academicYear || null,
         semester: (statusSemester || submissionWindow?.semester || null) as any,
         startTimeLabel: "12:00 AM",
-        endTimeLabel: "11:59 PM",
+        endTimeLabel: time12Part,
         currentTimeLabel: format24HourTo12Hour(getCurrentTimeInManila()),
         isGracePeriod: true,
         isPersonalDeadline: true,
@@ -3407,31 +3426,55 @@ function FacultySubmissionPanelContent({
       // safe
     }
   }
-  const windowDeadlineDisplay = useMemo(() => {
-    if (!submissionWindow?.endDate) return null;
-    if (submissionWindow.endDate.startsWith("2099"))
-      return "Always Open (No Deadline)";
-    const parsed = new Date(
-      `${submissionWindow.endDate}T${submissionWindow.endTime || "23:59:59"}`,
+  const isWindowAlwaysOpen = useMemo(() => {
+    const endDate = submissionWindow?.endDate;
+    if (!endDate) return false;
+    const yearNum = parseInt(endDate.slice(0, 4), 10);
+    return (
+      endDate.startsWith("2099") ||
+      endDate.startsWith("9999") ||
+      (!Number.isNaN(yearNum) && yearNum >= 2099)
     );
+  }, [submissionWindow?.endDate]);
+
+  const windowDeadlineDisplay = useMemo(() => {
+    if (!submissionWindow?.endDate || isWindowAlwaysOpen) return null;
+    const endTime24 = submissionWindow.endTime
+      ? normalizeTime24Hour(submissionWindow.endTime) || "23:59:59"
+      : "23:59:59";
+    const parsed = new Date(`${submissionWindow.endDate}T${endTime24}+08:00`);
     if (Number.isNaN(parsed.getTime())) return submissionWindow.endDate;
-    return parsed.toLocaleDateString("en-PH", {
+    const datePart = parsed.toLocaleDateString("en-PH", {
       month: "short",
       day: "numeric",
       year: "numeric",
+      timeZone: "Asia/Manila",
     });
-  }, [submissionWindow]);
+    const timePart =
+      submissionWindow.endTimeLabel?.trim() ||
+      format24HourTo12Hour(endTime24) ||
+      parsed.toLocaleTimeString("en-PH", {
+        hour: "numeric",
+        minute: "2-digit",
+        hour12: true,
+        timeZone: "Asia/Manila",
+      });
+    return timePart ? `${datePart} · ${timePart}` : datePart;
+  }, [submissionWindow, isWindowAlwaysOpen]);
+
   const windowDaysRemaining = useMemo(() => {
-    if (!submissionWindow?.endDate) return null;
-    if (submissionWindow.endDate.startsWith("2099")) return null;
+    if (!submissionWindow?.endDate || isWindowAlwaysOpen) return null;
+    const endTime24 = submissionWindow.endTime
+      ? normalizeTime24Hour(submissionWindow.endTime) || "23:59:59"
+      : "23:59:59";
     const targetMs = new Date(
-      `${submissionWindow.endDate}T${submissionWindow.endTime || "23:59:59"}`,
+      `${submissionWindow.endDate}T${endTime24}+08:00`,
     ).getTime();
     if (Number.isNaN(targetMs)) return null;
     const diffMs = targetMs - Date.now();
     if (diffMs <= 0) return 0;
     return Math.floor(diffMs / (1000 * 60 * 60 * 24));
-  }, [submissionWindow]);
+  }, [submissionWindow, isWindowAlwaysOpen]);
   // Show the alert once per page load when there are actionable items.
   // Waits for isLoadingStatuses=false so we use fresh API data, not stale SSR counts.
   // eslint-disable-next-line react-hooks/rules-of-hooks
@@ -5100,7 +5143,9 @@ function FacultySubmissionPanelContent({
                               ? "Schedule Not Set"
                               : isWindowClosed
                                 ? "Window Closed"
-                                : "Submissions Open"}
+                                : isWindowAlwaysOpen
+                                  ? "Always Open"
+                                  : "Submissions Open"}
                         </h3>
                         <span
                           className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider shrink-0 ${
@@ -5141,9 +5186,11 @@ function FacultySubmissionPanelContent({
                       <p className="text-[11px] text-slate-500 dark:text-slate-400 min-w-0 truncate">
                         {hasActiveGracePeriod && personalDeadlineFormatted
                           ? `Due: ${personalDeadlineFormatted}`
-                          : windowDeadlineDisplay
-                            ? `Deadline: ${windowDeadlineDisplay}`
-                            : "Waiting for admin schedule"}
+                          : isWindowAlwaysOpen
+                            ? "No closing deadline set"
+                            : windowDeadlineDisplay
+                              ? `Deadline: ${windowDeadlineDisplay}`
+                              : "Waiting for admin schedule"}
                       </p>
                       {hasLackings && !isEffectivelyOpen && !hasActiveGracePeriod ? (
                         <button
@@ -8043,7 +8090,14 @@ function FacultySubmissionPanelContent({
               notSubmittedCount={displayedStatusCounts?.notSubmitted ?? 0}
               rejectedCount={displayedStatusCounts?.rejected ?? 0}
               pendingValidationCount={displayedStatusCounts?.pending ?? 0}
-              deadlineDisplay={windowDeadlineDisplay}
+              isAlwaysOpen={isWindowAlwaysOpen && !hasActiveGracePeriod}
+              deadlineDisplay={
+                hasActiveGracePeriod
+                  ? personalDeadlineFormatted
+                  : isWindowAlwaysOpen
+                    ? null
+                    : windowDeadlineDisplay
+              }
             />
             {activeView === "settings" && (
               <article className="space-y-4 sm:space-y-5">

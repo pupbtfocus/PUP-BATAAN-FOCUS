@@ -580,11 +580,25 @@ export async function getFacultyInitialData(
     if (futurePendingSubs.length > 0) {
       futurePendingSubs.sort((a, b) => new Date(a.due_at!).getTime() - new Date(b.due_at!).getTime());
       const targetSub = futurePendingSubs[0];
-      const iso = targetSub.due_at!.includes("T") ? targetSub.due_at! : `${targetSub.due_at!}T23:59:59+08:00`;
-      const targetDate = new Date(targetSub.due_at!);
-      const datePart = iso.split("T")[0];
+      const rawDue = targetSub.due_at!;
+      const iso = rawDue.includes("T")
+        ? /[Zz]$|[+-]\d{2}:\d{2}$/.test(rawDue)
+          ? rawDue
+          : `${rawDue}+08:00`
+        : `${rawDue}T23:59:59+08:00`;
+      const targetDate = new Date(iso);
+      const datePart = new Intl.DateTimeFormat("en-CA", {
+        timeZone: "Asia/Manila",
+      }).format(targetDate);
+      const endTime24 = new Intl.DateTimeFormat("en-GB", {
+        timeZone: "Asia/Manila",
+        hour12: false,
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+      }).format(targetDate);
       const dateStr = targetDate.toLocaleDateString("en-PH", {
-        month: "long",
+        month: "short",
         day: "numeric",
         year: "numeric",
         timeZone: "Asia/Manila",
@@ -598,8 +612,10 @@ export async function getFacultyInitialData(
       personalDeadline = {
         hasPersonalDeadline: true,
         effectiveDeadline: iso,
-        formattedDueAt: `${dateStr} at ${timeStr}`,
+        formattedDueAt: `${dateStr} · ${timeStr}`,
         endDate: datePart,
+        endTime: endTime24,
+        endTimeLabel: timeStr,
       };
     }
   }
@@ -609,17 +625,29 @@ export async function getFacultyInitialData(
       if (ext.status !== "approved") continue;
       const extDate = ext.approved_extension_date || ext.approved_date;
       if (!extDate) continue;
-      let dueMs = new Date(extDate).getTime();
-      if (Number.isNaN(dueMs)) {
-        const iso = extDate.includes("T") ? extDate : `${extDate}T23:59:59+08:00`;
-        dueMs = new Date(iso).getTime();
-      }
+      const extTime = ext.approved_time
+        ? normalizeTime24Hour(ext.approved_time) || "23:59:59"
+        : "23:59:59";
+      const iso = extDate.includes("T")
+        ? /[Zz]$|[+-]\d{2}:\d{2}$/.test(extDate)
+          ? extDate
+          : `${extDate}+08:00`
+        : `${extDate}T${extTime}+08:00`;
+      const dueMs = new Date(iso).getTime();
       if (!Number.isNaN(dueMs) && dueMs > nowMs) {
-        const iso = extDate.includes("T") ? extDate : `${extDate}T23:59:59+08:00`;
-        const targetDate = new Date(extDate);
-        const datePart = iso.split("T")[0];
+        const targetDate = new Date(dueMs);
+        const datePart = new Intl.DateTimeFormat("en-CA", {
+          timeZone: "Asia/Manila",
+        }).format(targetDate);
+        const endTime24 = new Intl.DateTimeFormat("en-GB", {
+          timeZone: "Asia/Manila",
+          hour12: false,
+          hour: "2-digit",
+          minute: "2-digit",
+          second: "2-digit",
+        }).format(targetDate);
         const dateStr = targetDate.toLocaleDateString("en-PH", {
-          month: "long",
+          month: "short",
           day: "numeric",
           year: "numeric",
           timeZone: "Asia/Manila",
@@ -633,8 +661,10 @@ export async function getFacultyInitialData(
         personalDeadline = {
           hasPersonalDeadline: true,
           effectiveDeadline: iso,
-          formattedDueAt: `${dateStr} at ${timeStr}`,
+          formattedDueAt: `${dateStr} · ${timeStr}`,
           endDate: datePart,
+          endTime: endTime24,
+          endTimeLabel: timeStr,
         };
         break;
       }
@@ -1053,11 +1083,15 @@ export async function getFacultyInitialData(
       startDate: submissionWindow.startDate || submissionWindow.today,
       endDate: personalDeadline.endDate,
       startTime: "00:00:00",
-      endTime: "23:59:59",
+      endTime: personalDeadline.endTime || "23:59:59",
       academicYear: activeAcademicYear,
       semester: activeSemester || null,
       startTimeLabel: "12:00 AM",
-      endTimeLabel: "11:59 PM",
+      endTimeLabel:
+        personalDeadline.endTimeLabel ||
+        (personalDeadline.endTime
+          ? format24HourTo12Hour(personalDeadline.endTime)
+          : "11:59 PM"),
       currentTimeLabel: submissionWindow.currentTimeLabel,
       isGracePeriod: true,
       isPersonalDeadline: true,

@@ -909,6 +909,8 @@ export type FacultyPersonalDeadline = {
   effectiveDeadline: string;
   formattedDueAt: string;
   endDate: string;
+  endTime?: string;
+  endTimeLabel?: string;
 };
 
 export async function getFacultyPersonalDeadline(
@@ -1036,15 +1038,15 @@ export async function getFacultyPersonalDeadline(
 
         if (!dueAtStr) continue;
 
-        let dueMs = new Date(dueAtStr).getTime();
-        if (Number.isNaN(dueMs)) {
-          const iso = dueAtStr.includes("T") ? dueAtStr : `${dueAtStr}T23:59:59+08:00`;
-          dueMs = new Date(iso).getTime();
-        }
+        const normalizedDueIso = dueAtStr.includes("T")
+          ? /[Zz]$|[+-]\d{2}:\d{2}$/.test(dueAtStr)
+            ? dueAtStr
+            : `${dueAtStr}+08:00`
+          : `${dueAtStr}T23:59:59+08:00`;
+        const dueMs = new Date(normalizedDueIso).getTime();
 
         if (!Number.isNaN(dueMs) && dueMs > nowMs) {
-          const iso = dueAtStr.includes("T") ? dueAtStr : `${dueAtStr}T23:59:59+08:00`;
-          futurePending.push({ dueIso: iso, dueMs });
+          futurePending.push({ dueIso: normalizedDueIso, dueMs });
         }
       }
     }
@@ -1063,7 +1065,11 @@ export async function getFacultyPersonalDeadline(
           for (const ext of extData) {
             const extDate = ext.approved_date;
             if (!extDate) continue;
-            const timePart = ext.approved_time || "23:59:59";
+            const timePart = ext.approved_time
+              ? normalizeTime24Hour(ext.approved_time) ||
+                convert12HourTo24Hour(ext.approved_time) ||
+                "23:59:59"
+              : "23:59:59";
             const iso = `${extDate}T${timePart}+08:00`;
             const dueMs = new Date(iso).getTime();
             if (!Number.isNaN(dueMs) && dueMs > nowMs) {
@@ -1089,13 +1095,13 @@ export async function getFacultyPersonalDeadline(
             }
             const dt = a.due_at || a.grace_period_until;
             if (!dt) continue;
-            let dueMs = new Date(dt).getTime();
-            if (Number.isNaN(dueMs)) {
-              const iso = dt.includes("T") ? dt : `${dt}T23:59:59+08:00`;
-              dueMs = new Date(iso).getTime();
-            }
+            const iso = dt.includes("T")
+              ? /[Zz]$|[+-]\d{2}:\d{2}$/.test(dt)
+                ? dt
+                : `${dt}+08:00`
+              : `${dt}T23:59:59+08:00`;
+            const dueMs = new Date(iso).getTime();
             if (!Number.isNaN(dueMs) && dueMs > nowMs) {
-              const iso = dt.includes("T") ? dt : `${dt}T23:59:59+08:00`;
               futurePending.push({ dueIso: iso, dueMs });
             }
           }
@@ -1111,10 +1117,19 @@ export async function getFacultyPersonalDeadline(
     futurePending.sort((a, b) => a.dueMs - b.dueMs);
     const target = futurePending[0];
     const targetDate = new Date(target.dueMs);
-    const datePart = target.dueIso.split("T")[0];
+    const datePart = new Intl.DateTimeFormat("en-CA", {
+      timeZone: "Asia/Manila",
+    }).format(targetDate);
+    const endTime24 = new Intl.DateTimeFormat("en-GB", {
+      timeZone: "Asia/Manila",
+      hour12: false,
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+    }).format(targetDate);
 
     const dateStr = targetDate.toLocaleDateString("en-PH", {
-      month: "long",
+      month: "short",
       day: "numeric",
       year: "numeric",
       timeZone: "Asia/Manila",
@@ -1126,13 +1141,15 @@ export async function getFacultyPersonalDeadline(
       timeZone: "Asia/Manila",
     });
 
-    const formattedDueAt = `${dateStr} at ${timeStr}`;
+    const formattedDueAt = `${dateStr} · ${timeStr}`;
 
     return {
       hasPersonalDeadline: true,
       effectiveDeadline: target.dueIso,
       formattedDueAt,
       endDate: datePart,
+      endTime: endTime24,
+      endTimeLabel: timeStr,
     };
   } catch {
     return null;

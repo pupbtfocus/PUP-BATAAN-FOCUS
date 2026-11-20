@@ -35,13 +35,9 @@ export async function GET() {
       .maybeSingle();
 
     const activeAY = currentTerm?.academic_year || "2026-2027";
-    const rawSem = currentTerm?.semester ? normalizeSemester(currentTerm.semester) : "1st Semester";
-    const activeSem: SubmissionWindowSemester =
-      rawSem.includes("summer") || rawSem.includes("3")
-        ? "Summer Semester"
-        : rawSem.includes("2")
-        ? "2nd Semester"
-        : "1st Semester";
+    const activeSem: SubmissionWindowSemester = currentTerm?.semester
+      ? normalizeSemester(currentTerm.semester)
+      : "1st Semester";
 
     // 2. Evaluate schedule strictly for active term
     const config = await getSubmissionWindow(supabase, {
@@ -105,11 +101,15 @@ export async function GET() {
         startDate: status.startDate || status.today,
         endDate: personalDeadline.endDate,
         startTime: "00:00:00",
-        endTime: "23:59:59",
+        endTime: personalDeadline.endTime || "23:59:59",
         academicYear: activeAY,
         semester: activeSem,
         startTimeLabel: "12:00 AM",
-        endTimeLabel: "11:59 PM",
+        endTimeLabel:
+          personalDeadline.endTimeLabel ||
+          (personalDeadline.endTime
+            ? format24HourTo12Hour(personalDeadline.endTime)
+            : "11:59 PM"),
         currentTimeLabel: format24HourTo12Hour(status.currentTime),
         isGracePeriod: true,
         isPersonalDeadline: true,
