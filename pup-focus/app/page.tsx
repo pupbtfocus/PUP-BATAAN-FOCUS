@@ -904,15 +904,15 @@ export default function Home() {
             </svg>
 
             {/* Logo of PUP positioned precisely inside the curved arch in top center */}
-            <div className="absolute -top-9 left-1/2 -translate-x-1/2 z-30">
-              <Logo size={114} className="mb-0 drop-shadow-[0_12px_22px_rgba(0,0,0,0.7)]" />
+            <div className="absolute -top-7 left-1/2 -translate-x-1/2 z-30">
+              <Logo size={96} className="mb-0 drop-shadow-[0_12px_22px_rgba(0,0,0,0.7)]" />
             </div>
           </div>
 
-          {/* Continuous Center Spine Separator Line (Desktop) */}
+          {/* Soft Blended Center Separator Line (Desktop) */}
           <div
-            className="hidden md:block absolute left-1/2 -translate-x-1/2 w-[2px] bg-amber-400/40 pointer-events-none z-20"
-            style={{ top: "80px", bottom: "4px" }}
+            className="hidden md:block absolute left-1/2 -translate-x-1/2 w-[1.5px] bg-gradient-to-b from-transparent via-amber-400/55 to-transparent pointer-events-none z-20"
+            style={{ top: "74px", bottom: "16px" }}
           />
 
           {/* Card Body - Official PUP Brand Maroon (#800000) with 2-Sided Open Book Layout */}
@@ -930,7 +930,6 @@ export default function Home() {
                   <h2 className="text-xl sm:text-3xl font-black tracking-wider text-amber-300 uppercase mb-0.5 sm:mb-1 drop-shadow-[0_2px_4px_rgba(0,0,0,0.6)]">
                     Sign In
                   </h2>
-                  <div className="mx-auto my-1 sm:my-3 h-0.5 w-16 sm:w-20 rounded-full bg-gradient-to-r from-transparent via-amber-400 to-transparent shadow-[0_0_10px_rgba(251,191,36,0.8)]" />
                   <p className="text-amber-100 text-[11px] sm:text-sm font-medium tracking-wide">
                     Enter your institutional credentials to continue
                   </p>
@@ -970,6 +969,8 @@ export default function Home() {
                     className="object-cover object-[55%_bottom] opacity-75 blur-[2.5px] scale-105"
                     priority
                   />
+                  {/* Soft left-edge maroon blend into form panel */}
+                  <div className="hidden md:block absolute inset-y-0 left-0 w-24 bg-gradient-to-r from-[#800000] via-[#800000]/60 to-transparent" />
                 </div>
 
                 {/* Centered Typography: FOCUS & Faculty Online Compliance and Uploading System */}
