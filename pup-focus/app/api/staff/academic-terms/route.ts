@@ -177,7 +177,7 @@ export async function GET() {
     }
 
     const supabase = getServiceRoleClient();
-    let { data: termRows, error: termError } = await supabase
+    const { data: termRows, error: termError } = await supabase
       .from("academic_terms")
       .select("academic_year, semester, status")
       .order("academic_year", { ascending: false })
@@ -191,53 +191,6 @@ export async function GET() {
         },
         { status: 500 },
       );
-    }
-
-    // Ensure all existing academic years have Summer Semester
-    if (Array.isArray(termRows) && termRows.length > 0) {
-      const currentTerms = termRows;
-      const distinctYears = Array.from(
-        new Set(currentTerms.map((r) => r.academic_year)),
-      );
-      const missingSummerYears = distinctYears.filter((year) => {
-        const termsForYear = currentTerms.filter((r) => r.academic_year === year);
-        const hasSummer = termsForYear.some((r) =>
-          (r.semester || "").toLowerCase().includes("summer"),
-        );
-        return !hasSummer;
-      });
-
-      if (missingSummerYears.length > 0) {
-        const rowsToInsert = missingSummerYears.map((year) => {
-          const termsForYear = currentTerms.filter((r) => r.academic_year === year);
-          const allArchived = termsForYear.every(
-            (r) =>
-              r.status === "Archived" || (r.status as string) === "Completed",
-          );
-          return {
-            academic_year: year,
-            semester: "Summer Semester",
-            status: (allArchived ? "Archived" : "Upcoming") as AcademicTermStatus,
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-          };
-        });
-
-        const { error: insertMissingError } = await supabase
-          .from("academic_terms")
-          .insert(rowsToInsert);
-
-        if (!insertMissingError) {
-          const { data: refreshedRows } = await supabase
-            .from("academic_terms")
-            .select("academic_year, semester, status")
-            .order("academic_year", { ascending: false })
-            .order("semester", { ascending: true });
-          if (refreshedRows) {
-            termRows = refreshedRows;
-          }
-        }
-      }
     }
 
     const latestAcademicYear =
@@ -399,19 +352,53 @@ export async function POST(request: NextRequest) {
       // No JSON body
     }
 
-    if (body?.action === "add_summer" && body?.academicYear) {
+    if (
+      (body?.action === "add_semester" || body?.action === "add_summer") &&
+      body?.academicYear
+    ) {
       const targetAy = String(body.academicYear).trim();
-      const { data: existingSummer } = await supabase
-        .from("academic_terms")
-        .select("semester")
-        .eq("academic_year", targetAy)
-        .ilike("semester", "%summer%")
-        .maybeSingle();
+      const targetSem =
+        body?.action === "add_summer"
+          ? "Summer Semester"
+          : normalizeSemester(body?.semester);
 
-      if (existingSummer) {
+      if (!isValidAcademicYear(targetAy) || !isValidSemester(targetSem)) {
         return NextResponse.json(
-          { error: "Summer Semester already exists for this academic year." },
+          { error: "Invalid academic year or semester." },
+          { status: 400 },
+        );
+      }
+
+      const { data: allTermsForCheck } = await supabase
+        .from("academic_terms")
+        .select("academic_year, semester, status");
+
+      const existingRows = Array.isArray(allTermsForCheck) ? allTermsForCheck : [];
+      const alreadyExists = existingRows.some(
+        (r) =>
+          r.academic_year === targetAy &&
+          normalizeSemester(r.semester) === targetSem,
+      );
+
+      if (alreadyExists) {
+        return NextResponse.json(
+          { error: `${targetSem} already exists for A.Y. ${targetAy}.` },
           { status: 409 },
+        );
+      }
+
+      const activeCurrent = existingRows.find((r) => r.status === "Current");
+      if (
+        activeCurrent &&
+        getTermScore(targetAy, targetSem) <=
+          getTermScore(activeCurrent.academic_year, activeCurrent.semester)
+      ) {
+        return NextResponse.json(
+          {
+            error:
+              "Cannot restore a past semester that precedes or matches the active term.",
+          },
+          { status: 400 },
         );
       }
 
@@ -419,8 +406,8 @@ export async function POST(request: NextRequest) {
         .from("academic_terms")
         .insert({
           academic_year: targetAy,
-          semester: "Summer Semester",
-          status: "Upcoming",
+          semester: targetSem,
+          status: activeCurrent ? "Upcoming" : "Current",
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
         });
@@ -428,7 +415,7 @@ export async function POST(request: NextRequest) {
       if (insertErr) {
         return NextResponse.json(
           {
-            error: "Failed to add Summer Semester",
+            error: `Failed to add ${targetSem}`,
             details: insertErr.message,
           },
           { status: 500 },
@@ -437,13 +424,18 @@ export async function POST(request: NextRequest) {
 
       void logTransactionEvent({
         actorId: user.id,
-        action: "academic_term.summer_create",
+        action: "academic_term.semester_restore",
         entityType: "academic_term",
         entityId: user.id,
-        metadata: { academic_year: targetAy, semester: "Summer Semester" },
+        metadata: { academic_year: targetAy, semester: targetSem },
       });
 
-      return NextResponse.json({ success: true, added: true });
+      return NextResponse.json({
+        success: true,
+        added: true,
+        academicYear: targetAy,
+        semester: targetSem,
+      });
     }
     const { data: existingTerms, error: existingError } = await supabase
       .from("academic_terms")
@@ -594,12 +586,15 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    invalidateServerTermsCache();
-
     const url = new URL(request.url);
     const academicYear = url.searchParams.get("academicYear")?.trim() ?? "";
     const semester = normalizeSemester(url.searchParams.get("semester"));
     const action = url.searchParams.get("action");
+    const checkOnly = url.searchParams.get("checkOnly") === "1";
+
+    if (!checkOnly) {
+      invalidateServerTermsCache();
+    }
 
     if (!isValidAcademicYear(academicYear) || !isValidSemester(semester)) {
       return NextResponse.json(
@@ -720,21 +715,7 @@ export async function PATCH(request: NextRequest) {
         }
       }
 
-      if (pendingSubmissionsCount > 0) {
-        return NextResponse.json(
-          {
-            error: "Pending Requirement Reviews Required",
-            details: `Cannot archive academic term: There ${pendingSubmissionsCount === 1 ? "is" : "are"} ${pendingSubmissionsCount} submitted requirement${pendingSubmissionsCount !== 1 ? "s" : ""} pending review in S.Y. ${academicYear} (${semester}). Please review all submitted requirements before you can archive or close this academic term.`,
-            pendingReviews: true,
-            pendingCount: pendingSubmissionsCount,
-            academicYear,
-            semester,
-          },
-          { status: 400 },
-        );
-      }
-
-      // Guard 1: Strictly prevent archiving if no backup exists specifically for this semester
+      // Guard 1: Check semester backup status alongside pending reviews
       const { data: backupRows } = await supabase
         .from("system_backups")
         .select("id, backup_name, academic_year, metadata, status")
@@ -745,6 +726,21 @@ export async function PATCH(request: NextRequest) {
         academicYear,
         semester,
       );
+
+      if (pendingSubmissionsCount > 0) {
+        return NextResponse.json(
+          {
+            error: "Pending Requirement Reviews Required",
+            details: `Cannot archive academic term: There ${pendingSubmissionsCount === 1 ? "is" : "are"} ${pendingSubmissionsCount} submitted requirement${pendingSubmissionsCount !== 1 ? "s" : ""} pending review in S.Y. ${academicYear} (${semester}). Please review all submitted requirements before you can archive or close this academic term.`,
+            pendingReviews: true,
+            pendingCount: pendingSubmissionsCount,
+            missingBackup: !hasSemesterBackup,
+            academicYear,
+            semester,
+          },
+          { status: 400 },
+        );
+      }
 
       if (!hasSemesterBackup) {
         return NextResponse.json(
@@ -757,6 +753,10 @@ export async function PATCH(request: NextRequest) {
           },
           { status: 400 },
         );
+      }
+
+      if (checkOnly) {
+        return NextResponse.json({ ready: true });
       }
 
       const { error: archiveError } = await supabase
@@ -957,21 +957,7 @@ export async function PATCH(request: NextRequest) {
         }
       }
 
-      if (pendingSubmissionsCount > 0) {
-        return NextResponse.json(
-          {
-            error: "Pending Requirement Reviews Required",
-            details: `Cannot change academic term: There ${pendingSubmissionsCount === 1 ? "is" : "are"} ${pendingSubmissionsCount} submitted requirement${pendingSubmissionsCount !== 1 ? "s" : ""} pending review in S.Y. ${currentTerm.academic_year} (${currentTerm.semester}). Please review all submitted requirements (validate or reject) before you can change to a new Academic Year and Semester.`,
-            pendingReviews: true,
-            pendingCount: pendingSubmissionsCount,
-            academicYear: currentTerm.academic_year,
-            semester: currentTerm.semester,
-          },
-          { status: 400 },
-        );
-      }
-
-      // Guard 1: Strictly prevent changing the active term if no backup exists specifically for this semester
+      // Guard 1: Check semester backup status alongside pending reviews
       const { data: backupRows } = await supabase
         .from("system_backups")
         .select("id, backup_name, academic_year, metadata, status")
@@ -982,6 +968,21 @@ export async function PATCH(request: NextRequest) {
         currentTerm.academic_year,
         currentTerm.semester,
       );
+
+      if (pendingSubmissionsCount > 0) {
+        return NextResponse.json(
+          {
+            error: "Pending Requirement Reviews Required",
+            details: `Cannot change academic term: There ${pendingSubmissionsCount === 1 ? "is" : "are"} ${pendingSubmissionsCount} submitted requirement${pendingSubmissionsCount !== 1 ? "s" : ""} pending review in S.Y. ${currentTerm.academic_year} (${currentTerm.semester}). Please review all submitted requirements (validate or reject) before you can change to a new Academic Year and Semester.`,
+            pendingReviews: true,
+            pendingCount: pendingSubmissionsCount,
+            missingBackup: !hasSemesterBackup,
+            academicYear: currentTerm.academic_year,
+            semester: currentTerm.semester,
+          },
+          { status: 400 },
+        );
+      }
 
       if (!hasSemesterBackup) {
         return NextResponse.json(
@@ -1038,6 +1039,10 @@ export async function PATCH(request: NextRequest) {
           );
         }
       }
+    }
+
+    if (checkOnly) {
+      return NextResponse.json({ ready: true });
     }
 
     const todayManila = getTodayInManila();
@@ -1197,10 +1202,43 @@ export async function DELETE(request: NextRequest) {
     }
 
     const supabase = getServiceRoleClient();
+    const { data: yearTerms, error: fetchTermErr } = await supabase
+      .from("academic_terms")
+      .select("academic_year, semester, status")
+      .eq("academic_year", academicYear);
+
+    if (fetchTermErr) {
+      return NextResponse.json(
+        {
+          error: "Failed to verify academic term",
+          details: fetchTermErr.message,
+        },
+        { status: 500 },
+      );
+    }
+
+    const matchingRows = (yearTerms ?? []).filter(
+      (r) => normalizeSemester(r.semester) === semester,
+    );
+
+    if (matchingRows.length === 0) {
+      return NextResponse.json(
+        { error: "Academic term not found." },
+        { status: 404 },
+      );
+    }
+
+    if (matchingRows.some((r) => r.status === "Current")) {
+      return NextResponse.json(
+        { error: "Cannot delete the currently active academic term." },
+        { status: 400 },
+      );
+    }
+
     const { data: assignmentRows, error: assignmentError } = await supabase
       .from("faculty_program_assignments")
-      .select("id")
-      .match({ academic_year: academicYear, term: semester });
+      .select("id, term")
+      .eq("academic_year", academicYear);
 
     if (assignmentError) {
       return NextResponse.json(
@@ -1212,7 +1250,11 @@ export async function DELETE(request: NextRequest) {
       );
     }
 
-    if (Array.isArray(assignmentRows) && assignmentRows.length > 0) {
+    const hasMatchingAssignments = (assignmentRows ?? []).some(
+      (a: any) => normalizeSemester(a.term) === semester,
+    );
+
+    if (hasMatchingAssignments) {
       return NextResponse.json(
         {
           error:
@@ -1222,10 +1264,15 @@ export async function DELETE(request: NextRequest) {
       );
     }
 
-    const { data: deleteResult, error: deleteError } = await supabase
+    const exactSemesterValues = Array.from(
+      new Set(matchingRows.map((r) => r.semester)),
+    );
+
+    const { error: deleteError } = await supabase
       .from("academic_terms")
       .delete()
-      .match({ academic_year: academicYear, semester });
+      .eq("academic_year", academicYear)
+      .in("semester", exactSemesterValues);
 
     if (deleteError) {
       return NextResponse.json(
@@ -1238,11 +1285,17 @@ export async function DELETE(request: NextRequest) {
     }
 
     await supabase
+      .from("submission_window_terms")
+      .delete()
+      .eq("academic_year", academicYear)
+      .in("semester", exactSemesterValues);
+
+    await supabase
       .from("submission_windows")
       .update({ academic_year: null, semester: null })
       .eq("id", 1)
       .eq("academic_year", academicYear)
-      .eq("semester", semester);
+      .in("semester", exactSemesterValues);
 
     void logTransactionEvent({
       actorId: user.id,

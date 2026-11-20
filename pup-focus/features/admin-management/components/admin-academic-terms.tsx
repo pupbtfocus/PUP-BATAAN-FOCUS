@@ -96,9 +96,12 @@ export function AdminAcademicTerms({
       (typeof window === "undefined" || (!sessionStorage.getItem("pup_focus_academic_terms") && !localStorage.getItem("pup_focus_academic_terms")));
   });
   const [isSaving, setIsSaving] = useState(false);
+  const [checkingTransitionKey, setCheckingTransitionKey] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [isRestoreModalOpen, setIsRestoreModalOpen] = useState(false);
+  const [restoringSemesterKey, setRestoringSemesterKey] = useState<string | null>(null);
   const [termToSetCurrent, setTermToSetCurrent] =
     useState<AcademicTermItem | null>(null);
   const [termToDelete, setTermToDelete] = useState<AcademicTermItem | null>(
@@ -113,6 +116,9 @@ export function AdminAcademicTerms({
   }>({ isOpen: false });
   const [countdown, setCountdown] = useState<number>(10);
   const [isModalBackingUp, setIsModalBackingUp] = useState(false);
+  const [backupDownloadedInModal, setBackupDownloadedInModal] = useState(false);
+  const [backupConfirmText, setBackupConfirmText] = useState("");
+  const [isConfirmingAfterBackup, setIsConfirmingAfterBackup] = useState(false);
   const [modalBackupError, setModalBackupError] = useState<string | null>(null);
   const [pendingTargetTerm, setPendingTargetTerm] = useState<AcademicTermItem | null>(null);
   const [pendingArchiveTerm, setPendingArchiveTerm] = useState<AcademicTermItem | null>(null);
@@ -216,6 +222,38 @@ export function AdminAcademicTerms({
       );
 
     return current ? [current, ...upcoming] : upcoming;
+  }, [terms, currentScore]);
+
+  // Compute missing upcoming semesters across existing academic years so deleted semesters can be restored
+  const missingSemesters = useMemo(() => {
+    const standardSemesters = [
+      "1st Semester",
+      "2nd Semester",
+      "Summer Semester",
+    ] as const;
+    const yearsMap = new Map<string, Set<string>>();
+    for (const term of terms) {
+      if (!yearsMap.has(term.academicYear)) {
+        yearsMap.set(term.academicYear, new Set());
+      }
+      yearsMap.get(term.academicYear)!.add(term.semester);
+    }
+
+    const missing: Array<{ academicYear: string; semester: string }> = [];
+    const sortedYears = Array.from(yearsMap.keys()).sort((a, b) =>
+      a.localeCompare(b),
+    );
+    for (const ay of sortedYears) {
+      const existing = yearsMap.get(ay)!;
+      for (const sem of standardSemesters) {
+        if (existing.has(sem)) continue;
+        const score = getTermScore(ay, sem);
+        if (currentScore === 0 || score > currentScore) {
+          missing.push({ academicYear: ay, semester: sem });
+        }
+      }
+    }
+    return missing;
   }, [terms, currentScore]);
 
   // Archive section: All completed, closed, and archived academic terms
@@ -335,6 +373,51 @@ export function AdminAcademicTerms({
     }
   }
 
+  async function handleRestoreSemester(academicYear: string, semester: string) {
+    const key = `${academicYear}|${semester}`;
+    if (restoringSemesterKey) return;
+    setRestoringSemesterKey(key);
+    setError(null);
+    setSuccess(null);
+
+    try {
+      const response = await fetch("/api/staff/academic-terms", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({
+          action: "add_semester",
+          academicYear,
+          semester,
+        }),
+      });
+      const data = await response.json();
+
+      if (!response.ok) {
+        setError(
+          data?.error ||
+            `Failed to restore ${academicYear} ${semester} (HTTP ${response.status})`,
+        );
+        return;
+      }
+
+      setSuccess(`Restored ${academicYear} ${semester}.`);
+      await loadTerms({ silent: true });
+      emitRealtimeSync({ source: "academic-term-restored", timestamp: Date.now() });
+      if (missingSemesters.length <= 1) {
+        setIsRestoreModalOpen(false);
+      }
+    } catch (restoreError) {
+      setError(
+        restoreError instanceof Error
+          ? restoreError.message
+          : "Failed to restore semester",
+      );
+    } finally {
+      setRestoringSemesterKey(null);
+    }
+  }
+
   async function handleSetCurrent(term: AcademicTermItem) {
     if (term.status === "Current") return;
     const termScore = getTermScore(term.academicYear, term.semester);
@@ -346,7 +429,80 @@ export function AdminAcademicTerms({
       setError("Cannot reactivate a completed or past academic term.");
       return;
     }
-    setTermToSetCurrent(term);
+
+    const key = `switch:${term.academicYear}|${term.semester}`;
+    if (checkingTransitionKey) return;
+    setCheckingTransitionKey(key);
+    setError(null);
+    setSuccess(null);
+
+    try {
+      const response = await fetch(
+        `/api/staff/academic-terms?academicYear=${encodeURIComponent(
+          term.academicYear,
+        )}&semester=${encodeURIComponent(term.semester)}&checkOnly=1`,
+        {
+          method: "PATCH",
+          credentials: "include",
+        },
+      );
+      const data = await response.json();
+
+      if (!response.ok) {
+        if (data?.pendingReviews) {
+          setPendingTargetTerm(term);
+          setPendingArchiveTerm(null);
+          setModalBackupError(null);
+          setWarningModalData({
+            isOpen: true,
+            title: data?.error || "Pending Requirement Reviews Required",
+            description:
+              data?.details ||
+              "All submitted requirements must be reviewed before changing to a new Academic Year and Semester.",
+            hasPendingReviews: true,
+            pendingCount: data?.pendingCount || 0,
+            missingBackup: Boolean(data?.missingBackup),
+          });
+          return;
+        }
+
+        if (
+          data?.error?.includes("Backup") ||
+          data?.details?.includes("backup") ||
+          data?.missingBackup
+        ) {
+          setPendingTargetTerm(term);
+          setPendingArchiveTerm(null);
+          setModalBackupError(null);
+          setBackupDownloadedInModal(false);
+          setBackupConfirmText("");
+          setWarningModalData({
+            isOpen: true,
+            title: data?.error || "Semester Backup Required",
+            description:
+              data?.details ||
+              "A backup for this specific semester must be created in Backup & Archive before changing to a new academic term. Backups are required per semester.",
+            missingBackup: Boolean(data?.missingBackup ?? true),
+          });
+          return;
+        }
+
+        setError(
+          data?.error || `Failed to verify academic term prerequisites (HTTP ${response.status})`,
+        );
+        return;
+      }
+
+      setTermToSetCurrent(term);
+    } catch (checkError) {
+      setError(
+        checkError instanceof Error
+          ? checkError.message
+          : "Failed to check academic term requirements",
+      );
+    } finally {
+      setCheckingTransitionKey(null);
+    }
   }
 
   async function confirmSetCurrent() {
@@ -464,7 +620,44 @@ export function AdminAcademicTerms({
       URL.revokeObjectURL(url);
 
       emitRealtimeSync({ source: "system-backup-created", timestamp: Date.now() });
+      await loadTerms({ silent: true });
 
+      if (pendingArchiveTerm || pendingTargetTerm) {
+        setBackupDownloadedInModal(true);
+        setBackupConfirmText("");
+        setWarningModalData((prev) => ({
+          ...prev,
+          title: pendingArchiveTerm
+            ? "Confirm Archive After Backup"
+            : "Confirm Term Switch After Backup",
+          description: `Backup for S.Y. ${targetAy} (${targetSem}) has been downloaded. Type CONFIRM below to ${pendingArchiveTerm ? "archive this term" : "activate the new academic term"}.`,
+          missingBackup: false,
+        }));
+      } else {
+        setSuccess(
+          `Document backup for S.Y. ${targetAy} (${targetSem}) completed successfully!`,
+        );
+        setWarningModalData({ isOpen: false, title: "", description: "" });
+        setIsConfirmBackupOpen(false);
+      }
+    } catch (err) {
+      setModalBackupError(
+        err instanceof Error ? err.message : "Failed to backup semester documents",
+      );
+    } finally {
+      setIsModalBackingUp(false);
+    }
+  }
+
+  async function handleConfirmAfterBackup() {
+    if (backupConfirmText.trim().toUpperCase() !== "CONFIRM") return;
+    const targetAy = pendingArchiveTerm?.academicYear || currentTerm?.academicYear;
+    const targetSem = pendingArchiveTerm?.semester || currentTerm?.semester;
+
+    setIsConfirmingAfterBackup(true);
+    setModalBackupError(null);
+
+    try {
       if (pendingArchiveTerm) {
         const target = pendingArchiveTerm;
         const patchRes = await fetch(
@@ -486,6 +679,8 @@ export function AdminAcademicTerms({
         );
         setWarningModalData({ isOpen: false, title: "", description: "" });
         setPendingArchiveTerm(null);
+        setBackupDownloadedInModal(false);
+        setBackupConfirmText("");
         setIsConfirmBackupOpen(false);
         await loadTerms({ silent: true });
         emitRealtimeSync({ source: "academic-term-archived", timestamp: Date.now() });
@@ -506,33 +701,101 @@ export function AdminAcademicTerms({
         }
 
         setSuccess(
-          `Successfully backed up documents for ${currentTerm?.academicYear} (${currentTerm?.semester}) and set ${target.academicYear} ${target.semester} as the Current term!`,
+          `Successfully backed up documents for ${targetAy} (${targetSem}) and set ${target.academicYear} ${target.semester} as the Current term!`,
         );
         setWarningModalData({ isOpen: false, title: "", description: "" });
         setPendingTargetTerm(null);
+        setBackupDownloadedInModal(false);
+        setBackupConfirmText("");
         setIsConfirmBackupOpen(false);
         await loadTerms({ silent: true });
         emitRealtimeSync({ source: "academic-term-set-current", timestamp: Date.now() });
-      } else {
-        setSuccess(
-          `Document backup for S.Y. ${targetAy} (${targetSem}) completed successfully!`,
-        );
-        setWarningModalData({ isOpen: false, title: "", description: "" });
-        setIsConfirmBackupOpen(false);
-        await loadTerms({ silent: true });
       }
     } catch (err) {
       setModalBackupError(
-        err instanceof Error ? err.message : "Failed to backup semester documents",
+        err instanceof Error ? err.message : "Failed to complete academic term transition",
       );
     } finally {
-      setIsModalBackingUp(false);
+      setIsConfirmingAfterBackup(false);
     }
   }
 
-  function handleArchiveClick(term: AcademicTermItem) {
+  async function handleArchiveClick(term: AcademicTermItem) {
     if (term.status === "Archived" || (term.status as string) === "Completed") return;
-    setTermToArchive(term);
+
+    const key = `archive:${term.academicYear}|${term.semester}`;
+    if (checkingTransitionKey) return;
+    setCheckingTransitionKey(key);
+    setError(null);
+    setSuccess(null);
+
+    try {
+      const response = await fetch(
+        `/api/staff/academic-terms?academicYear=${encodeURIComponent(
+          term.academicYear,
+        )}&semester=${encodeURIComponent(term.semester)}&action=archive&checkOnly=1`,
+        {
+          method: "PATCH",
+          credentials: "include",
+        },
+      );
+      const data = await response.json();
+
+      if (!response.ok) {
+        if (data?.pendingReviews) {
+          setPendingArchiveTerm(term);
+          setPendingTargetTerm(null);
+          setModalBackupError(null);
+          setWarningModalData({
+            isOpen: true,
+            title: data?.error || "Pending Requirement Reviews Required",
+            description:
+              data?.details ||
+              "All submitted requirements must be reviewed before archiving or closing this Academic Year and Semester.",
+            hasPendingReviews: true,
+            pendingCount: data?.pendingCount || 0,
+            missingBackup: Boolean(data?.missingBackup),
+          });
+          return;
+        }
+
+        if (
+          data?.error?.includes("Backup") ||
+          data?.details?.includes("backup") ||
+          data?.missingBackup
+        ) {
+          setPendingArchiveTerm(term);
+          setPendingTargetTerm(null);
+          setModalBackupError(null);
+          setBackupDownloadedInModal(false);
+          setBackupConfirmText("");
+          setWarningModalData({
+            isOpen: true,
+            title: data?.error || "Semester Backup Required",
+            description:
+              data?.details ||
+              `A backup for ${term.academicYear} (${term.semester}) must be created in Backup & Archive before archiving or closing this academic term. Backups are required per semester.`,
+            missingBackup: Boolean(data?.missingBackup ?? true),
+          });
+          return;
+        }
+
+        setError(
+          data?.error || `Failed to verify archive requirements (HTTP ${response.status})`,
+        );
+        return;
+      }
+
+      setTermToArchive(term);
+    } catch (checkError) {
+      setError(
+        checkError instanceof Error
+          ? checkError.message
+          : "Failed to check archive requirements",
+      );
+    } finally {
+      setCheckingTransitionKey(null);
+    }
   }
 
   async function confirmArchiveTerm() {
@@ -749,14 +1012,29 @@ export function AdminAcademicTerms({
       );
     }
 
+    const switchKey = `switch:${term.academicYear}|${term.semester}`;
+    const isCheckingThis = checkingTransitionKey === switchKey;
+
     return (
       <button
         type="button"
-        onClick={() => handleSetCurrent(term)}
-        disabled={isLoading || isSaving}
-        className="bg-[#0b5336] hover:bg-[#073d2a] text-white border border-[#08412a] text-xs font-semibold px-3 py-1.5 rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer shadow-2xs"
+        onClick={() => void handleSetCurrent(term)}
+        disabled={isLoading || isSaving || Boolean(checkingTransitionKey)}
+        className="inline-flex items-center gap-1.5 bg-[#0b5336] hover:bg-[#073d2a] text-white border border-[#08412a] text-xs font-semibold px-3 py-1.5 rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer shadow-2xs"
       >
-        Set Current
+        {isCheckingThis ? (
+          <>
+            <AppIcon
+              icon={SystemRestart}
+              size="xs"
+              color="inherit"
+              className="animate-spin shrink-0"
+            />
+            <span>Checking...</span>
+          </>
+        ) : (
+          "Set Current"
+        )}
       </button>
     );
   }
@@ -774,6 +1052,21 @@ export function AdminAcademicTerms({
           <AppIcon icon={Archive} size="xs" color="inherit" />
           <span>Browse Past Submissions</span>
         </button>
+
+        {missingSemesters.length > 0 && (
+          <button
+            type="button"
+            onClick={() => setIsRestoreModalOpen(true)}
+            disabled={isLoading || isSaving}
+            className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 bg-[#0b5336] hover:bg-[#073d2a] text-white border border-[#08412a] font-semibold px-3.5 py-2.5 sm:py-2 rounded-xl text-xs transition-all disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer shadow-sm"
+            title="Restore deleted or missing upcoming semesters"
+          >
+            <span>+ Restore Semester</span>
+            <span className="inline-flex items-center justify-center rounded-full bg-white/20 px-1.5 py-0.5 text-[10px] font-bold leading-none">
+              {missingSemesters.length}
+            </span>
+          </button>
+        )}
 
         <button
           type="button"
@@ -894,13 +1187,22 @@ export function AdminAcademicTerms({
                   {activeAndUpcomingTerms.length === 1 && (
                     <button
                       type="button"
-                      onClick={() => handleArchiveClick(term)}
-                      disabled={isLoading || isSaving}
+                      onClick={() => void handleArchiveClick(term)}
+                      disabled={isLoading || isSaving || Boolean(checkingTransitionKey)}
                       title="Archive and close this academic term"
                       className="inline-flex items-center gap-1 bg-[#0b5336] hover:bg-[#073d2a] text-white border border-[#08412a] text-xs font-semibold px-2.5 py-1.5 rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer shadow-2xs"
                     >
-                      <AppIcon icon={Archive} size="xs" color="inherit" />
-                      <span>Archive</span>
+                      {checkingTransitionKey === `archive:${term.academicYear}|${term.semester}` ? (
+                        <>
+                          <AppIcon icon={SystemRestart} size="xs" color="inherit" className="animate-spin" />
+                          <span>Checking...</span>
+                        </>
+                      ) : (
+                        <>
+                          <AppIcon icon={Archive} size="xs" color="inherit" />
+                          <span>Archive</span>
+                        </>
+                      )}
                     </button>
                   )}
 
@@ -1008,13 +1310,22 @@ export function AdminAcademicTerms({
                         {activeAndUpcomingTerms.length === 1 && (
                           <button
                             type="button"
-                            onClick={() => handleArchiveClick(term)}
-                            disabled={isLoading || isSaving}
+                            onClick={() => void handleArchiveClick(term)}
+                            disabled={isLoading || isSaving || Boolean(checkingTransitionKey)}
                             title="Archive and close this academic term"
                             className="inline-flex items-center gap-1 bg-[#0b5336] hover:bg-[#073d2a] text-white border border-[#08412a] text-xs font-semibold px-2.5 py-1 rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer shadow-2xs"
                           >
-                            <AppIcon icon={Archive} size="xs" color="inherit" />
-                            <span>Archive</span>
+                            {checkingTransitionKey === `archive:${term.academicYear}|${term.semester}` ? (
+                              <>
+                                <AppIcon icon={SystemRestart} size="xs" color="inherit" className="animate-spin" />
+                                <span>Checking...</span>
+                              </>
+                            ) : (
+                              <>
+                                <AppIcon icon={Archive} size="xs" color="inherit" />
+                                <span>Archive</span>
+                              </>
+                            )}
                           </button>
                         )}
 
@@ -1334,6 +1645,92 @@ export function AdminAcademicTerms({
         </div>
       ) : null}
 
+      {/* Modal: Restore Deleted / Missing Semesters */}
+      {isRestoreModalOpen ? (
+        <div
+          role="dialog"
+          aria-modal="true"
+          className="fixed inset-0 z-[60] h-dvh overflow-hidden overscroll-none flex items-center justify-center px-3 sm:px-4 py-4 sm:py-6"
+        >
+          <div
+            className="fixed inset-0 h-lvh bg-black/70 backdrop-blur-sm touch-none overscroll-none"
+            aria-hidden="true"
+          />
+          <div className="relative z-10 w-full max-w-md max-h-[90dvh] rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 shadow-2xl text-slate-900 dark:text-slate-100 overflow-hidden flex flex-col">
+            <ModalHeader
+              title="Restore Missing Semester"
+              subtitle="Add back a deleted upcoming semester to its academic year"
+              icon={Calendar}
+            />
+            <div className="p-4 sm:p-6 space-y-4 overflow-y-auto overflow-x-hidden overscroll-contain">
+              {missingSemesters.length === 0 ? (
+                <p className="text-xs text-slate-500 dark:text-slate-400 text-center py-4">
+                  All upcoming academic years already have all semesters configured.
+                </p>
+              ) : (
+                <div className="space-y-2.5">
+                  {missingSemesters.map((item) => {
+                    const key = `${item.academicYear}|${item.semester}`;
+                    const isRestoringThis = restoringSemesterKey === key;
+                    return (
+                      <div
+                        key={key}
+                        className="flex items-center justify-between gap-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/60 px-3.5 py-2.5"
+                      >
+                        <div className="min-w-0">
+                          <p className="text-xs font-bold text-slate-900 dark:text-slate-100">
+                            {item.academicYear}
+                          </p>
+                          <p className="text-[11px] font-medium text-slate-600 dark:text-slate-400">
+                            {item.semester}
+                          </p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            void handleRestoreSemester(
+                              item.academicYear,
+                              item.semester,
+                            )
+                          }
+                          disabled={Boolean(restoringSemesterKey)}
+                          className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-[#0b5336] hover:bg-[#073d2a] text-white border border-[#08412a] px-3 py-1.5 text-xs font-semibold transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed shrink-0 shadow-2xs"
+                        >
+                          {isRestoringThis ? (
+                            <>
+                              <AppIcon
+                                icon={SystemRestart}
+                                size="xs"
+                                color="inherit"
+                                className="animate-spin"
+                              />
+                              <span>Restoring...</span>
+                            </>
+                          ) : (
+                            <span>+ Restore</span>
+                          )}
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+
+              <div className="pt-2 border-t border-slate-100 dark:border-slate-800/80 flex justify-end">
+                <button
+                  type="button"
+                  onClick={() => setIsRestoreModalOpen(false)}
+                  disabled={Boolean(restoringSemesterKey)}
+                  className="px-4 py-2 rounded-xl bg-[#780000] hover:bg-[#5e0000] text-white border border-[#5e0000] text-xs font-semibold transition-all cursor-pointer shadow-xs disabled:opacity-50"
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
       {/* Modal: Confirm Set Current with Safety Timed Countdown */}
       {termToSetCurrent ? (
         <div
@@ -1628,6 +2025,30 @@ export function AdminAcademicTerms({
                   </span>
                 </div>
 
+                {warningModalData.hasPendingReviews && warningModalData.missingBackup && (
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 rounded-xl border border-slate-200/90 dark:border-slate-800 bg-white dark:bg-slate-900/60 shadow-2xs">
+                    <div className="flex items-start sm:items-center gap-3 min-w-0">
+                      <div className="h-9 w-9 rounded-xl flex items-center justify-center shrink-0 shadow-2xs bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700/60">
+                        <AppIcon icon={Database} size="sm" color="default" />
+                      </div>
+                      <div className="space-y-0.5 min-w-0">
+                        <p className="text-xs font-bold text-slate-900 dark:text-slate-100">
+                          {(pendingArchiveTerm || currentTerm)
+                            ? `${(pendingArchiveTerm || currentTerm)!.academicYear} · ${(pendingArchiveTerm || currentTerm)!.semester}`
+                            : "Current Semester"}{" "}
+                          Backup
+                        </p>
+                        <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed">
+                          A semester backup must also be created in Backup &amp; Archive after completing pending reviews.
+                        </p>
+                      </div>
+                    </div>
+                    <span className="self-start sm:self-center shrink-0 text-xs font-bold px-2.5 py-1 rounded-lg shadow-2xs bg-amber-500 text-slate-950 border border-amber-600">
+                      Backup Needed
+                    </span>
+                  </div>
+                )}
+
                 {pendingTargetTerm && (
                   <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-900/40 border border-slate-200 dark:border-slate-800 text-xs text-slate-600 dark:text-slate-400 flex flex-wrap items-center justify-between gap-2">
                     <span>Target term to activate:</span>
@@ -1643,6 +2064,33 @@ export function AdminAcademicTerms({
                     <span className="font-bold text-slate-900 dark:text-slate-200">
                       {pendingArchiveTerm.academicYear} {pendingArchiveTerm.semester}
                     </span>
+                  </div>
+                )}
+
+                {backupDownloadedInModal && (pendingTargetTerm || pendingArchiveTerm) && (
+                  <div className="p-3.5 rounded-xl bg-emerald-50/70 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-800/60 space-y-2.5">
+                    <div className="space-y-0.5">
+                      <p className="text-xs font-bold text-emerald-900 dark:text-emerald-200">
+                        Final Confirmation Required
+                      </p>
+                      <p className="text-[11px] text-emerald-800/90 dark:text-emerald-300/90 leading-relaxed">
+                        Verify your downloaded backup ZIP file, then type{" "}
+                        <span className="font-mono font-bold px-1.5 py-0.5 rounded bg-emerald-100 dark:bg-emerald-900/60 text-emerald-950 dark:text-emerald-100">
+                          CONFIRM
+                        </span>{" "}
+                        to {pendingArchiveTerm ? "archive this term" : "activate the target term"}.
+                      </p>
+                    </div>
+                    <input
+                      type="text"
+                      value={backupConfirmText}
+                      onChange={(e) => setBackupConfirmText(e.target.value)}
+                      disabled={isConfirmingAfterBackup}
+                      placeholder="Type CONFIRM to proceed"
+                      autoComplete="off"
+                      spellCheck={false}
+                      className="w-full rounded-xl border border-emerald-300 dark:border-emerald-700 bg-white dark:bg-slate-950 px-3 py-2 text-xs font-mono font-semibold uppercase tracking-wider text-slate-900 dark:text-slate-100 placeholder:normal-case placeholder:tracking-normal placeholder:font-sans placeholder:font-normal placeholder:text-slate-400 outline-none focus:border-[#0b5336] focus:ring-2 focus:ring-[#0b5336]/20 transition"
+                    />
                   </div>
                 )}
 
@@ -1663,9 +2111,11 @@ export function AdminAcademicTerms({
                     setPendingTargetTerm(null);
                     setPendingArchiveTerm(null);
                     setModalBackupError(null);
+                    setBackupDownloadedInModal(false);
+                    setBackupConfirmText("");
                     setIsConfirmBackupOpen(false);
                   }}
-                  disabled={isModalBackingUp}
+                  disabled={isModalBackingUp || isConfirmingAfterBackup}
                   className="w-full sm:w-auto inline-flex items-center justify-center px-4 py-2 rounded-xl bg-[#780000] hover:bg-[#5e0000] text-white border border-[#5e0000] text-xs font-semibold transition-all cursor-pointer shadow-xs disabled:opacity-50"
                 >
                   Cancel
@@ -1698,6 +2148,33 @@ export function AdminAcademicTerms({
                       <AppIcon icon={Check} size="xs" color="inherit" />
                       <span>Review Submitted Requirements</span>
                     </button>
+                  ) : backupDownloadedInModal ? (
+                    <button
+                      type="button"
+                      onClick={() => void handleConfirmAfterBackup()}
+                      disabled={
+                        isConfirmingAfterBackup ||
+                        backupConfirmText.trim().toUpperCase() !== "CONFIRM"
+                      }
+                      className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl bg-[#0b5336] hover:bg-[#073d2a] text-white border border-[#08412a] font-semibold text-xs transition-all cursor-pointer shadow-xs active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
+                    >
+                      {isConfirmingAfterBackup ? (
+                        <>
+                          <AppIcon
+                            icon={SystemRestart}
+                            size="xs"
+                            color="inherit"
+                            className="animate-spin"
+                          />
+                          <span>{pendingArchiveTerm ? "Archiving..." : "Activating..."}</span>
+                        </>
+                      ) : (
+                        <>
+                          <AppIcon icon={Check} size="xs" color="inherit" />
+                          <span>Confirm &amp; {pendingArchiveTerm ? "Archive" : "Activate"}</span>
+                        </>
+                      )}
+                    </button>
                   ) : (
                     <>
                       <button
@@ -1714,7 +2191,7 @@ export function AdminAcademicTerms({
                               color="inherit"
                               className="animate-spin"
                             />
-                            <span>Backing up...</span>
+                            <span>Downloading Backup...</span>
                           </>
                         ) : (
                           <>
