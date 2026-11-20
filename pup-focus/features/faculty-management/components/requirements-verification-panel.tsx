@@ -6,6 +6,11 @@ import JSZip from "jszip";
 import { createClient } from "@/lib/supabase/client";
 import { emitRealtimeSync, useRealtimeSync } from "@/lib/realtime";
 import {
+  MobileCardListSkeleton,
+  SubjectLoadCardSkeleton,
+  TableRowsSkeleton,
+} from "@/components/ui/skeleton";
+import {
   Archive,
   ChatBubble,
   Check,
@@ -661,7 +666,12 @@ export function FacultyVerificationDrawer({
   const [selectedHistoryClassId, setSelectedHistoryClassId] = useState<
     string | null
   >(null);
-  const [isLoadingHistory, setIsLoadingHistory] = useState(false);
+  const [isLoadingHistory, setIsLoadingHistory] = useState(
+    () =>
+      initialTab === "history" &&
+      historySubmissions.length === 0 &&
+      historyClasses.length === 0,
+  );
   const [isDownloadingHistoryZip, setIsDownloadingHistoryZip] = useState(false);
 
   // Revision Request Modal States
@@ -2557,14 +2567,7 @@ export function FacultyVerificationDrawer({
           {activeTab === "current" ? (
             /* Tab 1: Current Submissions */
             isLoading ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
-                {[1, 2, 3].map((i) => (
-                  <div
-                    key={i}
-                    className="h-56 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-900/50 animate-pulse p-5"
-                  />
-                ))}
-              </div>
+              <SubjectLoadCardSkeleton count={3} />
             ) : selectedClassId === null || !selectedGroup ? (
               /* Step 1: Class Selection Step (Default) */
               <div className="space-y-4">
@@ -4038,19 +4041,7 @@ export function FacultyVerificationDrawer({
                 historySubmissions.length === 0 &&
                 historyClasses.length === 0) ||
               !selectedHistoryAy ? (
-                <div className="space-y-3 pt-2">
-                  <div className="overflow-hidden rounded-2xl border-2 border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 animate-pulse space-y-4">
-                    <div className="h-5 bg-slate-200 dark:bg-slate-800 rounded w-1/4" />
-                    <div className="space-y-3">
-                      {[1, 2, 3, 4, 5].map((i) => (
-                        <div
-                          key={i}
-                          className="h-10 bg-slate-100 dark:bg-slate-800/60 rounded"
-                        />
-                      ))}
-                    </div>
-                  </div>
-                </div>
+                <SubjectLoadCardSkeleton count={3} />
               ) : selectedHistoryClassId === null || !selectedHistoryGroup ? (
                 /* History Step 1: Subject Cards Grid */
                 <div className="space-y-5 pt-1">
@@ -5713,6 +5704,7 @@ export interface FacultySubjectProgress {
 
 export interface RequirementsPanelProps {
   facultyAccounts: FacultyAccount[];
+  isLoadingFaculty?: boolean;
   selectedFaculty?: FacultyAccount | null;
   onSelectFaculty?: (facultyId: string | null) => void;
   resetTrigger?: number;
@@ -5740,6 +5732,7 @@ let openedFromRowFlag = false;
 
 export function RequirementsPanel({
   facultyAccounts,
+  isLoadingFaculty = false,
   selectedFaculty,
   onSelectFaculty,
   resetTrigger,
@@ -5860,7 +5853,10 @@ export function RequirementsPanel({
     }
   }, [academicYear, semester, historyAy, historySem, activePanelTab]);
 
-  const [isLoadingStatuses, setIsLoadingStatuses] = useState(false);
+  const [isLoadingStatuses, setIsLoadingStatuses] = useState(() => {
+    const termKey = `${initialAcademicYear || ""}::${initialSemester || "1st Semester"}`;
+    return !globalVerificationCache[termKey];
+  });
   const statusesByTermRef = useRef<
     Record<
       string,
@@ -6068,7 +6064,9 @@ export function RequirementsPanel({
   ) {
     const allIds = facultyAccounts.map((f) => f?.id).filter(Boolean);
     if (allIds.length === 0) {
-      setIsLoadingStatuses(false);
+      if (!isLoadingFaculty) {
+        setIsLoadingStatuses(false);
+      }
       return;
     }
 
@@ -7083,7 +7081,12 @@ export function RequirementsPanel({
 
           {/* 2. Mobile Faculty Card List */}
           <div className="md:hidden space-y-3">
-            {filteredFaculty.length === 0 ? (
+            {isLoadingFaculty ||
+            (isLoadingStatuses &&
+              Object.keys(facultyStatuses).length === 0 &&
+              Object.keys(facultyClassProgress).length === 0) ? (
+              <MobileCardListSkeleton count={4} />
+            ) : filteredFaculty.length === 0 ? (
               <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-4 py-12 text-center text-xs text-slate-500 dark:text-slate-400">
                 {statusFilter === "completed"
                   ? "No faculty accounts have completed all requirements yet."
@@ -7272,7 +7275,12 @@ export function RequirementsPanel({
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-200 dark:divide-slate-800/60">
-                {filteredFaculty.length === 0 ? (
+                {isLoadingFaculty ||
+                (isLoadingStatuses &&
+                  Object.keys(facultyStatuses).length === 0 &&
+                  Object.keys(facultyClassProgress).length === 0) ? (
+                  <TableRowsSkeleton rows={5} columns={6} />
+                ) : filteredFaculty.length === 0 ? (
                   <tr>
                     <td
                       colSpan={6}

@@ -9,6 +9,7 @@ import { exportReportToExcel, exportReportToPdf } from "@/lib/report-export";
 import type { FacultyAccount } from "@/features/faculty-management/types/faculty-dashboard.types";
 import { FacultyFilterBar } from "./faculty-filter-bar";
 import { FacultyStatsCards } from "./faculty-stats-cards";
+import { MobileCardListSkeleton, TableRowsSkeleton } from "@/components/ui/skeleton";
 
 export interface FacultyTableProps {
   facultyAccounts: FacultyAccount[];
@@ -197,9 +198,7 @@ export function FacultyTable({
       {/* Mobile Card List (prevents table column clipping on narrow viewports) */}
       <div className="md:hidden space-y-3">
         {isLoading ? (
-          <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-4 py-8 text-center text-xs text-slate-500 dark:text-slate-400">
-            Loading faculty accounts...
-          </div>
+          <MobileCardListSkeleton count={4} />
         ) : filteredFacultyAccounts.length === 0 ? (
           <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-4 py-8 text-center text-xs text-slate-500 dark:text-slate-400">
             No faculty members found.
@@ -384,14 +383,7 @@ export function FacultyTable({
             </thead>
             <tbody className="divide-y divide-slate-200 dark:divide-slate-800/60">
               {isLoading ? (
-                <tr>
-                  <td
-                    colSpan={6}
-                    className="px-4 py-8 text-center text-xs text-slate-500 dark:text-slate-400"
-                  >
-                    Loading faculty accounts...
-                  </td>
-                </tr>
+                <TableRowsSkeleton rows={5} columns={6} />
               ) : filteredFacultyAccounts.length === 0 ? (
                 <tr>
                   <td

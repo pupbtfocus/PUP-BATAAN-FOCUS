@@ -19,6 +19,7 @@ import {
 import { AppIcon } from "@/components/ui/app-icon";
 import { ModalHeader } from "@/components/ui/modal-header";
 import { AlertPopup } from "@/components/ui/alert-popup";
+import { MobileCardListSkeleton, TableRowsSkeleton } from "@/components/ui/skeleton";
 import { HistoricalSubmissionsModal, prefetchHistoricalSubmissions } from "./historical-submissions-modal";
 
 type AcademicTermStatus = "Current" | "Upcoming" | "Archived" | "Completed";
@@ -823,9 +824,7 @@ export function AdminAcademicTerms({
         {/* Mobile Card View (< md) */}
         <div className="md:hidden space-y-2.5">
           {isLoading && activeAndUpcomingTerms.length === 0 ? (
-            <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 text-center text-xs text-slate-500 dark:text-slate-400 shadow-xs">
-              Loading academic terms...
-            </div>
+            <MobileCardListSkeleton count={3} />
           ) : activeAndUpcomingTerms.length === 0 ? (
             <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 text-center text-xs text-slate-500 dark:text-slate-400 shadow-xs">
               No active or upcoming academic terms found.
@@ -940,11 +939,7 @@ export function AdminAcademicTerms({
             </thead>
             <tbody className="divide-y divide-slate-300 dark:divide-slate-800/60">
               {isLoading && activeAndUpcomingTerms.length === 0 ? (
-                <tr className="bg-white dark:bg-slate-900/40 py-2.5 px-4 text-xs">
-                  <td colSpan={4} className="py-6 text-center text-slate-500 dark:text-slate-400">
-                    Loading academic terms...
-                  </td>
-                </tr>
+                <TableRowsSkeleton rows={3} columns={4} />
               ) : activeAndUpcomingTerms.length === 0 ? (
                 <tr className="bg-white dark:bg-slate-900/40 py-2.5 px-4 text-xs">
                   <td colSpan={4} className="py-6 text-center text-slate-500 dark:text-slate-400">
@@ -1069,9 +1064,7 @@ export function AdminAcademicTerms({
         {/* Mobile Card View (< md) */}
         <div className="md:hidden space-y-2.5">
           {isLoading && archivedTerms.length === 0 ? (
-            <div className="rounded-xl border border-slate-300 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 text-center text-xs text-slate-500 dark:text-slate-400 shadow-xs">
-              Loading archived terms...
-            </div>
+            <MobileCardListSkeleton count={2} />
           ) : archivedTerms.length === 0 ? (
             <div className="rounded-xl border border-slate-300 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 text-center text-xs text-slate-500 dark:text-slate-400 shadow-xs">
               No completed or archived terms found.
@@ -1155,11 +1148,7 @@ export function AdminAcademicTerms({
             </thead>
             <tbody className="divide-y divide-slate-200 dark:divide-slate-800/60">
               {isLoading && archivedTerms.length === 0 ? (
-                <tr className="bg-white dark:bg-slate-900/40 py-2.5 px-4 text-xs">
-                  <td colSpan={4} className="py-6 text-center text-slate-500 dark:text-slate-400">
-                    Loading archived terms...
-                  </td>
-                </tr>
+                <TableRowsSkeleton rows={3} columns={4} />
               ) : archivedTerms.length === 0 ? (
                 <tr className="bg-white dark:bg-slate-900/40 py-2.5 px-4 text-xs">
                   <td colSpan={4} className="py-6 text-center text-slate-500 dark:text-slate-400">

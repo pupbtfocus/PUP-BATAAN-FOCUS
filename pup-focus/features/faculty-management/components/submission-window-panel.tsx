@@ -24,6 +24,7 @@ import {
 } from "iconoir-react";
 import { AppIcon } from "@/components/ui/app-icon";
 import { ModalHeader } from "@/components/ui/modal-header";
+import { Skeleton } from "@/components/ui/skeleton";
 import type {
   ApiBody,
   SubmissionWindowResponse,
@@ -924,6 +925,41 @@ export function SubmissionWindowPanel({
     windowStatus?.endDate &&
     windowStatus.status !== "Closed",
   );
+
+  if (isLoading && !windowStatus) {
+    return (
+      <div
+        aria-busy="true"
+        aria-label="Loading submission window"
+        className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 sm:p-6 shadow-xs space-y-5 sm:space-y-6"
+      >
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 sm:p-4 rounded-xl bg-slate-50 border border-slate-200/80 dark:bg-slate-900/50 dark:border-slate-800">
+          <div className="flex items-center gap-3">
+            <Skeleton className="h-8 w-40 rounded-md" />
+            <Skeleton className="h-4 w-48" />
+          </div>
+          <Skeleton className="h-8 w-36 rounded-lg" />
+        </div>
+        <div className="flex items-center gap-2">
+          <Skeleton className="h-9 w-36 rounded-xl" />
+          <Skeleton className="h-9 w-36 rounded-xl" />
+          <Skeleton className="h-9 w-36 rounded-xl" />
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="rounded-xl border border-slate-200 dark:border-slate-800 p-4 space-y-3">
+            <Skeleton className="h-4 w-32" />
+            <Skeleton className="h-10 w-full rounded-lg" />
+            <Skeleton className="h-10 w-full rounded-lg" />
+          </div>
+          <div className="rounded-xl border border-slate-200 dark:border-slate-800 p-4 space-y-3">
+            <Skeleton className="h-4 w-32" />
+            <Skeleton className="h-10 w-full rounded-lg" />
+            <Skeleton className="h-10 w-full rounded-lg" />
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 sm:p-6 shadow-xs dark:shadow-none space-y-5 sm:space-y-6 transition-colors">

@@ -12,6 +12,7 @@ import type {
   SubmissionWindowResponse,
 } from "@/features/faculty-management/types/faculty-dashboard.types";
 import { useRealtimeSync } from "@/lib/realtime";
+import { AnalyticsPanelSkeleton } from "@/components/ui/skeleton";
 
 interface SuperAdminComplianceAnalyticsProps {
   facultyAccounts: FacultyAccount[];
@@ -30,9 +31,11 @@ type FacultyComplianceCategory =
 
 export function SuperAdminComplianceAnalytics({
   facultyAccounts,
+  isLoadingFaculty = false,
   onNavigateSection,
 }: SuperAdminComplianceAnalyticsProps) {
   const [windowInfo, setWindowInfo] = useState<SubmissionWindowResponse | null>(null);
+  const [isLoadingWindow, setIsLoadingWindow] = useState(true);
   const [chartView, setChartView] = useState<"pie" | "bar">("pie");
   const [barLayout, setBarLayout] = useState<"column" | "horizontal">("column");
 
@@ -70,6 +73,8 @@ export function SuperAdminComplianceAnalytics({
       }
     } catch {
       // Ignore fetch errors
+    } finally {
+      setIsLoadingWindow(false);
     }
   }, []);
 
@@ -294,6 +299,10 @@ export function SuperAdminComplianceAnalytics({
         };
       });
   }, [categories, total, donutCircumference]);
+
+  if (isLoadingFaculty || (isLoadingWindow && !windowInfo)) {
+    return <AnalyticsPanelSkeleton />;
+  }
 
   return (
     <section>

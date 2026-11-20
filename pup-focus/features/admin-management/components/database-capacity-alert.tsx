@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { Archive, Database, HardDrive, NavArrowRight, WarningTriangle, Xmark } from "iconoir-react";
 import { AppIcon } from "@/components/ui/app-icon";
+import { KpiCardSkeleton } from "@/components/ui/skeleton";
 import { useRealtimeSync } from "@/lib/realtime";
 import { createClient } from "@/lib/supabase/client";
 
@@ -127,7 +128,11 @@ export function DatabaseCapacityAlert({
   });
 
   const dbStatus = overrideStatus ?? fetchedStatus;
-  if (!dbStatus) return null;
+  if (!dbStatus) {
+    return showCard ? (
+      <KpiCardSkeleton className="md:col-span-2 xl:col-span-1" />
+    ) : null;
+  }
 
   const isCritical = dbStatus.status === "critical";
   const isWarning = dbStatus.status === "warning";

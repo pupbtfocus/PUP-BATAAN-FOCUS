@@ -11,6 +11,7 @@ import {
   ShieldAlert,
 } from "iconoir-react";
 import { AppIcon } from "@/components/ui/app-icon";
+import { Skeleton } from "@/components/ui/skeleton";
 import { useRealtimeSync } from "@/lib/realtime";
 
 type KeepaliveLogEntry = {
@@ -164,8 +165,20 @@ export function SystemHeartbeatSection() {
       {error ? (
         <div className="px-5 py-4 text-xs text-red-600 dark:text-red-400">{error}</div>
       ) : isLoading && logs.length === 0 ? (
-        <div className="px-5 py-8 text-center text-xs text-slate-500 dark:text-slate-400">
-          Loading database keep-alive logs…
+        <div className="divide-y divide-slate-200 dark:divide-slate-800" aria-busy="true">
+          {Array.from({ length: 4 }).map((_, idx) => (
+            <div
+              key={idx}
+              className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 px-4 sm:px-5 py-3"
+            >
+              <div className="flex items-center gap-2.5">
+                <Skeleton className="h-3.5 w-3.5 rounded-full" />
+                <Skeleton className="h-3.5 w-36" />
+                <Skeleton className="h-3.5 w-28" />
+              </div>
+              <Skeleton className="h-5 w-16 rounded-full" />
+            </div>
+          ))}
         </div>
       ) : logs.length === 0 ? (
         <div className="px-4 sm:px-5 py-8 text-center text-xs text-slate-500 dark:text-slate-400">

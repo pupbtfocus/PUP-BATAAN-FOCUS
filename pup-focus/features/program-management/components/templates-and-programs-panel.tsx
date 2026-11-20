@@ -18,6 +18,7 @@ import {
 } from "iconoir-react";
 import { AppIcon } from "@/components/ui/app-icon";
 import { ModalHeader } from "@/components/ui/modal-header";
+import { MobileCardListSkeleton, Skeleton, TableRowsSkeleton } from "@/components/ui/skeleton";
 import { RequirementTemplatesPanel } from "@/features/requirement-templates/components/requirement-templates-panel";
 import { emitRealtimeSync, useRealtimeSync } from "@/lib/realtime";
 
@@ -454,9 +455,9 @@ export function TemplatesAndProgramsPanel({
                 </span>
                 <GraduationCap className="h-5 w-5 text-slate-400" strokeWidth={2} />
               </div>
-              <p className="mt-2 text-2xl font-bold text-slate-900 dark:text-slate-100">
-                {isLoadingPrograms ? "..." : totalPrograms}
-              </p>
+              <div className="mt-2 text-2xl font-bold text-slate-900 dark:text-slate-100">
+                {isLoadingPrograms ? <Skeleton className="h-8 w-14" /> : totalPrograms}
+              </div>
               <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
                 Bataan campus degree offerings
               </p>
@@ -470,9 +471,9 @@ export function TemplatesAndProgramsPanel({
                 </span>
                 <span className="w-2 h-2 rounded-full bg-[#0b5336]" />
               </div>
-              <p className="mt-2 text-2xl font-bold text-slate-900 dark:text-slate-100">
-                {isLoadingPrograms ? "..." : activeProgramsCount}
-              </p>
+              <div className="mt-2 text-2xl font-bold text-slate-900 dark:text-slate-100">
+                {isLoadingPrograms ? <Skeleton className="h-8 w-14" /> : activeProgramsCount}
+              </div>
               <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
                 Available for faculty selection
               </p>
@@ -486,9 +487,9 @@ export function TemplatesAndProgramsPanel({
                 </span>
                 <span className="w-2 h-2 rounded-full bg-[#780000]" />
               </div>
-              <p className="mt-2 text-2xl font-bold text-slate-900 dark:text-slate-100">
-                {isLoadingPrograms ? "..." : hiddenProgramsCount}
-              </p>
+              <div className="mt-2 text-2xl font-bold text-slate-900 dark:text-slate-100">
+                {isLoadingPrograms ? <Skeleton className="h-8 w-14" /> : hiddenProgramsCount}
+              </div>
               <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
                 Hidden from faculty forms
               </p>
@@ -544,10 +545,7 @@ export function TemplatesAndProgramsPanel({
           {/* Mobile Card View (< md) */}
           <div className="md:hidden space-y-2.5">
             {isLoadingPrograms && filteredPrograms.length === 0 ? (
-              <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 py-10 px-4 text-center text-xs text-slate-500 dark:text-slate-400 shadow-xs">
-                <Refresh className="h-5 w-5 animate-spin mx-auto mb-2 text-amber-500" strokeWidth={2} />
-                Loading academic programs...
-              </div>
+              <MobileCardListSkeleton count={4} />
             ) : filteredPrograms.length === 0 ? (
               <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 py-12 px-4 text-center text-xs text-slate-500 dark:text-slate-400 shadow-xs">
                 <GraduationCap className="h-8 w-8 mx-auto mb-2 text-slate-400 opacity-60" strokeWidth={2} />
@@ -656,12 +654,7 @@ export function TemplatesAndProgramsPanel({
               </thead>
               <tbody className="divide-y divide-slate-300 dark:divide-slate-800/60 text-xs">
                 {isLoadingPrograms && filteredPrograms.length === 0 ? (
-                  <tr>
-                    <td colSpan={5} className="py-10 text-center text-slate-500 dark:text-slate-400">
-                      <Refresh className="h-5 w-5 animate-spin mx-auto mb-2 text-amber-500" strokeWidth={2} />
-                      Loading academic programs...
-                    </td>
-                  </tr>
+                  <TableRowsSkeleton rows={5} columns={5} />
                 ) : filteredPrograms.length === 0 ? (
                   <tr>
                     <td colSpan={5} className="py-12 text-center text-slate-500 dark:text-slate-400">

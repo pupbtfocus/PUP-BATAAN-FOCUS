@@ -1,6 +1,7 @@
 "use client";
 
 import { Fragment, useCallback, useEffect, useRef, useState } from "react";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   Activity,
   CheckCircle,
@@ -597,11 +598,13 @@ export function TransactionLogsPanel() {
         </div>
 
         {/* Result Count */}
-        <p className="text-xs text-slate-600 dark:text-slate-400">
-          {isLoading && logs.length === 0
-            ? "Loading transaction logs…"
-            : `${total} ${total === 1 ? "record" : "records"} found`}
-        </p>
+        <div className="text-xs text-slate-600 dark:text-slate-400">
+          {isLoading && logs.length === 0 ? (
+            <Skeleton className="h-3.5 w-32" />
+          ) : (
+            `${total} ${total === 1 ? "record" : "records"} found`
+          )}
+        </div>
       </div>
 
       {/* ── Bulk Action Bar (visible when selection > 0) ── */}
@@ -664,11 +667,25 @@ export function TransactionLogsPanel() {
 
         {/* Table Body */}
         {isLoading && logs.length === 0 ? (
-          <div className="px-4 py-12 text-center">
-            <AppIcon icon={Refresh} size="lg" color="muted" className="animate-spin mx-auto" />
-            <p className="mt-3 text-xs text-slate-500 dark:text-slate-400">
-              Loading transaction logs…
-            </p>
+          <div className="divide-y divide-slate-200 dark:divide-slate-800" aria-busy="true">
+            {Array.from({ length: 6 }).map((_, idx) => (
+              <div
+                key={idx}
+                className="px-4 py-3.5 grid grid-cols-1 lg:grid-cols-[80px_160px_1fr_1.2fr_1fr_120px] gap-2.5 items-center"
+              >
+                <Skeleton className="h-4 w-4 rounded hidden lg:block mx-auto" />
+                <Skeleton className="h-3.5 w-32" />
+                <div className="space-y-1.5">
+                  <Skeleton className="h-3.5 w-36" />
+                  <Skeleton className="h-2.5 w-24" />
+                </div>
+                <Skeleton className="h-5 w-28 rounded-full" />
+                <Skeleton className="h-3.5 w-28" />
+                <div className="flex lg:justify-center gap-1.5">
+                  <Skeleton className="h-7 w-16 rounded-lg" />
+                </div>
+              </div>
+            ))}
           </div>
         ) : logs.length === 0 ? (
           <div className="px-4 py-12 text-center">

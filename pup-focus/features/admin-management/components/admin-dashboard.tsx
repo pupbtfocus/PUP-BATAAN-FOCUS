@@ -19,6 +19,7 @@ import {
   type CropTransform,
 } from "@/components/shared/profile-photo-crop-modal";
 import { SystemLoadingScreen } from "@/components/shared/system-loading-screen";
+import { KpiCardSkeleton } from "@/components/ui/skeleton";
 import { extractFirstName } from "@/lib/faculty-profile";
 import { Sidebar, SidebarContent, useSidebarCollapsed } from "@/components/sidebar";
 import { AdminAccountsTable } from "@/features/staff-management/components/staff-accounts-directory";
@@ -575,7 +576,7 @@ export function SuperAdminDashboard({
       setSelectedFacultyId(facultyParam);
     }
   }, [searchParams]);
-  const [isLoadingFaculty, setIsLoadingFaculty] = useState(false);
+  const [isLoadingFaculty, setIsLoadingFaculty] = useState(true);
   const [loadingFacultyIds, setLoadingFacultyIds] = useState<Set<string>>(new Set());
   const [deletingFacultyIds, setDeletingFacultyIds] = useState<Set<string>>(new Set());
   const [pendingFacultyAction, setPendingFacultyAction] = useState<PendingFacultyAction | null>(null);
@@ -1210,6 +1211,7 @@ export function SuperAdminDashboard({
   }
 
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [isLoadingWindow, setIsLoadingWindow] = useState(true);
   const [windowStatus, setWindowStatus] = useState<{
     isOpen?: boolean;
     isAlwaysOpen?: boolean;
@@ -1238,7 +1240,9 @@ export function SuperAdminDashboard({
           isAlwaysOpen: isAlwaysOpenWindow,
         });
       }
-    } catch {}
+    } catch {} finally {
+      setIsLoadingWindow(false);
+    }
   }
 
   async function refreshCurrentPanel() {
@@ -2208,6 +2212,9 @@ export function SuperAdminDashboard({
                 {/* TIER 2: Stat Grid */}
                 <section className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
                   {/* Card 1: Active Admin & Staff Accounts */}
+                  {isLoadingAccounts ? (
+                    <KpiCardSkeleton />
+                  ) : (
                   <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 sm:p-5 shadow-xs h-full flex flex-col justify-between space-y-3 transition-colors">
                     <div className="space-y-2.5">
                       <div className="flex items-center justify-between gap-2">
@@ -2281,8 +2288,12 @@ export function SuperAdminDashboard({
                       </button>
                     </div>
                   </div>
+                  )}
 
                   {/* Card 2: Faculty Members */}
+                  {isLoadingFaculty ? (
+                    <KpiCardSkeleton />
+                  ) : (
                   <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 sm:p-5 shadow-xs h-full flex flex-col justify-between space-y-3 transition-colors">
                     <div className="space-y-2.5">
                       <div className="flex items-center justify-between gap-2">
@@ -2325,8 +2336,12 @@ export function SuperAdminDashboard({
                       </button>
                     </div>
                   </div>
+                  )}
 
                   {/* Card 3: Submission Window Status */}
+                  {isLoadingWindow && !windowStatus ? (
+                    <KpiCardSkeleton />
+                  ) : (
                   <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 sm:p-5 shadow-xs h-full flex flex-col justify-between space-y-3 transition-colors">
                     <div className="space-y-2.5">
                       <div className="flex items-center justify-between gap-2">
@@ -2411,6 +2426,7 @@ export function SuperAdminDashboard({
                       </button>
                     </div>
                   </div>
+                  )}
 
                   {/* Card 4: Database Capacity */}
                   <DatabaseCapacityAlert
@@ -2610,6 +2626,7 @@ export function SuperAdminDashboard({
 
                 <RequirementsPanel
                   facultyAccounts={facultyAccounts}
+                  isLoadingFaculty={isLoadingFaculty}
                   selectedFaculty={selectedFaculty}
                   onSelectFaculty={handleSelectFaculty}
                   resetTrigger={verificationResetTrigger}

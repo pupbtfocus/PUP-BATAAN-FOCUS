@@ -13,6 +13,7 @@ import { AppIcon } from "@/components/ui/app-icon";
 import { SubmissionStatusBadge } from "@/features/submissions/components/submission-status-badge";
 import { LogoutButton } from "@/components/shared/logout-button";
 import { SystemLoadingScreen } from "@/components/shared/system-loading-screen";
+import { KpiCardSkeleton } from "@/components/ui/skeleton";
 import { HighlightedSystemTitle } from "@/components/shared/highlighted-system-title";
 import {
   AdminNotificationDrawer,
@@ -416,7 +417,7 @@ export function AdminFacultyDashboard({
   } | null>(null);
   const [pendingQueue, setPendingQueue] = useState<PendingQueueItem[]>([]);
   const [recentActivity, setRecentActivity] = useState<RecentActivityItem[]>([]);
-  const [isLoadingStats, setIsLoadingStats] = useState(false);
+  const [isLoadingStats, setIsLoadingStats] = useState(true);
 
   async function loadDashboardStats(options?: { silent?: boolean }) {
     try {
@@ -984,6 +985,9 @@ export function AdminFacultyDashboard({
                     {/* TIER 2: Stat Grid (3 Cards matching Admin Dashboard) */}
                     <section className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
                       {/* Card 1: Faculty Members */}
+                      {isLoading ? (
+                        <KpiCardSkeleton />
+                      ) : (
                       <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 sm:p-5 shadow-xs h-full flex flex-col justify-between space-y-3 transition-colors">
                         <div className="space-y-2.5">
                           <div className="flex items-center justify-between gap-2">
@@ -1026,9 +1030,12 @@ export function AdminFacultyDashboard({
                           </button>
                         </div>
                       </div>
+                      )}
 
                       {/* Card 2: Overall Progress */}
-                      {(() => {
+                      {isLoadingStats && !dashboardStats ? (
+                        <KpiCardSkeleton />
+                      ) : (() => {
                         const verified = dashboardStats?.verified ?? 0;
                         const pending = dashboardStats?.pending ?? 0;
                         const revisions = dashboardStats?.revisions ?? 0;
@@ -1120,6 +1127,9 @@ export function AdminFacultyDashboard({
                       })()}
 
                       {/* Card 3: Submission Window & Term */}
+                      {isLoadingStats && !windowStatus ? (
+                        <KpiCardSkeleton />
+                      ) : (
                       <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 sm:p-5 shadow-xs h-full flex flex-col justify-between space-y-3 transition-colors">
                         <div className="space-y-2.5">
                           <div className="flex items-center justify-between gap-2">
@@ -1204,6 +1214,7 @@ export function AdminFacultyDashboard({
                           </button>
                         </div>
                       </div>
+                      )}
                     </section>
 
                     {/* TIER 2.5: Term Submission Scale & Distribution matching Admin Dashboard */}
@@ -1303,6 +1314,7 @@ export function AdminFacultyDashboard({
 
                     <RequirementsPanel
                       facultyAccounts={facultyAccounts}
+                      isLoadingFaculty={isLoading}
                       selectedFaculty={selectedFaculty}
                       onSelectFaculty={handleSelectFaculty}
                       resetTrigger={verificationResetTrigger}

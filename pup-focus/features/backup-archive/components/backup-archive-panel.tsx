@@ -24,6 +24,7 @@ import {
 import { AppIcon } from "@/components/ui/app-icon";
 import { ModalHeader } from "@/components/ui/modal-header";
 import { AlertPopup } from "@/components/ui/alert-popup";
+import { MobileCardListSkeleton, TableRowsSkeleton } from "@/components/ui/skeleton";
 import { emitRealtimeSync, useRealtimeSync } from "@/lib/realtime";
 import {
   pauseSessionVerification,
@@ -1305,10 +1306,7 @@ export function BackupArchivePanel({
         {/* Backups Mobile Card View (< md) */}
         <div className="md:hidden space-y-2.5">
           {isLoading && filteredBackups.length === 0 ? (
-            <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 py-10 px-4 text-center text-xs text-slate-500 shadow-sm">
-              <Refresh className="h-5 w-5 animate-spin mx-auto mb-2 text-amber-500" strokeWidth={2} />
-              Loading backups...
-            </div>
+            <MobileCardListSkeleton count={4} />
           ) : filteredBackups.length === 0 ? (
             <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 py-10 px-4 text-center text-xs text-slate-500 shadow-sm">
               <AppIcon icon={HardDrive} size="xl" color="muted" className="mx-auto mb-2" />
@@ -1500,18 +1498,7 @@ export function BackupArchivePanel({
               </thead>
               <tbody className="divide-y divide-slate-200 dark:divide-slate-800/60">
                 {isLoading && filteredBackups.length === 0 ? (
-                  <tr>
-                    <td
-                      colSpan={8}
-                      className="py-12 text-center text-slate-500"
-                    >
-                      <Refresh
-                        className="h-5 w-5 animate-spin mx-auto mb-2 text-amber-500"
-                        strokeWidth={2}
-                      />
-                      Loading backups...
-                    </td>
-                  </tr>
+                  <TableRowsSkeleton rows={5} columns={8} />
                 ) : filteredBackups.length === 0 ? (
                   <tr>
                     <td

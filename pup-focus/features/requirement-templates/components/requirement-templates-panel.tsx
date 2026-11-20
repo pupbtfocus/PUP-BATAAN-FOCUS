@@ -21,6 +21,7 @@ import { RequirementTemplateModal } from "./requirement-template-modal";
 import { RequirementTemplateDetailsModal } from "./requirement-template-details-modal";
 import { FormatIcon } from "./format-icon";
 import { AlertPopup } from "@/components/ui/alert-popup";
+import { MobileCardListSkeleton, Skeleton, TableRowsSkeleton } from "@/components/ui/skeleton";
 import { emitRealtimeSync, useRealtimeSync } from "@/lib/realtime";
 
 interface RequirementTemplatesPanelProps {
@@ -286,9 +287,9 @@ export function RequirementTemplatesPanel({
             </span>
             <MultiplePages className="h-5 w-5 text-slate-400" strokeWidth={2} />
           </div>
-          <p className="mt-2 text-2xl font-bold text-slate-900 dark:text-slate-100">
-            {isLoading ? "..." : stats.total}
-          </p>
+          <div className="mt-2 text-2xl font-bold text-slate-900 dark:text-slate-100">
+            {isLoading ? <Skeleton className="h-8 w-14" /> : stats.total}
+          </div>
           <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
             Configured compliance documents
           </p>
@@ -302,9 +303,9 @@ export function RequirementTemplatesPanel({
             </span>
             <span className="w-2 h-2 rounded-full bg-[#0b5336]" />
           </div>
-          <p className="mt-2 text-2xl font-bold text-slate-900 dark:text-slate-100">
-            {isLoading ? "..." : stats.active}
-          </p>
+          <div className="mt-2 text-2xl font-bold text-slate-900 dark:text-slate-100">
+            {isLoading ? <Skeleton className="h-8 w-14" /> : stats.active}
+          </div>
           <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
             Visible in faculty checklist
           </p>
@@ -318,9 +319,9 @@ export function RequirementTemplatesPanel({
             </span>
             <span className="w-2 h-2 rounded-full bg-[#780000]" />
           </div>
-          <p className="mt-2 text-2xl font-bold text-slate-900 dark:text-slate-100">
-            {isLoading ? "..." : stats.hidden}
-          </p>
+          <div className="mt-2 text-2xl font-bold text-slate-900 dark:text-slate-100">
+            {isLoading ? <Skeleton className="h-8 w-14" /> : stats.hidden}
+          </div>
           <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
             Hidden from faculty view
           </p>
@@ -389,10 +390,7 @@ export function RequirementTemplatesPanel({
       {/* Mobile Card View (< md) */}
       <div className="md:hidden space-y-2.5">
         {isLoading && filteredTemplates.length === 0 ? (
-          <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 py-10 px-4 text-center text-xs text-slate-500 dark:text-slate-400 shadow-xs">
-            <Refresh className="h-5 w-5 animate-spin mx-auto mb-2 text-amber-500" strokeWidth={2} />
-            Loading requirement templates...
-          </div>
+          <MobileCardListSkeleton count={4} />
         ) : filteredTemplates.length === 0 ? (
           <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 py-12 px-4 text-center text-xs text-slate-500 dark:text-slate-400 shadow-xs">
             <Page className="h-8 w-8 mx-auto mb-2 text-slate-400 opacity-60" strokeWidth={2} />
@@ -543,12 +541,7 @@ export function RequirementTemplatesPanel({
           </thead>
           <tbody className="divide-y divide-slate-300 dark:divide-slate-800/60 text-xs">
             {isLoading && filteredTemplates.length === 0 ? (
-              <tr>
-                <td colSpan={7} className="py-10 text-center text-slate-500 dark:text-slate-400">
-                  <Refresh className="h-5 w-5 animate-spin mx-auto mb-2 text-amber-500" strokeWidth={2} />
-                  Loading requirement templates...
-                </td>
-              </tr>
+              <TableRowsSkeleton rows={5} columns={7} />
             ) : filteredTemplates.length === 0 ? (
               <tr>
                 <td colSpan={7} className="py-12 text-center text-slate-500 dark:text-slate-400">

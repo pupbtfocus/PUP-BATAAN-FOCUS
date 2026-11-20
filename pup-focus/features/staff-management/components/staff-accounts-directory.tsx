@@ -15,6 +15,7 @@ import {
 } from "iconoir-react";
 import { AppIcon } from "@/components/ui/app-icon";
 import { AlertPopup } from "@/components/ui/alert-popup";
+import { MobileCardListSkeleton, Skeleton, TableRowsSkeleton } from "@/components/ui/skeleton";
 import { ROLE, type AppRole, canManageAdminAccount } from "@/config/roles";
 import { exportReportToExcel, exportReportToPdf } from "@/lib/report-export";
 
@@ -136,9 +137,9 @@ export function AdminStatsCards({
           </p>
           <Group className="hidden sm:block h-5 w-5 text-slate-400 shrink-0" strokeWidth={2} />
         </div>
-        <p className="mt-1.5 sm:mt-2 text-xl sm:text-2xl font-bold text-slate-900 dark:text-slate-100">
-          {isLoading ? "..." : totalCount}
-        </p>
+        <div className="mt-1.5 sm:mt-2 text-xl sm:text-2xl font-bold text-slate-900 dark:text-slate-100">
+          {isLoading ? <Skeleton className="h-7 w-14" /> : totalCount}
+        </div>
       </div>
 
       {/* 2. ACTIVE */}
@@ -149,9 +150,9 @@ export function AdminStatsCards({
           </p>
           <CheckCircle className="hidden sm:block h-5 w-5 text-slate-400 shrink-0" strokeWidth={2} />
         </div>
-        <p className="mt-1.5 sm:mt-2 text-xl sm:text-2xl font-bold text-slate-900 dark:text-slate-100">
-          {isLoading ? "..." : activeCount}
-        </p>
+        <div className="mt-1.5 sm:mt-2 text-xl sm:text-2xl font-bold text-slate-900 dark:text-slate-100">
+          {isLoading ? <Skeleton className="h-7 w-14" /> : activeCount}
+        </div>
       </div>
 
       {/* 3. INACTIVE */}
@@ -162,9 +163,9 @@ export function AdminStatsCards({
           </p>
           <XmarkCircle className="hidden sm:block h-5 w-5 text-slate-400 shrink-0" strokeWidth={2} />
         </div>
-        <p className="mt-1.5 sm:mt-2 text-xl sm:text-2xl font-bold text-slate-900 dark:text-slate-100">
-          {isLoading ? "..." : inactiveCount}
-        </p>
+        <div className="mt-1.5 sm:mt-2 text-xl sm:text-2xl font-bold text-slate-900 dark:text-slate-100">
+          {isLoading ? <Skeleton className="h-7 w-14" /> : inactiveCount}
+        </div>
       </div>
     </div>
   );
@@ -569,9 +570,7 @@ export function AdminAccountsTable({
       {/* Mobile Card List (aligned cleanly without horizontal table clipping) */}
       <div className="md:hidden space-y-3">
         {isLoading ? (
-          <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-4 py-8 text-center text-xs text-slate-500 dark:text-slate-400">
-            Loading accounts...
-          </div>
+          <MobileCardListSkeleton count={4} />
         ) : filteredAccounts.length === 0 ? (
           <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-4 py-8 text-center text-xs text-slate-500 dark:text-slate-400">
             {activeTab === "staff"
@@ -764,14 +763,7 @@ export function AdminAccountsTable({
           </thead>
           <tbody className="divide-y divide-slate-200 dark:divide-slate-800/60">
             {isLoading ? (
-              <tr>
-                <td
-                  colSpan={6}
-                  className="px-4 py-8 text-center text-xs text-slate-500 dark:text-slate-400"
-                >
-                  Loading accounts...
-                </td>
-              </tr>
+              <TableRowsSkeleton rows={5} columns={6} />
             ) : filteredAccounts.length === 0 ? (
               <tr>
                 <td

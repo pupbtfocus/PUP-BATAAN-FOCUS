@@ -13,6 +13,7 @@ import {
   Trash,
 } from "iconoir-react";
 import { AppIcon } from "@/components/ui/app-icon";
+import { Skeleton } from "@/components/ui/skeleton";
 import type { FacultyClass } from "./faculty-submission-panel";
 
 export interface ClassSubjectLoadCardProps {
@@ -21,6 +22,7 @@ export interface ClassSubjectLoadCardProps {
   validatedCount: number;
   pendingCount: number;
   revisionCount: number;
+  isLoadingStatus?: boolean;
   isActionLoading?: boolean;
   onSelect: (cls: FacultyClass) => void;
   onDetails: (cls: FacultyClass, e?: React.MouseEvent) => void;
@@ -35,6 +37,7 @@ export function ClassSubjectLoadCard({
   validatedCount,
   pendingCount,
   revisionCount,
+  isLoadingStatus = false,
   isActionLoading = false,
   onSelect,
   onDetails,
@@ -82,11 +85,13 @@ export function ClassSubjectLoadCard({
       ? Math.min(100, Math.round((submittedCount / totalRequirements) * 100))
       : 0;
 
-  const leftBorderAccent = isComplete
-    ? "border-l-[#0b5336]"
-    : isArchived
-      ? "border-l-slate-400 dark:border-l-slate-600"
-      : "border-l-[#580000]";
+  const leftBorderAccent = isLoadingStatus
+    ? "border-l-slate-300 dark:border-l-slate-700"
+    : isComplete
+      ? "border-l-[#0b5336]"
+      : isArchived
+        ? "border-l-slate-400 dark:border-l-slate-600"
+        : "border-l-[#580000]";
 
   return (
     <div
@@ -111,7 +116,9 @@ export function ClassSubjectLoadCard({
         </div>
 
         {/* Semantic Compliance Status Pill */}
-        {isComplete ? (
+        {isLoadingStatus ? (
+          <Skeleton className="h-5 w-24 rounded-full shrink-0" />
+        ) : isComplete ? (
           <span className="inline-flex items-center gap-1 rounded-full border border-[#08412a] bg-[#0b5336] px-2.5 py-0.5 text-[11px] font-semibold text-white shadow-2xs shrink-0">
             <AppIcon icon={CheckCircle} size="xs" color="white" />
             <span>Complete</span>
@@ -149,36 +156,46 @@ export function ClassSubjectLoadCard({
         </div>
 
         {/* Slim Submission Progress Bar */}
-        {totalRequirements > 0 && (
+        {isLoadingStatus ? (
           <div className="space-y-1.5 pt-0.5">
-            <div className="flex items-center justify-between gap-2 text-xs">
-              <span className="font-medium text-slate-500 dark:text-slate-400">
-                Submission Progress
-                {revisionCount > 0 ? (
-                  <span className="ml-1.5 font-semibold text-[#780000] dark:text-rose-400">
-                    ({revisionCount} for revision)
-                  </span>
-                ) : null}
-              </span>
-              <span
-                className={`font-semibold tabular-nums ${
-                  isComplete
-                    ? "text-[#0b5336] dark:text-emerald-400"
-                    : "text-slate-700 dark:text-slate-300"
-                }`}
-              >
-                {progressPct}%
-              </span>
+            <div className="flex items-center justify-between gap-2">
+              <Skeleton className="h-3.5 w-28" />
+              <Skeleton className="h-3.5 w-9" />
             </div>
-            <div className="h-1.5 w-full overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
-              <div
-                className={`h-full rounded-full transition-all duration-300 ${
-                  isComplete ? "bg-[#0b5336]" : "bg-[#580000]"
-                }`}
-                style={{ width: `${progressPct}%` }}
-              />
-            </div>
+            <Skeleton className="h-1.5 w-full rounded-full" />
           </div>
+        ) : (
+          totalRequirements > 0 && (
+            <div className="space-y-1.5 pt-0.5">
+              <div className="flex items-center justify-between gap-2 text-xs">
+                <span className="font-medium text-slate-500 dark:text-slate-400">
+                  Submission Progress
+                  {revisionCount > 0 ? (
+                    <span className="ml-1.5 font-semibold text-[#780000] dark:text-rose-400">
+                      ({revisionCount} for revision)
+                    </span>
+                  ) : null}
+                </span>
+                <span
+                  className={`font-semibold tabular-nums ${
+                    isComplete
+                      ? "text-[#0b5336] dark:text-emerald-400"
+                      : "text-slate-700 dark:text-slate-300"
+                  }`}
+                >
+                  {progressPct}%
+                </span>
+              </div>
+              <div className="h-1.5 w-full overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
+                <div
+                  className={`h-full rounded-full transition-all duration-300 ${
+                    isComplete ? "bg-[#0b5336]" : "bg-[#580000]"
+                  }`}
+                  style={{ width: `${progressPct}%` }}
+                />
+              </div>
+            </div>
+          )
         )}
       </div>
 

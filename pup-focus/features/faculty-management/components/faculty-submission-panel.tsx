@@ -62,6 +62,12 @@ import {
   SubmissionWindowSkeleton,
 } from "@/features/submissions/components/submission-skeletons";
 import {
+  Skeleton,
+  KpiCardSkeleton,
+  StatTileSkeleton,
+  SubjectLoadCardSkeleton,
+} from "@/components/ui/skeleton";
+import {
   Activity,
   Archive,
   Calendar,
@@ -846,7 +852,9 @@ function FacultySubmissionPanelContent({
   const [pastSubmissions, setPastSubmissions] = useState<PastSubmission[]>(
     () => (initialData?.pastSubmissions as PastSubmission[]) || [],
   );
-  const [isLoadingHistory, setIsLoadingHistory] = useState(false);
+  const [isLoadingHistory, setIsLoadingHistory] = useState(
+    () => !initialData?.pastSubmissions,
+  );
   const [historyError, setHistoryError] = useState<string | null>(null);
   const [isBulkDownloading, setIsBulkDownloading] = useState(false);
   const [bulkDownloadProgressText, setBulkDownloadProgressText] = useState("");
@@ -1006,7 +1014,10 @@ function FacultySubmissionPanelContent({
   >(null);
   // ─── Class / Subject Load Management States ──────────────────────
   const [facultyClasses, setFacultyClasses] = useState<FacultyClass[]>([]);
-  const [isLoadingClasses, setIsLoadingClasses] = useState(false);
+  const [isLoadingClasses, setIsLoadingClasses] = useState(true);
+  const [loadedClassStatusKeys, setLoadedClassStatusKeys] = useState<
+    Set<string>
+  >(() => new Set());
   const [selectedClassId, setSelectedClassId] = useState<string | null>(null);
   const selectedClassIdRef = useRef<string | null>(null);
   selectedClassIdRef.current = selectedClassId;
@@ -1432,9 +1443,20 @@ function FacultySubmissionPanelContent({
         const statuses: RequirementStatus[] = data.requirementStatuses || [];
         if (targetClassId) {
           classStatusesCacheRef.current[targetClassId] = statuses;
+          const statusKey =
+            targetYear && targetSem
+              ? `${targetClassId}_${targetYear}_${targetSem}`
+              : targetClassId;
           if (targetYear && targetSem) {
-            classStatusesCacheRef.current[`${targetClassId}_${targetYear}_${targetSem}`] = statuses;
+            classStatusesCacheRef.current[statusKey] = statuses;
           }
+          setLoadedClassStatusKeys((prev) => {
+            if (prev.has(statusKey) && prev.has(targetClassId)) return prev;
+            const next = new Set(prev);
+            next.add(targetClassId);
+            next.add(statusKey);
+            return next;
+          });
         }
         if ((targetClassId || null) === (selectedClassIdRef.current || null)) {
           setRequirementStatuses(statuses);
@@ -1481,6 +1503,31 @@ function FacultySubmissionPanelContent({
     } catch {
       setStatusError("Error loading requirement statuses");
     } finally {
+      if (classId) {
+        const fallbackYear =
+          year ||
+          activeAY ||
+          (submissionWindow?.academicYear
+            ? submissionWindow.academicYear
+            : statusAcademicYear);
+        const fallbackSem =
+          sem ||
+          activeSem ||
+          (submissionWindow?.semester
+            ? submissionWindow.semester
+            : statusSemester);
+        const statusKey =
+          fallbackYear && fallbackSem
+            ? `${classId}_${fallbackYear}_${fallbackSem}`
+            : classId;
+        setLoadedClassStatusKeys((prev) => {
+          if (prev.has(statusKey) && prev.has(classId)) return prev;
+          const next = new Set(prev);
+          next.add(classId);
+          next.add(statusKey);
+          return next;
+        });
+      }
       if (!options?.silent) {
         setIsLoadingStatuses(false);
       }
@@ -4957,6 +5004,24 @@ function FacultySubmissionPanelContent({
                 </div>
 
                 {/* Top Stat Summary Grid (3 Cards) matching Admin Dashboard */}
+                {isLoadingStatuses ||
+                isLoadingSubmissionWindow ||
+                !isTemplatesFetched ? (
+                  <>
+                    <section className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                      <KpiCardSkeleton />
+                      <KpiCardSkeleton />
+                      <KpiCardSkeleton />
+                    </section>
+                    <section className="grid grid-cols-1 min-[360px]:grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
+                      <StatTileSkeleton />
+                      <StatTileSkeleton />
+                      <StatTileSkeleton />
+                      <StatTileSkeleton />
+                    </section>
+                  </>
+                ) : (
+                  <>
                 <section className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
                   {/* Card 1: Overall Compliance */}
                   <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 sm:p-5 shadow-xs space-y-3 transition-colors flex flex-col justify-between min-w-0">
@@ -5245,6 +5310,8 @@ function FacultySubmissionPanelContent({
                     </p>
                   </div>
                 </section>
+                  </>
+                )}
 
                 {/* Extension Request Feedback Toast in Dashboard */}
                 <AlertPopup
@@ -5621,10 +5688,14 @@ function FacultySubmissionPanelContent({
                               <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 block mb-1">
                                 Assigned Class Loads
                               </span>
-                              <p className="font-semibold text-slate-900 dark:text-slate-100">
-                                {facultyClasses.length} Registered Class Load
-                                {facultyClasses.length === 1 ? "" : "s"}
-                              </p>
+                              {isLoadingClasses ? (
+                                <Skeleton className="h-5 w-40" />
+                              ) : (
+                                <p className="font-semibold text-slate-900 dark:text-slate-100">
+                                  {facultyClasses.length} Registered Class Load
+                                  {facultyClasses.length === 1 ? "" : "s"}
+                                </p>
+                              )}
                             </div>
 
                             <div>
@@ -5790,14 +5861,7 @@ function FacultySubmissionPanelContent({
                       {/* Card Grid Body */}
                       <div className="px-4 sm:px-6 py-5">
                         {isLoadingClasses ? (
-                          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
-                            {[1, 2, 3].map((i) => (
-                              <div
-                                key={i}
-                                className="h-56 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-900/50 animate-pulse p-5"
-                              />
-                            ))}
-                          </div>
+                          <SubjectLoadCardSkeleton count={3} />
                         ) : facultyClasses.length === 0 ? (
                           <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-slate-300 dark:border-slate-700 bg-slate-50/60 dark:bg-slate-900/60 p-8 sm:p-14 text-center">
                             <div className="h-14 w-14 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-500 dark:text-slate-400 flex items-center justify-center mb-4 shadow-2xs">
@@ -5884,6 +5948,13 @@ function FacultySubmissionPanelContent({
                                   );
                                 }).length;
 
+                              const statusKey = `${cls.id}_${activeAY}_${activeSem}`;
+                              const isClassStatusLoading =
+                                !activeAY ||
+                                !activeSem ||
+                                !isTemplatesFetched ||
+                                !loadedClassStatusKeys.has(statusKey);
+
                               return (
                                 <ClassSubjectLoadCard
                                   key={cls.id}
@@ -5892,18 +5963,25 @@ function FacultySubmissionPanelContent({
                                   validatedCount={clsValidatedCount}
                                   pendingCount={clsPendingCount}
                                   revisionCount={clsRevisionCount}
+                                  isLoadingStatus={isClassStatusLoading}
                                   isActionLoading={
                                     classActionLoadingId === cls.id
                                   }
                                   onSelect={(selected) => {
                                     const cacheKey = `${selected.id}_${activeAY}_${activeSem}`;
+                                    const hasCachedStatuses =
+                                      loadedClassStatusKeys.has(cacheKey);
                                     selectedClassIdRef.current = selected.id;
                                     setRequirementStatuses(
-                                      classStatusesCacheRef.current[cacheKey] ||
-                                        classStatusesCacheRef.current[
-                                          selected.id
-                                        ] ||
-                                        [],
+                                      hasCachedStatuses
+                                        ? classStatusesCacheRef.current[
+                                            cacheKey
+                                          ] ||
+                                            classStatusesCacheRef.current[
+                                              selected.id
+                                            ] ||
+                                            []
+                                        : [],
                                     );
                                     setStep2FilterMode("all");
                                     setIsUploadSectionVisible(false);
@@ -5912,7 +5990,7 @@ function FacultySubmissionPanelContent({
                                       activeAY,
                                       activeSem,
                                       selected.id,
-                                      { silent: true },
+                                      { silent: hasCachedStatuses },
                                     );
                                   }}
                                   onDetails={handleOpenViewClass}
@@ -6450,9 +6528,7 @@ function FacultySubmissionPanelContent({
 
                     {/* Single Unified Table/List Container */}
                     {isLoadingStatuses ? (
-                      <p className="text-sm text-slate-500 dark:text-slate-400 py-6 text-center">
-                        Loading requirement statuses...
-                      </p>
+                      <ComplianceListSkeleton count={4} />
                     ) : statusError ? (
                       <div
                         role="alert"
